@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>TBMS - The Bap Management System</title>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--primary:#1a237e;--primary-light:#283593;--accent:#e53935;--bg:#f0f2f5;--card:#fff;--text:#333;--text-light:#666;--border:#ddd;--success:#43a047;--warning:#fb8c00;--danger:#e53935;--sidebar-w:260px;--header-h:60px}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+a{color:var(--primary);text-decoration:none}
+button{cursor:pointer;font-family:inherit;border:none;outline:none}
+input,select,textarea{font-family:inherit;outline:none}
+.hidden{display:none!important}
+
+/* Toast */
+.toast-container{position:fixed;top:16px;right:16px;z-index:10000;display:flex;flex-direction:column;gap:8px}
+.toast{padding:12px 20px;border-radius:10px;color:#fff;font-size:14px;font-weight:500;display:flex;align-items:center;gap:8px;animation:slideIn .3s;box-shadow:0 4px 12px rgba(0,0,0,.2);max-width:360px}
+.toast.success{background:var(--success)}.toast.error{background:var(--danger)}.toast.info{background:var(--primary)}
+@keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+
+/* Loading */
+#loadingOverlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;color:#fff;font-size:16px}
+.spinner{width:48px;height:48px;border:4px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Login */
+#loginPage{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--primary) 0%,#0d47a1 100%);padding:20px}
+.login-box{background:#fff;border-radius:16px;padding:40px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.login-logo{text-align:center;margin-bottom:30px}
+.login-logo h1{font-size:28px;color:var(--primary);font-weight:700}
+.login-logo p{color:var(--text-light);font-size:14px;margin-top:4px}
+.login-logo .logo-icon{width:80px;height:80px;background:var(--primary);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:36px;color:#fff}
+
+/* Setup */
+#setupPage{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#1b5e20 0%,#2e7d32 100%);padding:20px}
+.setup-box{background:#fff;border-radius:16px;padding:40px;width:100%;max-width:600px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.setup-steps{margin:24px 0}
+.setup-step{padding:12px 16px;background:#f8f9fa;border-radius:10px;margin-bottom:10px;font-size:14px;line-height:1.6;display:flex;gap:12px}
+.setup-step .step-num{width:28px;height:28px;background:var(--primary);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0}
+.connection-status{padding:12px;border-radius:8px;font-size:14px;margin-top:12px}
+.connection-status.ok{background:#e8f5e9;color:#2e7d32}
+.connection-status.err{background:#ffebee;color:#c62828}
+.connection-status.loading{background:#e3f2fd;color:#1565c0}
+
+/* Forms */
+.form-group{margin-bottom:20px}
+.form-group label{display:block;font-size:13px;font-weight:500;color:var(--text-light);margin-bottom:6px}
+.form-group input,.form-group select,.form-group textarea{width:100%;padding:12px 16px;border:2px solid var(--border);border-radius:10px;font-size:15px;transition:border-color .2s}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--primary)}
+.form-group textarea{resize:vertical;min-height:80px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+
+/* Buttons */
+.btn{padding:12px 24px;border-radius:10px;font-size:15px;font-weight:500;transition:all .2s;display:inline-flex;align-items:center;gap:8px}
+.btn-primary{background:var(--primary);color:#fff}.btn-primary:hover{background:var(--primary-light)}
+.btn-accent{background:var(--accent);color:#fff}.btn-accent:hover{background:#c62828}
+.btn-success{background:var(--success);color:#fff}.btn-success:hover{background:#2e7d32}
+.btn-warning{background:var(--warning);color:#fff}.btn-warning:hover{background:#ef6c00}
+.btn-outline{background:transparent;border:2px solid var(--border);color:var(--text)}.btn-outline:hover{border-color:var(--primary);color:var(--primary)}
+.btn-sm{padding:8px 14px;font-size:13px;border-radius:8px}
+.btn-full{width:100%;justify-content:center}
+.btn-icon{width:36px;height:36px;padding:0;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;font-size:14px}
+.login-actions{display:flex;flex-direction:column;gap:12px;margin-top:24px}
+.login-divider{text-align:center;color:var(--text-light);font-size:13px;position:relative;margin:8px 0}
+.login-divider::before,.login-divider::after{content:'';position:absolute;top:50%;width:40%;height:1px;background:var(--border)}
+.login-divider::before{left:0}.login-divider::after{right:0}
+
+/* Main Layout */
+#mainApp{display:flex;min-height:100vh}
+.sidebar{width:var(--sidebar-w);background:var(--primary);color:#fff;position:fixed;top:0;left:0;bottom:0;z-index:100;transition:transform .3s;overflow-y:auto}
+.sidebar-header{padding:20px;border-bottom:1px solid rgba(255,255,255,.1);text-align:center}
+.sidebar-header h2{font-size:20px;font-weight:700}
+.sidebar-header p{font-size:12px;opacity:.7;margin-top:4px}
+.sidebar-menu{padding:12px}
+.menu-item{display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:10px;color:rgba(255,255,255,.7);cursor:pointer;transition:all .2s;margin-bottom:4px;font-size:14px}
+.menu-item:hover,.menu-item.active{background:rgba(255,255,255,.15);color:#fff}
+.menu-item i{width:20px;text-align:center}
+.sidebar-user{padding:16px 20px;border-top:1px solid rgba(255,255,255,.1);display:flex;align-items:center;gap:12px;position:sticky;bottom:0;background:var(--primary)}
+.sidebar-user .avatar{width:40px;height:40px;background:rgba(255,255,255,.2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700}
+.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99}
+
+/* Header + Content */
+.main-content{flex:1;margin-left:var(--sidebar-w)}
+.header{height:var(--header-h);background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:sticky;top:0;z-index:50}
+.header-left{display:flex;align-items:center;gap:12px}
+.header-left .menu-toggle{display:none;background:none;font-size:20px;color:var(--text)}
+.header-right{display:flex;align-items:center;gap:16px;font-size:13px;color:var(--text-light)}
+.page-content{padding:24px}
+
+/* Cards */
+.card{background:var(--card);border-radius:12px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,.06);margin-bottom:20px}
+.card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.card-header h3{font-size:18px;font-weight:600}
+
+/* Stats */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;margin-bottom:24px}
+.stat-card{background:#fff;border-radius:12px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.06);display:flex;align-items:center;gap:16px}
+.stat-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff}
+.stat-icon.blue{background:#1565c0}.stat-icon.green{background:#2e7d32}.stat-icon.orange{background:#ef6c00}.stat-icon.red{background:#c62828}.stat-icon.purple{background:#6a1b9a}
+.stat-info .stat-num{font-size:24px;font-weight:700}.stat-info .stat-label{font-size:12px;color:var(--text-light);margin-top:2px}
+
+/* Tables */
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th,td{padding:12px 16px;text-align:left;border-bottom:1px solid var(--border);font-size:14px;white-space:nowrap}
+th{background:#f8f9fa;font-weight:600;font-size:13px;color:var(--text-light);position:sticky;top:0}
+tr:hover{background:#f8f9fa}
+.badge{padding:4px 10px;border-radius:20px;font-size:12px;font-weight:500;display:inline-block}
+.badge-success{background:#e8f5e9;color:#2e7d32}.badge-danger{background:#ffebee;color:#c62828}
+.badge-warning{background:#fff3e0;color:#e65100}.badge-info{background:#e3f2fd;color:#1565c0}
+
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px}
+.modal{background:#fff;border-radius:16px;width:100%;max-width:600px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.modal-header{padding:20px 24px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.modal-header h3{font-size:18px;font-weight:600}
+.modal-body{padding:24px}
+.modal-footer{padding:16px 24px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:12px}
+
+/* Staff Info Card */
+.staff-info-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.info-item{display:flex;align-items:flex-start;gap:10px;padding:10px;background:#f8f9fa;border-radius:8px}
+.info-item i{color:var(--primary);margin-top:2px;width:16px;text-align:center}
+.info-item .label{font-size:11px;color:var(--text-light)}.info-item .value{font-size:14px;font-weight:500}
+
+/* Filters */
+.filters{display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;align-items:center}
+.filters select,.filters input{padding:10px 14px;border:2px solid var(--border);border-radius:8px;font-size:14px}
+.filters select:focus,.filters input:focus{border-color:var(--primary)}
+.search-box{position:relative;flex:1;min-width:200px}
+.search-box input{width:100%;padding-left:36px}
+.search-box i{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-light)}
+
+.sync-status{font-size:12px;display:flex;align-items:center;gap:4px}
+.sync-status .dot{width:8px;height:8px;border-radius:50%}
+.sync-status .dot.online{background:var(--success)}.sync-status .dot.offline{background:var(--warning)}.sync-status .dot.syncing{background:#2196f3;animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* Responsive */
+@media(max-width:1024px){
+  .sidebar{transform:translateX(-100%)}
+  .sidebar.open{transform:translateX(0)}
+  .sidebar-overlay.show{display:block}
+  .main-content{margin-left:0}
+  .header-left .menu-toggle{display:block}
+  .form-row{grid-template-columns:1fr}
+  .staff-info-grid{grid-template-columns:1fr}
+}
+@media(max-width:600px){
+  .page-content{padding:16px}
+  .stats-grid{grid-template-columns:1fr 1fr}
+  .card{padding:16px}
+  .modal{margin:10px;border-radius:12px}
+  .kiosk-card{padding:24px}
+}
+</style>
+</head>
+<body>
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- Loading Overlay -->
+<div id="loadingOverlay" class="hidden"><div class="spinner"></div><div id="loadingText">Loading...</div></div>
+
+<!-- SETUP PAGE -->
+<div id="setupPage" class="hidden">
+<div class="setup-box">
+  <h2 style="text-align:center;color:var(--primary)"><i class="fas fa-cog"></i> TBMS Setup</h2>
+  <p style="text-align:center;color:var(--text-light);margin-top:8px">Connect to Google Sheets Database</p>
+  <div class="setup-steps">
+    <div class="setup-step"><div class="step-num">1</div><div>Google Drive > New > Google Sheets > Name "TBMS Database"</div></div>
+    <div class="setup-step"><div class="step-num">2</div><div>Extensions > Apps Script > paste Code.gs > Save</div></div>
+    <div class="setup-step"><div class="step-num">3</div><div>Run > initSheets (grant permissions)</div></div>
+    <div class="setup-step"><div class="step-num">4</div><div>Deploy > New Deployment > Web app (Anyone) > Copy URL</div></div>
+  </div>
+  <div class="form-group"><label>Google Apps Script Web App URL</label><input id="setupUrl" placeholder="https://script.google.com/macros/s/..."></div>
+  <button class="btn btn-primary btn-full" onclick="testConnection()"><i class="fas fa-plug"></i> Test Connection</button>
+  <div id="setupStatus"></div>
+  <div id="setupActions" class="hidden" style="margin-top:16px;display:flex;flex-direction:column;gap:12px">
+    <button class="btn btn-success btn-full" onclick="completeSetup()"><i class="fas fa-check"></i> Complete Setup</button>
+  </div>
+  <div style="margin-top:20px;text-align:center">
+    <button class="btn btn-outline btn-sm" onclick="skipSetup()"><i class="fas fa-forward"></i> Skip - Use Local Mode</button>
+  </div>
+</div>
+</div>
+
+<!-- LOGIN PAGE -->
+<div id="loginPage" class="hidden">
+<div class="login-box">
+  <div class="login-logo">
+    <div class="logo-icon"><i class="fas fa-bowl-food"></i></div>
+    <h1>TBMS</h1>
+    <p>The Bap Management System</p>
+  </div>
+  <div class="form-group"><label>Username</label><input id="loginUser" placeholder="Enter username"></div>
+  <div class="form-group"><label>Password</label><input id="loginPass" type="password" placeholder="Enter password"></div>
+  <div class="login-actions">
+    <button class="btn btn-primary btn-full" onclick="doLogin()"><i class="fas fa-sign-in-alt"></i> Login</button>
+  </div>
+</div>
+</div>
+
+
+<!-- MAIN APP -->
+<div id="mainApp" class="hidden">
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-header"><h2>TBMS</h2><p>The Bap Management System</p></div>
+    <div class="sidebar-menu">
+      <div class="menu-item active" onclick="navigate('dashboard')"><i class="fas fa-home"></i>Dashboard</div>
+      <div class="menu-item" onclick="navigate('stores')"><i class="fas fa-store"></i>Stores</div>
+      <div class="menu-item" onclick="navigate('users')"><i class="fas fa-users-cog"></i>Users</div>
+      <div class="menu-item" onclick="navigate('staff')"><i class="fas fa-user-tie"></i>Staff</div>
+      <div class="menu-item" onclick="navigate('attendance')"><i class="fas fa-clipboard-check"></i>Attendance</div>
+      <div class="menu-item" onclick="navigate('payroll')"><i class="fas fa-calculator"></i>Payroll</div>
+      <div class="menu-item" onclick="navigate('stock')"><i class="fas fa-boxes-stacked"></i>Stock</div>
+      <div class="menu-item" onclick="navigate('orders')"><i class="fas fa-clipboard-list"></i>Order List</div>
+      <div class="menu-item" onclick="navigate('settings')"><i class="fas fa-cog"></i>Settings</div>
+    </div>
+    <div class="sidebar-user"><div class="avatar" id="userAvatar">D</div><div><div id="userName" style="font-weight:600;font-size:14px">DJ</div><div id="userRole" style="font-size:12px;opacity:.7">Admin</div></div></div>
+  </div>
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+  <div class="main-content">
+    <div class="header">
+      <div class="header-left"><button class="menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button><h2 id="pageTitle" style="font-size:18px">Dashboard</h2></div>
+      <div class="header-right"><span id="headerDate"></span><span class="sync-status"><span class="dot offline" id="syncDot"></span><span id="syncText">Local</span></span><button class="btn btn-sm btn-outline" onclick="doLogout()"><i class="fas fa-sign-out-alt"></i> Logout</button></div>
+    </div>
+    <div class="page-content" id="pageContent"></div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div id="modalOverlay" class="modal-overlay hidden" onclick="if(event.target===this)closeModal()">
+<div class="modal"><div class="modal-header"><h3 id="modalTitle">Modal</h3><button class="btn-icon" onclick="closeModal()"><i class="fas fa-times"></i></button></div><div class="modal-body" id="modalBody"></div><div class="modal-footer" id="modalFooter"></div></div>
+</div>
+
+<script>
+// ==================== UTILITIES ====================
+function $(id){return document.getElementById(id)}
+function escHtml(s){if(!s&&s!==0)return'';const d=document.createElement('div');d.textContent=String(s);return d.innerHTML;}
+function toast(msg,type='info'){const t=document.createElement('div');t.className='toast '+type;t.innerHTML='<i class="fas fa-'+(type==='error'?'exclamation-circle':type==='success'?'check-circle':'info-circle')+'"></i>'+escHtml(msg);$('toastContainer').appendChild(t);setTimeout(()=>t.remove(),3000);}
+function showLoading(t='Loading...'){$('loadingText').textContent=t;$('loadingOverlay').classList.remove('hidden');}
+function hideLoading(){$('loadingOverlay').classList.add('hidden');}
+function openModal(title,body,footer=''){$('modalTitle').textContent=title;$('modalBody').innerHTML=body;$('modalFooter').innerHTML=footer;$('modalOverlay').classList.remove('hidden');}
+function closeModal(){$('modalOverlay').classList.add('hidden');}
+function genId(prefix){return prefix+'_'+Date.now()+'_'+Math.random().toString(36).substr(2,5);}
+function updateSyncStatus(s){const dot=$('syncDot'),txt=$('syncText');dot.className='dot '+s;txt.textContent=s==='online'?'Cloud':s==='syncing'?'Syncing...':'Local';}
+function fmtDate(d){if(!d)return'-';try{return new Date(d).toLocaleDateString('en-GB');}catch(e){return d;}}
+
+// ==================== DEFAULT DATA ====================
+const DEFAULT_DATA = {
+  Users: [{id:'u1',username:'ilovecpu',password:'1234',name:'DJ',role:'admin',email:'ilovecpu100@gmail.com',storeId:''}],
+  Stores: [
+    {id:'PAB',code:'PAB',name:'Pick A Bap',company:'Pick A Bap Ltd',companyNo:'',address:'Unit24, The Meads Shopping Center, Farnborough GU14 7SJ',phone:'',email:'',manager:'',memo:'',active:true},
+    {id:'TBS',code:'TBS',name:'The Bap Swindon',company:'The Bap Swindon Ltd',companyNo:'',address:'12 Havelock Square, Swindon SN1 1LE',phone:'',email:'',manager:'',memo:'',active:true},
+    {id:'TBR',code:'TBR',name:'The Bap Reading',company:'The Bap Reading Ltd',companyNo:'',address:'23-24 Market Place, Reading, RG1 2DE',phone:'',email:'',manager:'',memo:'',active:true},
+    {id:'TBB',code:'TBB',name:'The Bap Bristol',company:'The Bap Bristol Ltd',companyNo:'',address:'21 Queens Road, Clifton, Bristol, BS8 1QE',phone:'',email:'',manager:'',memo:'',active:true}
+  ],
+  Staff: [
+    {id:'s1',storeId:'TBS',name:'Mr. Youngseon Yun',clothSize:'XL',kioskPwd:'4321',dob:'1992-03-02',address:'4 Horsham Road, Swindon, SN3 2BN',niNo:'SW 01 34 28 A',eVisa:'',mobile:'07308 354 998',startDate:'2022-05-07',rate:15,sortCode:'52-21-30',accountNo:'31585833',email:'roller1918@naver.com',memo:'',active:true},
+    {id:'s2',storeId:'TBS',name:'Mr. Niraj Gurung',clothSize:'M',kioskPwd:'1234',dob:'1978-11-15',address:'32 Horsham Road, Swindon, SN3 2BN',niNo:'SZ 29 40 74 C',eVisa:'',mobile:'07466 513 913',startDate:'2023-05-08',rate:13.5,sortCode:'77-04-38',accountNo:'63983960',email:'gurungniraj2006@yahoo.com',memo:'',active:true},
+    {id:'s3',storeId:'TBS',name:'Ms. Sraswati Rana',clothSize:'M',kioskPwd:'2928',dob:'1986-11-19',address:'17 March Close, Swindon, SN5 4GJ',niNo:'RY 09 04 02 C',eVisa:'',mobile:'',startDate:'',rate:12.5,sortCode:'',accountNo:'',email:'',memo:'',active:true},
+    {id:'s4',storeId:'TBS',name:'Mrs. Pataramon Jones',clothSize:'S',kioskPwd:'1212',dob:'1985-06-10',address:'22 King William Street, Swindon, SN1 3LB',niNo:'NJ 54 83 07 D',eVisa:'',mobile:'07384 308 243',startDate:'2022-10-19',rate:12.5,sortCode:'30-13-35',accountNo:'75625368',email:'am_ammymy@hotmail.com',memo:'',active:true},
+    {id:'s5',storeId:'TBS',name:'Ms. Alina Bakhshyar',clothSize:'S',kioskPwd:'2321',dob:'2007-04-15',address:'59 Upham Road, Swindon, SN3 1DN',niNo:'SK 09 73 10 C',eVisa:'',mobile:'',startDate:'2023-08-01',rate:10.5,sortCode:'',accountNo:'39747682',email:'alinabakhshyar1@gmail.com',memo:'',active:true},
+    {id:'s6',storeId:'TBS',name:'Ms. Sara Khan',clothSize:'S',kioskPwd:'2232',dob:'2006-11-18',address:'66 County Road, Swindon, SN1 2EW',niNo:'PL 70 48 21 B',eVisa:'',mobile:'',startDate:'2023-03-29',rate:10.5,sortCode:'23-05-80',accountNo:'26650784',email:'sarakhanstandard@gmail.com',memo:'',active:true},
+    {id:'s7',storeId:'TBS',name:'Ms. Zahra Bakhshyar',clothSize:'M',kioskPwd:'4554',dob:'2005-04-10',address:'59 Upham Road, Swindon, SN3 1DN',niNo:'SK 09 73 05 B',eVisa:'',mobile:'07491 948 790',startDate:'2022-05-14',rate:11.5,sortCode:'07-08-06',accountNo:'23952006',email:'zahrabakhshyar@gmail.com',memo:'',active:true},
+    {id:'s8',storeId:'TBS',name:'Mrs. Susan Rai',clothSize:'S',kioskPwd:'7665',dob:'1983-07-21',address:'30 Avening Street, Swindon, SN2 8BZ',niNo:'TJ 54 48 73 B',eVisa:'',mobile:'07472 953 406',startDate:'2023-10-05',rate:13,sortCode:'30-98-41',accountNo:'34089362',email:'susanuma1983@gmail.com',memo:'',active:true},
+    {id:'s9',storeId:'TBS',name:'Mrs. Devi Maya Pun',clothSize:'M',kioskPwd:'5644',dob:'1972-12-15',address:'11 Fraser Close, Nythe, Swindon, SN3 3RP',niNo:'SK 01 85 37 B',eVisa:'',mobile:'07414 966 478',startDate:'2023-03-13',rate:12.5,sortCode:'40-04-15',accountNo:'41717316',email:'kne@hotmail.co.uk',memo:'',active:true},
+    {id:'s10',storeId:'PAB',name:'Thir Bahadur B.K.',clothSize:'L',kioskPwd:'1234',dob:'1977-03-19',address:'14 Glenwood Court, Farnborough, GU14 7TB',niNo:'SW 61 55 50 C',eVisa:'',mobile:'',startDate:'2020-12-15',rate:13.5,sortCode:'',accountNo:'',email:'',memo:'',active:true},
+    {id:'s11',storeId:'PAB',name:'Jems B.K.',clothSize:'L',kioskPwd:'4311',dob:'1999-09-27',address:'14 Glenwood Court, Farnborough, GU14 7TB',niNo:'NJ 15 54 87 D',eVisa:'',mobile:'',startDate:'2021-06-30',rate:13,sortCode:'',accountNo:'',email:'',memo:'',active:true},
+    {id:'s12',storeId:'PAB',name:'Lila Kumari Rana',clothSize:'S',kioskPwd:'1111',dob:'1987-04-28',address:'42 Lulworth Close, Farnborough, GU14 8TR',niNo:'SY 34 56 11 D',eVisa:'',mobile:'',startDate:'2021-07-08',rate:12.5,sortCode:'',accountNo:'',email:'',memo:'',active:true},
+    {id:'s13',storeId:'PAB',name:'Dipson B.K.',clothSize:'L',kioskPwd:'2222',dob:'2004-04-11',address:'14 Glenwood Court, Farnborough, GU14 7TB',niNo:'TK 30 34 61 B',eVisa:'',mobile:'',startDate:'2024-03-01',rate:12.5,sortCode:'77-49-22',accountNo:'26518968',email:'',memo:'',active:true},
+    {id:'s14',storeId:'TBR',name:'Mr. Avinaya Rai',clothSize:'M',kioskPwd:'1212',dob:'1999-06-30',address:'34 Dwyer Road, Reading, RG30 3PN',niNo:'TL812621B',eVisa:'',mobile:'07440 714 416',startDate:'2023-08-01',rate:13,sortCode:'20-71-03',accountNo:'63332438',email:'iamavinaya69@gmail.com',memo:'',active:true},
+    {id:'s15',storeId:'TBR',name:'Ms. Diksha Rai',clothSize:'S',kioskPwd:'1212',dob:'2005-06-01',address:'38 Beresford Road, Reading, RG30 1BX',niNo:'TK740551D',eVisa:'',mobile:'07778 417 997',startDate:'2023-08-13',rate:12,sortCode:'77-66-73',accountNo:'00130894',email:'dikshabantawa2345@gmail.com',memo:'',active:true},
+    {id:'s16',storeId:'TBR',name:'Ms. Shuva Chapagai',clothSize:'S',kioskPwd:'1223',dob:'1996-08-02',address:'17 Walnut Way, Tilehurst, RG30 4TD',niNo:'NJ565252A',eVisa:'',mobile:'0777 682 2993',startDate:'2023-08-01',rate:13,sortCode:'30-67-99',accountNo:'75460668',email:'shuvachapagai@gmail.com',memo:'',active:true},
+    {id:'s17',storeId:'TBR',name:'Mr. Ashok Bhandari',clothSize:'XL',kioskPwd:'2322',dob:'1995-01-13',address:'93 Liverpool Road, Reading, RG1 3PN',niNo:'TK557314C',eVisa:'',mobile:'07769 010 211',startDate:'2023-08-22',rate:13,sortCode:'30-90-43',accountNo:'63726068',email:'ashook1995@gmail.com',memo:'',active:true},
+    {id:'s18',storeId:'TBR',name:'Mrs. Naina Kala Ghale',clothSize:'S',kioskPwd:'2322',dob:'1986-05-12',address:'55 Mason Street, Reading, RG1 7PD',niNo:'NJ544552A',eVisa:'SPM M24 5N3',mobile:'07465856894',startDate:'2023-10-14',rate:12.5,sortCode:'04-00-04',accountNo:'72331444',email:'nainaghale12@gmail.com',memo:'',active:true},
+    {id:'s19',storeId:'TBR',name:'Ms. Teena Ale',clothSize:'S',kioskPwd:'2344',dob:'2005-12-05',address:'55 Mason Street, Reading, RG1 7PD',niNo:'TJ818150C',eVisa:'WYW 434 54E',mobile:'07984236439',startDate:'2023-11-26',rate:10.5,sortCode:'',accountNo:'51917707',email:'teenaale2@gmail.com',memo:'',active:true},
+    {id:'s20',storeId:'TBR',name:'Mr. Saroj Ale',clothSize:'L',kioskPwd:'4433',dob:'2008-01-17',address:'77 Norfolk Road, Reading, RG30 2EG',niNo:'RZ082840A',eVisa:'WMF A6C 5BN',mobile:'07853750380',startDate:'2025-01-03',rate:12,sortCode:'04-00-03',accountNo:'86776795',email:'sarojale@gmail.com',memo:'',active:true},
+    {id:'s21',storeId:'TBB',name:'Mr. Mukesh Lamsal',clothSize:'XL',kioskPwd:'1234',dob:'1992-09-24',address:'93 Liverpool Road, Reading, RG1 3PN',niNo:'TJ366399D',eVisa:'',mobile:'07503 382 305',startDate:'2025-07-18',rate:13,sortCode:'30-67-99',accountNo:'87414660',email:'mukeshlamsal111@gmail.com',memo:'',active:true},
+    {id:'s22',storeId:'TBB',name:'Mrs. Jayanti Bhatta',clothSize:'M',kioskPwd:'3232',dob:'1994-10-23',address:'6 Bouverie Street, Easton, Bristol, BS5 0RS',niNo:'TJ642875D',eVisa:'WHC K64 6C9',mobile:'07459 028 504',startDate:'2025-07-18',rate:12.5,sortCode:'77-77-52',accountNo:'67762928',email:'jayantibhatta75@gmail.com',memo:'',active:true},
+    {id:'s23',storeId:'TBB',name:'Mr. Soe Thiha Maung',clothSize:'M',kioskPwd:'2323',dob:'2000-04-04',address:'14 Orchard Gardens, Bristol, BS15 9UA',niNo:'RZ474071D',eVisa:'',mobile:'07553 381 469',startDate:'2025-08-05',rate:12.5,sortCode:'',accountNo:'5016851',email:'SoeThiaMaung13@gmail.com',memo:'',active:true},
+    {id:'s24',storeId:'TBB',name:'Miss. Thi Ri May',clothSize:'S',kioskPwd:'2323',dob:'2003-11-14',address:'14 Orchard Gardens, Bristol, BS15 9UA',niNo:'TJ083444A',eVisa:'WW8 L8Z 58J',mobile:'07501 726 872',startDate:'2025-07-18',rate:12.5,sortCode:'30-62-96',accountNo:'48833663',email:'thirimaythonethone@gmail.com',memo:'',active:true},
+    {id:'s25',storeId:'TBB',name:'Miss. Kai Qi Koh',clothSize:'S',kioskPwd:'2323',dob:'2003-05-19',address:'Studio 16, Stonebridge House, Colston Ave, Bristol BS1 4TN',niNo:'D6785568',eVisa:'SF3 T9W 5NZ',mobile:'07535 616 619',startDate:'2025-07-18',rate:12.5,sortCode:'40-14-03',accountNo:'83893456',email:'charlottekoh03@gmail.com',memo:'',active:true},
+    {id:'s26',storeId:'TBB',name:'Mr. Timothy Chung',clothSize:'M',kioskPwd:'4432',dob:'2006-07-08',address:'13 Osborne Villas, Bristol, BS2 8BP',niNo:'TH444989B',eVisa:'W3K TL7 6CT',mobile:'07300 894 746',startDate:'2025-07-18',rate:11,sortCode:'04-00-03',accountNo:'75584464',email:'',memo:'',active:true}
+  ],
+  Attendance: [],
+  StockTemplate: [
+    {id:'t1',category:'Dry Stock',name:'Susi Rice 20kg',unit:'Bag',min:4},{id:'t2',category:'Dry Stock',name:'Jasmine Rice 20kg',unit:'Pack',min:2},
+    {id:'t3',category:'Dry Stock',name:'Sweet Potato Noodles 14kg',unit:'Box',min:2},{id:'t4',category:'Dry Stock',name:'Bread Crumbs 10kg',unit:'Box',min:2},
+    {id:'t5',category:'Dry Stock',name:'Flour 16kg',unit:'Bag',min:2},{id:'t6',category:'Dry Stock',name:'Potato Starch',unit:'Bag',min:1},
+    {id:'t7',category:'Dry Stock',name:'Sugar 25kg',unit:'Bag',min:2},{id:'t8',category:'Dry Stock',name:'Salt 12.5kg',unit:'Bag',min:1},
+    {id:'t9',category:'Dry Stock',name:'Corn Flour 3kg',unit:'Pack',min:1},{id:'t10',category:'Dry Stock',name:'MSG 18kg',unit:'Bag',min:1},
+    {id:'t11',category:'Dry Stock',name:'Chilli Powder 15kg',unit:'Box',min:1},{id:'t12',category:'Dry Stock',name:'Jave Curry 20kg',unit:'Box',min:1},
+    {id:'t13',category:'Dry Stock',name:'Sesame Seed 1kg',unit:'Pack',min:2},{id:'t14',category:'Dry Stock',name:'Garlic Flakes 1kg',unit:'Pack',min:2},
+    {id:'t15',category:'Dry Stock',name:'Black Pepper 400g',unit:'Pack',min:2},{id:'t16',category:'Dry Stock',name:'Extra Hot Chilli 400g',unit:'Pack',min:2},
+    {id:'t17',category:'Dry Stock',name:'Soy Sauce 15L',unit:'Pcs',min:2},{id:'t18',category:'Dry Stock',name:'Go Chu Jang 14kg',unit:'Pcs',min:2},
+    {id:'t19',category:'Dry Stock',name:'Mirine 10L',unit:'Pcs',min:2},{id:'t20',category:'Dry Stock',name:'Golden Syrup 15kg',unit:'Ctn',min:4},
+    {id:'t21',category:'Dry Stock',name:'Sesame Oil 2L',unit:'Pcs',min:1},{id:'t22',category:'Dry Stock',name:'Udon Sauce 1.5L',unit:'Pcs',min:2},
+    {id:'t23',category:'Dry Stock',name:'Vinegar 5L',unit:'Pcs',min:2},{id:'t24',category:'Dry Stock',name:'Tomato Ketchup 8L',unit:'Ctn',min:4},
+    {id:'t25',category:'Dry Stock',name:'Mayonnaise 10kg',unit:'Pcs',min:2},{id:'t26',category:'Dry Stock',name:'Sriracha Sauce (730ml×6)',unit:'Box',min:1},
+    {id:'t27',category:'Dry Stock',name:'Lime Juice 1L',unit:'Pcs',min:6},{id:'t28',category:'Dry Stock',name:'Yellow Radish 1kg',unit:'Pack',min:2},
+    {id:'t29',category:'Dry Stock',name:'Rapeseed Oil 20L',unit:'Box',min:1},{id:'t30',category:'Dry Stock',name:'Baking Powder',unit:'Pack',min:2},
+    {id:'t31',category:'Dry Stock',name:'Ginger Powder',unit:'Pcs',min:1},{id:'t32',category:'Dry Stock',name:'Dried Seaweed 500g',unit:'Pcs',min:1},
+    {id:'t33',category:'Dry Stock',name:'Crazy Hot Sauce',unit:'Pcs',min:2},{id:'t34',category:'Dry Stock',name:'Wine',unit:'Pcs',min:1},
+    {id:'t35',category:'Treestone Stock',name:'Fresh Chicken Thigh',unit:'Kg',min:80},{id:'t36',category:'Treestone Stock',name:'Sliced Beef Bulgogi Chuck',unit:'Pack',min:4},
+    {id:'t37',category:'Treestone Stock',name:'Pork Collar',unit:'Pack',min:6},{id:'t38',category:'Treestone Stock',name:'White Cabbage',unit:'Kg',min:4},
+    {id:'t39',category:'Treestone Stock',name:'Red Cabbage',unit:'Pcs',min:1},{id:'t40',category:'Treestone Stock',name:'Onions',unit:'Bag',min:1},
+    {id:'t41',category:'Treestone Stock',name:'Carrots',unit:'Bag',min:1},{id:'t42',category:'Treestone Stock',name:'Spring Onion',unit:'Pack',min:1},
+    {id:'t43',category:'Treestone Stock',name:'Egg (60 Ea)',unit:'Box',min:2},{id:'t44',category:'Treestone Stock',name:'Spinach',unit:'Pack',min:10},
+    {id:'t45',category:'Treestone Stock',name:'Beansprout',unit:'Pack',min:10},{id:'t46',category:'Treestone Stock',name:'Courgettes',unit:'Pack',min:10},
+    {id:'t47',category:'Treestone Stock',name:'Mushroom',unit:'Pack',min:10},{id:'t48',category:'Treestone Stock',name:'Tofu',unit:'Box',min:1},
+    {id:'t49',category:'Treestone Stock',name:'Fresh Garlic Peeled',unit:'Kg',min:1}
+  ],
+  StoreStock: []
+};
+// Generate StoreStock for all stores × templates
+DEFAULT_DATA.Stores.forEach(store => {
+  DEFAULT_DATA.StockTemplate.forEach(item => {
+    DEFAULT_DATA.StoreStock.push({storeId:store.id, itemId:item.id, category:item.category, name:item.name, unit:item.unit, min:item.min, qty:0});
+  });
+});
+
+// ==================== DATA LAYER ====================
+const D = { Users:[], Stores:[], Staff:[], Attendance:[], StockTemplate:[], StoreStock:[] };
+const LS = {
+  get(k) { try { return JSON.parse(localStorage.getItem('tbms_'+k)); } catch(e) { return null; } },
+  set(k, v) { localStorage.setItem('tbms_'+k, JSON.stringify(v)); },
+  getConfig() { return this.get('config') || {}; }
+};
+const CLOUD_URL = 'https://script.google.com/macros/s/AKfycby4-TUEUu3VUpKNIGXH4HlFzbvSUgaP18QfDN4RKzrzJ17OKqO8Uygh9o6JmqfhelGI/exec';
+const API = {
+  url: CLOUD_URL, mode: 'cloud',
+  async get(action, params={}) {
+    if (this.mode !== 'cloud' || !this.url) return null;
+    try {
+      let url = this.url + '?action=' + action;
+      for (let k in params) url += '&' + k + '=' + encodeURIComponent(params[k]);
+      const r = await fetch(url, {redirect:'follow'});
+      return await r.json();
+    } catch(e) { console.error('API GET error:', e); return null; }
+  },
+  async post(data) {
+    if (this.mode !== 'cloud' || !this.url) return null;
+    try {
+      const r = await fetch(this.url, {method:'POST', headers:{'Content-Type':'text/plain'}, body:JSON.stringify(data), redirect:'follow'});
+      return await r.json();
+    } catch(e) { console.error('API POST error:', e); return null; }
+  }
+};
+
+async function saveData(sheet) {
+  LS.set(sheet, D[sheet]);
+  if (API.mode === 'cloud') {
+    updateSyncStatus('syncing');
+    const r = await API.post({action:'saveSheet', sheet, rows: D[sheet]});
+    updateSyncStatus(r && !r.error ? 'online' : 'offline');
+  }
+}
+async function saveRow(sheet, row) {
+  const idx = D[sheet].findIndex(r => r.id === row.id);
+  if (idx >= 0) D[sheet][idx] = row; else D[sheet].push(row);
+  LS.set(sheet, D[sheet]);
+  if (API.mode === 'cloud') {
+    updateSyncStatus('syncing');
+    const r = await API.post({action:'upsert', sheet, row});
+    updateSyncStatus(r && !r.error ? 'online' : 'offline');
+  }
+}
+async function deleteData(sheet, id) {
+  D[sheet] = D[sheet].filter(r => String(r.id) !== String(id));
+  LS.set(sheet, D[sheet]);
+  if (API.mode === 'cloud') {
+    updateSyncStatus('syncing');
+    const r = await API.post({action:'deleteRow', sheet, id});
+    updateSyncStatus(r && !r.error ? 'online' : 'offline');
+  }
+}
+
+async function loadAllData() {
+  showLoading('Loading data...');
+  if (API.mode === 'cloud') {
+    const result = await API.get('getAll');
+    if (result && result.data && !result.error) {
+      let loaded = false;
+      for (let sheet in result.data) {
+        if (Array.isArray(result.data[sheet]) && result.data[sheet].length > 0) {
+          D[sheet] = result.data[sheet]; LS.set(sheet, D[sheet]); loaded = true;
+        }
+      }
+      if (loaded) { hideLoading(); updateSyncStatus('online'); return true; }
+    }
+  }
+  // Fallback to localStorage
+  for (let sheet in D) {
+    const local = LS.get(sheet);
+    if (local && local.length > 0) D[sheet] = local;
+  }
+  hideLoading(); updateSyncStatus('offline'); return true;
+}
+
+async function initDefaultData() {
+  showLoading('Initializing data...');
+  for (let sheet in DEFAULT_DATA) { D[sheet] = DEFAULT_DATA[sheet]; LS.set(sheet, D[sheet]); }
+  if (API.mode === 'cloud') {
+    await API.post({action:'initData', sheets: DEFAULT_DATA});
+  }
+  hideLoading();
+}
+
+// ==================== PAY PERIOD ====================
+function getPayPeriod(d=new Date()) {
+  let sm,sy,em,ey;
+  if(d.getDate()>=26){sm=d.getMonth();sy=d.getFullYear();em=(d.getMonth()+1)%12;ey=d.getMonth()===11?d.getFullYear()+1:d.getFullYear();}
+  else{em=d.getMonth();ey=d.getFullYear();sm=(d.getMonth()-1+12)%12;sy=d.getMonth()===0?d.getFullYear()-1:d.getFullYear();}
+  return{start:new Date(sy,sm,26,0,0,0),end:new Date(ey,em,25,23,59,59),label:`${sy}-${String(sm+1).padStart(2,'0')}-26 ~ ${ey}-${String(em+1).padStart(2,'0')}-25`};
+}
+function getPayPeriods() { const p=[];const n=new Date();for(let i=-6;i<=1;i++){p.push(getPayPeriod(new Date(n.getFullYear(),n.getMonth()+i,26)));}return p; }
+
+// ==================== SETUP ====================
+async function testConnection() {
+  const url = $('setupUrl').value.trim();
+  if (!url) { $('setupStatus').innerHTML='<div class="connection-status err"><i class="fas fa-times-circle"></i> Please enter the URL</div>'; return; }
+  $('setupStatus').innerHTML='<div class="connection-status loading"><i class="fas fa-spinner fa-spin"></i> Testing...</div>';
+  try {
+    const r = await fetch(url + '?action=ping', {redirect:'follow'});
+    const data = await r.json();
+    if (data.status === 'ok') {
+      $('setupStatus').innerHTML='<div class="connection-status ok"><i class="fas fa-check-circle"></i> Connected! Version: '+data.version+'</div>';
+      $('setupActions').classList.remove('hidden');
+    } else {
+      $('setupStatus').innerHTML='<div class="connection-status err"><i class="fas fa-times-circle"></i> Error: '+(data.error||'Unknown')+'</div>';
+    }
+  } catch(e) {
+    $('setupStatus').innerHTML='<div class="connection-status err"><i class="fas fa-times-circle"></i> Failed: '+e.message+'</div>';
+  }
+}
+async function completeSetup() {
+  const url = $('setupUrl').value.trim();
+  API.url = url; API.mode = 'cloud';
+  LS.set('config', {apiUrl: url, mode: 'cloud'});
+  await initDefaultData();
+  $('setupPage').classList.add('hidden');
+  $('loginPage').classList.remove('hidden');
+  toast('Setup complete! Cloud connected.', 'success');
+}
+function skipSetup() {
+  API.mode = 'local';
+  LS.set('config', {mode: 'local'});
+  for (let sheet in DEFAULT_DATA) { D[sheet] = DEFAULT_DATA[sheet]; LS.set(sheet, D[sheet]); }
+  $('setupPage').classList.add('hidden');
+  $('loginPage').classList.remove('hidden');
+  toast('Running in local mode');
+}
+
+// ==================== AUTH ====================
+let currentUser = null;
+
+function doLogin() {
+  const username = $('loginUser').value.trim();
+  const password = $('loginPass').value;
+  // Ensure D.Users has data
+  if (!D.Users || D.Users.length === 0) {
+    const local = LS.get('Users');
+    if (local && local.length > 0) D.Users = local;
+    else { D.Users = DEFAULT_DATA.Users; LS.set('Users', D.Users); }
+  }
+  // String comparison to handle type differences from Google Sheets
+  const user = D.Users.find(u => String(u.username) === String(username) && String(u.password) === String(password));
+  if (user) {
+    currentUser = user;
+    $('loginPage').classList.add('hidden');
+    $('mainApp').classList.remove('hidden');
+    $('userName').textContent = user.name;
+    $('userRole').textContent = user.role === 'admin' ? 'Administrator' : 'Manager';
+    $('userAvatar').textContent = user.name.charAt(0).toUpperCase();
+    navigate('dashboard'); toast('Welcome, ' + user.name + '!', 'success');
+  } else { toast('Invalid username or password', 'error'); }
+}
+function doLogout() { currentUser=null;$('mainApp').classList.add('hidden');$('loginPage').classList.remove('hidden');$('loginUser').value='';$('loginPass').value=''; }
+$('loginPass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+$('loginUser').addEventListener('keydown',e=>{if(e.key==='Enter')$('loginPass').focus();});
+
+// ==================== NAVIGATION ====================
+function toggleSidebar() { $('sidebar').classList.toggle('open');$('sidebarOverlay').classList.toggle('show'); }
+const pageTitles={dashboard:'Dashboard',stores:'Store Management',users:'User Management',staff:'Staff Management',attendance:'Attendance Records',payroll:'Payroll',stock:'Stock Management',orders:'Order List',settings:'Settings'};
+let currentPage='dashboard';
+function navigate(page) {
+  currentPage=page;
+  if(attAutoRefresh&&page!=='attendance'){clearInterval(attAutoRefresh);attAutoRefresh=null;}
+  if(dashAutoRefresh&&page!=='dashboard'){clearInterval(dashAutoRefresh);dashAutoRefresh=null;}
+  $('pageTitle').textContent=pageTitles[page]||page;
+  document.querySelectorAll('.menu-item').forEach((el,i)=>{el.classList.toggle('active',el.textContent.trim().toLowerCase().includes(page==='dashboard'?'dashboard':page));});
+  if(window.innerWidth<=1024){$('sidebar').classList.remove('open');$('sidebarOverlay').classList.remove('show');}
+  renderPage(page);
+}
+
+function renderPage(page) {
+  const c=$('pageContent');
+  const storeName=id=>{ const s=D.Stores.find(x=>String(x.id)===String(id)); return s?s.name:id; };
+  switch(page) {
+    case 'dashboard': renderDashboard(c); break;
+    case 'stores': renderStores(c); break;
+    case 'users': renderUsers(c); break;
+    case 'staff': renderStaff(c); break;
+    case 'attendance': renderAttendance(c); break;
+    case 'payroll': renderPayroll(c); break;
+    case 'stock': renderStock(c); break;
+    case 'orders': renderOrders(c); break;
+    case 'settings': renderSettings(c); break;
+    default: c.innerHTML='<p>Page not found</p>';
+  }
+}
+
+// ==================== DASHBOARD ====================
+let dashAutoRefresh=null;
+async function refreshDashboard(){
+  if(API.mode==='cloud'){
+    const r=await API.get('getAll');
+    if(r&&r.data){
+      if(r.data.Attendance&&r.data.Attendance.length>0){D.Attendance=r.data.Attendance;LS.set('Attendance',D.Attendance);}
+      if(r.data.Staff&&r.data.Staff.length>0){D.Staff=r.data.Staff;LS.set('Staff',D.Staff);}
+    }
+  }
+  if(currentPage==='dashboard')renderDashboardContent();
+}
+function renderDashboard(c) {
+  c.innerHTML=`<div id="dashContent"></div>`;
+  renderDashboardContent();
+  if(dashAutoRefresh)clearInterval(dashAutoRefresh);
+  dashAutoRefresh=setInterval(refreshDashboard,30000);
+}
+function renderDashboardContent() {
+  const activeStaff = D.Staff.filter(s=>s.active!==false).length;
+  const today = new Date().toISOString().split('T')[0];
+  const todayAtt = D.Attendance.filter(a=>a.date===today);
+  const working = todayAtt.filter(a=>a.clockIn&&!a.clockOut);
+  const clockedIn = working.length;
+  $('dashContent').innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <span style="font-size:12px;color:var(--text-light)"><i class="fas fa-sync"></i> Auto-refresh: 30s</span>
+      <button class="btn btn-sm btn-success" onclick="refreshDashboard()"><i class="fas fa-sync"></i> Refresh Now</button>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-icon blue"><i class="fas fa-store"></i></div><div class="stat-info"><div class="stat-num">${D.Stores.length}</div><div class="stat-label">Stores</div></div></div>
+      <div class="stat-card"><div class="stat-icon green"><i class="fas fa-user-tie"></i></div><div class="stat-info"><div class="stat-num">${activeStaff}</div><div class="stat-label">Active Staff</div></div></div>
+      <div class="stat-card"><div class="stat-icon orange"><i class="fas fa-clock"></i></div><div class="stat-info"><div class="stat-num">${clockedIn}</div><div class="stat-label">Clocked In Now</div></div></div>
+      <div class="stat-card"><div class="stat-icon purple"><i class="fas fa-boxes-stacked"></i></div><div class="stat-info"><div class="stat-num">${D.StockTemplate.length}</div><div class="stat-label">Stock Items</div></div></div>
+    </div>
+    ${clockedIn>0?`<div class="card" style="border-left:4px solid var(--success)"><div class="card-header"><h3><i class="fas fa-user-clock" style="color:var(--success)"></i> Currently Working (${clockedIn})</h3></div>
+    <div class="table-wrap"><table><thead><tr><th>Staff</th><th>Store</th><th>Clock In</th><th>Working</th></tr></thead><tbody>
+    ${working.map(a=>{
+      const s=D.Staff.find(x=>String(x.id)===String(a.staffId));
+      const store=D.Stores.find(x=>String(x.id)===String(a.storeId));
+      const cin=parseTime(a.clockIn);
+      let dur='-';
+      if(cin){const[h,m]=cin.split(':').map(Number);const now=new Date();const mins=now.getHours()*60+now.getMinutes()-h*60-m;if(mins>=0){const hh=Math.floor(mins/60);const mm=mins%60;dur=hh+'h '+mm+'m';}}
+      return`<tr><td><strong>${s?escHtml(s.name):a.staffId}</strong></td><td>${store?escHtml(store.name):a.storeId}</td><td><span class="badge badge-success">${cin||'-'}</span></td><td><span class="badge badge-info">${dur}</span></td></tr>`;
+    }).join('')}
+    </tbody></table></div></div>`
+    :`<div class="card" style="border-left:4px solid var(--border);text-align:center;padding:32px;color:var(--text-light)"><i class="fas fa-moon" style="font-size:32px;margin-bottom:12px;display:block"></i>No staff currently working</div>`}
+    <div class="card"><div class="card-header"><h3>Stores Overview</h3></div>
+    <div class="table-wrap"><table><thead><tr><th>Store</th><th>Staff</th><th>Working Now</th><th>Today Total</th></tr></thead><tbody>
+    ${D.Stores.map(s=>{
+      const storeWorking=working.filter(a=>String(a.storeId)===String(s.id));
+      const storeTotal=todayAtt.filter(a=>String(a.storeId)===String(s.id));
+      return`<tr><td><strong>${escHtml(s.name)}</strong><br><small style="color:var(--text-light)">${escHtml(s.address)}</small></td>
+      <td>${D.Staff.filter(st=>String(st.storeId)===String(s.id)&&st.active!==false).length}</td>
+      <td>${storeWorking.length>0?`<span class="badge badge-success">${storeWorking.length} working</span>`:`<span class="badge" style="background:#f5f5f5;color:#999">0</span>`}</td>
+      <td>${storeTotal.length}</td></tr>`;
+    }).join('')}
+    </tbody></table></div></div>`;
+}
+
+// ==================== STORES ====================
+function renderStores(c) {
+  c.innerHTML=`<div class="card"><div class="card-header"><h3>Stores</h3><button class="btn btn-primary btn-sm" onclick="editStore()"><i class="fas fa-plus"></i> Add Store</button></div>
+  <div class="table-wrap"><table><thead><tr><th>Code</th><th>Name</th><th>Company</th><th>Address</th><th>Actions</th></tr></thead><tbody>
+  ${D.Stores.map(s=>`<tr><td><strong>${escHtml(s.code)}</strong></td><td>${escHtml(s.name)}</td><td>${escHtml(s.company)}</td><td>${escHtml(s.address)}</td>
+  <td><button class="btn btn-sm btn-outline" onclick="editStore('${s.id}')"><i class="fas fa-edit"></i></button> <button class="btn btn-sm btn-accent" onclick="delStore('${s.id}')"><i class="fas fa-trash"></i></button></td></tr>`).join('')}
+  </tbody></table></div></div>`;
+}
+function editStore(id) {
+  const s=id?D.Stores.find(x=>x.id===id):{id:'',code:'',name:'',company:'',companyNo:'',address:'',phone:'',email:'',manager:'',memo:'',active:true};
+  openModal(id?'Edit Store':'Add Store',`
+    <div class="form-row"><div class="form-group"><label>Code</label><input id="mSC" value="${escHtml(s.code)}" ${id?'readonly':''}></div><div class="form-group"><label>Name</label><input id="mSN" value="${escHtml(s.name)}"></div></div>
+    <div class="form-row"><div class="form-group"><label>Company</label><input id="mSCo" value="${escHtml(s.company)}"></div><div class="form-group"><label>Company No</label><input id="mSCn" value="${escHtml(s.companyNo)}"></div></div>
+    <div class="form-group"><label>Address</label><input id="mSA" value="${escHtml(s.address)}"></div>
+    <div class="form-row"><div class="form-group"><label>Phone</label><input id="mSP" value="${escHtml(s.phone)}"></div><div class="form-group"><label>Email</label><input id="mSE" value="${escHtml(s.email)}"></div></div>
+    <div class="form-group"><label>Manager</label><input id="mSM" value="${escHtml(s.manager)}"></div>
+    <div class="form-group"><label>Memo</label><textarea id="mSMe">${escHtml(s.memo)}</textarea></div>`,
+    `<button class="btn btn-outline" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="saveStore('${id||''}')">Save</button>`);
+}
+async function saveStore(id) {
+  const s={id:id||$('mSC').value.trim().toUpperCase(),code:$('mSC').value.trim().toUpperCase(),name:$('mSN').value.trim(),company:$('mSCo').value.trim(),companyNo:$('mSCn').value.trim(),address:$('mSA').value.trim(),phone:$('mSP').value.trim(),email:$('mSE').value.trim(),manager:$('mSM').value.trim(),memo:$('mSMe').value.trim(),active:true};
+  if(!s.code||!s.name){toast('Code and Name required','error');return;}
+  await saveRow('Stores',s); closeModal(); renderStores($('pageContent')); toast('Store saved','success');
+}
+async function delStore(id){if(!confirm('Delete this store?'))return;await deleteData('Stores',id);renderStores($('pageContent'));toast('Store deleted');}
+
+// ==================== USERS ====================
+function renderUsers(c) {
+  c.innerHTML=`<div class="card"><div class="card-header"><h3>Users</h3><button class="btn btn-primary btn-sm" onclick="editUser()"><i class="fas fa-plus"></i> Add User</button></div>
+  <div class="table-wrap"><table><thead><tr><th>Username</th><th>Name</th><th>Role</th><th>Store</th><th>Actions</th></tr></thead><tbody>
+  ${D.Users.map(u=>`<tr><td>${escHtml(u.username)}</td><td>${escHtml(u.name)}</td><td><span class="badge ${u.role==='admin'?'badge-info':'badge-success'}">${u.role}</span></td>
+  <td>${u.storeId?(D.Stores.find(s=>String(s.id)===String(u.storeId))||{}).name||u.storeId:'All'}</td>
+  <td><button class="btn btn-sm btn-outline" onclick="editUser('${u.id}')"><i class="fas fa-edit"></i></button> <button class="btn btn-sm btn-accent" onclick="delUser('${u.id}')"><i class="fas fa-trash"></i></button></td></tr>`).join('')}
+  </tbody></table></div></div>`;
+}
+function editUser(id) {
+  const u=id?D.Users.find(x=>x.id===id):{id:'',username:'',password:'',name:'',role:'manager',email:'',storeId:''};
+  openModal(id?'Edit User':'Add User',`
+    <div class="form-row"><div class="form-group"><label>Username</label><input id="mUU" value="${escHtml(u.username)}"></div><div class="form-group"><label>Password</label><input id="mUP" value="${escHtml(u.password)}"></div></div>
+    <div class="form-row"><div class="form-group"><label>Name</label><input id="mUN" value="${escHtml(u.name)}"></div><div class="form-group"><label>Email</label><input id="mUE" value="${escHtml(u.email)}"></div></div>
+    <div class="form-row"><div class="form-group"><label>Role</label><select id="mUR"><option value="admin" ${u.role==='admin'?'selected':''}>Admin</option><option value="manager" ${u.role==='manager'?'selected':''}>Manager</option></select></div>
+    <div class="form-group"><label>Store</label><select id="mUS"><option value="">All Stores</option>${D.Stores.map(s=>`<option value="${s.id}" ${String(u.storeId)===String(s.id)?'selected':''}>${s.name}</option>`).join('')}</select></div></div>`,
+    `<button class="btn btn-outline" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="saveUser('${id||''}')">Save</button>`);
+}
+async function saveUser(id) {
+  const u={id:id||genId('u'),username:$('mUU').value.trim(),password:$('mUP').value,name:$('mUN').value.trim(),role:$('mUR').value,email:$('mUE').value.trim(),storeId:$('mUS').value};
+  if(!u.username||!u.password){toast('Username and Password required','error');return;}
+  await saveRow('Users',u); closeModal(); renderUsers($('pageContent')); toast('User saved','success');
+}
+async function delUser(id){if(!confirm('Delete this user?'))return;await deleteData('Users',id);renderUsers($('pageContent'));toast('User deleted');}
+
+// ==================== STAFF ====================
+const sF={storeId:'',search:''};
+function renderStaff(c) {
+  let staff=D.Staff.filter(s=>s.active!==false);
+  if(sF.storeId)staff=staff.filter(s=>String(s.storeId)===sF.storeId);
+  if(sF.search){const q=sF.search.toLowerCase();staff=staff.filter(s=>s.name.toLowerCase().includes(q));}
+  c.innerHTML=`<div class="filters">
+    <select onchange="sF.storeId=this.value;renderStaff($('pageContent'))"><option value="">All Stores</option>${D.Stores.map(s=>`<option value="${s.id}" ${sF.storeId===s.id?'selected':''}>${s.name}</option>`).join('')}</select>
+    <div class="search-box"><i class="fas fa-search"></i><input placeholder="Search staff..." value="${escHtml(sF.search)}" oninput="sF.search=this.value;renderStaff($('pageContent'))"></div>
+    <button class="btn btn-primary btn-sm" onclick="editStaff()"><i class="fas fa-plus"></i> Add Staff</button></div>
+  <div class="card"><div class="table-wrap"><table><thead><tr><th>Name</th><th>Store</th><th>Rate</th><th>Mobile</th><th>Start Date</th><th>Actions</th></tr></thead><tbody>
+  ${staff.map(s=>{const store=D.Stores.find(x=>String(x.id)===String(s.storeId));return`<tr><td><strong>${escHtml(s.name)}</strong></td><td>${store?escHtml(store.name):s.storeId}</td><td>£${Number(s.rate).toFixed(2)}</td><td>${escHtml(s.mobile||'-')}</td><td>${fmtDate(s.startDate)}</td>
+  <td><button class="btn btn-sm btn-outline" onclick="viewStaff('${s.id}')"><i class="fas fa-eye"></i></button> <button class="btn btn-sm btn-outline" onclick="editStaff('${s.id}')"><i class="fas fa-edit"></i></button> <button class="btn btn-sm btn-accent" onclick="delStaff('${s.id}')"><i class="fas fa-trash"></i></button></td></tr>`;}).join('')}
+  </tbody></table></div></div>`;
+}
+function viewStaff(id) {
+  const s=D.Staff.find(x=>x.id===id);if(!s)return;
+  const store=D.Stores.find(x=>String(x.id)===String(s.storeId));
+  openModal(s.name,`<div class="staff-info-grid">
+    <div class="info-item"><i class="fas fa-store"></i><div><div class="label">Store</div><div class="value">${store?escHtml(store.name):s.storeId}</div></div></div>
+    <div class="info-item"><i class="fas fa-tshirt"></i><div><div class="label">Cloth Size</div><div class="value">${escHtml(s.clothSize||'-')}</div></div></div>
+    <div class="info-item"><i class="fas fa-key"></i><div><div class="label">Kiosk Pwd</div><div class="value">${escHtml(s.kioskPwd||'-')}</div></div></div>
+    <div class="info-item"><i class="fas fa-birthday-cake"></i><div><div class="label">DOB</div><div class="value">${fmtDate(s.dob)}</div></div></div>
+    <div class="info-item"><i class="fas fa-map-marker-alt"></i><div><div class="label">Address</div><div class="value">${escHtml(s.address||'-')}</div></div></div>
+    <div class="info-item"><i class="fas fa-id-card"></i><div><div class="label">NI No</div><div class="value">${escHtml(s.niNo||'-')}</div></div></div>
+    <div class="info-item"><i class="fas fa-passport"></i><div><div class="label">eVisa</div><div class="value">${escHtml(s.eVisa||'-')}</div></div></div>
+    <div class="info-item"><i class="fas fa-phone"></i><div><div class="label">Mobile</div><div class="value">${escHtml(s.mobile||'-')}</div></div></div>
+    <div class="info-item"><i class="fas fa-pound-sign"></i><div><div class="label">Rate</div><div class="value">£${Number(s.rate).toFixed(2)}/hr</div></div></div>
+    <div class="info-item"><i class="fas fa-university"></i><div><div class="label">Sort Code</div><div class="value">${escHtml(s.sortCode||'-')}</div></div></div>
+    <div class="info-item"><i class="fas fa-credit-card"></i><div><div class="label">Account No</div><div class="value">${escHtml(s.accountNo||'-')}</div></div></div>
+    <div class="info-item"><i class="fas fa-envelope"></i><div><div class="label">Email</div><div class="value">${escHtml(s.email||'-')}</div></div></div>
+  </div>`,`<button class="btn btn-outline" onclick="closeModal()">Close</button>`);
+}
+function editStaff(id) {
+  const s=id?D.Staff.find(x=>x.id===id):{id:'',storeId:sF.storeId||'',name:'',clothSize:'',kioskPwd:'',dob:'',address:'',niNo:'',eVisa:'',mobile:'',startDate:'',rate:12,sortCode:'',accountNo:'',email:'',memo:'',active:true};
+  openModal(id?'Edit Staff':'Add Staff',`
+    <div class="form-row"><div class="form-group"><label>Name</label><input id="mFN" value="${escHtml(s.name)}"></div><div class="form-group"><label>Store</label><select id="mFS">${D.Stores.map(st=>`<option value="${st.id}" ${String(s.storeId)===String(st.id)?'selected':''}>${st.name}</option>`).join('')}</select></div></div>
+    <div class="form-row"><div class="form-group"><label>Rate (£/hr)</label><input id="mFR" type="number" step="0.5" value="${s.rate}"></div><div class="form-group"><label>Kiosk Pwd</label><input id="mFP" value="${escHtml(s.kioskPwd||'')}"></div></div>
+    <div class="form-row"><div class="form-group"><label>DOB</label><input id="mFD" type="date" value="${s.dob?String(s.dob).split('T')[0]:''}"></div><div class="form-group"><label>Cloth Size</label><select id="mFC"><option value="">-</option>${['XS','S','M','L','XL','XXL'].map(sz=>`<option ${s.clothSize===sz?'selected':''}>${sz}</option>`).join('')}</select></div></div>
+    <div class="form-group"><label>Address</label><input id="mFA" value="${escHtml(s.address)}"></div>
+    <div class="form-row"><div class="form-group"><label>NI No</label><input id="mFNI" value="${escHtml(s.niNo)}"></div><div class="form-group"><label>eVisa</label><input id="mFEV" value="${escHtml(s.eVisa)}"></div></div>
+    <div class="form-row"><div class="form-group"><label>Mobile</label><input id="mFM" value="${escHtml(s.mobile)}"></div><div class="form-group"><label>Start Date</label><input id="mFSD" type="date" value="${s.startDate?String(s.startDate).split('T')[0]:''}"></div></div>
+    <div class="form-row"><div class="form-group"><label>Sort Code</label><input id="mFSC" value="${escHtml(s.sortCode)}"></div><div class="form-group"><label>Account No</label><input id="mFAN" value="${escHtml(s.accountNo)}"></div></div>
+    <div class="form-group"><label>Email</label><input id="mFEM" value="${escHtml(s.email)}"></div>
+    <div class="form-group"><label>Memo</label><textarea id="mFME">${escHtml(s.memo)}</textarea></div>`,
+    `<button class="btn btn-outline" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="saveStaff('${id||''}')">Save</button>`);
+}
+async function saveStaff(id) {
+  const s={id:id||genId('s'),storeId:$('mFS').value,name:$('mFN').value.trim(),clothSize:$('mFC').value,kioskPwd:$('mFP').value,dob:$('mFD').value,address:$('mFA').value.trim(),niNo:$('mFNI').value.trim(),eVisa:$('mFEV').value.trim(),mobile:$('mFM').value.trim(),startDate:$('mFSD').value,rate:parseFloat($('mFR').value)||12,sortCode:$('mFSC').value.trim(),accountNo:$('mFAN').value.trim(),email:$('mFEM').value.trim(),memo:$('mFME').value.trim(),active:true};
+  if(!s.name){toast('Name required','error');return;}
+  await saveRow('Staff',s); closeModal(); renderStaff($('pageContent')); toast('Staff saved','success');
+}
+async function delStaff(id){if(!confirm('Delete this staff member?'))return;await deleteData('Staff',id);renderStaff($('pageContent'));toast('Staff deleted');}
+
+// ==================== ATTENDANCE ====================
+let attAutoRefresh=null;
+function parseTime(t) {
+  if(!t)return null;
+  t=String(t).trim();
+  // Handle ISO timestamps like "2026-02-11T20:40:10.054Z"
+  if(t.includes('T')){try{const d=new Date(t);return d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0');}catch(e){}}
+  // Handle "1899-12-30" (Google Sheets epoch for time-only = broken)
+  if(t.startsWith('1899'))return null;
+  // Handle normal "HH:MM" or "HH:MM:SS"
+  const m=t.match(/^(\d{1,2}):(\d{2})/);
+  if(m)return m[1].padStart(2,'0')+':'+m[2];
+  return t;
+}
+function calcHours(cin,cout) {
+  const t1=parseTime(cin),t2=parseTime(cout);
+  if(!t1||!t2)return'-';
+  const[h1,m1]=t1.split(':').map(Number);const[h2,m2]=t2.split(':').map(Number);
+  const mins=h2*60+m2-h1*60-m1;
+  return mins>0?(mins/60).toFixed(1)+'h':'-';
+}
+async function refreshAttendance(){
+  if(API.mode==='cloud'){
+    const r=await API.get('getAll');
+    if(r&&r.data&&r.data.Attendance){
+      D.Attendance=r.data.Attendance;LS.set('Attendance',D.Attendance);
+    }
+  }
+  if(currentPage==='attendance')renderAttendanceTable();
+}
+function renderAttendance(c) {
+  const today=new Date().toISOString().split('T')[0];
+  c.innerHTML=`<div class="filters">
+    <select id="attStore" onchange="renderAttendanceTable()"><option value="">All Stores</option>${D.Stores.map(s=>`<option value="${s.id}">${s.name}</option>`).join('')}</select>
+    <input type="date" id="attDate" value="${today}" onchange="renderAttendanceTable()">
+    <button class="btn btn-sm btn-success" onclick="refreshAttendance()"><i class="fas fa-sync"></i> Refresh</button>
+    <span style="font-size:12px;color:var(--text-light)">Auto-refresh: 30s</span>
+  </div>
+  <div class="card"><div class="table-wrap"><table><thead><tr><th>Date</th><th>Staff</th><th>Store</th><th>Clock In</th><th>Clock Out</th><th>Hours</th></tr></thead><tbody id="attBody"></tbody></table></div></div>`;
+  renderAttendanceTable();
+  // Auto-refresh every 30 seconds
+  if(attAutoRefresh)clearInterval(attAutoRefresh);
+  attAutoRefresh=setInterval(refreshAttendance,30000);
+}
+function renderAttendanceTable(){
+  let att=[...D.Attendance].sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  const storeF=$('attStore')?.value||'';
+  const dateF=$('attDate')?.value||'';
+  if(storeF)att=att.filter(a=>String(a.storeId)===storeF);
+  if(dateF)att=att.filter(a=>a.date===dateF);
+  $('attBody').innerHTML=att.slice(0,100).map(a=>{
+    const s=D.Staff.find(x=>String(x.id)===String(a.staffId));
+    const store=D.Stores.find(x=>String(x.id)===String(a.storeId));
+    const cin=parseTime(a.clockIn);
+    const cout=parseTime(a.clockOut);
+    const hrs=calcHours(a.clockIn,a.clockOut);
+    return`<tr><td>${a.date}</td><td>${s?escHtml(s.name):a.staffId}</td><td>${store?escHtml(store.name):a.storeId}</td><td><span class="badge badge-success">${cin||'-'}</span></td><td><span class="badge ${cout?'badge-danger':'badge-warning'}">${cout||'Working...'}</span></td><td>${hrs}</td></tr>`;
+  }).join('');
+}
+
+// ==================== PAYROLL ====================
+function renderPayroll(c) {
+  const periods=getPayPeriods();
+  const curP=getPayPeriod();
+  c.innerHTML=`<div class="filters">
+    <select id="payStore" onchange="calcPayroll()"><option value="">All Stores</option>${D.Stores.map(s=>`<option value="${s.id}">${s.name}</option>`).join('')}</select>
+    <select id="payPeriod" onchange="calcPayroll()">${periods.map(p=>`<option value="${p.label}" ${p.label===curP.label?'selected':''}>${p.label}</option>`).join('')}</select>
+    <button class="btn btn-sm btn-success" onclick="exportPayroll()"><i class="fas fa-download"></i> Export CSV</button>
+  </div><div class="card"><div class="table-wrap"><table><thead><tr><th>Staff</th><th>Store</th><th>Days</th><th>Total Hours</th><th>Rate</th><th>Total Pay</th></tr></thead><tbody id="payBody"></tbody><tfoot id="payFoot"></tfoot></table></div></div>`;
+  calcPayroll();
+}
+function calcPayroll() {
+  const storeF=$('payStore')?.value||'';
+  const periodLabel=$('payPeriod')?.value||'';
+  const period=getPayPeriods().find(p=>p.label===periodLabel)||getPayPeriod();
+  let staff=D.Staff.filter(s=>s.active!==false);
+  if(storeF)staff=staff.filter(s=>String(s.storeId)===storeF);
+  const rows=[];let grandTotal=0;
+  staff.forEach(s=>{
+    const att=D.Attendance.filter(a=>String(a.staffId)===String(s.id)&&a.date>=period.start.toISOString().split('T')[0]&&a.date<=period.end.toISOString().split('T')[0]&&a.clockIn&&a.clockOut);
+    let totalMins=0;
+    att.forEach(a=>{const t1=parseTime(a.clockIn),t2=parseTime(a.clockOut);if(t1&&t2){const[h1,m1]=t1.split(':').map(Number);const[h2,m2]=t2.split(':').map(Number);totalMins+=h2*60+m2-h1*60-m1;}});
+    const hrs=totalMins/60;const pay=hrs*Number(s.rate);grandTotal+=pay;
+    const store=D.Stores.find(x=>String(x.id)===String(s.storeId));
+    rows.push({name:s.name,store:store?store.name:s.storeId,days:att.length,hrs:hrs.toFixed(1),rate:'£'+Number(s.rate).toFixed(2),pay:'£'+pay.toFixed(2)});
+  });
+  $('payBody').innerHTML=rows.map(r=>`<tr><td>${escHtml(r.name)}</td><td>${escHtml(r.store)}</td><td>${r.days}</td><td>${r.hrs}h</td><td>${r.rate}</td><td><strong>${r.pay}</strong></td></tr>`).join('');
+  $('payFoot').innerHTML=`<tr><td colspan="5" style="text-align:right;font-weight:700">Total</td><td><strong>£${grandTotal.toFixed(2)}</strong></td></tr>`;
+}
+function exportPayroll() {
+  const rows=document.querySelectorAll('#payBody tr');
+  let csv='Staff,Store,Days,Hours,Rate,Pay\n';
+  rows.forEach(r=>{const cells=r.querySelectorAll('td');csv+=Array.from(cells).map(c=>'"'+c.textContent+'"').join(',')+'\n';});
+  const blob=new Blob([csv],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='payroll.csv';a.click();toast('CSV exported','success');
+}
+
+// ==================== STOCK MANAGEMENT ====================
+function renderStock(c) {
+  c.innerHTML=`<div class="filters">
+    <select id="stockStore" onchange="renderStockTable()"><option value="">Select Store</option>${D.Stores.map(s=>`<option value="${s.id}">${s.name}</option>`).join('')}</select>
+    <select id="stockCat" onchange="renderStockTable()"><option value="">All Categories</option>${[...new Set(D.StockTemplate.map(t=>t.category))].map(c=>`<option>${c}</option>`).join('')}</select>
+    <button class="btn btn-sm btn-success" onclick="saveStockAll()"><i class="fas fa-save"></i> Save All</button>
+  </div><div class="card"><div class="table-wrap"><table><thead><tr><th>Category</th><th>Item</th><th>Unit</th><th>Min</th><th>QTY</th><th>Status</th></tr></thead><tbody id="stockBody"></tbody></table></div></div>`;
+}
+function renderStockTable() {
+  const storeId=$('stockStore')?.value;
+  const cat=$('stockCat')?.value||'';
+  if(!storeId){$('stockBody').innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--text-light)">Please select a store</td></tr>';return;}
+  let items=D.StoreStock.filter(s=>String(s.storeId)===storeId);
+  if(cat)items=items.filter(s=>s.category===cat);
+  $('stockBody').innerHTML=items.map((s,i)=>{
+    const qty=Number(s.qty)||0;const min=Number(s.min)||0;
+    const status=qty<=0?'badge-danger':qty<=min?'badge-warning':'badge-success';
+    const statusText=qty<=0?'Out of Stock':qty<=min?'Low':'OK';
+    return`<tr><td>${escHtml(s.category)}</td><td>${escHtml(s.name)}</td><td>${escHtml(s.unit)}</td><td>${min}</td>
+    <td><input type="number" min="0" value="${qty}" style="width:80px;padding:6px;border:2px solid var(--border);border-radius:6px" data-store="${storeId}" data-item="${s.itemId}" onchange="updateStockQty(this)"></td>
+    <td><span class="badge ${status}">${statusText}</span></td></tr>`;
+  }).join('');
+}
+function updateStockQty(el) {
+  const storeId=el.dataset.store, itemId=el.dataset.item, qty=Number(el.value)||0;
+  const item=D.StoreStock.find(s=>String(s.storeId)===storeId&&String(s.itemId)===itemId);
+  if(item)item.qty=qty;
+}
+async function saveStockAll() {
+  LS.set('StoreStock',D.StoreStock);
+  if(API.mode==='cloud'){updateSyncStatus('syncing');const r=await API.post({action:'saveSheet',sheet:'StoreStock',rows:D.StoreStock});updateSyncStatus(r&&!r.error?'online':'offline');}
+  renderStockTable(); toast('Stock saved!','success');
+}
+
+// ==================== ORDER LIST ====================
+function renderOrders(c) {
+  c.innerHTML=`<div class="filters">
+    <select id="orderStore" onchange="renderOrderTable()"><option value="">Select Store</option>${D.Stores.map(s=>`<option value="${s.id}">${s.name}</option>`).join('')}</select>
+    <button class="btn btn-sm btn-success" onclick="exportOrder()"><i class="fas fa-download"></i> Export CSV</button>
+    <button class="btn btn-sm btn-primary" onclick="printOrder()"><i class="fas fa-print"></i> Print</button>
+  </div><div class="card"><div class="table-wrap"><table><thead><tr><th>Category</th><th>Item</th><th>Unit</th><th>Min</th><th>Current</th><th>Order QTY</th></tr></thead><tbody id="orderBody"></tbody></table></div></div>`;
+}
+function renderOrderTable() {
+  const storeId=$('orderStore')?.value;
+  if(!storeId){$('orderBody').innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--text-light)">Please select a store</td></tr>';return;}
+  const items=D.StoreStock.filter(s=>String(s.storeId)===storeId&&Number(s.qty)<=Number(s.min));
+  $('orderBody').innerHTML=items.length?items.map(s=>{
+    const need=Math.max(0,Number(s.min)-Number(s.qty));
+    return`<tr><td>${escHtml(s.category)}</td><td>${escHtml(s.name)}</td><td>${escHtml(s.unit)}</td><td>${s.min}</td><td><span class="badge ${Number(s.qty)<=0?'badge-danger':'badge-warning'}">${s.qty}</span></td><td><strong>${need}</strong></td></tr>`;
+  }).join(''):'<tr><td colspan="6" style="text-align:center;color:var(--success)"><i class="fas fa-check-circle"></i> All items are sufficiently stocked!</td></tr>';
+}
+function exportOrder() {
+  const rows=document.querySelectorAll('#orderBody tr');
+  let csv='Category,Item,Unit,Min,Current,Order QTY\n';
+  rows.forEach(r=>{const cells=r.querySelectorAll('td');if(cells.length>=6)csv+=Array.from(cells).map(c=>'"'+c.textContent.trim()+'"').join(',')+'\n';});
+  const store=D.Stores.find(s=>s.id===$('orderStore')?.value);
+  const blob=new Blob([csv],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`order_${store?store.code:'all'}_${new Date().toISOString().split('T')[0]}.csv`;a.click();toast('Order CSV exported','success');
+}
+function printOrder(){window.print();}
+
+// ==================== SETTINGS ====================
+function renderSettings(c) {
+  const cfg=LS.getConfig();
+  c.innerHTML=`<div class="card"><div class="card-header"><h3>Connection Settings</h3></div>
+    <div class="form-group"><label>Mode</label><p style="font-size:16px;font-weight:600">${API.mode==='cloud'?'☁️ Cloud (Google Sheets)':'💾 Local (Browser Storage)'}</p></div>
+    ${API.mode==='cloud'?`<div class="form-group"><label>API URL</label><input value="${escHtml(cfg.apiUrl||'')}" readonly style="background:#f5f5f5"></div>`:''}
+    <div style="display:flex;gap:12px;flex-wrap:wrap">
+      <button class="btn btn-warning btn-sm" onclick="syncData()"><i class="fas fa-sync"></i> Sync Now</button>
+      <button class="btn btn-accent btn-sm" onclick="resetData()"><i class="fas fa-undo"></i> Reset to Defaults</button>
+      <button class="btn btn-outline btn-sm" onclick="clearAndSetup()"><i class="fas fa-cog"></i> Reconfigure</button>
+    </div></div>
+    <div class="card"><div class="card-header"><h3>Change Password</h3></div>
+    <div class="form-row"><div class="form-group"><label>New Password</label><input id="newPwd" type="password"></div><div class="form-group"><label>Confirm</label><input id="confirmPwd" type="password"></div></div>
+    <button class="btn btn-primary btn-sm" onclick="changePwd()"><i class="fas fa-key"></i> Change Password</button></div>`;
+}
+async function syncData(){showLoading('Syncing...');await loadAllData();hideLoading();renderPage(currentPage);toast('Data synced!','success');}
+async function resetData(){
+  if(!confirm('Reset ALL data to defaults? This cannot be undone.'))return;
+  for(let sheet in DEFAULT_DATA){D[sheet]=DEFAULT_DATA[sheet];LS.set(sheet,D[sheet]);}
+  if(API.mode==='cloud'){showLoading('Resetting cloud...');await API.post({action:'initData',sheets:DEFAULT_DATA});hideLoading();}
+  toast('Data reset to defaults');navigate('dashboard');
+}
+function clearAndSetup(){localStorage.clear();location.reload();}
+async function changePwd(){
+  const np=$('newPwd').value,cp=$('confirmPwd').value;
+  if(!np){toast('Enter new password','error');return;}
+  if(np!==cp){toast('Passwords do not match','error');return;}
+  currentUser.password=np;await saveRow('Users',currentUser);toast('Password changed!','success');
+}
+
+// ==================== INITIALIZATION ====================
+async function init() {
+  // Always use cloud mode with built-in URL
+  API.mode = 'cloud'; API.url = CLOUD_URL;
+  LS.set('config', {apiUrl: CLOUD_URL, mode: 'cloud'});
+  // Load data from cloud
+  await loadAllData();
+  // If no users loaded, initialize defaults
+  if (!D.Users || D.Users.length === 0) { await initDefaultData(); }
+  // Show login
+  $('loginPage').classList.remove('hidden');
+  $('headerDate').textContent = new Date().toLocaleDateString('en-GB', {weekday:'long', year:'numeric', month:'long', day:'numeric'});
+  window.addEventListener('resize', () => { if (window.innerWidth > 1024) { $('sidebar').classList.remove('open'); $('sidebarOverlay').classList.remove('show'); } });
+}
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Pick A Bap - Time Record</title>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--primary:#1b5e20;--accent:#e84393;--bg:#f0faf0;--danger:#e74c3c;--success:#27ae60;--warning:#f39c12;--border:#e0e0e0;--text:#2d3436;--text-light:#636e72}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:10px}
+.header{text-align:center;padding:12px 0 8px}
+.header h1{font-size:22px;font-weight:800;color:var(--primary)}
+.header p{font-size:12px;color:var(--text-light);margin-top:2px}
+.status-bar{position:fixed;top:0;left:0;right:0;background:var(--primary);color:#fff;font-size:11px;padding:3px 12px;display:flex;align-items:center;gap:6px;z-index:999}
+.status-dot{width:8px;height:8px;border-radius:50%;background:#f39c12;display:inline-block}
+.status-dot.on{background:#2ecc71}
+.status-dot.off{background:#e74c3c}
+/* Staff Grid */
+.staff-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:10px;width:100%;max-width:600px;padding:4px;margin-bottom:16px}
+.staff-btn{padding:12px 6px;background:#e8f5e9;border-radius:14px;text-align:center;cursor:pointer;transition:all .2s;border:2.5px solid #43a047}
+.staff-btn:hover,.staff-btn:active{transform:scale(1.05);filter:brightness(0.97)}
+.staff-btn .avatar{width:48px;height:48px;background:#43a047;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 6px;font-weight:700;font-size:20px}
+.staff-btn .name{font-size:13px;font-weight:600;line-height:1.3;word-break:keep-all}
+/* Calendar Card */
+.card{background:#fff;border-radius:16px;padding:16px;width:100%;max-width:700px;box-shadow:0 4px 20px rgba(0,0,0,.08);margin-bottom:16px}
+.card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px}
+.card-header h2{font-size:18px;font-weight:700;color:var(--primary)}
+.month-nav{display:flex;align-items:center;gap:8px}
+.month-nav button{width:36px;height:36px;border:2px solid var(--border);border-radius:10px;background:#fff;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center}
+.month-nav button:active{background:#f0f0f0}
+.month-nav span{font-size:16px;font-weight:700;min-width:140px;text-align:center}
+/* Time Table */
+.time-table{width:100%;border-collapse:collapse;font-size:13px}
+.time-table th{background:var(--primary);color:#fff;padding:8px 4px;font-size:12px;font-weight:600;text-align:center}
+.time-table th.sun{background:#c0392b}
+.time-table td{padding:4px 2px;border-bottom:1px solid #f0f0f0;text-align:center;vertical-align:middle}
+.time-table tr.sat{background:#e3f2fd}
+.time-table tr.sun{background:#fce4ec}
+.time-table tr.today{background:#e8f5e9}
+.time-table .date-cell{font-weight:700;font-size:14px;width:55px;white-space:nowrap}
+.time-table .day-cell{font-size:14px;font-weight:700;width:40px}
+.time-table .day-sat{color:#1565c0;font-weight:700}
+.time-table .day-sun{color:#c0392b;font-weight:700}
+.time-input{width:70px;padding:6px 4px;border:2px solid var(--border);border-radius:8px;text-align:center;font-size:13px;font-weight:600;font-family:inherit}
+.time-input:focus{border-color:var(--primary);outline:none}
+.time-input.filled{border-color:var(--success);background:#f0fff0}
+.hour-cell{font-weight:700;font-size:14px;color:var(--primary);min-width:50px}
+.hour-cell.zero{color:#ccc}
+/* Summary */
+.summary-bar{display:flex;justify-content:space-between;align-items:center;background:linear-gradient(135deg,var(--primary),#2e7d32);color:#fff;padding:14px 20px;border-radius:12px;margin-top:12px}
+.summary-bar .total{font-size:24px;font-weight:800}
+.summary-bar .label{font-size:13px;opacity:.8}
+/* Buttons */
+.btn{padding:10px 20px;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:6px}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-primary:active{filter:brightness(.9)}
+.btn-back{background:#f0f0f0;color:#555}
+.btn-save{background:var(--success);color:#fff}
+.btn-save:active{filter:brightness(.9)}
+/* Toast */
+.toast-box{position:fixed;top:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:8px}
+.toast{padding:12px 20px;border-radius:10px;color:#fff;font-size:14px;font-weight:600;animation:toastIn .3s}
+.toast.success{background:#27ae60}.toast.error{background:#e74c3c}.toast.info{background:#3498db}
+@keyframes toastIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+/* Loading */
+.loading{position:fixed;inset:0;background:rgba(255,255,255,.9);z-index:900;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px}
+.loading.hidden{display:none}
+.loading .spinner{width:40px;height:40px;border:4px solid #e0e0e0;border-top-color:var(--primary);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media(max-width:400px){
+  .staff-grid{grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:8px}
+  .staff-btn{padding:8px 4px}
+  .staff-btn .avatar{width:40px;height:40px;font-size:18px}
+  .staff-btn .name{font-size:11px}
+  .time-input{width:60px;padding:4px 2px;font-size:12px}
+  .card{padding:10px}
+}
+</style>
+</head>
+<body>
+<div class="status-bar"><span class="status-dot" id="statusDot"></span><span id="statusText">Connecting...</span></div>
+<div id="toastBox" class="toast-box"></div>
+<div class="loading" id="loading"><div class="spinner"></div><span id="loadingText">Loading...</span></div>
+<div class="header">
+  <h1><i class="fas fa-clock"></i> Pick A Bap — Time Record</h1>
+  <p>Manual Entry — Select your name and enter your working hours</p>
+</div>
+<div id="mainArea" style="width:100%;display:flex;flex-direction:column;align-items:center"></div>
+
+<script>
+const STORE_ID='PAB',STORE_NAME='Pick A Bap';
+const DEFAULT_API='https://script.google.com/macros/s/AKfycbz1IRMcShaZJUPWe8mCIej4uBF3AeYlpAPHxZuwipJfhkN0QmyOMzSdJHfympz2s9jH/exec';
+const API_URL=(function(){try{const c=JSON.parse(localStorage.getItem('tbms_config'));return(c&&c.apiUrl)?c.apiUrl:DEFAULT_API;}catch(e){return DEFAULT_API;}})();
+const $=id=>document.getElementById(id);
+function toast(msg,type='info'){const t=document.createElement('div');t.className='toast '+type;t.innerHTML='<i class="fas fa-'+(type==='error'?'exclamation-circle':type==='success'?'check-circle':'info-circle')+'"></i> '+msg;$('toastBox').appendChild(t);setTimeout(()=>t.remove(),3000);}
+function showLoad(t){$('loadingText').textContent=t;$('loading').classList.remove('hidden');}
+function hideLoad(){$('loading').classList.add('hidden');}
+
+async function apiGet(action){try{const r=await fetch(API_URL+'?action='+action,{redirect:'follow'});return await r.json();}catch(e){return null;}}
+async function apiPost(data){try{const r=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(data),redirect:'follow'});return await r.json();}catch(e){return null;}}
+
+let staff=[],attendance=[],currentStaff=null;
+// Pay period: 26th of prev month ~ 25th of current month
+// viewYear/viewMonth represents the END month (the month containing the 25th)
+let viewYear=new Date().getFullYear(), viewMonth=new Date().getMonth();
+// If today is 26th or later, the current period ends next month's 25th
+if(new Date().getDate()>=26){viewMonth++;if(viewMonth>11){viewMonth=0;viewYear++;}}
+const STAFF_FIELDS=['id','storeId','name','nickName','clothSize','kioskPwd','dob','address','niNo','eVisa','mobile','startDate','leftDate','rate','sortCode','accountNo','email','memo','active'];
+const ATT_FIELDS=['id','staffId','storeId','date','clockIn','clockOut','photoIn','photoOut','source'];
+function nrmRow(fields,row){const m={};for(const k in row)m[k.replace(/[\s_\-]+/g,'').toLowerCase()]=row[k];const r={};for(const f of fields){const n=f.replace(/[\s_\-]+/g,'').toLowerCase();r[f]=m[n]!==undefined?m[n]:'';}return r;}
+function genId(){return 'a'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
+
+async function loadData(silent){
+  if(!silent)showLoad('Loading data...');
+  const result=await apiGet('getAll');
+  if(result&&result.data&&!result.error){
+    staff=(result.data.Staff||[]).map(r=>nrmRow(STAFF_FIELDS,r)).filter(s=>String(s.storeId)===STORE_ID&&(s.active===true||s.active==='true'||s.active==='TRUE'));
+    attendance=(result.data.Attendance||[]).map(r=>nrmRow(ATT_FIELDS,r));
+    $('statusDot').className='status-dot on';$('statusText').textContent='Connected';
+    if(!silent)hideLoad();return true;
+  }
+  $('statusDot').className='status-dot off';$('statusText').textContent='Offline';
+  if(!silent){hideLoad();toast('Cannot connect to server','error');}
+  return false;
+}
+
+function showStaffList(){
+  currentStaff=null;
+  const html=staff.map(s=>{
+    const initials=(s.nickName||s.name||'?').slice(0,2).toUpperCase();
+    return `<div class="staff-btn" onclick="selectStaff('${s.id}')">
+      <div class="avatar">${initials}</div>
+      <div class="name">${s.nickName||s.name}</div>
+    </div>`;
+  }).join('');
+  $('mainArea').innerHTML=`<div class="staff-grid">${html}</div>`;
+}
+
+function selectStaff(id){
+  currentStaff=staff.find(s=>s.id===id);
+  if(!currentStaff)return;
+  renderCalendar();
+}
+
+function getPeriodDates(){
+  // Period: 26th of prev month ~ 25th of viewYear/viewMonth
+  const prevM=viewMonth===0?11:viewMonth-1;
+  const prevY=viewMonth===0?viewYear-1:viewYear;
+  const startDate=new Date(prevY,prevM,26);
+  const endDate=new Date(viewYear,viewMonth,25);
+  const dates=[];
+  for(let d=new Date(startDate);d<=endDate;d.setDate(d.getDate()+1)){
+    dates.push(new Date(d));
+  }
+  return dates;
+}
+function fmtDate(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function periodLabel(){
+  const mShort=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const prevM=viewMonth===0?11:viewMonth-1;
+  const prevY=viewMonth===0?viewYear-1:viewYear;
+  return '26 '+mShort[prevM]+' — 25 '+mShort[viewMonth]+' '+viewYear;
+}
+
+function renderCalendar(){
+  if(!currentStaff)return;
+  const s=currentStaff;
+  const initials=(s.nickName||s.name||'?').slice(0,2).toUpperCase();
+  const dayNames=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const dates=getPeriodDates();
+  const today=new Date();const todayStr=fmtDate(today);
+
+  // Get attendance for this staff in this period
+  const dateSet=new Set(dates.map(d=>fmtDate(d)));
+  const myAtt=attendance.filter(a=>String(a.staffId)===String(s.id)&&dateSet.has(a.date));
+
+  // Build table rows
+  let rows='';
+  let totalHours=0;
+  let totalDays=0;
+  let lastMonth=-1;
+  const mNames=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  dates.forEach(dateObj=>{
+    const dow=dateObj.getDay();
+    const dateStr=fmtDate(dateObj);
+    const dayLabel=dayNames[dow===0?6:dow-1];
+    const isWeekend=dow===0||dow===6;
+    const isToday=dateStr===todayStr;
+    const dm=dateObj.getMonth();
+
+    // Month separator
+    if(dm!==lastMonth){
+      lastMonth=dm;
+      rows+=`<tr><td colspan="5" style="background:var(--primary);color:#fff;font-weight:700;font-size:13px;padding:8px 12px;border:none;text-align:left">
+        <i class="fas fa-calendar" style="margin-right:6px"></i>${mNames[dm]} ${dateObj.getFullYear()}</td></tr>`;
+    }
+
+    const rec=myAtt.find(a=>a.date===dateStr);
+    const clockIn=rec?rec.clockIn:'';
+    const clockOut=rec?rec.clockOut:'';
+    const hours=calcHours(clockIn,clockOut);
+    if(hours>0){totalHours+=hours;totalDays++;}
+
+    const rowClass=isToday?'today':dow===6?'sat':dow===0?'sun':'';
+    const dayClass=dow===0?'day-cell day-sun':dow===6?'day-cell day-sat':'day-cell';
+    const filledIn=clockIn?'filled':'';
+    const filledOut=clockOut?'filled':'';
+
+    rows+=`<tr class="${rowClass}">
+      <td class="date-cell">${dateObj.getDate()}</td>
+      <td class="${dayClass}">${dayLabel}</td>
+      <td><input type="time" class="time-input ${filledIn}" id="in_${dateStr}" value="${clockIn}" onchange="calcRow('${dateStr}')"></td>
+      <td><input type="time" class="time-input ${filledOut}" id="out_${dateStr}" value="${clockOut}" onchange="calcRow('${dateStr}')"></td>
+      <td class="hour-cell ${hours===0?'zero':''}" id="hr_${dateStr}">${hours>0?hours.toFixed(1):'—'}</td>
+    </tr>`;
+  });
+
+  $('mainArea').innerHTML=`
+    <div class="card">
+      <div class="card-header">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="avatar" style="width:40px;height:40px;background:var(--primary);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px">${initials}</div>
+          <h2>${s.nickName||s.name}</h2>
+        </div>
+        <div class="month-nav">
+          <button onclick="changeMonth(-1)"><i class="fas fa-chevron-left"></i></button>
+          <span>${periodLabel()}</span>
+          <button onclick="changeMonth(1)"><i class="fas fa-chevron-right"></i></button>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;margin-bottom:12px;justify-content:space-between">
+        <button class="btn btn-back" onclick="showStaffList()"><i class="fas fa-arrow-left"></i> Back</button>
+        <button class="btn btn-save" onclick="saveAll()"><i class="fas fa-cloud-upload-alt"></i> Save</button>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="time-table">
+          <thead><tr>
+            <th>Date</th><th>Day</th><th>IN</th><th>OUT</th><th>Hours</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+      <div class="summary-bar">
+        <div><div class="label">Total Hours (${periodLabel()})</div><div class="total" id="totalHours">${totalHours.toFixed(1)} hrs</div></div>
+        <div style="text-align:right"><div class="label">Days Worked</div><div class="total" id="totalDays">${totalDays}</div></div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:14px;justify-content:space-between">
+        <button class="btn btn-back" onclick="showStaffList()"><i class="fas fa-arrow-left"></i> Back</button>
+        <button class="btn btn-save" onclick="saveAll()"><i class="fas fa-cloud-upload-alt"></i> Save</button>
+      </div>
+    </div>`;
+}
+
+function calcHours(inTime,outTime){
+  if(!inTime||!outTime)return 0;
+  const [ih,im]=inTime.split(':').map(Number);
+  const [oh,om]=outTime.split(':').map(Number);
+  let mins=(oh*60+om)-(ih*60+im);
+  if(mins<0)mins+=24*60; // overnight
+  return Math.round(mins/6)/10; // round to 0.1
+}
+
+function calcRow(dateStr){
+  const inVal=$('in_'+dateStr)?.value||'';
+  const outVal=$('out_'+dateStr)?.value||'';
+  const hrs=calcHours(inVal,outVal);
+  const hrEl=$('hr_'+dateStr);
+  if(hrEl){hrEl.textContent=hrs>0?hrs.toFixed(1):'—';hrEl.className='hour-cell'+(hrs===0?' zero':'');}
+  // Update input styling
+  const inEl=$('in_'+dateStr);if(inEl)inEl.className='time-input'+(inVal?' filled':'');
+  const outEl=$('out_'+dateStr);if(outEl)outEl.className='time-input'+(outVal?' filled':'');
+  // Recalculate totals
+  recalcTotals();
+}
+
+function recalcTotals(){
+  const dates=getPeriodDates();
+  let totalHrs=0,totalDays=0;
+  dates.forEach(d=>{
+    const dateStr=fmtDate(d);
+    const inVal=$('in_'+dateStr)?.value||'';
+    const outVal=$('out_'+dateStr)?.value||'';
+    const hrs=calcHours(inVal,outVal);
+    if(hrs>0){totalHrs+=hrs;totalDays++;}
+  });
+  const thEl=$('totalHours');if(thEl)thEl.textContent=totalHrs.toFixed(1)+' hrs';
+  const tdEl=$('totalDays');if(tdEl)tdEl.textContent=totalDays;
+}
+
+async function saveAll(){
+  if(!currentStaff)return;
+  const dates=getPeriodDates();
+  const rows=[];
+  dates.forEach(d=>{
+    const dateStr=fmtDate(d);
+    const inVal=$('in_'+dateStr)?.value||'';
+    const outVal=$('out_'+dateStr)?.value||'';
+    if(!inVal&&!outVal)return; // skip empty days
+    // Find existing record
+    const existing=attendance.find(a=>String(a.staffId)===String(currentStaff.id)&&a.date===dateStr);
+    const row={
+      id:existing?existing.id:genId(),
+      staffId:currentStaff.id,
+      storeId:STORE_ID,
+      date:dateStr,
+      clockIn:inVal,
+      clockOut:outVal,
+      photoIn:'',
+      photoOut:'',
+      source:'manual'
+    };
+    rows.push(row);
+    if(existing){
+      existing.clockIn=inVal;existing.clockOut=outVal;existing.source='manual';
+    }else{
+      attendance.push(row);
+    }
+  });
+  if(rows.length===0){toast('No hours entered','info');return;}
+  toast('Saving '+rows.length+' records...','info');
+  let ok=true;
+  const promises=rows.map(r=>apiPost({action:'upsert',sheet:'Attendance',row:r}));
+  const results=await Promise.all(promises);
+  results.forEach(r=>{if(!r||r.error)ok=false;});
+  if(ok){
+    $('statusDot').className='status-dot on';
+    toast('Saved successfully!','success');
+  }else{
+    $('statusDot').className='status-dot off';
+    toast('Some records failed to save','error');
+  }
+}
+
+function changeMonth(dir){
+  viewMonth+=dir;
+  if(viewMonth>11){viewMonth=0;viewYear++;}
+  if(viewMonth<0){viewMonth=11;viewYear--;}
+  renderCalendar();
+}
+
+async function init(){
+  const ok=await loadData();
+  if(ok)showStaffList();
+  else $('mainArea').innerHTML='<div style="text-align:center;padding:40px"><p style="color:var(--danger);font-size:18px;margin-bottom:16px"><i class="fas fa-exclamation-triangle"></i> Connection Failed</p><button class="btn btn-primary" onclick="init()"><i class="fas fa-redo"></i> Retry</button></div>';
+  setInterval(async()=>{if(!currentStaff){await loadData(true);showStaffList();}},15*60*1000);
+}
+init();
+</script>
+</body>
+</html>

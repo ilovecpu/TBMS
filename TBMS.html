@@ -304,7 +304,7 @@ function escHtml(s){if(!s&&s!==0)return'';const d=document.createElement('div');
 function toast(msg,type='info'){const t=document.createElement('div');t.className='toast '+type;t.innerHTML='<i class="fas fa-'+(type==='error'?'exclamation-circle':type==='success'?'check-circle':'info-circle')+'"></i>'+escHtml(msg);$('toastContainer').appendChild(t);setTimeout(()=>t.remove(),3000);}
 function showLoading(t='Loading...'){$('loadingText').textContent=t;$('loadingOverlay').classList.remove('hidden');}
 function hideLoading(){$('loadingOverlay').classList.add('hidden');}
-function openModal(title,body,footer=''){$('modalTitle').textContent=title;$('modalBody').innerHTML=body;$('modalFooter').innerHTML=footer;$('modalOverlay').classList.remove('hidden');}
+function openModal(title,body,footer='',style=''){$('modalTitle').innerHTML=title;$('modalBody').innerHTML=body;$('modalFooter').innerHTML=footer;const mc=document.querySelector('.modal-content');if(mc)mc.style.cssText=style||'';$('modalOverlay').classList.remove('hidden');}
 function closeModal(){$('modalOverlay').classList.add('hidden');}
 function genId(prefix){return prefix+'_'+Date.now()+'_'+Math.random().toString(36).substr(2,5);}
 function updateSyncStatus(s){const dot=$('syncDot'),txt=$('syncText');dot.className='dot '+s;txt.textContent=s==='online'?'Cloud':s==='syncing'?'Syncing...':'Local';}
@@ -906,7 +906,7 @@ function renderStaff(c) {
     <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;white-space:nowrap"><input type="checkbox" ${sF.showLeft?'checked':''} onchange="sF.showLeft=this.checked;renderStaff($('pageContent'))" style="accent-color:var(--accent)"> Show Left (${D.Staff.filter(s=>s.active===false&&hasStoreAccess(s.storeId)).length})</label>
     <button class="btn btn-primary btn-sm" onclick="editStaff()"><i class="fas fa-plus"></i> Add Staff</button></div>
   <div class="card"><div class="table-wrap"><table><thead><tr><th>Name</th><th>Nick Name</th><th>Store</th><th>Status</th><th>Rate</th><th>Start</th><th>Actions</th></tr></thead><tbody>
-  ${staff.map(s=>{const store=D.Stores.find(x=>String(x.id)===String(s.storeId));const isLeft=s.active===false;return`<tr style="${isLeft?'opacity:.5':''}"><td><strong>${escHtml(s.name)}</strong></td><td>${escHtml(s.nickName||'-')}</td><td>${store?escHtml(store.name):s.storeId}</td>
+  ${staff.map(s=>{const store=D.Stores.find(x=>String(x.id)===String(s.storeId));const isLeft=s.active===false;return`<tr style="${isLeft?'opacity:.5':''}"><td><strong style="cursor:pointer;color:var(--accent);text-decoration:underline" onclick="openTimeRecord('${s.id}')">${escHtml(s.name)}</strong></td><td>${escHtml(s.nickName||'-')}</td><td>${store?escHtml(store.name):s.storeId}</td>
   <td>${isLeft?`<span class="badge badge-danger">Left${s.leftDate?' '+fmtDate(s.leftDate):''}</span>`:`<span class="badge badge-success">Active</span>`}</td>
   <td>£${Number(s.rate).toFixed(2)}</td><td>${fmtDate(s.startDate)}</td>
   <td><button class="btn btn-sm btn-outline" onclick="viewStaff('${s.id}')"><i class="fas fa-eye"></i></button> <button class="btn btn-sm btn-outline" onclick="editStaff('${s.id}')"><i class="fas fa-edit"></i></button> <button class="btn btn-sm btn-accent" onclick="delStaff('${s.id}')"><i class="fas fa-trash"></i></button></td></tr>`;}).join('')}
@@ -986,6 +986,142 @@ async function saveStaff(id) {
   await saveRow('Staff',s); closeModal(); renderStaff($('pageContent')); toast('Staff saved','success');
 }
 async function delStaff(id){if(!confirm('Delete this staff member?'))return;await deleteData('Staff',id);renderStaff($('pageContent'));toast('Staff deleted');}
+
+// ==================== TIME RECORD MODAL (Kiosk2 Style) ====================
+let trYear=new Date().getFullYear(), trMonth=new Date().getMonth();
+if(new Date().getDate()>=26){trMonth++;if(trMonth>11){trMonth=0;trYear++;}}
+let trStaffId=null;
+
+function trPeriodDates(){
+  const pm=trMonth===0?11:trMonth-1;
+  const py=trMonth===0?trYear-1:trYear;
+  const s=new Date(py,pm,26),e=new Date(trYear,trMonth,25),dates=[];
+  for(let d=new Date(s);d<=e;d.setDate(d.getDate()+1))dates.push(new Date(d));
+  return dates;
+}
+function trFmt(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function trLabel(){
+  const ms=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const pm=trMonth===0?11:trMonth-1;
+  return '26 '+ms[pm]+' — 25 '+ms[trMonth]+' '+trYear;
+}
+
+function openTimeRecord(staffId){
+  trStaffId=staffId;
+  trYear=new Date().getFullYear();trMonth=new Date().getMonth();
+  if(new Date().getDate()>=26){trMonth++;if(trMonth>11){trMonth=0;trYear++;}}
+  renderTimeRecordModal();
+}
+function trChangeMonth(dir){
+  trMonth+=dir;
+  if(trMonth>11){trMonth=0;trYear++;}
+  if(trMonth<0){trMonth=11;trYear--;}
+  renderTimeRecordModal();
+}
+function renderTimeRecordModal(){
+  const s=D.Staff.find(x=>x.id===trStaffId);if(!s)return;
+  const dayNames=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const mNames=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const dates=trPeriodDates();
+  const todayStr=trFmt(new Date());
+  const dateSet=new Set(dates.map(d=>trFmt(d)));
+  const myAtt=D.Attendance.filter(a=>String(a.staffId)===String(s.id)&&dateSet.has(a.date));
+
+  let rows='',totalHours=0,totalDays=0,lastMo=-1;
+  dates.forEach(dt=>{
+    const dow=dt.getDay(),ds=trFmt(dt),dl=dayNames[dow===0?6:dow-1];
+    const isToday=ds===todayStr,dm=dt.getMonth();
+    if(dm!==lastMo){lastMo=dm;rows+=`<tr><td colspan="5" style="background:var(--primary);color:#fff;font-weight:700;font-size:13px;padding:6px 12px;border:none;text-align:left"><i class="fas fa-calendar" style="margin-right:6px"></i>${mNames[dm]} ${dt.getFullYear()}</td></tr>`;}
+    const rec=myAtt.find(a=>a.date===ds);
+    const ci=rec?rec.clockIn:'',co=rec?rec.clockOut:'';
+    const hrs=trCalcHrs(ci,co);
+    if(hrs>0){totalHours+=hrs;totalDays++;}
+    const rc=isToday?'background:#e8f5e9;':dow===6?'background:#e3f2fd;':dow===0?'background:#fce4ec;':'';
+    const dc=dow===0?'color:#c0392b;font-weight:700':dow===6?'color:#1565c0;font-weight:700':'color:var(--text-light)';
+    const fi=ci?'border-color:var(--success);background:#f0fff0':'';
+    const fo=co?'border-color:var(--success);background:#f0fff0':'';
+    rows+=`<tr style="${rc}">
+      <td style="font-weight:700;font-size:14px">${dt.getDate()}</td>
+      <td style="font-size:14px;font-weight:700;${dc}">${dl}</td>
+      <td><input type="time" id="tr_in_${ds}" value="${ci}" onchange="trCalcRow('${ds}')" style="width:90px;padding:5px;border:2px solid var(--border);border-radius:6px;text-align:center;font-size:13px;font-weight:600;${fi}"></td>
+      <td><input type="time" id="tr_out_${ds}" value="${co}" onchange="trCalcRow('${ds}')" style="width:90px;padding:5px;border:2px solid var(--border);border-radius:6px;text-align:center;font-size:13px;font-weight:600;${fo}"></td>
+      <td style="font-weight:700;font-size:14px;color:${hrs>0?'var(--primary)':'#ccc'}" id="tr_hr_${ds}">${hrs>0?hrs.toFixed(1):'—'}</td>
+    </tr>`;
+  });
+
+  const body=`
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+      <div style="display:flex;align-items:center;gap:6px">
+        <button class="btn btn-sm btn-outline" onclick="trChangeMonth(-1)"><i class="fas fa-chevron-left"></i></button>
+        <span style="font-weight:700;font-size:15px;min-width:160px;text-align:center">${trLabel()}</span>
+        <button class="btn btn-sm btn-outline" onclick="trChangeMonth(1)"><i class="fas fa-chevron-right"></i></button>
+      </div>
+      <span style="font-size:12px;color:var(--text-light)">Source: Manual</span>
+    </div>
+    <div style="max-height:55vh;overflow-y:auto;border:1px solid var(--border);border-radius:8px">
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead><tr style="position:sticky;top:0;z-index:1">
+          <th style="background:var(--primary);color:#fff;padding:8px 4px;font-size:12px">Date</th>
+          <th style="background:var(--primary);color:#fff;padding:8px 4px;font-size:12px">Day</th>
+          <th style="background:var(--primary);color:#fff;padding:8px 4px;font-size:12px">IN</th>
+          <th style="background:var(--primary);color:#fff;padding:8px 4px;font-size:12px">OUT</th>
+          <th style="background:var(--primary);color:#fff;padding:8px 4px;font-size:12px">Hours</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;background:linear-gradient(135deg,var(--primary),var(--accent));color:#fff;padding:12px 16px;border-radius:10px;margin-top:10px">
+      <div><div style="font-size:12px;opacity:.8">Total Hours</div><div style="font-size:22px;font-weight:800" id="trTotalHrs">${totalHours.toFixed(1)} hrs</div></div>
+      <div style="text-align:right"><div style="font-size:12px;opacity:.8">Days Worked</div><div style="font-size:22px;font-weight:800" id="trTotalDays">${totalDays}</div></div>
+    </div>`;
+
+  openModal('<i class="fas fa-clock" style="color:var(--accent);margin-right:8px"></i>'+escHtml(s.nickName||s.name)+' — Time Record',body,
+    `<button class="btn btn-outline" onclick="closeModal()">Close</button>
+     <button class="btn btn-success" onclick="trSaveAll()"><i class="fas fa-cloud-upload-alt"></i> Save</button>`,
+    'width:95%;max-width:600px');
+}
+
+function trCalcHrs(i,o){
+  if(!i||!o)return 0;
+  const [ih,im]=i.split(':').map(Number),[oh,om]=o.split(':').map(Number);
+  let m=(oh*60+om)-(ih*60+im);if(m<0)m+=1440;
+  return Math.round(m/6)/10;
+}
+function trCalcRow(ds){
+  const iv=$('tr_in_'+ds)?.value||'',ov=$('tr_out_'+ds)?.value||'';
+  const h=trCalcHrs(iv,ov);
+  const el=$('tr_hr_'+ds);if(el){el.textContent=h>0?h.toFixed(1):'—';el.style.color=h>0?'var(--primary)':'#ccc';}
+  const ie=$('tr_in_'+ds);if(ie)ie.style.cssText='width:90px;padding:5px;border:2px solid '+(iv?'var(--success)':'var(--border)')+';border-radius:6px;text-align:center;font-size:13px;font-weight:600;'+(iv?'background:#f0fff0':'');
+  const oe=$('tr_out_'+ds);if(oe)oe.style.cssText='width:90px;padding:5px;border:2px solid '+(ov?'var(--success)':'var(--border)')+';border-radius:6px;text-align:center;font-size:13px;font-weight:600;'+(ov?'background:#f0fff0':'');
+  // Recalc totals
+  const dates=trPeriodDates();let th=0,td=0;
+  dates.forEach(d=>{const s=trFmt(d);const i=$('tr_in_'+s)?.value||'',o=$('tr_out_'+s)?.value||'';const hrs=trCalcHrs(i,o);if(hrs>0){th+=hrs;td++;}});
+  const thE=$('trTotalHrs');if(thE)thE.textContent=th.toFixed(1)+' hrs';
+  const tdE=$('trTotalDays');if(tdE)tdE.textContent=td;
+}
+async function trSaveAll(){
+  if(!trStaffId)return;
+  const s=D.Staff.find(x=>x.id===trStaffId);if(!s)return;
+  const dates=trPeriodDates();
+  const rows=[];
+  dates.forEach(d=>{
+    const ds=trFmt(d);
+    const iv=$('tr_in_'+ds)?.value||'',ov=$('tr_out_'+ds)?.value||'';
+    if(!iv&&!ov)return;
+    const existing=D.Attendance.find(a=>String(a.staffId)===String(trStaffId)&&a.date===ds);
+    const row={id:existing?existing.id:('a'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)),staffId:trStaffId,storeId:s.storeId,date:ds,clockIn:iv,clockOut:ov,photoIn:'',photoOut:'',source:'manual'};
+    rows.push(row);
+    if(existing){existing.clockIn=iv;existing.clockOut=ov;existing.source='manual';}
+    else D.Attendance.push(row);
+  });
+  if(rows.length===0){toast('No hours entered','info');return;}
+  toast('Saving '+rows.length+' records...','info');
+  let ok=true;
+  const results=await Promise.all(rows.map(r=>API.post({action:'upsert',sheet:'Attendance',row:r})));
+  results.forEach(r=>{if(!r||r.error)ok=false;});
+  if(ok){updateSyncStatus('online');toast('Saved successfully!','success');}
+  else{updateSyncStatus('offline');toast('Some records failed','error');}
+}
 
 // ==================== ATTENDANCE ====================
 let attAutoRefresh=null;

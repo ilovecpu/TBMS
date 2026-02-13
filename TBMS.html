@@ -790,13 +790,27 @@ function renderDashboardContent() {
 // ==================== STORES ====================
 function renderStores(c) {
   c.innerHTML=`<div class="card"><div class="card-header"><h3>Stores</h3><button class="btn btn-primary btn-sm" onclick="editStore()"><i class="fas fa-plus"></i> Add Store</button></div>
-  <div class="table-wrap"><table><thead><tr><th>Code</th><th>Name</th><th>Company</th><th>Co. No / VAT</th><th>Address</th><th>Phone / Email</th><th>Actions</th></tr></thead><tbody>
-  ${D.Stores.map(s=>`<tr><td><strong>${escHtml(s.code)}</strong></td><td>${escHtml(s.name)}</td><td>${escHtml(s.company)}</td>
-  <td style="font-size:12px">${s.companyNo||'—'}<br><span style="color:var(--text-light)">${s.vatNo||''}</span></td>
-  <td style="font-size:13px">${escHtml(s.address)}</td>
-  <td style="font-size:12px">${s.phone||'—'}<br>${s.email?`<a href="mailto:${escHtml(s.email)}">${escHtml(s.email)}</a>`:''}</td>
-  <td><button class="btn btn-sm btn-outline" onclick="editStore('${s.id}')"><i class="fas fa-edit"></i></button> <button class="btn btn-sm btn-accent" onclick="delStore('${s.id}')"><i class="fas fa-trash"></i></button></td></tr>`).join('')}
-  </tbody></table></div></div>`;
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px">
+  ${D.Stores.map(s=>`<div style="border:1px solid var(--border);border-radius:12px;padding:16px;background:var(--bg)">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="background:var(--primary);color:#fff;padding:6px 10px;border-radius:8px;font-weight:800;font-size:14px">${escHtml(s.code)}</span>
+        <strong style="font-size:15px">${escHtml(s.name)}</strong>
+      </div>
+      <div style="display:flex;gap:4px">
+        <button class="btn btn-sm btn-outline" onclick="editStore('${s.id}')"><i class="fas fa-edit"></i></button>
+        <button class="btn btn-sm btn-accent" onclick="delStore('${s.id}')"><i class="fas fa-trash"></i></button>
+      </div>
+    </div>
+    <div style="font-size:12px;color:var(--text-light);line-height:1.8">
+      <div><i class="fas fa-building" style="width:16px;color:var(--accent)"></i> ${escHtml(s.company)} ${s.companyNo?'<span style="opacity:.6">· '+escHtml(s.companyNo)+'</span>':''}</div>
+      ${s.vatNo?'<div><i class="fas fa-receipt" style="width:16px;color:var(--accent)"></i> VAT: '+escHtml(s.vatNo)+'</div>':''}
+      <div><i class="fas fa-map-marker-alt" style="width:16px;color:var(--accent)"></i> ${escHtml(s.address)}</div>
+      ${s.phone?'<div><i class="fas fa-phone" style="width:16px;color:var(--accent)"></i> '+escHtml(s.phone)+'</div>':''}
+      ${s.email?'<div><i class="fas fa-envelope" style="width:16px;color:var(--accent)"></i> <a href="mailto:'+escHtml(s.email)+'">'+escHtml(s.email)+'</a></div>':''}
+    </div>
+  </div>`).join('')}
+  </div></div>`;
 }
 function editStore(id) {
   const s=id?D.Stores.find(x=>x.id===id):{id:'',code:'',name:'',company:'',companyNo:'',vatNo:'',address:'',phone:'',email:'',manager:'',memo:'',active:true};

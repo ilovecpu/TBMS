@@ -8,9 +8,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-:root{--primary:#1a237e;--primary-light:#283593;--accent:#e53935;--bg:#f0f2f5;--card:#fff;--text:#333;--text-light:#666;--border:#ddd;--success:#43a047;--warning:#fb8c00;--danger:#e53935;--sidebar-w:260px;--header-h:60px}
+:root{--primary:#111111;--primary-light:#222222;--accent:#e84393;--accent-light:#fce4ec;--bg:#faf5f6;--card:#fff;--text:#222;--text-light:#777;--border:#e8dfe0;--success:#43a047;--warning:#fb8c00;--danger:#e53935;--sidebar-w:260px;--header-h:60px;--pink:#e84393;--pink-soft:#f8c8d8;--pink-bg:#fff0f3}
 body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
-a{color:var(--primary);text-decoration:none}
+a{color:var(--accent);text-decoration:none}
 button{cursor:pointer;font-family:inherit;border:none;outline:none}
 input,select,textarea{font-family:inherit;outline:none}
 .hidden{display:none!important}
@@ -27,15 +27,15 @@ input,select,textarea{font-family:inherit;outline:none}
 @keyframes spin{to{transform:rotate(360deg)}}
 
 /* Login */
-#loginPage{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--primary) 0%,#0d47a1 100%);padding:20px}
+#loginPage{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#111111 0%,#2d1f2d 50%,#e84393 100%);padding:20px}
 .login-box{background:#fff;border-radius:16px;padding:40px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
 .login-logo{text-align:center;margin-bottom:30px}
-.login-logo h1{font-size:28px;color:var(--primary);font-weight:700}
+.login-logo h1{font-size:28px;color:#111;font-weight:700}
 .login-logo p{color:var(--text-light);font-size:14px;margin-top:4px}
-.login-logo .logo-icon{width:80px;height:80px;background:var(--primary);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:36px;color:#fff}
+.login-logo .logo-icon{width:80px;height:80px;background:var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:36px;color:#fff}
 
 /* Setup */
-#setupPage{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#1b5e20 0%,#2e7d32 100%);padding:20px}
+#setupPage{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#111111 0%,#2d1f2d 50%,#e84393 100%);padding:20px}
 .setup-box{background:#fff;border-radius:16px;padding:40px;width:100%;max-width:600px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
 .setup-steps{margin:24px 0}
 .setup-step{padding:12px 16px;background:#f8f9fa;border-radius:10px;margin-bottom:10px;font-size:14px;line-height:1.6;display:flex;gap:12px}
@@ -49,17 +49,17 @@ input,select,textarea{font-family:inherit;outline:none}
 .form-group{margin-bottom:20px}
 .form-group label{display:block;font-size:13px;font-weight:500;color:var(--text-light);margin-bottom:6px}
 .form-group input,.form-group select,.form-group textarea{width:100%;padding:12px 16px;border:2px solid var(--border);border-radius:10px;font-size:15px;transition:border-color .2s}
-.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--primary)}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--accent)}
 .form-group textarea{resize:vertical;min-height:80px}
 .form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 
 /* Buttons */
 .btn{padding:12px 24px;border-radius:10px;font-size:15px;font-weight:500;transition:all .2s;display:inline-flex;align-items:center;gap:8px}
-.btn-primary{background:var(--primary);color:#fff}.btn-primary:hover{background:var(--primary-light)}
+.btn-primary{background:var(--accent);color:#fff}.btn-primary:hover{background:#d63384}
 .btn-accent{background:var(--accent);color:#fff}.btn-accent:hover{background:#c62828}
 .btn-success{background:var(--success);color:#fff}.btn-success:hover{background:#2e7d32}
 .btn-warning{background:var(--warning);color:#fff}.btn-warning:hover{background:#ef6c00}
-.btn-outline{background:transparent;border:2px solid var(--border);color:var(--text)}.btn-outline:hover{border-color:var(--primary);color:var(--primary)}
+.btn-outline{background:transparent;border:2px solid var(--border);color:var(--text)}.btn-outline:hover{border-color:var(--accent);color:var(--accent)}
 .btn-sm{padding:8px 14px;font-size:13px;border-radius:8px}
 .btn-full{width:100%;justify-content:center}
 .btn-icon{width:36px;height:36px;padding:0;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;font-size:14px}
@@ -70,47 +70,68 @@ input,select,textarea{font-family:inherit;outline:none}
 
 /* Main Layout */
 #mainApp{display:flex;min-height:100vh}
-.sidebar{width:var(--sidebar-w);background:var(--primary);color:#fff;position:fixed;top:0;left:0;bottom:0;z-index:100;transition:transform .3s;overflow-y:auto}
-.sidebar-header{padding:20px;border-bottom:1px solid rgba(255,255,255,.1);text-align:center}
+.sidebar{width:var(--sidebar-w);background:linear-gradient(180deg,#333338 0%,#2a2a2f 100%);color:#fff;position:fixed;top:0;left:0;bottom:0;z-index:100;transition:transform .3s;overflow-y:auto}
+.sidebar-header{padding:20px;border-bottom:1px solid rgba(232,67,147,.25);text-align:center}
 .sidebar-header h2{font-size:20px;font-weight:700}
 .sidebar-header p{font-size:12px;opacity:.7;margin-top:4px}
 .sidebar-menu{padding:12px}
-.menu-item{display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:10px;color:rgba(255,255,255,.7);cursor:pointer;transition:all .2s;margin-bottom:4px;font-size:14px}
-.menu-item:hover,.menu-item.active{background:rgba(255,255,255,.15);color:#fff}
+.menu-item{display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:10px;color:rgba(255,255,255,.7);cursor:pointer;transition:all .2s;margin-bottom:2px;font-size:14px}
+.menu-item:hover,.menu-item.active{background:rgba(232,67,147,.2);color:#fff}
 .menu-item i{width:20px;text-align:center}
-.sidebar-user{padding:16px 20px;border-top:1px solid rgba(255,255,255,.1);display:flex;align-items:center;gap:12px;position:sticky;bottom:0;background:var(--primary)}
-.sidebar-user .avatar{width:40px;height:40px;background:rgba(255,255,255,.2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700}
+.menu-group{margin-bottom:2px}
+.menu-parent{justify-content:flex-start}
+.menu-arrow{margin-left:auto;font-size:10px;transition:transform .25s;opacity:.5}
+.menu-group.open .menu-arrow{transform:rotate(180deg);opacity:.8}
+.sub-menu{max-height:0;overflow:hidden;transition:max-height .3s ease}
+.menu-group.open .sub-menu{max-height:500px}
+.menu-item.sub{padding:9px 16px 9px 50px;font-size:13px;margin-bottom:1px;border-radius:8px}
+.menu-item.sub::before{content:'';width:4px;height:4px;border-radius:50%;background:rgba(255,255,255,.3);position:absolute;left:32px}
+.menu-item.sub{position:relative}
+.sidebar-user{padding:16px 20px;border-top:1px solid rgba(232,67,147,.25);display:flex;align-items:center;gap:12px;position:sticky;bottom:0;background:#2a2a2f}
+.sidebar-user .avatar{width:40px;height:40px;background:rgba(232,67,147,.3);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700}
 .sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99}
 
 /* Header + Content */
 .main-content{flex:1;margin-left:var(--sidebar-w)}
-.header{height:var(--header-h);background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:sticky;top:0;z-index:50}
+.header{height:var(--header-h);background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:sticky;top:0;z-index:50;box-shadow:0 1px 4px rgba(0,0,0,.04)}
 .header-left{display:flex;align-items:center;gap:12px}
 .header-left .menu-toggle{display:none;background:none;font-size:20px;color:var(--text)}
 .header-right{display:flex;align-items:center;gap:16px;font-size:13px;color:var(--text-light)}
 .page-content{padding:24px}
 
 /* Cards */
-.card{background:var(--card);border-radius:12px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,.06);margin-bottom:20px}
+.card{background:var(--card);border-radius:12px;padding:24px;box-shadow:0 2px 12px rgba(232,67,147,.06);margin-bottom:20px;border:1px solid rgba(232,67,147,.05)}
 .card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
 .card-header h3{font-size:18px;font-weight:600}
 
 /* Stats */
 .stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;margin-bottom:24px}
-.stat-card{background:#fff;border-radius:12px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.06);display:flex;align-items:center;gap:16px}
+.stat-card{background:#fff;border-radius:12px;padding:20px;box-shadow:0 2px 12px rgba(232,67,147,.06);display:flex;align-items:center;gap:16px;border:1px solid rgba(232,67,147,.05)}
 .stat-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff}
-.stat-icon.blue{background:#1565c0}.stat-icon.green{background:#2e7d32}.stat-icon.orange{background:#ef6c00}.stat-icon.red{background:#c62828}.stat-icon.purple{background:#6a1b9a}
+.stat-icon.blue{background:#111}.stat-icon.green{background:#e84393}.stat-icon.orange{background:#d63384}.stat-icon.red{background:#c62828}.stat-icon.purple{background:#6a1b9a}
 .stat-info .stat-num{font-size:24px;font-weight:700}.stat-info .stat-label{font-size:12px;color:var(--text-light);margin-top:2px}
 
 /* Tables */
 .table-wrap{overflow-x:auto}
 table{width:100%;border-collapse:collapse}
 th,td{padding:12px 16px;text-align:left;border-bottom:1px solid var(--border);font-size:14px;white-space:nowrap}
-th{background:#f8f9fa;font-weight:600;font-size:13px;color:var(--text-light);position:sticky;top:0}
+th{background:#fdf0f3;font-weight:600;font-size:13px;color:#555;position:sticky;top:0}
 tr:hover{background:#f8f9fa}
 .badge{padding:4px 10px;border-radius:20px;font-size:12px;font-weight:500;display:inline-block}
 .badge-success{background:#e8f5e9;color:#2e7d32}.badge-danger{background:#ffebee;color:#c62828}
-.badge-warning{background:#fff3e0;color:#e65100}.badge-info{background:#e3f2fd;color:#1565c0}
+.badge-warning{background:#fff3e0;color:#e65100}.badge-info{background:#fce4ec;color:#c2185b}
+
+/* Permission Checkboxes */
+.perm-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:8px}
+.perm-item{display:flex;align-items:center;gap:6px;padding:6px 10px;background:#f8f9fa;border-radius:8px;cursor:pointer;font-size:13px;transition:all .2s;border:2px solid transparent}
+.perm-item:hover{background:var(--pink-bg)}
+.perm-item input[type=checkbox]{accent-color:var(--accent);width:16px;height:16px;cursor:pointer}
+.perm-item.checked{background:var(--pink-bg);border-color:var(--accent)}
+.perm-item i{width:16px;text-align:center;font-size:12px;color:var(--accent)}
+.perm-section{margin-top:16px;padding:16px;background:#fafafa;border-radius:10px;border:1px solid var(--border)}
+.perm-section-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.perm-section-header h4{font-size:14px;font-weight:600;color:var(--text)}
+.perm-section-header label{font-size:12px;color:var(--accent);cursor:pointer}
 
 /* Modal */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px}
@@ -123,13 +144,13 @@ tr:hover{background:#f8f9fa}
 /* Staff Info Card */
 .staff-info-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .info-item{display:flex;align-items:flex-start;gap:10px;padding:10px;background:#f8f9fa;border-radius:8px}
-.info-item i{color:var(--primary);margin-top:2px;width:16px;text-align:center}
+.info-item i{color:var(--accent);margin-top:2px;width:16px;text-align:center}
 .info-item .label{font-size:11px;color:var(--text-light)}.info-item .value{font-size:14px;font-weight:500}
 
 /* Filters */
 .filters{display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;align-items:center}
 .filters select,.filters input{padding:10px 14px;border:2px solid var(--border);border-radius:8px;font-size:14px}
-.filters select:focus,.filters input:focus{border-color:var(--primary)}
+.filters select:focus,.filters input:focus{border-color:var(--accent)}
 .search-box{position:relative;flex:1;min-width:200px}
 .search-box input{width:100%;padding-left:36px}
 .search-box i{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-light)}
@@ -138,6 +159,21 @@ tr:hover{background:#f8f9fa}
 .sync-status .dot{width:8px;height:8px;border-radius:50%}
 .sync-status .dot.online{background:var(--success)}.sync-status .dot.offline{background:var(--warning)}.sync-status .dot.syncing{background:#2196f3;animation:pulse 1s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* Drag Sort */
+.sort-handle{cursor:grab;color:var(--text-light);font-size:16px;padding:4px 8px;user-select:none;transition:color .15s}
+.sort-handle:hover{color:var(--accent)}
+.sort-handle:active{cursor:grabbing}
+.sort-arrows{display:flex;flex-direction:column;gap:0}
+.sort-arrows button{background:none;border:none;padding:2px 6px;color:var(--text-light);font-size:11px;cursor:pointer;border-radius:4px;line-height:1;transition:all .15s}
+.sort-arrows button:hover{background:var(--accent);color:#fff}
+.sort-arrows button:disabled{opacity:.2;cursor:default;background:none;color:var(--text-light)}
+tr.dragging{opacity:.4;background:var(--accent-light)!important}
+tr.drag-over{border-top:3px solid var(--accent)!important}
+.item-icon{width:28px;height:28px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;font-size:13px;margin-right:8px;flex-shrink:0}
+.item-icon.dry{background:#fff3e0;color:#e65100}
+.item-icon.fresh{background:#e8f5e9;color:#2e7d32}
+.reorder-toolbar{display:flex;align-items:center;gap:12px;padding:10px 16px;background:var(--pink-bg);border-radius:10px;margin-bottom:12px;font-size:13px;color:var(--text)}
 
 /* Responsive */
 @media(max-width:1024px){
@@ -210,15 +246,35 @@ tr:hover{background:#f8f9fa}
   <div class="sidebar" id="sidebar">
     <div class="sidebar-header"><h2>TBMS</h2><p>The Bap Management System</p></div>
     <div class="sidebar-menu">
-      <div class="menu-item active" onclick="navigate('dashboard')"><i class="fas fa-home"></i>Dashboard</div>
-      <div class="menu-item" onclick="navigate('stores')"><i class="fas fa-store"></i>Stores</div>
-      <div class="menu-item" onclick="navigate('users')"><i class="fas fa-users-cog"></i>Users</div>
-      <div class="menu-item" onclick="navigate('staff')"><i class="fas fa-user-tie"></i>Staff</div>
-      <div class="menu-item" onclick="navigate('attendance')"><i class="fas fa-clipboard-check"></i>Attendance</div>
-      <div class="menu-item" onclick="navigate('payroll')"><i class="fas fa-calculator"></i>Payroll</div>
-      <div class="menu-item" onclick="navigate('stock')"><i class="fas fa-boxes-stacked"></i>Stock</div>
-      <div class="menu-item" onclick="navigate('orders')"><i class="fas fa-clipboard-list"></i>Order List</div>
-      <div class="menu-item" onclick="navigate('settings')"><i class="fas fa-cog"></i>Settings</div>
+      <div class="menu-item active" data-page="dashboard" onclick="navigate('dashboard')"><i class="fas fa-home"></i>Dashboard</div>
+      <div class="menu-item" data-page="stores" onclick="navigate('stores')"><i class="fas fa-store"></i>Stores</div>
+      <div class="menu-group open">
+        <div class="menu-item menu-parent" onclick="toggleMenuGroup(this)"><i class="fas fa-user-tie"></i>Staff<i class="fas fa-chevron-down menu-arrow"></i></div>
+        <div class="sub-menu">
+          <div class="menu-item sub" data-page="staff" onclick="navigate('staff')"><i class="fas fa-list-ul"></i>Staff List</div>
+          <div class="menu-item sub" data-page="attendance" onclick="navigate('attendance')"><i class="fas fa-clipboard-check"></i>Attendance</div>
+          <div class="menu-item sub" data-page="payroll" onclick="navigate('payroll')"><i class="fas fa-calculator"></i>Payroll</div>
+        </div>
+      </div>
+      <div class="menu-group open">
+        <div class="menu-item menu-parent" onclick="toggleMenuGroup(this)"><i class="fas fa-boxes-stacked"></i>Stock<i class="fas fa-chevron-down menu-arrow"></i></div>
+        <div class="sub-menu">
+          <div class="menu-item sub" data-page="stock" onclick="navigate('stock')"><i class="fas fa-warehouse"></i>Stock List</div>
+          <div class="menu-item sub" data-page="stock-count" onclick="navigate('stock-count')"><i class="fas fa-clipboard-check"></i>Weekly Count</div>
+          <div class="menu-item sub" data-page="stock-history" onclick="navigate('stock-history')"><i class="fas fa-history"></i>Count History</div>
+          <div class="menu-item sub" data-page="sales" onclick="navigate('sales')"><i class="fas fa-chart-bar"></i>Weekly Sales</div>
+          <div class="menu-item sub" data-page="analytics" onclick="navigate('analytics')"><i class="fas fa-chart-line"></i>Usage Analytics</div>
+          <div class="menu-item sub" data-page="orders" onclick="navigate('orders')"><i class="fas fa-clipboard-list"></i>Order List</div>
+          <div class="menu-item sub" data-page="suppliers" onclick="navigate('suppliers')"><i class="fas fa-truck-field"></i>Suppliers</div>
+        </div>
+      </div>
+      <div class="menu-group open">
+        <div class="menu-item menu-parent" onclick="toggleMenuGroup(this)"><i class="fas fa-cog"></i>Settings<i class="fas fa-chevron-down menu-arrow"></i></div>
+        <div class="sub-menu">
+          <div class="menu-item sub" data-page="users" onclick="navigate('users')"><i class="fas fa-users-cog"></i>Users</div>
+          <div class="menu-item sub" data-page="settings" onclick="navigate('settings')"><i class="fas fa-sliders"></i>General</div>
+        </div>
+      </div>
     </div>
     <div class="sidebar-user"><div class="avatar" id="userAvatar">D</div><div><div id="userName" style="font-weight:600;font-size:14px">DJ</div><div id="userRole" style="font-size:12px;opacity:.7">Admin</div></div></div>
   </div>
@@ -250,9 +306,74 @@ function genId(prefix){return prefix+'_'+Date.now()+'_'+Math.random().toString(3
 function updateSyncStatus(s){const dot=$('syncDot'),txt=$('syncText');dot.className='dot '+s;txt.textContent=s==='online'?'Cloud':s==='syncing'?'Syncing...':'Local';}
 function fmtDate(d){if(!d)return'-';try{return new Date(d).toLocaleDateString('en-GB');}catch(e){return d;}}
 
+// ==================== ROLES & PERMISSIONS ====================
+const ROLES={admin:'Admin',senior_manager:'Senior Manager',manager:'Manager',account:'Account'};
+const ROLE_LABELS=Object.entries(ROLES);
+const ALL_PAGES=[
+  {id:'dashboard',label:'Dashboard',icon:'fa-home'},
+  {id:'stores',label:'Stores',icon:'fa-store'},
+  {id:'staff',label:'Staff List',icon:'fa-list-ul'},
+  {id:'attendance',label:'Attendance',icon:'fa-clipboard-check'},
+  {id:'payroll',label:'Payroll',icon:'fa-calculator'},
+  {id:'stock',label:'Stock List',icon:'fa-warehouse'},
+  {id:'stock-count',label:'Weekly Count',icon:'fa-clipboard-check'},
+  {id:'stock-history',label:'Count History',icon:'fa-history'},
+  {id:'sales',label:'Weekly Sales',icon:'fa-chart-bar'},
+  {id:'analytics',label:'Usage Analytics',icon:'fa-chart-line'},
+  {id:'orders',label:'Order List',icon:'fa-clipboard-list'},
+  {id:'suppliers',label:'Suppliers',icon:'fa-truck-field'},
+  {id:'users',label:'Users',icon:'fa-users-cog'},
+  {id:'settings',label:'Settings',icon:'fa-sliders'}
+];
+function hasPermission(page){
+  if(!currentUser)return false;
+  if(currentUser.role==='admin')return true;
+  const perms=currentUser.permissions;
+  if(!perms&&perms!=='')return true; // Old users without permissions field = full access
+  if(perms==='all')return true;
+  return perms.split(',').map(p=>p.trim()).includes(page);
+}
+function getUserPermissions(u){
+  if(!u)return[];
+  if(u.role==='admin'||u.permissions==='all')return ALL_PAGES.map(p=>p.id);
+  return(u.permissions||'').split(',').map(p=>p.trim()).filter(Boolean);
+}
+function getRoleLabel(role){return ROLES[role]||role;}
+function hasStoreAccess(sid){
+  if(!currentUser)return false;
+  if(currentUser.role==='admin')return true;
+  const stores=currentUser.storeId||'';
+  if(!stores)return true; // empty = all stores (backward compat)
+  return stores.split(',').map(s=>s.trim()).includes(String(sid));
+}
+function getUserStores(u){
+  if(!u)return[];
+  if(u.role==='admin'||!u.storeId)return D.Stores.map(s=>s.id);
+  return(u.storeId||'').split(',').map(s=>s.trim()).filter(Boolean);
+}
+function getAccessibleStores(){
+  if(!currentUser||currentUser.role==='admin')return D.Stores;
+  const ids=getUserStores(currentUser);
+  if(ids.length===0)return D.Stores;
+  return D.Stores.filter(s=>ids.includes(String(s.id)));
+}
+function applyPermissions(){
+  // Show/hide sidebar menu items based on current user permissions
+  document.querySelectorAll('.menu-item[data-page]').forEach(el=>{
+    const page=el.dataset.page;
+    el.style.display=hasPermission(page)?'':'none';
+  });
+  // Show/hide menu groups if all children hidden
+  document.querySelectorAll('.menu-group').forEach(g=>{
+    const subs=g.querySelectorAll('.menu-item.sub[data-page]');
+    const anyVisible=[...subs].some(s=>s.style.display!=='none');
+    g.style.display=anyVisible?'':'none';
+  });
+}
+
 // ==================== DEFAULT DATA ====================
 const DEFAULT_DATA = {
-  Users: [{id:'u1',username:'ilovecpu',password:'1234',name:'DJ',role:'admin',email:'ilovecpu100@gmail.com',storeId:''}],
+  Users: [{id:'u1',username:'ilovecpu',password:'1234',name:'DJ',role:'admin',email:'ilovecpu100@gmail.com',storeId:'',permissions:'all'}],
   Stores: [
     {id:'PAB',code:'PAB',name:'Pick A Bap',company:'Pick A Bap Ltd',companyNo:'',address:'Unit24, The Meads Shopping Center, Farnborough GU14 7SJ',phone:'',email:'',manager:'',memo:'',active:true},
     {id:'TBS',code:'TBS',name:'The Bap Swindon',company:'The Bap Swindon Ltd',companyNo:'',address:'12 Havelock Square, Swindon SN1 1LE',phone:'',email:'',manager:'',memo:'',active:true},
@@ -260,60 +381,71 @@ const DEFAULT_DATA = {
     {id:'TBB',code:'TBB',name:'The Bap Bristol',company:'The Bap Bristol Ltd',companyNo:'',address:'21 Queens Road, Clifton, Bristol, BS8 1QE',phone:'',email:'',manager:'',memo:'',active:true}
   ],
   Staff: [
-    {id:'s1',storeId:'TBS',name:'Mr. Youngseon Yun',clothSize:'XL',kioskPwd:'4321',dob:'1992-03-02',address:'4 Horsham Road, Swindon, SN3 2BN',niNo:'SW 01 34 28 A',eVisa:'',mobile:'07308 354 998',startDate:'2022-05-07',rate:15,sortCode:'52-21-30',accountNo:'31585833',email:'roller1918@naver.com',memo:'',active:true},
-    {id:'s2',storeId:'TBS',name:'Mr. Niraj Gurung',clothSize:'M',kioskPwd:'1234',dob:'1978-11-15',address:'32 Horsham Road, Swindon, SN3 2BN',niNo:'SZ 29 40 74 C',eVisa:'',mobile:'07466 513 913',startDate:'2023-05-08',rate:13.5,sortCode:'77-04-38',accountNo:'63983960',email:'gurungniraj2006@yahoo.com',memo:'',active:true},
-    {id:'s3',storeId:'TBS',name:'Ms. Sraswati Rana',clothSize:'M',kioskPwd:'2928',dob:'1986-11-19',address:'17 March Close, Swindon, SN5 4GJ',niNo:'RY 09 04 02 C',eVisa:'',mobile:'',startDate:'',rate:12.5,sortCode:'',accountNo:'',email:'',memo:'',active:true},
-    {id:'s4',storeId:'TBS',name:'Mrs. Pataramon Jones',clothSize:'S',kioskPwd:'1212',dob:'1985-06-10',address:'22 King William Street, Swindon, SN1 3LB',niNo:'NJ 54 83 07 D',eVisa:'',mobile:'07384 308 243',startDate:'2022-10-19',rate:12.5,sortCode:'30-13-35',accountNo:'75625368',email:'am_ammymy@hotmail.com',memo:'',active:true},
-    {id:'s5',storeId:'TBS',name:'Ms. Alina Bakhshyar',clothSize:'S',kioskPwd:'2321',dob:'2007-04-15',address:'59 Upham Road, Swindon, SN3 1DN',niNo:'SK 09 73 10 C',eVisa:'',mobile:'',startDate:'2023-08-01',rate:10.5,sortCode:'',accountNo:'39747682',email:'alinabakhshyar1@gmail.com',memo:'',active:true},
-    {id:'s6',storeId:'TBS',name:'Ms. Sara Khan',clothSize:'S',kioskPwd:'2232',dob:'2006-11-18',address:'66 County Road, Swindon, SN1 2EW',niNo:'PL 70 48 21 B',eVisa:'',mobile:'',startDate:'2023-03-29',rate:10.5,sortCode:'23-05-80',accountNo:'26650784',email:'sarakhanstandard@gmail.com',memo:'',active:true},
-    {id:'s7',storeId:'TBS',name:'Ms. Zahra Bakhshyar',clothSize:'M',kioskPwd:'4554',dob:'2005-04-10',address:'59 Upham Road, Swindon, SN3 1DN',niNo:'SK 09 73 05 B',eVisa:'',mobile:'07491 948 790',startDate:'2022-05-14',rate:11.5,sortCode:'07-08-06',accountNo:'23952006',email:'zahrabakhshyar@gmail.com',memo:'',active:true},
-    {id:'s8',storeId:'TBS',name:'Mrs. Susan Rai',clothSize:'S',kioskPwd:'7665',dob:'1983-07-21',address:'30 Avening Street, Swindon, SN2 8BZ',niNo:'TJ 54 48 73 B',eVisa:'',mobile:'07472 953 406',startDate:'2023-10-05',rate:13,sortCode:'30-98-41',accountNo:'34089362',email:'susanuma1983@gmail.com',memo:'',active:true},
-    {id:'s9',storeId:'TBS',name:'Mrs. Devi Maya Pun',clothSize:'M',kioskPwd:'5644',dob:'1972-12-15',address:'11 Fraser Close, Nythe, Swindon, SN3 3RP',niNo:'SK 01 85 37 B',eVisa:'',mobile:'07414 966 478',startDate:'2023-03-13',rate:12.5,sortCode:'40-04-15',accountNo:'41717316',email:'kne@hotmail.co.uk',memo:'',active:true},
-    {id:'s10',storeId:'PAB',name:'Thir Bahadur B.K.',clothSize:'L',kioskPwd:'1234',dob:'1977-03-19',address:'14 Glenwood Court, Farnborough, GU14 7TB',niNo:'SW 61 55 50 C',eVisa:'',mobile:'',startDate:'2020-12-15',rate:13.5,sortCode:'',accountNo:'',email:'',memo:'',active:true},
-    {id:'s11',storeId:'PAB',name:'Jems B.K.',clothSize:'L',kioskPwd:'4311',dob:'1999-09-27',address:'14 Glenwood Court, Farnborough, GU14 7TB',niNo:'NJ 15 54 87 D',eVisa:'',mobile:'',startDate:'2021-06-30',rate:13,sortCode:'',accountNo:'',email:'',memo:'',active:true},
-    {id:'s12',storeId:'PAB',name:'Lila Kumari Rana',clothSize:'S',kioskPwd:'1111',dob:'1987-04-28',address:'42 Lulworth Close, Farnborough, GU14 8TR',niNo:'SY 34 56 11 D',eVisa:'',mobile:'',startDate:'2021-07-08',rate:12.5,sortCode:'',accountNo:'',email:'',memo:'',active:true},
-    {id:'s13',storeId:'PAB',name:'Dipson B.K.',clothSize:'L',kioskPwd:'2222',dob:'2004-04-11',address:'14 Glenwood Court, Farnborough, GU14 7TB',niNo:'TK 30 34 61 B',eVisa:'',mobile:'',startDate:'2024-03-01',rate:12.5,sortCode:'77-49-22',accountNo:'26518968',email:'',memo:'',active:true},
-    {id:'s14',storeId:'TBR',name:'Mr. Avinaya Rai',clothSize:'M',kioskPwd:'1212',dob:'1999-06-30',address:'34 Dwyer Road, Reading, RG30 3PN',niNo:'TL812621B',eVisa:'',mobile:'07440 714 416',startDate:'2023-08-01',rate:13,sortCode:'20-71-03',accountNo:'63332438',email:'iamavinaya69@gmail.com',memo:'',active:true},
-    {id:'s15',storeId:'TBR',name:'Ms. Diksha Rai',clothSize:'S',kioskPwd:'1212',dob:'2005-06-01',address:'38 Beresford Road, Reading, RG30 1BX',niNo:'TK740551D',eVisa:'',mobile:'07778 417 997',startDate:'2023-08-13',rate:12,sortCode:'77-66-73',accountNo:'00130894',email:'dikshabantawa2345@gmail.com',memo:'',active:true},
-    {id:'s16',storeId:'TBR',name:'Ms. Shuva Chapagai',clothSize:'S',kioskPwd:'1223',dob:'1996-08-02',address:'17 Walnut Way, Tilehurst, RG30 4TD',niNo:'NJ565252A',eVisa:'',mobile:'0777 682 2993',startDate:'2023-08-01',rate:13,sortCode:'30-67-99',accountNo:'75460668',email:'shuvachapagai@gmail.com',memo:'',active:true},
-    {id:'s17',storeId:'TBR',name:'Mr. Ashok Bhandari',clothSize:'XL',kioskPwd:'2322',dob:'1995-01-13',address:'93 Liverpool Road, Reading, RG1 3PN',niNo:'TK557314C',eVisa:'',mobile:'07769 010 211',startDate:'2023-08-22',rate:13,sortCode:'30-90-43',accountNo:'63726068',email:'ashook1995@gmail.com',memo:'',active:true},
-    {id:'s18',storeId:'TBR',name:'Mrs. Naina Kala Ghale',clothSize:'S',kioskPwd:'2322',dob:'1986-05-12',address:'55 Mason Street, Reading, RG1 7PD',niNo:'NJ544552A',eVisa:'SPM M24 5N3',mobile:'07465856894',startDate:'2023-10-14',rate:12.5,sortCode:'04-00-04',accountNo:'72331444',email:'nainaghale12@gmail.com',memo:'',active:true},
-    {id:'s19',storeId:'TBR',name:'Ms. Teena Ale',clothSize:'S',kioskPwd:'2344',dob:'2005-12-05',address:'55 Mason Street, Reading, RG1 7PD',niNo:'TJ818150C',eVisa:'WYW 434 54E',mobile:'07984236439',startDate:'2023-11-26',rate:10.5,sortCode:'',accountNo:'51917707',email:'teenaale2@gmail.com',memo:'',active:true},
-    {id:'s20',storeId:'TBR',name:'Mr. Saroj Ale',clothSize:'L',kioskPwd:'4433',dob:'2008-01-17',address:'77 Norfolk Road, Reading, RG30 2EG',niNo:'RZ082840A',eVisa:'WMF A6C 5BN',mobile:'07853750380',startDate:'2025-01-03',rate:12,sortCode:'04-00-03',accountNo:'86776795',email:'sarojale@gmail.com',memo:'',active:true},
-    {id:'s21',storeId:'TBB',name:'Mr. Mukesh Lamsal',clothSize:'XL',kioskPwd:'1234',dob:'1992-09-24',address:'93 Liverpool Road, Reading, RG1 3PN',niNo:'TJ366399D',eVisa:'',mobile:'07503 382 305',startDate:'2025-07-18',rate:13,sortCode:'30-67-99',accountNo:'87414660',email:'mukeshlamsal111@gmail.com',memo:'',active:true},
-    {id:'s22',storeId:'TBB',name:'Mrs. Jayanti Bhatta',clothSize:'M',kioskPwd:'3232',dob:'1994-10-23',address:'6 Bouverie Street, Easton, Bristol, BS5 0RS',niNo:'TJ642875D',eVisa:'WHC K64 6C9',mobile:'07459 028 504',startDate:'2025-07-18',rate:12.5,sortCode:'77-77-52',accountNo:'67762928',email:'jayantibhatta75@gmail.com',memo:'',active:true},
-    {id:'s23',storeId:'TBB',name:'Mr. Soe Thiha Maung',clothSize:'M',kioskPwd:'2323',dob:'2000-04-04',address:'14 Orchard Gardens, Bristol, BS15 9UA',niNo:'RZ474071D',eVisa:'',mobile:'07553 381 469',startDate:'2025-08-05',rate:12.5,sortCode:'',accountNo:'5016851',email:'SoeThiaMaung13@gmail.com',memo:'',active:true},
-    {id:'s24',storeId:'TBB',name:'Miss. Thi Ri May',clothSize:'S',kioskPwd:'2323',dob:'2003-11-14',address:'14 Orchard Gardens, Bristol, BS15 9UA',niNo:'TJ083444A',eVisa:'WW8 L8Z 58J',mobile:'07501 726 872',startDate:'2025-07-18',rate:12.5,sortCode:'30-62-96',accountNo:'48833663',email:'thirimaythonethone@gmail.com',memo:'',active:true},
-    {id:'s25',storeId:'TBB',name:'Miss. Kai Qi Koh',clothSize:'S',kioskPwd:'2323',dob:'2003-05-19',address:'Studio 16, Stonebridge House, Colston Ave, Bristol BS1 4TN',niNo:'D6785568',eVisa:'SF3 T9W 5NZ',mobile:'07535 616 619',startDate:'2025-07-18',rate:12.5,sortCode:'40-14-03',accountNo:'83893456',email:'charlottekoh03@gmail.com',memo:'',active:true},
-    {id:'s26',storeId:'TBB',name:'Mr. Timothy Chung',clothSize:'M',kioskPwd:'4432',dob:'2006-07-08',address:'13 Osborne Villas, Bristol, BS2 8BP',niNo:'TH444989B',eVisa:'W3K TL7 6CT',mobile:'07300 894 746',startDate:'2025-07-18',rate:11,sortCode:'04-00-03',accountNo:'75584464',email:'',memo:'',active:true}
+    {id:'s1',storeId:'TBS',name:'Mr. Youngseon Yun',nickName:'',clothSize:'XL',kioskPwd:'4321',dob:'1992-03-02',address:'4 Horsham Road, Swindon, SN3 2BN',niNo:'SW 01 34 28 A',eVisa:'',mobile:'07308 354 998',startDate:'2022-05-07',leftDate:'',rate:15,sortCode:'52-21-30',accountNo:'31585833',email:'roller1918@naver.com',memo:'',active:true},
+    {id:'s2',storeId:'TBS',name:'Mr. Niraj Gurung',nickName:'',clothSize:'M',kioskPwd:'1234',dob:'1978-11-15',address:'32 Horsham Road, Swindon, SN3 2BN',niNo:'SZ 29 40 74 C',eVisa:'',mobile:'07466 513 913',startDate:'2023-05-08',leftDate:'',rate:13.5,sortCode:'77-04-38',accountNo:'63983960',email:'gurungniraj2006@yahoo.com',memo:'',active:true},
+    {id:'s3',storeId:'TBS',name:'Ms. Sraswati Rana',nickName:'',clothSize:'M',kioskPwd:'2928',dob:'1986-11-19',address:'17 March Close, Swindon, SN5 4GJ',niNo:'RY 09 04 02 C',eVisa:'',mobile:'',startDate:'',leftDate:'',rate:12.5,sortCode:'',accountNo:'',email:'',memo:'',active:true},
+    {id:'s4',storeId:'TBS',name:'Mrs. Pataramon Jones',nickName:'',clothSize:'S',kioskPwd:'1212',dob:'1985-06-10',address:'22 King William Street, Swindon, SN1 3LB',niNo:'NJ 54 83 07 D',eVisa:'',mobile:'07384 308 243',startDate:'2022-10-19',leftDate:'',rate:12.5,sortCode:'30-13-35',accountNo:'75625368',email:'am_ammymy@hotmail.com',memo:'',active:true},
+    {id:'s5',storeId:'TBS',name:'Ms. Alina Bakhshyar',nickName:'',clothSize:'S',kioskPwd:'2321',dob:'2007-04-15',address:'59 Upham Road, Swindon, SN3 1DN',niNo:'SK 09 73 10 C',eVisa:'',mobile:'',startDate:'2023-08-01',leftDate:'',rate:10.5,sortCode:'',accountNo:'39747682',email:'alinabakhshyar1@gmail.com',memo:'',active:true},
+    {id:'s6',storeId:'TBS',name:'Ms. Sara Khan',nickName:'',clothSize:'S',kioskPwd:'2232',dob:'2006-11-18',address:'66 County Road, Swindon, SN1 2EW',niNo:'PL 70 48 21 B',eVisa:'',mobile:'',startDate:'2023-03-29',leftDate:'',rate:10.5,sortCode:'23-05-80',accountNo:'26650784',email:'sarakhanstandard@gmail.com',memo:'',active:true},
+    {id:'s7',storeId:'TBS',name:'Ms. Zahra Bakhshyar',nickName:'',clothSize:'M',kioskPwd:'4554',dob:'2005-04-10',address:'59 Upham Road, Swindon, SN3 1DN',niNo:'SK 09 73 05 B',eVisa:'',mobile:'07491 948 790',startDate:'2022-05-14',leftDate:'',rate:11.5,sortCode:'07-08-06',accountNo:'23952006',email:'zahrabakhshyar@gmail.com',memo:'',active:true},
+    {id:'s8',storeId:'TBS',name:'Mrs. Susan Rai',nickName:'',clothSize:'S',kioskPwd:'7665',dob:'1983-07-21',address:'30 Avening Street, Swindon, SN2 8BZ',niNo:'TJ 54 48 73 B',eVisa:'',mobile:'07472 953 406',startDate:'2023-10-05',leftDate:'',rate:13,sortCode:'30-98-41',accountNo:'34089362',email:'susanuma1983@gmail.com',memo:'',active:true},
+    {id:'s9',storeId:'TBS',name:'Mrs. Devi Maya Pun',nickName:'',clothSize:'M',kioskPwd:'5644',dob:'1972-12-15',address:'11 Fraser Close, Nythe, Swindon, SN3 3RP',niNo:'SK 01 85 37 B',eVisa:'',mobile:'07414 966 478',startDate:'2023-03-13',leftDate:'',rate:12.5,sortCode:'40-04-15',accountNo:'41717316',email:'kne@hotmail.co.uk',memo:'',active:true},
+    {id:'s10',storeId:'PAB',name:'Thir Bahadur B.K.',nickName:'',clothSize:'L',kioskPwd:'1234',dob:'1977-03-19',address:'14 Glenwood Court, Farnborough, GU14 7TB',niNo:'SW 61 55 50 C',eVisa:'',mobile:'',startDate:'2020-12-15',leftDate:'',rate:13.5,sortCode:'',accountNo:'',email:'',memo:'',active:true},
+    {id:'s11',storeId:'PAB',name:'Jems B.K.',nickName:'',clothSize:'L',kioskPwd:'4311',dob:'1999-09-27',address:'14 Glenwood Court, Farnborough, GU14 7TB',niNo:'NJ 15 54 87 D',eVisa:'',mobile:'',startDate:'2021-06-30',leftDate:'',rate:13,sortCode:'',accountNo:'',email:'',memo:'',active:true},
+    {id:'s12',storeId:'PAB',name:'Lila Kumari Rana',nickName:'',clothSize:'S',kioskPwd:'1111',dob:'1987-04-28',address:'42 Lulworth Close, Farnborough, GU14 8TR',niNo:'SY 34 56 11 D',eVisa:'',mobile:'',startDate:'2021-07-08',leftDate:'',rate:12.5,sortCode:'',accountNo:'',email:'',memo:'',active:true},
+    {id:'s13',storeId:'PAB',name:'Dipson B.K.',nickName:'',clothSize:'L',kioskPwd:'2222',dob:'2004-04-11',address:'14 Glenwood Court, Farnborough, GU14 7TB',niNo:'TK 30 34 61 B',eVisa:'',mobile:'',startDate:'2024-03-01',leftDate:'',rate:12.5,sortCode:'77-49-22',accountNo:'26518968',email:'',memo:'',active:true},
+    {id:'s14',storeId:'TBR',name:'Mr. Avinaya Rai',nickName:'',clothSize:'M',kioskPwd:'1212',dob:'1999-06-30',address:'34 Dwyer Road, Reading, RG30 3PN',niNo:'TL812621B',eVisa:'',mobile:'07440 714 416',startDate:'2023-08-01',leftDate:'',rate:13,sortCode:'20-71-03',accountNo:'63332438',email:'iamavinaya69@gmail.com',memo:'',active:true},
+    {id:'s15',storeId:'TBR',name:'Ms. Diksha Rai',nickName:'',clothSize:'S',kioskPwd:'1212',dob:'2005-06-01',address:'38 Beresford Road, Reading, RG30 1BX',niNo:'TK740551D',eVisa:'',mobile:'07778 417 997',startDate:'2023-08-13',leftDate:'',rate:12,sortCode:'77-66-73',accountNo:'00130894',email:'dikshabantawa2345@gmail.com',memo:'',active:true},
+    {id:'s16',storeId:'TBR',name:'Ms. Shuva Chapagai',nickName:'',clothSize:'S',kioskPwd:'1223',dob:'1996-08-02',address:'17 Walnut Way, Tilehurst, RG30 4TD',niNo:'NJ565252A',eVisa:'',mobile:'0777 682 2993',startDate:'2023-08-01',leftDate:'',rate:13,sortCode:'30-67-99',accountNo:'75460668',email:'shuvachapagai@gmail.com',memo:'',active:true},
+    {id:'s17',storeId:'TBR',name:'Mr. Ashok Bhandari',nickName:'',clothSize:'XL',kioskPwd:'2322',dob:'1995-01-13',address:'93 Liverpool Road, Reading, RG1 3PN',niNo:'TK557314C',eVisa:'',mobile:'07769 010 211',startDate:'2023-08-22',leftDate:'',rate:13,sortCode:'30-90-43',accountNo:'63726068',email:'ashook1995@gmail.com',memo:'',active:true},
+    {id:'s18',storeId:'TBR',name:'Mrs. Naina Kala Ghale',nickName:'',clothSize:'S',kioskPwd:'2322',dob:'1986-05-12',address:'55 Mason Street, Reading, RG1 7PD',niNo:'NJ544552A',eVisa:'SPM M24 5N3',mobile:'07465856894',startDate:'2023-10-14',leftDate:'',rate:12.5,sortCode:'04-00-04',accountNo:'72331444',email:'nainaghale12@gmail.com',memo:'',active:true},
+    {id:'s19',storeId:'TBR',name:'Ms. Teena Ale',nickName:'',clothSize:'S',kioskPwd:'2344',dob:'2005-12-05',address:'55 Mason Street, Reading, RG1 7PD',niNo:'TJ818150C',eVisa:'WYW 434 54E',mobile:'07984236439',startDate:'2023-11-26',leftDate:'',rate:10.5,sortCode:'',accountNo:'51917707',email:'teenaale2@gmail.com',memo:'',active:true},
+    {id:'s20',storeId:'TBR',name:'Mr. Saroj Ale',nickName:'',clothSize:'L',kioskPwd:'4433',dob:'2008-01-17',address:'77 Norfolk Road, Reading, RG30 2EG',niNo:'RZ082840A',eVisa:'WMF A6C 5BN',mobile:'07853750380',startDate:'2025-01-03',leftDate:'',rate:12,sortCode:'04-00-03',accountNo:'86776795',email:'sarojale@gmail.com',memo:'',active:true},
+    {id:'s21',storeId:'TBB',name:'Mr. Mukesh Lamsal',nickName:'',clothSize:'XL',kioskPwd:'1234',dob:'1992-09-24',address:'93 Liverpool Road, Reading, RG1 3PN',niNo:'TJ366399D',eVisa:'',mobile:'07503 382 305',startDate:'2025-07-18',leftDate:'',rate:13,sortCode:'30-67-99',accountNo:'87414660',email:'mukeshlamsal111@gmail.com',memo:'',active:true},
+    {id:'s22',storeId:'TBB',name:'Mrs. Jayanti Bhatta',nickName:'',clothSize:'M',kioskPwd:'3232',dob:'1994-10-23',address:'6 Bouverie Street, Easton, Bristol, BS5 0RS',niNo:'TJ642875D',eVisa:'WHC K64 6C9',mobile:'07459 028 504',startDate:'2025-07-18',leftDate:'',rate:12.5,sortCode:'77-77-52',accountNo:'67762928',email:'jayantibhatta75@gmail.com',memo:'',active:true},
+    {id:'s23',storeId:'TBB',name:'Mr. Soe Thiha Maung',nickName:'',clothSize:'M',kioskPwd:'2323',dob:'2000-04-04',address:'14 Orchard Gardens, Bristol, BS15 9UA',niNo:'RZ474071D',eVisa:'',mobile:'07553 381 469',startDate:'2025-08-05',leftDate:'',rate:12.5,sortCode:'',accountNo:'5016851',email:'SoeThiaMaung13@gmail.com',memo:'',active:true},
+    {id:'s24',storeId:'TBB',name:'Miss. Thi Ri May',nickName:'',clothSize:'S',kioskPwd:'2323',dob:'2003-11-14',address:'14 Orchard Gardens, Bristol, BS15 9UA',niNo:'TJ083444A',eVisa:'WW8 L8Z 58J',mobile:'07501 726 872',startDate:'2025-07-18',leftDate:'',rate:12.5,sortCode:'30-62-96',accountNo:'48833663',email:'thirimaythonethone@gmail.com',memo:'',active:true},
+    {id:'s25',storeId:'TBB',name:'Miss. Kai Qi Koh',nickName:'',clothSize:'S',kioskPwd:'2323',dob:'2003-05-19',address:'Studio 16, Stonebridge House, Colston Ave, Bristol BS1 4TN',niNo:'D6785568',eVisa:'SF3 T9W 5NZ',mobile:'07535 616 619',startDate:'2025-07-18',leftDate:'',rate:12.5,sortCode:'40-14-03',accountNo:'83893456',email:'charlottekoh03@gmail.com',memo:'',active:true},
+    {id:'s26',storeId:'TBB',name:'Mr. Timothy Chung',nickName:'',clothSize:'M',kioskPwd:'4432',dob:'2006-07-08',address:'13 Osborne Villas, Bristol, BS2 8BP',niNo:'TH444989B',eVisa:'W3K TL7 6CT',mobile:'07300 894 746',startDate:'2025-07-18',leftDate:'',rate:11,sortCode:'04-00-03',accountNo:'75584464',email:'',memo:'',active:true}
   ],
   Attendance: [],
+  Suppliers: [
+    {id:'sup1',name:'Pan Asia',email:'',phone:'',address:'',website:'',memo:'',active:true},
+    {id:'sup2',name:'Wismettac Harro',email:'',phone:'',address:'',website:'https://b2b.wismettac.co.uk',memo:'',active:true},
+    {id:'sup3',name:'Korea Foods',email:'',phone:'',address:'',website:'',memo:'',active:true},
+    {id:'sup4',name:'JJ Food Service',email:'',phone:'',address:'',website:'https://www.jjfoodservice.com',memo:'',active:true},
+    {id:'sup5',name:'AtoZ Catering',email:'',phone:'',address:'',website:'https://www.atoz-catering.co.uk',memo:'',active:true},
+    {id:'sup6',name:'Sing-Kee',email:'',phone:'',address:'',website:'https://singkeefoods.co.uk',memo:'',active:true},
+    {id:'sup7',name:'N&B',email:'',phone:'',address:'',website:'',memo:'',active:true},
+    {id:'sup8',name:'Magna',email:'',phone:'',address:'',website:'',memo:'',active:true},
+    {id:'sup9',name:'Amazon',email:'',phone:'',address:'',website:'https://www.amazon.co.uk',memo:'',active:true}
+  ],
   StockTemplate: [
-    {id:'t1',category:'Dry Stock',name:'Susi Rice 20kg',unit:'Bag',min:4},{id:'t2',category:'Dry Stock',name:'Jasmine Rice 20kg',unit:'Pack',min:2},
-    {id:'t3',category:'Dry Stock',name:'Sweet Potato Noodles 14kg',unit:'Box',min:2},{id:'t4',category:'Dry Stock',name:'Bread Crumbs 10kg',unit:'Box',min:2},
-    {id:'t5',category:'Dry Stock',name:'Flour 16kg',unit:'Bag',min:2},{id:'t6',category:'Dry Stock',name:'Potato Starch',unit:'Bag',min:1},
-    {id:'t7',category:'Dry Stock',name:'Sugar 25kg',unit:'Bag',min:2},{id:'t8',category:'Dry Stock',name:'Salt 12.5kg',unit:'Bag',min:1},
-    {id:'t9',category:'Dry Stock',name:'Corn Flour 3kg',unit:'Pack',min:1},{id:'t10',category:'Dry Stock',name:'MSG 18kg',unit:'Bag',min:1},
-    {id:'t11',category:'Dry Stock',name:'Chilli Powder 15kg',unit:'Box',min:1},{id:'t12',category:'Dry Stock',name:'Jave Curry 20kg',unit:'Box',min:1},
-    {id:'t13',category:'Dry Stock',name:'Sesame Seed 1kg',unit:'Pack',min:2},{id:'t14',category:'Dry Stock',name:'Garlic Flakes 1kg',unit:'Pack',min:2},
-    {id:'t15',category:'Dry Stock',name:'Black Pepper 400g',unit:'Pack',min:2},{id:'t16',category:'Dry Stock',name:'Extra Hot Chilli 400g',unit:'Pack',min:2},
-    {id:'t17',category:'Dry Stock',name:'Soy Sauce 15L',unit:'Pcs',min:2},{id:'t18',category:'Dry Stock',name:'Go Chu Jang 14kg',unit:'Pcs',min:2},
-    {id:'t19',category:'Dry Stock',name:'Mirine 10L',unit:'Pcs',min:2},{id:'t20',category:'Dry Stock',name:'Golden Syrup 15kg',unit:'Ctn',min:4},
-    {id:'t21',category:'Dry Stock',name:'Sesame Oil 2L',unit:'Pcs',min:1},{id:'t22',category:'Dry Stock',name:'Udon Sauce 1.5L',unit:'Pcs',min:2},
-    {id:'t23',category:'Dry Stock',name:'Vinegar 5L',unit:'Pcs',min:2},{id:'t24',category:'Dry Stock',name:'Tomato Ketchup 8L',unit:'Ctn',min:4},
-    {id:'t25',category:'Dry Stock',name:'Mayonnaise 10kg',unit:'Pcs',min:2},{id:'t26',category:'Dry Stock',name:'Sriracha Sauce (730ml×6)',unit:'Box',min:1},
-    {id:'t27',category:'Dry Stock',name:'Lime Juice 1L',unit:'Pcs',min:6},{id:'t28',category:'Dry Stock',name:'Yellow Radish 1kg',unit:'Pack',min:2},
-    {id:'t29',category:'Dry Stock',name:'Rapeseed Oil 20L',unit:'Box',min:1},{id:'t30',category:'Dry Stock',name:'Baking Powder',unit:'Pack',min:2},
-    {id:'t31',category:'Dry Stock',name:'Ginger Powder',unit:'Pcs',min:1},{id:'t32',category:'Dry Stock',name:'Dried Seaweed 500g',unit:'Pcs',min:1},
-    {id:'t33',category:'Dry Stock',name:'Crazy Hot Sauce',unit:'Pcs',min:2},{id:'t34',category:'Dry Stock',name:'Wine',unit:'Pcs',min:1},
-    {id:'t35',category:'Treestone Stock',name:'Fresh Chicken Thigh',unit:'Kg',min:80},{id:'t36',category:'Treestone Stock',name:'Sliced Beef Bulgogi Chuck',unit:'Pack',min:4},
-    {id:'t37',category:'Treestone Stock',name:'Pork Collar',unit:'Pack',min:6},{id:'t38',category:'Treestone Stock',name:'White Cabbage',unit:'Kg',min:4},
-    {id:'t39',category:'Treestone Stock',name:'Red Cabbage',unit:'Pcs',min:1},{id:'t40',category:'Treestone Stock',name:'Onions',unit:'Bag',min:1},
-    {id:'t41',category:'Treestone Stock',name:'Carrots',unit:'Bag',min:1},{id:'t42',category:'Treestone Stock',name:'Spring Onion',unit:'Pack',min:1},
-    {id:'t43',category:'Treestone Stock',name:'Egg (60 Ea)',unit:'Box',min:2},{id:'t44',category:'Treestone Stock',name:'Spinach',unit:'Pack',min:10},
-    {id:'t45',category:'Treestone Stock',name:'Beansprout',unit:'Pack',min:10},{id:'t46',category:'Treestone Stock',name:'Courgettes',unit:'Pack',min:10},
-    {id:'t47',category:'Treestone Stock',name:'Mushroom',unit:'Pack',min:10},{id:'t48',category:'Treestone Stock',name:'Tofu',unit:'Box',min:1},
-    {id:'t49',category:'Treestone Stock',name:'Fresh Garlic Peeled',unit:'Kg',min:1}
+    {id:'t1',category:'Dry Stock',name:'Susi Rice 20kg',unit:'Bag',min:4,sortOrder:1},{id:'t2',category:'Dry Stock',name:'Jasmine Rice 20kg',unit:'Pack',min:2,sortOrder:2},
+    {id:'t3',category:'Dry Stock',name:'Sweet Potato Noodles 14kg',unit:'Box',min:2,sortOrder:3},{id:'t4',category:'Dry Stock',name:'Bread Crumbs 10kg',unit:'Box',min:2,sortOrder:4},
+    {id:'t5',category:'Dry Stock',name:'Flour 16kg',unit:'Bag',min:2,sortOrder:5},{id:'t6',category:'Dry Stock',name:'Potato Starch',unit:'Bag',min:1,sortOrder:6},
+    {id:'t7',category:'Dry Stock',name:'Sugar 25kg',unit:'Bag',min:2,sortOrder:7},{id:'t8',category:'Dry Stock',name:'Salt 12.5kg',unit:'Bag',min:1,sortOrder:8},
+    {id:'t9',category:'Dry Stock',name:'Corn Flour 3kg',unit:'Pack',min:1,sortOrder:9},{id:'t10',category:'Dry Stock',name:'MSG 18kg',unit:'Bag',min:1,sortOrder:10},
+    {id:'t11',category:'Dry Stock',name:'Chilli Powder 15kg',unit:'Box',min:1,sortOrder:11},{id:'t12',category:'Dry Stock',name:'Jave Curry 20kg',unit:'Box',min:1,sortOrder:12},
+    {id:'t13',category:'Dry Stock',name:'Sesame Seed 1kg',unit:'Pack',min:2,sortOrder:13},{id:'t14',category:'Dry Stock',name:'Garlic Flakes 1kg',unit:'Pack',min:2,sortOrder:14},
+    {id:'t15',category:'Dry Stock',name:'Black Pepper 400g',unit:'Pack',min:2,sortOrder:15},{id:'t16',category:'Dry Stock',name:'Extra Hot Chilli 400g',unit:'Pack',min:2,sortOrder:16},
+    {id:'t17',category:'Dry Stock',name:'Soy Sauce 15L',unit:'Pcs',min:2,sortOrder:17},{id:'t18',category:'Dry Stock',name:'Go Chu Jang 14kg',unit:'Pcs',min:2,sortOrder:18},
+    {id:'t19',category:'Dry Stock',name:'Mirine 10L',unit:'Pcs',min:2,sortOrder:19},{id:'t20',category:'Dry Stock',name:'Golden Syrup 15kg',unit:'Ctn',min:4,sortOrder:20},
+    {id:'t21',category:'Dry Stock',name:'Sesame Oil 2L',unit:'Pcs',min:1,sortOrder:21},{id:'t22',category:'Dry Stock',name:'Udon Sauce 1.5L',unit:'Pcs',min:2,sortOrder:22},
+    {id:'t23',category:'Dry Stock',name:'Vinegar 5L',unit:'Pcs',min:2,sortOrder:23},{id:'t24',category:'Dry Stock',name:'Tomato Ketchup 8L',unit:'Ctn',min:4,sortOrder:24},
+    {id:'t25',category:'Dry Stock',name:'Mayonnaise 10kg',unit:'Pcs',min:2,sortOrder:25},{id:'t26',category:'Dry Stock',name:'Sriracha Sauce (730ml×6)',unit:'Box',min:1,sortOrder:26},
+    {id:'t27',category:'Dry Stock',name:'Lime Juice 1L',unit:'Pcs',min:6,sortOrder:27},{id:'t28',category:'Dry Stock',name:'Yellow Radish 1kg',unit:'Pack',min:2,sortOrder:28},
+    {id:'t29',category:'Dry Stock',name:'Rapeseed Oil 20L',unit:'Box',min:1,sortOrder:29},{id:'t30',category:'Dry Stock',name:'Baking Powder',unit:'Pack',min:2,sortOrder:30},
+    {id:'t31',category:'Dry Stock',name:'Ginger Powder',unit:'Pcs',min:1,sortOrder:31},{id:'t32',category:'Dry Stock',name:'Dried Seaweed 500g',unit:'Pcs',min:1,sortOrder:32},
+    {id:'t33',category:'Dry Stock',name:'Crazy Hot Sauce',unit:'Pcs',min:2,sortOrder:33},{id:'t34',category:'Dry Stock',name:'Wine',unit:'Pcs',min:1,sortOrder:34},
+    {id:'t35',category:'Treestone Stock',name:'Fresh Chicken Thigh',unit:'Kg',min:80,sortOrder:101},{id:'t36',category:'Treestone Stock',name:'Sliced Beef Bulgogi Chuck',unit:'Pack',min:4,sortOrder:102},
+    {id:'t37',category:'Treestone Stock',name:'Pork Collar',unit:'Pack',min:6,sortOrder:103},{id:'t38',category:'Treestone Stock',name:'White Cabbage',unit:'Kg',min:4,sortOrder:104},
+    {id:'t39',category:'Treestone Stock',name:'Red Cabbage',unit:'Pcs',min:1,sortOrder:105},{id:'t40',category:'Treestone Stock',name:'Onions',unit:'Bag',min:1,sortOrder:106},
+    {id:'t41',category:'Treestone Stock',name:'Carrots',unit:'Bag',min:1,sortOrder:107},{id:'t42',category:'Treestone Stock',name:'Spring Onion',unit:'Pack',min:1,sortOrder:108},
+    {id:'t43',category:'Treestone Stock',name:'Egg (60 Ea)',unit:'Box',min:2,sortOrder:109},{id:'t44',category:'Treestone Stock',name:'Spinach',unit:'Pack',min:10,sortOrder:110},
+    {id:'t45',category:'Treestone Stock',name:'Beansprout',unit:'Pack',min:10,sortOrder:111},{id:'t46',category:'Treestone Stock',name:'Courgettes',unit:'Pack',min:10,sortOrder:112},
+    {id:'t47',category:'Treestone Stock',name:'Mushroom',unit:'Pack',min:10,sortOrder:113},{id:'t48',category:'Treestone Stock',name:'Tofu',unit:'Box',min:1,sortOrder:114},
+    {id:'t49',category:'Treestone Stock',name:'Fresh Garlic Peeled',unit:'Kg',min:1,sortOrder:115}
   ],
   StoreStock: []
 };
@@ -325,13 +457,41 @@ DEFAULT_DATA.Stores.forEach(store => {
 });
 
 // ==================== DATA LAYER ====================
-const D = { Users:[], Stores:[], Staff:[], Attendance:[], StockTemplate:[], StoreStock:[] };
+const D = { Users:[], Stores:[], Staff:[], Attendance:[], Suppliers:[], StockTemplate:[], StoreStock:[], StockCount:[], WeeklySales:[] };
+
+// Canonical field names — must match Apps Script SHEETS definition exactly
+const FIELD_SCHEMA = {
+  Users:['id','username','password','name','role','email','storeId','permissions'],
+  Stores:['id','code','name','company','companyNo','vatNo','address','phone','email','manager','memo','active'],
+  Staff:['id','storeId','name','nickName','clothSize','kioskPwd','dob','address','niNo','eVisa','mobile','startDate','leftDate','rate','sortCode','accountNo','email','memo','active'],
+  Attendance:['id','staffId','storeId','date','clockIn','clockOut','photoIn','photoOut','source'],
+  Suppliers:['id','name','email','phone','address','website','memo','active'],
+  StockTemplate:['id','category','name','unit','min','sortOrder','supplier1','supplier2','supplier3','memo'],
+  StoreStock:['storeId','itemId','category','name','unit','min','qty'],
+  StockCount:['id','storeId','week','countDate','itemId','category','name','unit','qty','submittedBy','submittedAt'],
+  WeeklySales:['id','storeId','week','weekStart','totalSales','notes','submittedBy','submittedAt']
+};
+// Normalize row keys: "Nick Name" → "nickName", "Left Date" → "leftDate"
+function normalizeRow(sheetName, row) {
+  const schema = FIELD_SCHEMA[sheetName];
+  if (!schema) return row;
+  const normLookup = {};
+  for (const key in row) {
+    normLookup[key.replace(/[\s_\-]+/g, '').toLowerCase()] = row[key];
+  }
+  const result = {};
+  for (const canonical of schema) {
+    const normKey = canonical.replace(/[\s_\-]+/g, '').toLowerCase();
+    result[canonical] = normLookup[normKey] !== undefined ? normLookup[normKey] : '';
+  }
+  return result;
+}
 const LS = {
   get(k) { try { return JSON.parse(localStorage.getItem('tbms_'+k)); } catch(e) { return null; } },
   set(k, v) { localStorage.setItem('tbms_'+k, JSON.stringify(v)); },
   getConfig() { return this.get('config') || {}; }
 };
-const CLOUD_URL = 'https://script.google.com/macros/s/AKfycby4-TUEUu3VUpKNIGXH4HlFzbvSUgaP18QfDN4RKzrzJ17OKqO8Uygh9o6JmqfhelGI/exec';
+const CLOUD_URL = 'https://script.google.com/macros/s/AKfycbyLDhT4YaaqkIVUPPX42JEADYfgkZosd1tL7mRAGaicrUHMR8TR8TolZAJOvlT063IT/exec';
 const API = {
   url: CLOUD_URL, mode: 'cloud',
   async get(action, params={}) {
@@ -384,20 +544,35 @@ async function loadAllData() {
   showLoading('Loading data...');
   if (API.mode === 'cloud') {
     const result = await API.get('getAll');
+    console.log('[TBMS] Server response keys:', result ? Object.keys(result.data||{}) : 'NO RESULT');
+    console.log('[TBMS] Server Suppliers count:', result?.data?.Suppliers?.length ?? 'NOT IN RESPONSE');
+    if (result && result.error) console.error('[TBMS] Server error:', result.error);
     if (result && result.data && !result.error) {
       let loaded = false;
       for (let sheet in result.data) {
         if (Array.isArray(result.data[sheet]) && result.data[sheet].length > 0) {
-          D[sheet] = result.data[sheet]; LS.set(sheet, D[sheet]); loaded = true;
+          D[sheet] = result.data[sheet].map(r => normalizeRow(sheet, r));
+          LS.set(sheet, D[sheet]); loaded = true;
+          console.log(`[TBMS] Loaded ${sheet}: ${D[sheet].length} rows`);
         }
       }
-      if (loaded) { hideLoading(); updateSyncStatus('online'); return true; }
+      if (loaded) {
+        // Fill any sheets still empty from localStorage
+        for (let sheet in D) {
+          if (D[sheet].length === 0) {
+            const local = LS.get(sheet);
+            if (local && local.length > 0) { D[sheet] = local.map(r => normalizeRow(sheet, r)); console.log(`[TBMS] ${sheet}: filled from localStorage (${D[sheet].length} rows)`); }
+            else console.warn(`[TBMS] ${sheet}: EMPTY (not from server, not in localStorage)`);
+          }
+        }
+        hideLoading(); updateSyncStatus('online'); return true;
+      }
     }
   }
   // Fallback to localStorage
   for (let sheet in D) {
     const local = LS.get(sheet);
-    if (local && local.length > 0) D[sheet] = local;
+    if (local && local.length > 0) D[sheet] = local.map(r => normalizeRow(sheet, r));
   }
   hideLoading(); updateSyncStatus('offline'); return true;
 }
@@ -475,9 +650,13 @@ function doLogin() {
     $('loginPage').classList.add('hidden');
     $('mainApp').classList.remove('hidden');
     $('userName').textContent = user.name;
-    $('userRole').textContent = user.role === 'admin' ? 'Administrator' : 'Manager';
+    $('userRole').textContent = getRoleLabel(user.role);
     $('userAvatar').textContent = user.name.charAt(0).toUpperCase();
-    navigate('dashboard'); toast('Welcome, ' + user.name + '!', 'success');
+    applyPermissions();
+    // Navigate to first permitted page
+    const firstPage=ALL_PAGES.find(p=>hasPermission(p.id));
+    navigate(firstPage?firstPage.id:'dashboard');
+    toast('Welcome, ' + user.name + '!', 'success');
   } else { toast('Invalid username or password', 'error'); }
 }
 function doLogout() { currentUser=null;$('mainApp').classList.add('hidden');$('loginPage').classList.remove('hidden');$('loginUser').value='';$('loginPass').value=''; }
@@ -486,14 +665,23 @@ $('loginUser').addEventListener('keydown',e=>{if(e.key==='Enter')$('loginPass').
 
 // ==================== NAVIGATION ====================
 function toggleSidebar() { $('sidebar').classList.toggle('open');$('sidebarOverlay').classList.toggle('show'); }
-const pageTitles={dashboard:'Dashboard',stores:'Store Management',users:'User Management',staff:'Staff Management',attendance:'Attendance Records',payroll:'Payroll',stock:'Stock Management',orders:'Order List',settings:'Settings'};
+function toggleMenuGroup(el){el.parentElement.classList.toggle('open');}
+const pageTitles={dashboard:'Dashboard',stores:'Store Management',users:'User Management',staff:'Staff List',attendance:'Attendance Records',payroll:'Payroll',stock:'Stock Management','stock-count':'Weekly Stock Count','stock-history':'Count History',sales:'Weekly Sales',analytics:'Usage Analytics',orders:'Order List',suppliers:'Supplier Management',settings:'General Settings'};
 let currentPage='dashboard';
 function navigate(page) {
+  // Permission check
+  if(!hasPermission(page)){toast('Access denied','error');return;}
   currentPage=page;
   if(attAutoRefresh&&page!=='attendance'){clearInterval(attAutoRefresh);attAutoRefresh=null;}
   if(dashAutoRefresh&&page!=='dashboard'){clearInterval(dashAutoRefresh);dashAutoRefresh=null;}
   $('pageTitle').textContent=pageTitles[page]||page;
-  document.querySelectorAll('.menu-item').forEach((el,i)=>{el.classList.toggle('active',el.textContent.trim().toLowerCase().includes(page==='dashboard'?'dashboard':page));});
+  // Update active menu state
+  document.querySelectorAll('.menu-item[data-page]').forEach(el=>{el.classList.toggle('active',el.dataset.page===page);});
+  // Auto-open parent group of active sub-item
+  document.querySelectorAll('.menu-group').forEach(g=>{
+    const hasSub=g.querySelector('.menu-item.sub.active');
+    if(hasSub)g.classList.add('open');
+  });
   if(window.innerWidth<=1024){$('sidebar').classList.remove('open');$('sidebarOverlay').classList.remove('show');}
   renderPage(page);
 }
@@ -509,7 +697,12 @@ function renderPage(page) {
     case 'attendance': renderAttendance(c); break;
     case 'payroll': renderPayroll(c); break;
     case 'stock': renderStock(c); break;
+    case 'stock-count': renderStockCount(c); break;
+    case 'stock-history': renderStockHistory(c); break;
+    case 'sales': renderSalesInput(c); break;
+    case 'analytics': renderAnalytics(c); break;
     case 'orders': renderOrders(c); break;
+    case 'suppliers': renderSuppliers(c); break;
     case 'settings': renderSettings(c); break;
     default: c.innerHTML='<p>Page not found</p>';
   }
@@ -534,42 +727,54 @@ function renderDashboard(c) {
   dashAutoRefresh=setInterval(refreshDashboard,30000);
 }
 function renderDashboardContent() {
-  const activeStaff = D.Staff.filter(s=>s.active!==false).length;
+  const myStores=getAccessibleStores();
+  const myStoreIds=myStores.map(s=>s.id);
+  const activeStaff = D.Staff.filter(s=>s.active!==false&&myStoreIds.includes(s.storeId)).length;
   const today = new Date().toISOString().split('T')[0];
-  const todayAtt = D.Attendance.filter(a=>a.date===today);
+  const todayAtt = D.Attendance.filter(a=>a.date===today&&hasStoreAccess(a.storeId));
   const working = todayAtt.filter(a=>a.clockIn&&!a.clockOut);
   const clockedIn = working.length;
   $('dashContent').innerHTML=`
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
       <span style="font-size:12px;color:var(--text-light)"><i class="fas fa-sync"></i> Auto-refresh: 30s</span>
-      <button class="btn btn-sm btn-success" onclick="refreshDashboard()"><i class="fas fa-sync"></i> Refresh Now</button>
+      <button class="btn btn-sm btn-primary" onclick="refreshDashboard()"><i class="fas fa-sync"></i> Refresh Now</button>
     </div>
     <div class="stats-grid">
-      <div class="stat-card"><div class="stat-icon blue"><i class="fas fa-store"></i></div><div class="stat-info"><div class="stat-num">${D.Stores.length}</div><div class="stat-label">Stores</div></div></div>
+      <div class="stat-card"><div class="stat-icon blue"><i class="fas fa-store"></i></div><div class="stat-info"><div class="stat-num">${myStores.length}</div><div class="stat-label">Stores</div></div></div>
       <div class="stat-card"><div class="stat-icon green"><i class="fas fa-user-tie"></i></div><div class="stat-info"><div class="stat-num">${activeStaff}</div><div class="stat-label">Active Staff</div></div></div>
       <div class="stat-card"><div class="stat-icon orange"><i class="fas fa-clock"></i></div><div class="stat-info"><div class="stat-num">${clockedIn}</div><div class="stat-label">Clocked In Now</div></div></div>
       <div class="stat-card"><div class="stat-icon purple"><i class="fas fa-boxes-stacked"></i></div><div class="stat-info"><div class="stat-num">${D.StockTemplate.length}</div><div class="stat-label">Stock Items</div></div></div>
     </div>
-    ${clockedIn>0?`<div class="card" style="border-left:4px solid var(--success)"><div class="card-header"><h3><i class="fas fa-user-clock" style="color:var(--success)"></i> Currently Working (${clockedIn})</h3></div>
-    <div class="table-wrap"><table><thead><tr><th>Staff</th><th>Store</th><th>Clock In</th><th>Working</th></tr></thead><tbody>
-    ${working.map(a=>{
-      const s=D.Staff.find(x=>String(x.id)===String(a.staffId));
-      const store=D.Stores.find(x=>String(x.id)===String(a.storeId));
-      const cin=parseTime(a.clockIn);
-      let dur='-';
-      if(cin){const[h,m]=cin.split(':').map(Number);const now=new Date();const mins=now.getHours()*60+now.getMinutes()-h*60-m;if(mins>=0){const hh=Math.floor(mins/60);const mm=mins%60;dur=hh+'h '+mm+'m';}}
-      return`<tr><td><strong>${s?escHtml(s.name):a.staffId}</strong></td><td>${store?escHtml(store.name):a.storeId}</td><td><span class="badge badge-success">${cin||'-'}</span></td><td><span class="badge badge-info">${dur}</span></td></tr>`;
-    }).join('')}
-    </tbody></table></div></div>`
-    :`<div class="card" style="border-left:4px solid var(--border);text-align:center;padding:32px;color:var(--text-light)"><i class="fas fa-moon" style="font-size:32px;margin-bottom:12px;display:block"></i>No staff currently working</div>`}
+    ${clockedIn>0?`<div class="card" style="padding:16px;margin-bottom:16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><h3 style="font-size:15px;font-weight:600"><i class="fas fa-user-clock" style="color:var(--accent)"></i> Currently Working (${clockedIn})</h3></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px">
+      ${myStores.map(store=>{
+        const sw=working.filter(a=>String(a.storeId)===String(store.id));
+        if(!sw.length)return'';
+        return`<div style="background:var(--pink-bg);border-radius:10px;padding:10px 12px;border-left:3px solid var(--accent)">
+          <div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:6px"><i class="fas fa-store"></i> ${escHtml(store.name)} (${sw.length})</div>
+          ${sw.map(a=>{
+            const s=D.Staff.find(x=>String(x.id)===String(a.staffId));
+            const cin=parseTime(a.clockIn);
+            let dur='-';
+            if(cin){const[h,m]=cin.split(':').map(Number);const now=new Date();const mins=now.getHours()*60+now.getMinutes()-h*60-m;if(mins>=0){const hh=Math.floor(mins/60);const mm=mins%60;dur=hh+'h '+mm+'m';}}
+            return`<div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;padding:3px 0;${sw.indexOf(a)<sw.length-1?'border-bottom:1px solid rgba(232,67,147,.1)':''}">
+              <span style="font-weight:500">${s?escHtml(s.name):a.staffId}</span>
+              <span style="color:var(--text-light);font-size:11px">${cin||'-'} ${dur!=='-'?'('+dur+')':''}</span>
+            </div>`;
+          }).join('')}
+        </div>`;
+      }).join('')}
+      </div></div>`
+    :`<div class="card" style="text-align:center;padding:24px;color:var(--text-light)"><i class="fas fa-moon" style="font-size:24px;margin-bottom:8px;display:block;opacity:.4"></i><span style="font-size:13px">No staff currently working</span></div>`}
     <div class="card"><div class="card-header"><h3>Stores Overview</h3></div>
     <div class="table-wrap"><table><thead><tr><th>Store</th><th>Staff</th><th>Working Now</th><th>Today Total</th></tr></thead><tbody>
-    ${D.Stores.map(s=>{
+    ${myStores.map(s=>{
       const storeWorking=working.filter(a=>String(a.storeId)===String(s.id));
       const storeTotal=todayAtt.filter(a=>String(a.storeId)===String(s.id));
       return`<tr><td><strong>${escHtml(s.name)}</strong><br><small style="color:var(--text-light)">${escHtml(s.address)}</small></td>
       <td>${D.Staff.filter(st=>String(st.storeId)===String(s.id)&&st.active!==false).length}</td>
-      <td>${storeWorking.length>0?`<span class="badge badge-success">${storeWorking.length} working</span>`:`<span class="badge" style="background:#f5f5f5;color:#999">0</span>`}</td>
+      <td>${storeWorking.length>0?`<span class="badge badge-info">${storeWorking.length} working</span>`:`<span class="badge" style="background:#f5f5f5;color:#999">0</span>`}</td>
       <td>${storeTotal.length}</td></tr>`;
     }).join('')}
     </tbody></table></div></div>`;
@@ -578,16 +783,20 @@ function renderDashboardContent() {
 // ==================== STORES ====================
 function renderStores(c) {
   c.innerHTML=`<div class="card"><div class="card-header"><h3>Stores</h3><button class="btn btn-primary btn-sm" onclick="editStore()"><i class="fas fa-plus"></i> Add Store</button></div>
-  <div class="table-wrap"><table><thead><tr><th>Code</th><th>Name</th><th>Company</th><th>Address</th><th>Actions</th></tr></thead><tbody>
-  ${D.Stores.map(s=>`<tr><td><strong>${escHtml(s.code)}</strong></td><td>${escHtml(s.name)}</td><td>${escHtml(s.company)}</td><td>${escHtml(s.address)}</td>
+  <div class="table-wrap"><table><thead><tr><th>Code</th><th>Name</th><th>Company</th><th>Co. No / VAT</th><th>Address</th><th>Phone / Email</th><th>Actions</th></tr></thead><tbody>
+  ${D.Stores.map(s=>`<tr><td><strong>${escHtml(s.code)}</strong></td><td>${escHtml(s.name)}</td><td>${escHtml(s.company)}</td>
+  <td style="font-size:12px">${s.companyNo||'—'}<br><span style="color:var(--text-light)">${s.vatNo||''}</span></td>
+  <td style="font-size:13px">${escHtml(s.address)}</td>
+  <td style="font-size:12px">${s.phone||'—'}<br>${s.email?`<a href="mailto:${escHtml(s.email)}">${escHtml(s.email)}</a>`:''}</td>
   <td><button class="btn btn-sm btn-outline" onclick="editStore('${s.id}')"><i class="fas fa-edit"></i></button> <button class="btn btn-sm btn-accent" onclick="delStore('${s.id}')"><i class="fas fa-trash"></i></button></td></tr>`).join('')}
   </tbody></table></div></div>`;
 }
 function editStore(id) {
-  const s=id?D.Stores.find(x=>x.id===id):{id:'',code:'',name:'',company:'',companyNo:'',address:'',phone:'',email:'',manager:'',memo:'',active:true};
+  const s=id?D.Stores.find(x=>x.id===id):{id:'',code:'',name:'',company:'',companyNo:'',vatNo:'',address:'',phone:'',email:'',manager:'',memo:'',active:true};
   openModal(id?'Edit Store':'Add Store',`
     <div class="form-row"><div class="form-group"><label>Code</label><input id="mSC" value="${escHtml(s.code)}" ${id?'readonly':''}></div><div class="form-group"><label>Name</label><input id="mSN" value="${escHtml(s.name)}"></div></div>
     <div class="form-row"><div class="form-group"><label>Company</label><input id="mSCo" value="${escHtml(s.company)}"></div><div class="form-group"><label>Company No</label><input id="mSCn" value="${escHtml(s.companyNo)}"></div></div>
+    <div class="form-group"><label>VAT Number</label><input id="mSVat" value="${escHtml(s.vatNo||'')}" placeholder="e.g. GB123456789"></div>
     <div class="form-group"><label>Address</label><input id="mSA" value="${escHtml(s.address)}"></div>
     <div class="form-row"><div class="form-group"><label>Phone</label><input id="mSP" value="${escHtml(s.phone)}"></div><div class="form-group"><label>Email</label><input id="mSE" value="${escHtml(s.email)}"></div></div>
     <div class="form-group"><label>Manager</label><input id="mSM" value="${escHtml(s.manager)}"></div>
@@ -595,56 +804,117 @@ function editStore(id) {
     `<button class="btn btn-outline" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="saveStore('${id||''}')">Save</button>`);
 }
 async function saveStore(id) {
-  const s={id:id||$('mSC').value.trim().toUpperCase(),code:$('mSC').value.trim().toUpperCase(),name:$('mSN').value.trim(),company:$('mSCo').value.trim(),companyNo:$('mSCn').value.trim(),address:$('mSA').value.trim(),phone:$('mSP').value.trim(),email:$('mSE').value.trim(),manager:$('mSM').value.trim(),memo:$('mSMe').value.trim(),active:true};
+  const s={id:id||$('mSC').value.trim().toUpperCase(),code:$('mSC').value.trim().toUpperCase(),name:$('mSN').value.trim(),company:$('mSCo').value.trim(),companyNo:$('mSCn').value.trim(),vatNo:($('mSVat')?.value||'').trim(),address:$('mSA').value.trim(),phone:$('mSP').value.trim(),email:$('mSE').value.trim(),manager:$('mSM').value.trim(),memo:$('mSMe').value.trim(),active:true};
   if(!s.code||!s.name){toast('Code and Name required','error');return;}
   await saveRow('Stores',s); closeModal(); renderStores($('pageContent')); toast('Store saved','success');
 }
 async function delStore(id){if(!confirm('Delete this store?'))return;await deleteData('Stores',id);renderStores($('pageContent'));toast('Store deleted');}
 
 // ==================== USERS ====================
+const ROLE_BADGES={admin:'badge-info',senior_manager:'badge-warning',manager:'badge-success',account:'badge-danger'};
 function renderUsers(c) {
   c.innerHTML=`<div class="card"><div class="card-header"><h3>Users</h3><button class="btn btn-primary btn-sm" onclick="editUser()"><i class="fas fa-plus"></i> Add User</button></div>
-  <div class="table-wrap"><table><thead><tr><th>Username</th><th>Name</th><th>Role</th><th>Store</th><th>Actions</th></tr></thead><tbody>
-  ${D.Users.map(u=>`<tr><td>${escHtml(u.username)}</td><td>${escHtml(u.name)}</td><td><span class="badge ${u.role==='admin'?'badge-info':'badge-success'}">${u.role}</span></td>
-  <td>${u.storeId?(D.Stores.find(s=>String(s.id)===String(u.storeId))||{}).name||u.storeId:'All'}</td>
-  <td><button class="btn btn-sm btn-outline" onclick="editUser('${u.id}')"><i class="fas fa-edit"></i></button> <button class="btn btn-sm btn-accent" onclick="delUser('${u.id}')"><i class="fas fa-trash"></i></button></td></tr>`).join('')}
+  <div class="table-wrap"><table><thead><tr><th>Username</th><th>Name</th><th>Role</th><th>Stores</th><th>Menus</th><th>Actions</th></tr></thead><tbody>
+  ${D.Users.map(u=>{
+    const perms=getUserPermissions(u);
+    const permLabel=u.role==='admin'?'All':perms.length>0?perms.length+'/'+ALL_PAGES.length:'None';
+    const stores=getUserStores(u);
+    const storeLabel=u.role==='admin'||!u.storeId?'All':stores.map(sid=>{const s=D.Stores.find(x=>x.id===sid);return s?s.code:sid;}).join(', ')||'None';
+    return`<tr><td>${escHtml(u.username)}</td><td>${escHtml(u.name)}</td><td><span class="badge ${ROLE_BADGES[u.role]||'badge-success'}">${getRoleLabel(u.role)}</span></td>
+    <td><span style="font-size:12px">${storeLabel}</span></td>
+    <td><span style="font-size:12px;color:var(--text-light)">${permLabel}</span></td>
+    <td><button class="btn btn-sm btn-outline" onclick="editUser('${u.id}')"><i class="fas fa-edit"></i></button> <button class="btn btn-sm btn-accent" onclick="delUser('${u.id}')"><i class="fas fa-trash"></i></button></td></tr>`;
+  }).join('')}
   </tbody></table></div></div>`;
 }
 function editUser(id) {
-  const u=id?D.Users.find(x=>x.id===id):{id:'',username:'',password:'',name:'',role:'manager',email:'',storeId:''};
+  const u=id?D.Users.find(x=>x.id===id):{id:'',username:'',password:'',name:'',role:'manager',email:'',storeId:'',permissions:'dashboard'};
+  const perms=getUserPermissions(u);
+  const uStores=getUserStores(u);
+  const isAdmin=u.role==='admin';
   openModal(id?'Edit User':'Add User',`
     <div class="form-row"><div class="form-group"><label>Username</label><input id="mUU" value="${escHtml(u.username)}"></div><div class="form-group"><label>Password</label><input id="mUP" value="${escHtml(u.password)}"></div></div>
     <div class="form-row"><div class="form-group"><label>Name</label><input id="mUN" value="${escHtml(u.name)}"></div><div class="form-group"><label>Email</label><input id="mUE" value="${escHtml(u.email)}"></div></div>
-    <div class="form-row"><div class="form-group"><label>Role</label><select id="mUR"><option value="admin" ${u.role==='admin'?'selected':''}>Admin</option><option value="manager" ${u.role==='manager'?'selected':''}>Manager</option></select></div>
-    <div class="form-group"><label>Store</label><select id="mUS"><option value="">All Stores</option>${D.Stores.map(s=>`<option value="${s.id}" ${String(u.storeId)===String(s.id)?'selected':''}>${s.name}</option>`).join('')}</select></div></div>`,
+    <div class="form-row"><div class="form-group"><label>Role</label><select id="mUR" onchange="togglePermSection()">
+      ${ROLE_LABELS.map(([v,l])=>`<option value="${v}" ${u.role===v?'selected':''}>${l}</option>`).join('')}
+    </select></div><div class="form-group"></div></div>
+    <div id="permSection" style="${isAdmin?'display:none':''}">
+      <div class="perm-section">
+        <div class="perm-section-header"><h4><i class="fas fa-store" style="color:var(--accent)"></i> Store Access</h4><label onclick="toggleAllStores()"><i class="fas fa-check-double"></i> Toggle All</label></div>
+        <div class="perm-grid" style="grid-template-columns:1fr 1fr">
+          ${D.Stores.map(s=>`<label class="perm-item${uStores.includes(s.id)?' checked':''}" onclick="this.classList.toggle('checked')"><input type="checkbox" name="store" value="${s.id}" ${uStores.includes(s.id)?'checked':''}><i class="fas fa-store"></i>${escHtml(s.name)}</label>`).join('')}
+        </div>
+      </div>
+      <div class="perm-section" style="margin-top:12px">
+        <div class="perm-section-header"><h4><i class="fas fa-shield-halved" style="color:var(--accent)"></i> Menu Permissions</h4><label onclick="toggleAllPerms()"><i class="fas fa-check-double"></i> Toggle All</label></div>
+        <div class="perm-grid">
+          ${ALL_PAGES.map(p=>`<label class="perm-item${perms.includes(p.id)?' checked':''}" onclick="this.classList.toggle('checked')"><input type="checkbox" name="perm" value="${p.id}" ${perms.includes(p.id)?'checked':''}><i class="fas ${p.icon}"></i>${p.label}</label>`).join('')}
+        </div>
+      </div>
+    </div>`,
     `<button class="btn btn-outline" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="saveUser('${id||''}')">Save</button>`);
 }
+function togglePermSection(){
+  const role=$('mUR').value;
+  const sec=$('permSection');
+  if(sec)sec.style.display=role==='admin'?'none':'';
+}
+function toggleAllPerms(){
+  const boxes=document.querySelectorAll('input[name=perm]');
+  const allChecked=[...boxes].every(b=>b.checked);
+  boxes.forEach(b=>{b.checked=!allChecked;b.parentElement.classList.toggle('checked',!allChecked);});
+}
+function toggleAllStores(){
+  const boxes=document.querySelectorAll('input[name=store]');
+  const allChecked=[...boxes].every(b=>b.checked);
+  boxes.forEach(b=>{b.checked=!allChecked;b.parentElement.classList.toggle('checked',!allChecked);});
+}
 async function saveUser(id) {
-  const u={id:id||genId('u'),username:$('mUU').value.trim(),password:$('mUP').value,name:$('mUN').value.trim(),role:$('mUR').value,email:$('mUE').value.trim(),storeId:$('mUS').value};
+  const role=$('mUR').value;
+  let permissions='all',storeId='';
+  if(role!=='admin'){
+    const checkedPerms=[...document.querySelectorAll('input[name=perm]:checked')].map(b=>b.value);
+    permissions=checkedPerms.join(',');
+    const checkedStores=[...document.querySelectorAll('input[name=store]:checked')].map(b=>b.value);
+    storeId=checkedStores.join(',');
+  }
+  const u={id:id||genId('u'),username:$('mUU').value.trim(),password:$('mUP').value,name:$('mUN').value.trim(),role,email:$('mUE').value.trim(),storeId,permissions};
   if(!u.username||!u.password){toast('Username and Password required','error');return;}
   await saveRow('Users',u); closeModal(); renderUsers($('pageContent')); toast('User saved','success');
 }
 async function delUser(id){if(!confirm('Delete this user?'))return;await deleteData('Users',id);renderUsers($('pageContent'));toast('User deleted');}
 
 // ==================== STAFF ====================
-const sF={storeId:'',search:''};
+const sF={storeId:'',search:'',showLeft:false};
 function renderStaff(c) {
-  let staff=D.Staff.filter(s=>s.active!==false);
+  let staff=D.Staff.filter(s=>hasStoreAccess(s.storeId));
+  if(!sF.showLeft)staff=staff.filter(s=>s.active!==false);
   if(sF.storeId)staff=staff.filter(s=>String(s.storeId)===sF.storeId);
-  if(sF.search){const q=sF.search.toLowerCase();staff=staff.filter(s=>s.name.toLowerCase().includes(q));}
+  if(sF.search){const q=sF.search.toLowerCase();staff=staff.filter(s=>s.name.toLowerCase().includes(q)||(s.nickName||'').toLowerCase().includes(q));}
+  const activeCount=staff.filter(s=>s.active!==false).length;
+  const leftCount=staff.filter(s=>s.active===false).length;
   c.innerHTML=`<div class="filters">
-    <select onchange="sF.storeId=this.value;renderStaff($('pageContent'))"><option value="">All Stores</option>${D.Stores.map(s=>`<option value="${s.id}" ${sF.storeId===s.id?'selected':''}>${s.name}</option>`).join('')}</select>
+    <select onchange="sF.storeId=this.value;renderStaff($('pageContent'))"><option value="">All Stores</option>${getAccessibleStores().map(s=>`<option value="${s.id}" ${sF.storeId===s.id?'selected':''}>${s.name}</option>`).join('')}</select>
     <div class="search-box"><i class="fas fa-search"></i><input placeholder="Search staff..." value="${escHtml(sF.search)}" oninput="sF.search=this.value;renderStaff($('pageContent'))"></div>
+    <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;white-space:nowrap"><input type="checkbox" ${sF.showLeft?'checked':''} onchange="sF.showLeft=this.checked;renderStaff($('pageContent'))" style="accent-color:var(--accent)"> Show Left (${D.Staff.filter(s=>s.active===false&&hasStoreAccess(s.storeId)).length})</label>
     <button class="btn btn-primary btn-sm" onclick="editStaff()"><i class="fas fa-plus"></i> Add Staff</button></div>
-  <div class="card"><div class="table-wrap"><table><thead><tr><th>Name</th><th>Store</th><th>Rate</th><th>Mobile</th><th>Start Date</th><th>Actions</th></tr></thead><tbody>
-  ${staff.map(s=>{const store=D.Stores.find(x=>String(x.id)===String(s.storeId));return`<tr><td><strong>${escHtml(s.name)}</strong></td><td>${store?escHtml(store.name):s.storeId}</td><td>£${Number(s.rate).toFixed(2)}</td><td>${escHtml(s.mobile||'-')}</td><td>${fmtDate(s.startDate)}</td>
+  <div class="card"><div class="table-wrap"><table><thead><tr><th>Name</th><th>Nick Name</th><th>Store</th><th>Status</th><th>Rate</th><th>Start</th><th>Actions</th></tr></thead><tbody>
+  ${staff.map(s=>{const store=D.Stores.find(x=>String(x.id)===String(s.storeId));const isLeft=s.active===false;return`<tr style="${isLeft?'opacity:.5':''}"><td><strong>${escHtml(s.name)}</strong></td><td>${escHtml(s.nickName||'-')}</td><td>${store?escHtml(store.name):s.storeId}</td>
+  <td>${isLeft?`<span class="badge badge-danger">Left${s.leftDate?' '+fmtDate(s.leftDate):''}</span>`:`<span class="badge badge-success">Active</span>`}</td>
+  <td>£${Number(s.rate).toFixed(2)}</td><td>${fmtDate(s.startDate)}</td>
   <td><button class="btn btn-sm btn-outline" onclick="viewStaff('${s.id}')"><i class="fas fa-eye"></i></button> <button class="btn btn-sm btn-outline" onclick="editStaff('${s.id}')"><i class="fas fa-edit"></i></button> <button class="btn btn-sm btn-accent" onclick="delStaff('${s.id}')"><i class="fas fa-trash"></i></button></td></tr>`;}).join('')}
   </tbody></table></div></div>`;
 }
 function viewStaff(id) {
   const s=D.Staff.find(x=>x.id===id);if(!s)return;
   const store=D.Stores.find(x=>String(x.id)===String(s.storeId));
-  openModal(s.name,`<div class="staff-info-grid">
+  const isLeft=s.active===false;
+  openModal(s.name,`
+    <div style="margin-bottom:12px;display:flex;gap:8px;align-items:center">
+      <span class="badge ${isLeft?'badge-danger':'badge-success'}">${isLeft?'Left':'Active'}</span>
+      ${s.nickName?`<span style="font-size:14px;color:var(--text-light)">Nick: <strong>${escHtml(s.nickName)}</strong></span>`:''}
+    </div>
+    <div class="staff-info-grid">
     <div class="info-item"><i class="fas fa-store"></i><div><div class="label">Store</div><div class="value">${store?escHtml(store.name):s.storeId}</div></div></div>
     <div class="info-item"><i class="fas fa-tshirt"></i><div><div class="label">Cloth Size</div><div class="value">${escHtml(s.clothSize||'-')}</div></div></div>
     <div class="info-item"><i class="fas fa-key"></i><div><div class="label">Kiosk Pwd</div><div class="value">${escHtml(s.kioskPwd||'-')}</div></div></div>
@@ -654,27 +924,57 @@ function viewStaff(id) {
     <div class="info-item"><i class="fas fa-passport"></i><div><div class="label">eVisa</div><div class="value">${escHtml(s.eVisa||'-')}</div></div></div>
     <div class="info-item"><i class="fas fa-phone"></i><div><div class="label">Mobile</div><div class="value">${escHtml(s.mobile||'-')}</div></div></div>
     <div class="info-item"><i class="fas fa-pound-sign"></i><div><div class="label">Rate</div><div class="value">£${Number(s.rate).toFixed(2)}/hr</div></div></div>
+    <div class="info-item"><i class="fas fa-calendar-plus"></i><div><div class="label">Start Date</div><div class="value">${fmtDate(s.startDate)}</div></div></div>
+    ${isLeft?`<div class="info-item"><i class="fas fa-calendar-minus"></i><div><div class="label">Left Date</div><div class="value">${fmtDate(s.leftDate)}</div></div></div>`:''}
     <div class="info-item"><i class="fas fa-university"></i><div><div class="label">Sort Code</div><div class="value">${escHtml(s.sortCode||'-')}</div></div></div>
     <div class="info-item"><i class="fas fa-credit-card"></i><div><div class="label">Account No</div><div class="value">${escHtml(s.accountNo||'-')}</div></div></div>
     <div class="info-item"><i class="fas fa-envelope"></i><div><div class="label">Email</div><div class="value">${escHtml(s.email||'-')}</div></div></div>
   </div>`,`<button class="btn btn-outline" onclick="closeModal()">Close</button>`);
 }
 function editStaff(id) {
-  const s=id?D.Staff.find(x=>x.id===id):{id:'',storeId:sF.storeId||'',name:'',clothSize:'',kioskPwd:'',dob:'',address:'',niNo:'',eVisa:'',mobile:'',startDate:'',rate:12,sortCode:'',accountNo:'',email:'',memo:'',active:true};
+  const s=id?D.Staff.find(x=>x.id===id):{id:'',storeId:sF.storeId||'',name:'',nickName:'',clothSize:'',kioskPwd:'',dob:'',address:'',niNo:'',eVisa:'',mobile:'',startDate:'',leftDate:'',rate:12,sortCode:'',accountNo:'',email:'',memo:'',active:true};
+  const isLeft=s.active===false;
   openModal(id?'Edit Staff':'Add Staff',`
-    <div class="form-row"><div class="form-group"><label>Name</label><input id="mFN" value="${escHtml(s.name)}"></div><div class="form-group"><label>Store</label><select id="mFS">${D.Stores.map(st=>`<option value="${st.id}" ${String(s.storeId)===String(st.id)?'selected':''}>${st.name}</option>`).join('')}</select></div></div>
-    <div class="form-row"><div class="form-group"><label>Rate (£/hr)</label><input id="mFR" type="number" step="0.5" value="${s.rate}"></div><div class="form-group"><label>Kiosk Pwd</label><input id="mFP" value="${escHtml(s.kioskPwd||'')}"></div></div>
-    <div class="form-row"><div class="form-group"><label>DOB</label><input id="mFD" type="date" value="${s.dob?String(s.dob).split('T')[0]:''}"></div><div class="form-group"><label>Cloth Size</label><select id="mFC"><option value="">-</option>${['XS','S','M','L','XL','XXL'].map(sz=>`<option ${s.clothSize===sz?'selected':''}>${sz}</option>`).join('')}</select></div></div>
+    <div class="form-row"><div class="form-group"><label>Name</label><input id="mFN" value="${escHtml(s.name)}"></div><div class="form-group"><label>Nick Name</label><input id="mFNN" value="${escHtml(s.nickName||'')}" placeholder="Kiosk display name"></div></div>
+    <div class="form-row"><div class="form-group"><label>Store</label><select id="mFS">${getAccessibleStores().map(st=>`<option value="${st.id}" ${String(s.storeId)===String(st.id)?'selected':''}>${st.name}</option>`).join('')}</select></div><div class="form-group"><label>Rate (£/hr)</label><input id="mFR" type="number" step="0.5" value="${s.rate}"></div></div>
+    <div class="form-row"><div class="form-group"><label>Kiosk Pwd</label><input id="mFP" value="${escHtml(s.kioskPwd||'')}"></div><div class="form-group"><label>Cloth Size</label><select id="mFC"><option value="">-</option>${['XS','S','M','L','XL','XXL'].map(sz=>`<option ${s.clothSize===sz?'selected':''}>${sz}</option>`).join('')}</select></div></div>
+    <div class="form-row"><div class="form-group"><label>DOB</label><input id="mFD" type="date" value="${s.dob?String(s.dob).split('T')[0]:''}"></div><div class="form-group"><label>Start Date</label><input id="mFSD" type="date" value="${s.startDate?String(s.startDate).split('T')[0]:''}"></div></div>
     <div class="form-group"><label>Address</label><input id="mFA" value="${escHtml(s.address)}"></div>
     <div class="form-row"><div class="form-group"><label>NI No</label><input id="mFNI" value="${escHtml(s.niNo)}"></div><div class="form-group"><label>eVisa</label><input id="mFEV" value="${escHtml(s.eVisa)}"></div></div>
-    <div class="form-row"><div class="form-group"><label>Mobile</label><input id="mFM" value="${escHtml(s.mobile)}"></div><div class="form-group"><label>Start Date</label><input id="mFSD" type="date" value="${s.startDate?String(s.startDate).split('T')[0]:''}"></div></div>
+    <div class="form-row"><div class="form-group"><label>Mobile</label><input id="mFM" value="${escHtml(s.mobile)}"></div><div class="form-group"><label>Email</label><input id="mFEM" value="${escHtml(s.email)}"></div></div>
     <div class="form-row"><div class="form-group"><label>Sort Code</label><input id="mFSC" value="${escHtml(s.sortCode)}"></div><div class="form-group"><label>Account No</label><input id="mFAN" value="${escHtml(s.accountNo)}"></div></div>
-    <div class="form-group"><label>Email</label><input id="mFEM" value="${escHtml(s.email)}"></div>
-    <div class="form-group"><label>Memo</label><textarea id="mFME">${escHtml(s.memo)}</textarea></div>`,
+    <div class="form-group"><label>Memo</label><textarea id="mFME">${escHtml(s.memo)}</textarea></div>
+    <div style="padding:12px 16px;background:${isLeft?'#ffebee':'#f1f8e9'};border-radius:10px;display:flex;justify-content:space-between;align-items:center">
+      <div><strong style="font-size:14px">${isLeft?'This staff has left':'Currently working'}</strong><br><span style="font-size:12px;color:var(--text-light)">${isLeft?'Set to Active to re-enable kiosk access':'Mark as Left to disable kiosk access'}</span></div>
+      <div style="display:flex;align-items:center;gap:10px">
+        ${isLeft?`<div class="form-group" style="margin:0"><label style="font-size:11px">Left Date</label><input id="mFLD" type="date" value="${s.leftDate?String(s.leftDate).split('T')[0]:''}" style="padding:6px 10px;font-size:13px"></div>`:''}
+        <button class="btn btn-sm ${isLeft?'btn-primary':'btn-accent'}" type="button" onclick="toggleStaffStatus()" id="staffStatusBtn">${isLeft?'<i class="fas fa-user-check"></i> Set Active':'<i class="fas fa-user-slash"></i> Mark as Left'}</button>
+      </div>
+    </div>
+    <input type="hidden" id="mFActive" value="${isLeft?'false':'true'}">
+    <input type="hidden" id="mFLD2" value="${s.leftDate||''}">`,
     `<button class="btn btn-outline" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="saveStaff('${id||''}')">Save</button>`);
 }
+function toggleStaffStatus(){
+  const cur=$('mFActive').value==='true';
+  if(cur){
+    // Mark as Left — show date picker
+    $('mFActive').value='false';
+    const today=new Date().toISOString().split('T')[0];
+    $('mFLD2').value=today;
+    // Re-render the status area
+    document.querySelector('#staffStatusBtn').closest('div[style*="background"]')?.replaceWith(Object.assign(document.createElement('div'),{innerHTML:`<div style="padding:12px 16px;background:#ffebee;border-radius:10px;display:flex;justify-content:space-between;align-items:center"><div><strong style="font-size:14px">Marked as Left</strong><br><span style="font-size:12px;color:var(--text-light)">Will be saved when you click Save</span></div><div style="display:flex;align-items:center;gap:10px"><div class="form-group" style="margin:0"><label style="font-size:11px">Left Date</label><input id="mFLD" type="date" value="${today}" onchange="document.getElementById('mFLD2').value=this.value" style="padding:6px 10px;font-size:13px"></div><button class="btn btn-sm btn-primary" type="button" onclick="toggleStaffStatus()" id="staffStatusBtn"><i class="fas fa-user-check"></i> Set Active</button></div></div>`}).firstChild);
+  } else {
+    // Set Active
+    $('mFActive').value='true';
+    $('mFLD2').value='';
+    document.querySelector('#staffStatusBtn').closest('div[style*="background"]')?.replaceWith(Object.assign(document.createElement('div'),{innerHTML:`<div style="padding:12px 16px;background:#f1f8e9;border-radius:10px;display:flex;justify-content:space-between;align-items:center"><div><strong style="font-size:14px">Currently working</strong><br><span style="font-size:12px;color:var(--text-light)">Mark as Left to disable kiosk access</span></div><div><button class="btn btn-sm btn-accent" type="button" onclick="toggleStaffStatus()" id="staffStatusBtn"><i class="fas fa-user-slash"></i> Mark as Left</button></div></div>`}).firstChild);
+  }
+}
 async function saveStaff(id) {
-  const s={id:id||genId('s'),storeId:$('mFS').value,name:$('mFN').value.trim(),clothSize:$('mFC').value,kioskPwd:$('mFP').value,dob:$('mFD').value,address:$('mFA').value.trim(),niNo:$('mFNI').value.trim(),eVisa:$('mFEV').value.trim(),mobile:$('mFM').value.trim(),startDate:$('mFSD').value,rate:parseFloat($('mFR').value)||12,sortCode:$('mFSC').value.trim(),accountNo:$('mFAN').value.trim(),email:$('mFEM').value.trim(),memo:$('mFME').value.trim(),active:true};
+  const active=$('mFActive').value==='true';
+  const leftDate=active?'':($('mFLD')?.value||$('mFLD2')?.value||'');
+  const s={id:id||genId('s'),storeId:$('mFS').value,name:$('mFN').value.trim(),nickName:$('mFNN').value.trim(),clothSize:$('mFC').value,kioskPwd:$('mFP').value,dob:$('mFD').value,address:$('mFA').value.trim(),niNo:$('mFNI').value.trim(),eVisa:$('mFEV').value.trim(),mobile:$('mFM').value.trim(),startDate:$('mFSD').value,leftDate,rate:parseFloat($('mFR').value)||12,sortCode:$('mFSC').value.trim(),accountNo:$('mFAN').value.trim(),email:$('mFEM').value.trim(),memo:$('mFME').value.trim(),active};
   if(!s.name){toast('Name required','error');return;}
   await saveRow('Staff',s); closeModal(); renderStaff($('pageContent')); toast('Staff saved','success');
 }
@@ -683,16 +983,42 @@ async function delStaff(id){if(!confirm('Delete this staff member?'))return;awai
 // ==================== ATTENDANCE ====================
 let attAutoRefresh=null;
 function parseTime(t) {
-  if(!t)return null;
+  if(t===null||t===undefined||t==='')return null;
+  // Handle numbers directly (Google Sheets decimal time)
+  if(typeof t==='number'){
+    if(t>0&&t<1){const tm=Math.round(t*24*60);return Math.floor(tm/60).toString().padStart(2,'0')+':'+(tm%60).toString().padStart(2,'0');}
+    if(t>=100&&t<=2359){const h=Math.floor(t/100),m=t%100;if(h>=0&&h<24&&m>=0&&m<60)return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0');}
+    console.log('[TBMS] parseTime numeric but unhandled:',t);
+    return null;
+  }
   t=String(t).trim();
-  // Handle ISO timestamps like "2026-02-11T20:40:10.054Z"
-  if(t.includes('T')){try{const d=new Date(t);return d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0');}catch(e){}}
-  // Handle "1899-12-30" (Google Sheets epoch for time-only = broken)
-  if(t.startsWith('1899'))return null;
-  // Handle normal "HH:MM" or "HH:MM:SS"
-  const m=t.match(/^(\d{1,2}):(\d{2})/);
-  if(m)return m[1].padStart(2,'0')+':'+m[2];
-  return t;
+  if(!t||t==='undefined'||t==='null')return null;
+  // 1) "HH:MM" or "H:MM" at start (most common - kiosk sends this)
+  const m1=t.match(/^(\d{1,2}):(\d{2})$/);
+  if(m1){const h=parseInt(m1[1]);if(h>=0&&h<24)return m1[1].padStart(2,'0')+':'+m1[2];}
+  // 2) "HH:MM" at start with extra chars after
+  const m1b=t.match(/^(\d{1,2}):(\d{2})/);
+  if(m1b){const h=parseInt(m1b[1]);if(h>=0&&h<24)return m1b[1].padStart(2,'0')+':'+m1b[2];}
+  // 3) ISO "...T..." timestamps like "1899-12-30T10:13:00.000Z" or "2026-02-12T10:13:00"
+  if(t.includes('T')){
+    const isoM=t.match(/T(\d{1,2}):(\d{2})/);
+    if(isoM){const h=parseInt(isoM[1]),m=parseInt(isoM[2]);if(h>=0&&h<24&&m>=0&&m<60)return isoM[1].padStart(2,'0')+':'+isoM[2];}
+  }
+  // 4) Google Sheets decimal time as string (0.4257 = ~10:13)
+  const num=Number(t);
+  if(!isNaN(num)&&num>0&&num<1){const tm=Math.round(num*24*60);return Math.floor(tm/60).toString().padStart(2,'0')+':'+(tm%60).toString().padStart(2,'0');}
+  // 5) Date string with HH:MM:SS anywhere: "Sat Dec 30 1899 10:13:00 GMT..."
+  const m2=t.match(/(\d{1,2}):(\d{2}):(\d{2})/);
+  if(m2){const h=parseInt(m2[1]),m=parseInt(m2[2]);if(h>=0&&h<24&&m>=0&&m<60)return m2[1].padStart(2,'0')+':'+m2[2];}
+  // 6) Any HH:MM pattern anywhere in string
+  const m3=t.match(/(\d{1,2}):(\d{2})/);
+  if(m3){const h=parseInt(m3[1]),m=parseInt(m3[2]);if(h>=0&&h<24&&m>=0&&m<60)return m3[1].padStart(2,'0')+':'+m3[2];}
+  // 7) Pure number as string like "1013" → "10:13"
+  if(/^\d{3,4}$/.test(t)){const n=parseInt(t);const h=Math.floor(n/100),m=n%100;if(h>=0&&h<24&&m>=0&&m<60)return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0');}
+  // 8) "1899-12-30" alone = Google Sheets date-only (time info lost)
+  if(t.includes('1899')){console.log('[TBMS] parseTime: 1899 date detected (time data lost in Google Sheets). Raw:',t);return null;}
+  console.log('[TBMS] parseTime UNKNOWN format:',JSON.stringify(t),'type:',typeof t);
+  return null;
 }
 function calcHours(cin,cout) {
   const t1=parseTime(cin),t2=parseTime(cout);
@@ -705,7 +1031,7 @@ async function refreshAttendance(){
   if(API.mode==='cloud'){
     const r=await API.get('getAll');
     if(r&&r.data&&r.data.Attendance){
-      D.Attendance=r.data.Attendance;LS.set('Attendance',D.Attendance);
+      D.Attendance=r.data.Attendance.map(r=>normalizeRow('Attendance',r));LS.set('Attendance',D.Attendance);
     }
   }
   if(currentPage==='attendance')renderAttendanceTable();
@@ -713,19 +1039,41 @@ async function refreshAttendance(){
 function renderAttendance(c) {
   const today=new Date().toISOString().split('T')[0];
   c.innerHTML=`<div class="filters">
-    <select id="attStore" onchange="renderAttendanceTable()"><option value="">All Stores</option>${D.Stores.map(s=>`<option value="${s.id}">${s.name}</option>`).join('')}</select>
+    <select id="attStore" onchange="renderAttendanceTable()"><option value="">All Stores</option>${getAccessibleStores().map(s=>`<option value="${s.id}">${s.name}</option>`).join('')}</select>
     <input type="date" id="attDate" value="${today}" onchange="renderAttendanceTable()">
     <button class="btn btn-sm btn-success" onclick="refreshAttendance()"><i class="fas fa-sync"></i> Refresh</button>
+    <button class="btn btn-sm btn-primary" onclick="openManualAttPopup()"><i class="fas fa-plus"></i> Add Manual</button>
     <span style="font-size:12px;color:var(--text-light)">Auto-refresh: 30s</span>
   </div>
-  <div class="card"><div class="table-wrap"><table><thead><tr><th>Date</th><th>Staff</th><th>Store</th><th>Clock In</th><th>Clock Out</th><th>Hours</th></tr></thead><tbody id="attBody"></tbody></table></div></div>`;
+  <div class="card"><div class="table-wrap"><table><thead><tr><th>Date</th><th>Staff</th><th>Store</th><th>Clock In</th><th>Photo</th><th>Clock Out</th><th>Photo</th><th>Hours</th><th>Source</th></tr></thead><tbody id="attBody"></tbody></table></div></div>`;
   renderAttendanceTable();
   // Auto-refresh every 30 seconds
   if(attAutoRefresh)clearInterval(attAutoRefresh);
   attAutoRefresh=setInterval(refreshAttendance,30000);
 }
+function photoThumb(fileId,label){
+  if(!fileId)return'<span style="color:#ccc;font-size:11px">—</span>';
+  const thumbUrl='https://drive.google.com/thumbnail?id='+fileId+'&sz=w80';
+  return`<img src="${thumbUrl}" style="width:40px;height:30px;border-radius:4px;object-fit:cover;border:1px solid var(--border);cursor:pointer" title="${label}" onclick="viewPhoto('${fileId}','${label}')" onerror="this.style.display='none';this.parentElement.innerHTML='<span style=color:#ccc;font-size:11px>err</span>'">`;
+}
+function viewPhoto(fileId,label){
+  const fullUrl='https://drive.google.com/thumbnail?id='+fileId+'&sz=w600';
+  const driveUrl='https://drive.google.com/file/d/'+fileId+'/view';
+  const old=document.getElementById('photoViewerModal');if(old)old.remove();
+  const modal=document.createElement('div');modal.id='photoViewerModal';
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;cursor:pointer';
+  modal.onclick=()=>modal.remove();
+  modal.innerHTML=`
+    <div style="color:#fff;font-size:18px;font-weight:600"><i class="fas fa-camera"></i> ${label}</div>
+    <img src="${fullUrl}" style="max-width:90vw;max-height:70vh;border-radius:12px;border:3px solid #fff;box-shadow:0 8px 40px rgba(0,0,0,.5)" onerror="this.src='';this.alt='Failed to load photo'">
+    <div style="display:flex;gap:12px">
+      <a href="${driveUrl}" target="_blank" onclick="event.stopPropagation()" style="padding:10px 24px;background:#4285f4;color:#fff;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px"><i class="fas fa-external-link-alt"></i> Open in Drive</a>
+      <button onclick="event.stopPropagation();this.closest('#photoViewerModal').remove()" style="padding:10px 24px;background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:8px;cursor:pointer;font-size:14px"><i class="fas fa-times"></i> Close</button>
+    </div>`;
+  document.body.appendChild(modal);
+}
 function renderAttendanceTable(){
-  let att=[...D.Attendance].sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  let att=[...D.Attendance].filter(a=>hasStoreAccess(a.storeId)).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
   const storeF=$('attStore')?.value||'';
   const dateF=$('attDate')?.value||'';
   if(storeF)att=att.filter(a=>String(a.storeId)===storeF);
@@ -736,68 +1084,377 @@ function renderAttendanceTable(){
     const cin=parseTime(a.clockIn);
     const cout=parseTime(a.clockOut);
     const hrs=calcHours(a.clockIn,a.clockOut);
-    return`<tr><td>${a.date}</td><td>${s?escHtml(s.name):a.staffId}</td><td>${store?escHtml(store.name):a.storeId}</td><td><span class="badge badge-success">${cin||'-'}</span></td><td><span class="badge ${cout?'badge-danger':'badge-warning'}">${cout||'Working...'}</span></td><td>${hrs}</td></tr>`;
+    const isManual=a.source==='manual'||String(a.id).startsWith('m');
+    const srcBadge=isManual?'<span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;background:#fff3e0;color:#e65100;border:1px solid #ffcc80"><i class="fas fa-pen" style="margin-right:3px;font-size:10px"></i>Manual</span>':'<span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;background:#e8f5e9;color:#2e7d32;border:1px solid #a5d6a7"><i class="fas fa-camera" style="margin-right:3px;font-size:10px"></i>Kiosk</span>';
+    return`<tr${isManual?' style="background:#fff8f0"':''}><td>${a.date}</td><td>${s?escHtml(s.name):a.staffId}</td><td>${store?escHtml(store.name):a.storeId}</td>
+    <td><input type="time" value="${cin||''}" style="border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:13px;width:100px;background:#e8f5e9;color:#2e7d32;font-weight:600" onchange="editAttTime('${a.id}','clockIn',this.value)"></td>
+    <td>${photoThumb(a.photoIn,'Clock In')}</td>
+    <td>${cout?`<input type="time" value="${cout}" style="border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:13px;width:100px;background:#ffebee;color:#c62828;font-weight:600" onchange="editAttTime('${a.id}','clockOut',this.value)">`:`<span class="badge badge-warning">Working...</span>`}</td>
+    <td>${photoThumb(a.photoOut,'Clock Out')}</td>
+    <td>${hrs}</td>
+    <td>${srcBadge}</td></tr>`;
   }).join('');
+}
+async function editAttTime(attId,field,value){
+  const a=D.Attendance.find(x=>String(x.id)===String(attId));
+  if(!a)return;
+  a[field]=value;
+  await saveRow('Attendance',a);
+  renderAttendanceTable();
+  toast(field==='clockIn'?'Clock In updated':'Clock Out updated','success');
+}
+
+// ===== Manual Attendance Entry =====
+function openManualAttPopup(){
+  const old=document.getElementById('manualAttModal');if(old)old.remove();
+  const stores=getAccessibleStores();
+  const today=new Date().toISOString().split('T')[0];
+  const modal=document.createElement('div');modal.id='manualAttModal';
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center';
+  modal.innerHTML=`
+    <div style="background:#fff;border-radius:16px;padding:28px;width:420px;max-width:95vw;box-shadow:0 20px 60px rgba(0,0,0,.3)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+        <h3 style="margin:0;font-size:18px"><i class="fas fa-plus-circle" style="color:var(--accent)"></i> Manual Attendance Entry</h3>
+        <button onclick="document.getElementById('manualAttModal').remove()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-light)"><i class="fas fa-times"></i></button>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div>
+          <label style="font-size:12px;font-weight:600;color:var(--text-light);display:block;margin-bottom:4px">Store</label>
+          <select id="manAttStore" style="width:100%;padding:10px 12px;border:2px solid var(--border);border-radius:8px;font-size:14px" onchange="filterManAttStaff()">
+            <option value="">— Select Store —</option>
+            ${stores.map(s=>`<option value="${s.id}">${escHtml(s.name)}</option>`).join('')}
+          </select>
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:600;color:var(--text-light);display:block;margin-bottom:4px">Staff</label>
+          <select id="manAttStaff" style="width:100%;padding:10px 12px;border:2px solid var(--border);border-radius:8px;font-size:14px" disabled>
+            <option value="">— Select Store first —</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:600;color:var(--text-light);display:block;margin-bottom:4px">Date</label>
+          <input type="date" id="manAttDate" value="${today}" style="width:100%;padding:10px 12px;border:2px solid var(--border);border-radius:8px;font-size:14px">
+        </div>
+        <div style="display:flex;gap:12px">
+          <div style="flex:1">
+            <label style="font-size:12px;font-weight:600;color:#2e7d32;display:block;margin-bottom:4px"><i class="fas fa-sign-in-alt"></i> Clock In</label>
+            <input type="time" id="manAttIn" style="width:100%;padding:10px 12px;border:2px solid #c8e6c9;border-radius:8px;font-size:14px;background:#f1f8e9">
+          </div>
+          <div style="flex:1">
+            <label style="font-size:12px;font-weight:600;color:#c62828;display:block;margin-bottom:4px"><i class="fas fa-sign-out-alt"></i> Clock Out</label>
+            <input type="time" id="manAttOut" style="width:100%;padding:10px 12px;border:2px solid #ffcdd2;border-radius:8px;font-size:14px;background:#fff8f8">
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:6px">
+          <button id="manAttSaveBtn" onclick="saveManualAtt()" style="flex:1;padding:12px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer"><i class="fas fa-save"></i> Save</button>
+          <button onclick="document.getElementById('manualAttModal').remove()" style="flex:1;padding:12px;background:var(--bg-hover);color:var(--text);border:2px solid var(--border);border-radius:10px;font-size:15px;cursor:pointer">Cancel</button>
+        </div>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+}
+function filterManAttStaff(){
+  const storeId=$('manAttStore')?.value;
+  const sel=$('manAttStaff');
+  if(!storeId){sel.disabled=true;sel.innerHTML='<option value="">— Select Store first —</option>';return;}
+  const staffList=D.Staff.filter(s=>String(s.storeId)===storeId&&s.active!==false);
+  sel.disabled=false;
+  sel.innerHTML='<option value="">— Select Staff —</option>'+staffList.map(s=>`<option value="${s.id}">${escHtml(s.name)}${s.nickName?' ('+escHtml(s.nickName)+')':''}</option>`).join('');
+}
+async function saveManualAtt(){
+  const staffId=$('manAttStaff')?.value;
+  const storeId=$('manAttStore')?.value;
+  const date=$('manAttDate')?.value;
+  const clockIn=$('manAttIn')?.value;
+  const clockOut=$('manAttOut')?.value;
+  if(!storeId){toast('Please select a store','error');return;}
+  if(!staffId){toast('Please select a staff member','error');return;}
+  if(!date){toast('Please select a date','error');return;}
+  if(!clockIn){toast('Please enter Clock In time','error');return;}
+  const att={id:genId('m'),staffId,storeId,date,clockIn,clockOut:clockOut||'',photoIn:'',photoOut:'',source:'manual'};
+  const btn=$('manAttSaveBtn');
+  if(btn){btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Saving...';}
+  try{
+    await saveRow('Attendance',att);
+    renderAttendanceTable();
+    document.getElementById('manualAttModal')?.remove();
+    const s=D.Staff.find(x=>String(x.id)===String(staffId));
+    toast(`Manual entry added for ${s?s.name:'staff'}: ${clockIn}${clockOut?' → '+clockOut:''}`, 'success');
+  }catch(e){
+    toast('Failed to save: '+e.message,'error');
+    if(btn){btn.disabled=false;btn.innerHTML='<i class="fas fa-save"></i> Save';}
+  }
 }
 
 // ==================== PAYROLL ====================
+let payrollData=[];
+function getTimeRounding(){return Number(LS.get('timeRounding'))||0;}
+function setTimeRounding(v){LS.set('timeRounding',v);}
+function roundTime(timeStr,roundMin){
+  if(!timeStr||!roundMin)return timeStr;
+  const[h,m]=timeStr.split(':').map(Number);
+  const rounded=Math.floor(m/roundMin)*roundMin;
+  return String(h).padStart(2,'0')+':'+String(rounded).padStart(2,'0');
+}
+function roundTimeUp(timeStr,roundMin){
+  if(!timeStr||!roundMin)return timeStr;
+  const[h,m]=timeStr.split(':').map(Number);
+  const rounded=Math.ceil(m/roundMin)*roundMin;
+  if(rounded>=60)return String(h+1).padStart(2,'0')+':00';
+  return String(h).padStart(2,'0')+':'+String(rounded).padStart(2,'0');
+}
 function renderPayroll(c) {
   const periods=getPayPeriods();
   const curP=getPayPeriod();
-  c.innerHTML=`<div class="filters">
-    <select id="payStore" onchange="calcPayroll()"><option value="">All Stores</option>${D.Stores.map(s=>`<option value="${s.id}">${s.name}</option>`).join('')}</select>
+  const rnd=getTimeRounding();
+  c.innerHTML=`<div class="filters" style="flex-wrap:wrap;gap:10px">
+    <select id="payStore" onchange="calcPayroll()"><option value="">All Stores</option>${getAccessibleStores().map(s=>`<option value="${s.id}">${s.name}</option>`).join('')}</select>
     <select id="payPeriod" onchange="calcPayroll()">${periods.map(p=>`<option value="${p.label}" ${p.label===curP.label?'selected':''}>${p.label}</option>`).join('')}</select>
+    <div style="display:flex;align-items:center;gap:6px"><label style="font-size:12px;font-weight:600;white-space:nowrap">Rounding:</label>
+    <select id="payRounding" onchange="setTimeRounding(this.value);calcPayroll()" style="padding:6px 10px;border:2px solid var(--border);border-radius:8px;font-size:13px">
+      <option value="0" ${rnd===0?'selected':''}>None (0 min)</option>
+      <option value="5" ${rnd===5?'selected':''}>5 min</option>
+      <option value="10" ${rnd===10?'selected':''}>10 min</option>
+      <option value="15" ${rnd===15?'selected':''}>15 min</option>
+      <option value="20" ${rnd===20?'selected':''}>20 min</option>
+    </select></div>
+    <button class="btn btn-sm btn-primary" onclick="togglePayDetail()"><i class="fas fa-list-alt"></i> Detail View</button>
     <button class="btn btn-sm btn-success" onclick="exportPayroll()"><i class="fas fa-download"></i> Export CSV</button>
-  </div><div class="card"><div class="table-wrap"><table><thead><tr><th>Staff</th><th>Store</th><th>Days</th><th>Total Hours</th><th>Rate</th><th>Total Pay</th></tr></thead><tbody id="payBody"></tbody><tfoot id="payFoot"></tfoot></table></div></div>`;
+  </div>
+  <div class="card"><div class="table-wrap"><table><thead><tr><th>Staff</th><th>Store</th><th>Days</th><th>Total Hours</th><th>Rate</th><th>Total Pay</th></tr></thead><tbody id="payBody"></tbody><tfoot id="payFoot"></tfoot></table></div></div>
+  <div id="payDetailWrap" class="hidden"><div class="card"><h3 style="margin-bottom:12px"><i class="fas fa-clock"></i> Detailed Attendance (with rounding)</h3><div class="table-wrap"><table><thead><tr><th>Date</th><th>Staff</th><th>Store</th><th>Clock In</th><th>Rounded In</th><th>Clock Out</th><th>Rounded Out</th><th>Raw Hrs</th><th>Paid Hrs</th></tr></thead><tbody id="payDetailBody"></tbody></table></div></div></div>
+  <div id="staffDetailWrap" class="hidden" data-staff-id=""><div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><h3 style="margin:0"><i class="fas fa-user-clock"></i> <span id="staffDetailName"></span> — Hours Detail</h3><button class="btn btn-sm" onclick="$('staffDetailWrap').classList.add('hidden');$('staffDetailWrap').dataset.staffId=''" style="background:var(--border);color:var(--text)"><i class="fas fa-times"></i> Close</button></div><div id="staffDetailSummary" style="margin-bottom:10px"></div><div class="table-wrap"><table><thead><tr><th>Date</th><th>Store</th><th>Clock In</th><th>Rounded In</th><th>Clock Out</th><th>Rounded Out</th><th>Raw Hrs</th><th>Paid Hrs</th></tr></thead><tbody id="staffDetailBody"></tbody></table></div></div></div>`;
   calcPayroll();
+}
+function togglePayDetail(){
+  const w=$('payDetailWrap');
+  w.classList.toggle('hidden');
+  if(!w.classList.contains('hidden'))renderPayDetail();
 }
 function calcPayroll() {
   const storeF=$('payStore')?.value||'';
   const periodLabel=$('payPeriod')?.value||'';
   const period=getPayPeriods().find(p=>p.label===periodLabel)||getPayPeriod();
-  let staff=D.Staff.filter(s=>s.active!==false);
+  const rnd=getTimeRounding();
+  let staff=D.Staff.filter(s=>s.active!==false&&hasStoreAccess(s.storeId));
   if(storeF)staff=staff.filter(s=>String(s.storeId)===storeF);
-  const rows=[];let grandTotal=0;
+  payrollData=[];let grandTotal=0;
   staff.forEach(s=>{
     const att=D.Attendance.filter(a=>String(a.staffId)===String(s.id)&&a.date>=period.start.toISOString().split('T')[0]&&a.date<=period.end.toISOString().split('T')[0]&&a.clockIn&&a.clockOut);
     let totalMins=0;
-    att.forEach(a=>{const t1=parseTime(a.clockIn),t2=parseTime(a.clockOut);if(t1&&t2){const[h1,m1]=t1.split(':').map(Number);const[h2,m2]=t2.split(':').map(Number);totalMins+=h2*60+m2-h1*60-m1;}});
+    att.forEach(a=>{
+      const t1=parseTime(a.clockIn),t2=parseTime(a.clockOut);
+      if(t1&&t2){
+        const rIn=rnd?roundTimeUp(t1,rnd):t1;
+        const rOut=rnd?roundTime(t2,rnd):t2;
+        const[h1,m1]=rIn.split(':').map(Number);const[h2,m2]=rOut.split(':').map(Number);
+        const mins=h2*60+m2-h1*60-m1;
+        if(mins>0)totalMins+=mins;
+      }
+    });
     const hrs=totalMins/60;const pay=hrs*Number(s.rate);grandTotal+=pay;
     const store=D.Stores.find(x=>String(x.id)===String(s.storeId));
-    rows.push({name:s.name,store:store?store.name:s.storeId,days:att.length,hrs:hrs.toFixed(1),rate:'£'+Number(s.rate).toFixed(2),pay:'£'+pay.toFixed(2)});
+    payrollData.push({id:s.id,name:s.name,nickName:s.nickName,store:store?store.name:s.storeId,storeId:s.storeId,days:att.length,hrs:hrs.toFixed(1),rate:Number(s.rate),pay:pay.toFixed(2),att});
   });
-  $('payBody').innerHTML=rows.map(r=>`<tr><td>${escHtml(r.name)}</td><td>${escHtml(r.store)}</td><td>${r.days}</td><td>${r.hrs}h</td><td>${r.rate}</td><td><strong>${r.pay}</strong></td></tr>`).join('');
+  $('payBody').innerHTML=payrollData.map(r=>`<tr>
+    <td><a href="#" onclick="showStaffPayDetail('${r.id}');return false" style="color:var(--accent);font-weight:600;text-decoration:underline;cursor:pointer">${escHtml(r.name)}</a></td>
+    <td>${escHtml(r.store)}</td><td>${r.days}</td><td>${r.hrs}h</td><td>£${r.rate.toFixed(2)}</td><td><strong>£${r.pay}</strong></td></tr>`).join('');
   $('payFoot').innerHTML=`<tr><td colspan="5" style="text-align:right;font-weight:700">Total</td><td><strong>£${grandTotal.toFixed(2)}</strong></td></tr>`;
+  if(!$('payDetailWrap')?.classList.contains('hidden'))renderPayDetail();
+  // Keep staff detail open if already showing
+  const sdw=$('staffDetailWrap');
+  if(sdw&&!sdw.classList.contains('hidden')){const sid=sdw.dataset.staffId;if(sid)showStaffPayDetail(sid);}
+}
+function renderPayDetail(){
+  const rnd=getTimeRounding();
+  let html='';
+  payrollData.forEach(s=>{
+    s.att.forEach(a=>{
+      const t1=parseTime(a.clockIn),t2=parseTime(a.clockOut);
+      if(!t1||!t2)return;
+      const rIn=rnd?roundTimeUp(t1,rnd):t1;
+      const rOut=rnd?roundTime(t2,rnd):t2;
+      const[h1,m1]=t1.split(':').map(Number);const[h2,m2]=t2.split(':').map(Number);
+      const rawMins=h2*60+m2-h1*60-m1;
+      const[rh1,rm1]=rIn.split(':').map(Number);const[rh2,rm2]=rOut.split(':').map(Number);
+      const paidMins=rh2*60+rm2-rh1*60-rm1;
+      const store=D.Stores.find(x=>String(x.id)===String(a.storeId));
+      const changed=t1!==rIn||t2!==rOut;
+      html+=`<tr${changed?' style="background:#fff8e1"':''}>
+        <td>${a.date}</td><td>${escHtml(s.name)}</td><td>${store?escHtml(store.name):''}</td>
+        <td><span class="badge badge-success">${t1}</span></td>
+        <td>${rnd?`<span class="badge" style="background:#fff3e0;color:#e65100">${rIn}</span>`:'-'}</td>
+        <td><span class="badge badge-danger">${t2}</span></td>
+        <td>${rnd?`<span class="badge" style="background:#fff3e0;color:#e65100">${rOut}</span>`:'-'}</td>
+        <td>${(rawMins/60).toFixed(1)}h</td>
+        <td><strong>${(paidMins>0?paidMins/60:0).toFixed(1)}h</strong></td></tr>`;
+    });
+  });
+  $('payDetailBody').innerHTML=html||'<tr><td colspan="9" style="text-align:center;color:var(--text-light)">No attendance data in this period</td></tr>';
+}
+function showStaffPayDetail(staffId){
+  const sd=payrollData.find(r=>String(r.id)===String(staffId));
+  if(!sd){toast('Staff not found','error');return;}
+  const wrap=$('staffDetailWrap');
+  wrap.dataset.staffId=staffId;
+  wrap.classList.remove('hidden');
+  $('staffDetailName').textContent=sd.name+(sd.nickName?' ('+sd.nickName+')':'');
+  const rnd=getTimeRounding();
+  let html='';let totalRaw=0;let totalPaid=0;
+  sd.att.sort((a,b)=>a.date.localeCompare(b.date)).forEach(a=>{
+    const t1=parseTime(a.clockIn),t2=parseTime(a.clockOut);
+    if(!t1||!t2)return;
+    const rIn=rnd?roundTimeUp(t1,rnd):t1;
+    const rOut=rnd?roundTime(t2,rnd):t2;
+    const[h1,m1]=t1.split(':').map(Number);const[h2,m2]=t2.split(':').map(Number);
+    const rawMins=h2*60+m2-h1*60-m1;
+    const[rh1,rm1]=rIn.split(':').map(Number);const[rh2,rm2]=rOut.split(':').map(Number);
+    const paidMins=Math.max(0,rh2*60+rm2-rh1*60-rm1);
+    totalRaw+=rawMins;totalPaid+=paidMins;
+    const store=D.Stores.find(x=>String(x.id)===String(a.storeId));
+    const changed=t1!==rIn||t2!==rOut;
+    html+=`<tr${changed?' style="background:#fff8e1"':''}>
+      <td>${a.date}</td><td>${store?escHtml(store.name):''}</td>
+      <td><span class="badge badge-success">${t1}</span></td>
+      <td>${rnd?`<span class="badge" style="background:#fff3e0;color:#e65100">${rIn}</span>`:'-'}</td>
+      <td><span class="badge badge-danger">${t2}</span></td>
+      <td>${rnd?`<span class="badge" style="background:#fff3e0;color:#e65100">${rOut}</span>`:'-'}</td>
+      <td>${(rawMins/60).toFixed(1)}h</td>
+      <td><strong>${(paidMins/60).toFixed(1)}h</strong></td></tr>`;
+  });
+  html+=`<tr style="background:#f5f5f5;font-weight:700"><td colspan="6" style="text-align:right">Total</td><td>${(totalRaw/60).toFixed(1)}h</td><td><strong>${(totalPaid/60).toFixed(1)}h</strong></td></tr>`;
+  $('staffDetailBody').innerHTML=html||'<tr><td colspan="8" style="text-align:center;color:var(--text-light)">No attendance records</td></tr>';
+  const diffMins=totalRaw-totalPaid;
+  $('staffDetailSummary').innerHTML=`<div style="display:flex;gap:16px;flex-wrap:wrap">
+    <div style="padding:10px 16px;background:#e8f5e9;border-radius:8px;font-size:13px"><strong>Days Worked:</strong> ${sd.days}</div>
+    <div style="padding:10px 16px;background:#e3f2fd;border-radius:8px;font-size:13px"><strong>Raw Hours:</strong> ${(totalRaw/60).toFixed(1)}h</div>
+    <div style="padding:10px 16px;background:#fff3e0;border-radius:8px;font-size:13px"><strong>Paid Hours:</strong> ${(totalPaid/60).toFixed(1)}h</div>
+    ${rnd?`<div style="padding:10px 16px;background:#fce4ec;border-radius:8px;font-size:13px"><strong>Rounding Diff:</strong> -${(diffMins/60).toFixed(1)}h</div>`:''}
+    <div style="padding:10px 16px;background:#f3e5f5;border-radius:8px;font-size:13px"><strong>Rate:</strong> £${sd.rate.toFixed(2)}/hr</div>
+    <div style="padding:10px 16px;background:var(--accent);color:#fff;border-radius:8px;font-size:13px"><strong>Total Pay:</strong> £${sd.pay}</div>
+  </div>`;
+  wrap.scrollIntoView({behavior:'smooth',block:'start'});
 }
 function exportPayroll() {
-  const rows=document.querySelectorAll('#payBody tr');
-  let csv='Staff,Store,Days,Hours,Rate,Pay\n';
-  rows.forEach(r=>{const cells=r.querySelectorAll('td');csv+=Array.from(cells).map(c=>'"'+c.textContent+'"').join(',')+'\n';});
-  const blob=new Blob([csv],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='payroll.csv';a.click();toast('CSV exported','success');
+  const rnd=getTimeRounding();
+  const periodLabel=$('payPeriod')?.value||'';
+  // Summary CSV
+  let csv='Payroll Report\nPeriod:,'+periodLabel+'\nRounding:,'+(rnd?rnd+' min':'None')+'\n\n';
+  csv+='Staff,Store,Days,Hours,Rate,Pay\n';
+  payrollData.forEach(r=>{csv+=`"${r.name}","${r.store}",${r.days},${r.hrs},${r.rate.toFixed(2)},${r.pay}\n`;});
+  const grandTotal=payrollData.reduce((s,r)=>s+parseFloat(r.pay),0);
+  csv+=`,,,,Total,"${grandTotal.toFixed(2)}"\n`;
+  // Detail section
+  csv+='\n\nDetailed Attendance\nDate,Staff,Store,Clock In,Rounded In,Clock Out,Rounded Out,Raw Hours,Paid Hours\n';
+  payrollData.forEach(s=>{
+    s.att.forEach(a=>{
+      const t1=parseTime(a.clockIn),t2=parseTime(a.clockOut);
+      if(!t1||!t2)return;
+      const rIn=rnd?roundTimeUp(t1,rnd):t1;
+      const rOut=rnd?roundTime(t2,rnd):t2;
+      const[h1,m1]=t1.split(':').map(Number);const[h2,m2]=t2.split(':').map(Number);
+      const rawH=((h2*60+m2-h1*60-m1)/60).toFixed(1);
+      const[rh1,rm1]=rIn.split(':').map(Number);const[rh2,rm2]=rOut.split(':').map(Number);
+      const paidH=(Math.max(0,rh2*60+rm2-rh1*60-rm1)/60).toFixed(1);
+      const store=D.Stores.find(x=>String(x.id)===String(a.storeId));
+      csv+=`${a.date},"${s.name}","${store?store.name:''}",${t1},${rIn},${t2},${rOut},${rawH},${paidH}\n`;
+    });
+  });
+  const blob=new Blob([csv],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`payroll_${periodLabel.replace(/\s+/g,'_')}.csv`;a.click();toast('CSV exported','success');
 }
 
 // ==================== STOCK MANAGEMENT ====================
 function renderStock(c) {
-  c.innerHTML=`<div class="filters">
-    <select id="stockStore" onchange="renderStockTable()"><option value="">Select Store</option>${D.Stores.map(s=>`<option value="${s.id}">${s.name}</option>`).join('')}</select>
-    <select id="stockCat" onchange="renderStockTable()"><option value="">All Categories</option>${[...new Set(D.StockTemplate.map(t=>t.category))].map(c=>`<option>${c}</option>`).join('')}</select>
-    <button class="btn btn-sm btn-success" onclick="saveStockAll()"><i class="fas fa-save"></i> Save All</button>
-  </div><div class="card"><div class="table-wrap"><table><thead><tr><th>Category</th><th>Item</th><th>Unit</th><th>Min</th><th>QTY</th><th>Status</th></tr></thead><tbody id="stockBody"></tbody></table></div></div>`;
+  const cats=[...new Set(D.StockTemplate.map(t=>t.category))].sort();
+  const stores=getAccessibleStores();
+  c.innerHTML=`<div style="display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap">
+    <div style="flex:1">
+      <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+        <select id="stockCat" onchange="renderStockTable()" style="padding:10px 14px;border:2px solid var(--border);border-radius:8px;font-size:14px">
+          <option value="">All Categories</option>${cats.map(cat=>`<option>${escHtml(cat)}</option>`).join('')}</select>
+        <div class="search-box" style="min-width:200px;flex:1"><i class="fas fa-search"></i>
+          <input type="text" id="stockSearch" placeholder="Search items..." oninput="renderStockTable()" style="padding:10px 14px 10px 36px;border:2px solid var(--border);border-radius:8px;font-size:14px;width:100%"></div>
+        <button class="btn btn-primary btn-sm" onclick="openStockItemModal()"><i class="fas fa-plus"></i> Add Item</button>
+      </div>
+    </div>
+  </div>
+  <div class="card" style="margin-bottom:16px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <h3><i class="fas fa-boxes-stacked" style="color:var(--accent);margin-right:8px"></i>Stock Template <span id="stockCount" style="font-size:13px;font-weight:400;color:var(--text-light)"></span></h3>
+      <span style="font-size:12px;color:var(--text-light)"><i class="fas fa-info-circle"></i> Changes apply to <strong>all ${stores.length} stores</strong></span>
+    </div>
+    <div class="table-wrap"><table><thead><tr>
+      <th style="width:40px">#</th><th>Item</th><th>Category</th><th>Unit</th><th>Min</th><th>Supplier</th><th style="width:100px">Actions</th>
+    </tr></thead><tbody id="stockBody"></tbody></table></div>
+  </div>
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <h3><i class="fas fa-store" style="color:var(--accent);margin-right:8px"></i>Store QTY Snapshot</h3>
+      <select id="stockStore" onchange="renderStoreQtyTable()" style="padding:8px 12px;border:2px solid var(--border);border-radius:8px;font-size:14px">
+        <option value="">Select Store</option>${stores.map(s=>`<option value="${s.id}">${escHtml(s.name)}</option>`).join('')}</select>
+    </div>
+    <div class="table-wrap"><table><thead><tr><th>Category</th><th>Item</th><th>Unit</th><th>Min</th><th>QTY</th><th>Status</th></tr></thead><tbody id="storeQtyBody"></tbody></table></div>
+    <div style="margin-top:12px;text-align:right"><button class="btn btn-success btn-sm" onclick="saveStockAll()"><i class="fas fa-save"></i> Save All QTY</button></div>
+  </div>`;
+  renderStockTable();
 }
 function renderStockTable() {
+  const catF=$('stockCat')?.value||'';
+  const search=($('stockSearch')?.value||'').toLowerCase().trim();
+  let items=[...D.StockTemplate];
+  if(catF)items=items.filter(t=>t.category===catF);
+  if(search)items=items.filter(t=>(t.name||'').toLowerCase().includes(search)||(t.category||'').toLowerCase().includes(search));
+  items.sort((a,b)=>(a.category||'').localeCompare(b.category||'')||(a.sortOrder||0)-(b.sortOrder||0));
+  const cnt=$('stockCount');if(cnt)cnt.textContent=`(${items.length} items)`;
+  let html='';let lastCat='';
+  items.forEach((t,idx)=>{
+    if(t.category!==lastCat){
+      lastCat=t.category;
+      const catItems=items.filter(i=>i.category===lastCat);
+      const catIcon=lastCat.toLowerCase().includes('dry')?'fa-boxes-stacked':'fa-seedling';
+      html+=`<tr><td colspan="7" style="background:var(--primary);color:#fff;font-weight:700;font-size:14px;padding:10px 16px;border:none">
+        <i class="fas ${catIcon}" style="margin-right:8px"></i>${escHtml(lastCat)} <span style="opacity:.6;font-weight:400;font-size:12px;margin-left:8px">${catItems.length} items</span></td></tr>`;
+    }
+    const icon=stockItemIcon(t.name);
+    const iconCls=stockIconClass(t.category);
+    const sup1=t.supplier1||'';const sup2=t.supplier2||'';const sup3=t.supplier3||'';
+    const supName=c=>{const s=D.Suppliers.find(x=>x.id===c||x.name===c);return s?s.name:c;};
+    const supCount=[sup1,sup2,sup3].filter(Boolean).length;
+    const supDisplay=sup1?`<span>${escHtml(supName(sup1))}</span>`:'<span style="color:#ccc">—</span>';
+    const supExtra=supCount>1?`<span style="font-size:11px;color:var(--accent);margin-left:4px;cursor:help" title="${[sup2,sup3].filter(Boolean).map(c=>supName(c)).join(', ')}">+${supCount-1}</span>`:'';
+    const memoIcon=t.memo?`<i class="fas fa-sticky-note" style="color:var(--warning);margin-left:6px;font-size:11px;cursor:help" title="${escHtml(t.memo)}"></i>`:'';
+    html+=`<tr>
+      <td style="color:var(--text-light);font-size:12px">${idx+1}</td>
+      <td><div style="display:flex;align-items:center"><span class="item-icon ${iconCls}"><i class="fas ${icon}"></i></span><strong>${escHtml(t.name)}</strong>${memoIcon}</div></td>
+      <td><span style="font-size:12px;color:var(--text-light)">${escHtml(t.category)}</span></td>
+      <td>${escHtml(t.unit)}</td>
+      <td style="font-weight:600">${t.min}</td>
+      <td style="font-size:12px">${supDisplay}${supExtra}</td>
+      <td>
+        <button class="btn-icon btn-outline" onclick="openStockItemModal('${t.id}')" title="Edit"><i class="fas fa-pen" style="font-size:12px"></i></button>
+        <button class="btn-icon" style="color:var(--danger)" onclick="deleteStockItem('${t.id}')" title="Delete"><i class="fas fa-trash" style="font-size:12px"></i></button>
+      </td>
+    </tr>`;
+  });
+  $('stockBody').innerHTML=html||'<tr><td colspan="7" style="text-align:center;color:var(--text-light)">No items found</td></tr>';
+}
+// ---- Store QTY Snapshot table ----
+function renderStoreQtyTable(){
   const storeId=$('stockStore')?.value;
-  const cat=$('stockCat')?.value||'';
-  if(!storeId){$('stockBody').innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--text-light)">Please select a store</td></tr>';return;}
+  if(!storeId){$('storeQtyBody').innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--text-light)">Select a store to view quantities</td></tr>';return;}
+  const catF=$('stockCat')?.value||'';
   let items=D.StoreStock.filter(s=>String(s.storeId)===storeId);
-  if(cat)items=items.filter(s=>s.category===cat);
-  $('stockBody').innerHTML=items.map((s,i)=>{
+  if(catF)items=items.filter(s=>s.category===catF);
+  items.forEach(it=>{const tpl=D.StockTemplate.find(t=>t.id===it.itemId);it._so=tpl?tpl.sortOrder:9999;});
+  items.sort((a,b)=>(a.category||'').localeCompare(b.category||'')||a._so-b._so);
+  $('storeQtyBody').innerHTML=items.map(s=>{
     const qty=Number(s.qty)||0;const min=Number(s.min)||0;
     const status=qty<=0?'badge-danger':qty<=min?'badge-warning':'badge-success';
     const statusText=qty<=0?'Out of Stock':qty<=min?'Low':'OK';
-    return`<tr><td>${escHtml(s.category)}</td><td>${escHtml(s.name)}</td><td>${escHtml(s.unit)}</td><td>${min}</td>
-    <td><input type="number" min="0" value="${qty}" style="width:80px;padding:6px;border:2px solid var(--border);border-radius:6px" data-store="${storeId}" data-item="${s.itemId}" onchange="updateStockQty(this)"></td>
+    return`<tr><td style="font-size:12px;color:var(--text-light)">${escHtml(s.category)}</td><td>${escHtml(s.name)}</td><td>${escHtml(s.unit)}</td><td>${min}</td>
+    <td><input type="number" min="0" value="${qty}" style="width:80px;padding:6px;border:2px solid var(--border);border-radius:6px;font-weight:600;text-align:center" data-store="${storeId}" data-item="${s.itemId}" onchange="updateStockQty(this)"></td>
     <td><span class="badge ${status}">${statusText}</span></td></tr>`;
-  }).join('');
+  }).join('')||'<tr><td colspan="6" style="text-align:center;color:var(--text-light)">No items</td></tr>';
 }
 function updateStockQty(el) {
   const storeId=el.dataset.store, itemId=el.dataset.item, qty=Number(el.value)||0;
@@ -807,13 +1464,157 @@ function updateStockQty(el) {
 async function saveStockAll() {
   LS.set('StoreStock',D.StoreStock);
   if(API.mode==='cloud'){updateSyncStatus('syncing');const r=await API.post({action:'saveSheet',sheet:'StoreStock',rows:D.StoreStock});updateSyncStatus(r&&!r.error?'online':'offline');}
-  renderStockTable(); toast('Stock saved!','success');
+  renderStoreQtyTable(); toast('Stock quantities saved!','success');
+}
+
+// ---- Stock Item Add/Edit Modal ----
+function openStockItemModal(editId){
+  const existing=editId?D.StockTemplate.find(t=>t.id===editId):null;
+  const cats=[...new Set(D.StockTemplate.map(t=>t.category))].sort();
+  const isNew=!existing;
+  const title=isNew?'Add New Stock Item':'Edit Stock Item';
+  const maxSort=Math.max(0,...D.StockTemplate.map(t=>t.sortOrder||0));
+  const body=`
+    <div class="form-group"><label>Category</label>
+      <div style="display:flex;gap:8px">
+        <select id="siCat" style="flex:1;padding:10px;border:2px solid var(--border);border-radius:8px" onchange="toggleNewCat()">
+          ${cats.map(c=>`<option value="${c}"${existing&&existing.category===c?' selected':''}>${escHtml(c)}</option>`).join('')}
+          <option value="__new__">+ New Category</option>
+        </select>
+        <input type="text" id="siNewCat" class="hidden" placeholder="New category name" style="flex:1;padding:10px;border:2px solid var(--border);border-radius:8px">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Item Name *</label>
+        <input type="text" id="siName" value="${existing?escHtml(existing.name):''}" placeholder="e.g. Soy Sauce 15L" style="padding:10px;border:2px solid var(--border);border-radius:8px"></div>
+      <div class="form-group"><label>Unit *</label>
+        <select id="siUnit" style="padding:10px;border:2px solid var(--border);border-radius:8px">
+          ${['Bag','Box','Pack','Pcs','Kg','Ctn','L','Bottle'].map(u=>`<option${existing&&existing.unit===u?' selected':''}>${u}</option>`).join('')}
+        </select></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Minimum Stock Level</label>
+        <input type="number" id="siMin" min="0" value="${existing?existing.min:1}" style="padding:10px;border:2px solid var(--border);border-radius:8px"></div>
+      <div class="form-group"><label>Sort Order</label>
+        <input type="number" id="siSort" min="0" value="${existing?existing.sortOrder:(maxSort+1)}" style="padding:10px;border:2px solid var(--border);border-radius:8px"></div>
+    </div>
+    <div style="border-top:1px solid var(--border);margin:16px 0 12px;padding-top:14px">
+      <label style="font-size:13px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:6px;margin-bottom:10px"><i class="fas fa-truck" style="color:var(--accent)"></i>Suppliers</label>
+      <div class="form-group" style="margin-bottom:10px"><label>Supplier 1 (Primary)</label>
+        <select id="siSup1" style="padding:10px;border:2px solid var(--border);border-radius:8px;width:100%">
+          <option value="">— None —</option>${D.Suppliers.map(s=>`<option value="${escHtml(s.id)}"${existing&&(existing.supplier1===s.id||existing.supplier1===s.name)?' selected':''}>${escHtml(s.name)}</option>`).join('')}
+        </select></div>
+      <div class="form-row">
+        <div class="form-group"><label>Supplier 2</label>
+          <select id="siSup2" style="padding:10px;border:2px solid var(--border);border-radius:8px;width:100%">
+            <option value="">— None —</option>${D.Suppliers.map(s=>`<option value="${escHtml(s.id)}"${existing&&(existing.supplier2===s.id||existing.supplier2===s.name)?' selected':''}>${escHtml(s.name)}</option>`).join('')}
+          </select></div>
+        <div class="form-group"><label>Supplier 3</label>
+          <select id="siSup3" style="padding:10px;border:2px solid var(--border);border-radius:8px;width:100%">
+            <option value="">— None —</option>${D.Suppliers.map(s=>`<option value="${escHtml(s.id)}"${existing&&(existing.supplier3===s.id||existing.supplier3===s.name)?' selected':''}>${escHtml(s.name)}</option>`).join('')}
+          </select></div>
+      </div>
+    </div>
+    <div class="form-group"><label>Memo / Notes</label>
+      <textarea id="siMemo" rows="2" placeholder="e.g. Order on Mondays, 2-day lead time..." style="padding:10px;border:2px solid var(--border);border-radius:8px;resize:vertical">${existing?escHtml(existing.memo||''):''}</textarea></div>
+    ${isNew?'<p style="font-size:12px;color:var(--text-light);margin-top:8px"><i class="fas fa-info-circle"></i> This item will be added to all stores automatically.</p>':'<p style="font-size:12px;color:var(--text-light);margin-top:8px"><i class="fas fa-info-circle"></i> Changes will be synced to all stores.</p>'}`;
+  const footer=`<button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+    <button class="btn btn-primary" onclick="saveStockItem('${editId||''}')">${isNew?'<i class="fas fa-plus"></i> Add Item':'<i class="fas fa-save"></i> Save Changes'}</button>`;
+  openModal(title,body,footer);
+}
+function toggleNewCat(){
+  const sel=$('siCat');const newInput=$('siNewCat');
+  if(sel.value==='__new__'){newInput.classList.remove('hidden');newInput.focus();}
+  else{newInput.classList.add('hidden');}
+}
+async function saveStockItem(editId){
+  let category=$('siCat').value;
+  if(category==='__new__'){category=($('siNewCat').value||'').trim();if(!category){toast('Enter category name','error');return;}}
+  const name=($('siName').value||'').trim();
+  const unit=$('siUnit').value;
+  const min=parseInt($('siMin').value)||0;
+  const sortOrder=parseInt($('siSort').value)||0;
+  const supplier1=($('siSup1')?.value||'').trim();
+  const supplier2=($('siSup2')?.value||'').trim();
+  const supplier3=($('siSup3')?.value||'').trim();
+  const memo=($('siMemo')?.value||'').trim();
+  if(!name){toast('Enter item name','error');return;}
+  // Check duplicate name
+  const dup=D.StockTemplate.find(t=>t.name.toLowerCase()===name.toLowerCase()&&t.id!==editId);
+  if(dup){toast('Item "'+name+'" already exists','error');return;}
+
+  showLoading('Saving...');
+  if(editId){
+    // ---- EDIT existing ----
+    const tpl=D.StockTemplate.find(t=>t.id===editId);
+    if(!tpl){hideLoading();toast('Item not found','error');return;}
+    tpl.category=category;tpl.name=name;tpl.unit=unit;tpl.min=min;tpl.sortOrder=sortOrder;
+    tpl.supplier1=supplier1;tpl.supplier2=supplier2;tpl.supplier3=supplier3;tpl.memo=memo;
+    // Sync StoreStock for ALL stores
+    D.StoreStock.forEach(ss=>{
+      if(String(ss.itemId)===editId){
+        ss.category=category;ss.name=name;ss.unit=unit;ss.min=min;
+      }
+    });
+    LS.set('StockTemplate',D.StockTemplate);
+    LS.set('StoreStock',D.StoreStock);
+    // Save both to cloud
+    if(API.mode==='cloud'){
+      updateSyncStatus('syncing');
+      const r1=await API.post({action:'saveSheet',sheet:'StockTemplate',rows:D.StockTemplate});
+      const r2=await API.post({action:'saveSheet',sheet:'StoreStock',rows:D.StoreStock});
+      updateSyncStatus(r1&&!r1.error&&r2&&!r2.error?'online':'offline');
+    }
+    hideLoading();closeModal();renderStockTable();
+    toast(`"${name}" updated — synced to all stores`,'success');
+  } else {
+    // ---- ADD new ----
+    const newId=genId('t');
+    const tpl={id:newId,category,name,unit,min,sortOrder,supplier1,supplier2,supplier3,memo};
+    D.StockTemplate.push(tpl);
+    // Add to StoreStock for EVERY store
+    D.Stores.forEach(store=>{
+      D.StoreStock.push({storeId:store.id,itemId:newId,category,name,unit,min,qty:0});
+    });
+    LS.set('StockTemplate',D.StockTemplate);
+    LS.set('StoreStock',D.StoreStock);
+    // Save both to cloud
+    if(API.mode==='cloud'){
+      updateSyncStatus('syncing');
+      const r1=await API.post({action:'saveSheet',sheet:'StockTemplate',rows:D.StockTemplate});
+      const r2=await API.post({action:'saveSheet',sheet:'StoreStock',rows:D.StoreStock});
+      updateSyncStatus(r1&&!r1.error&&r2&&!r2.error?'online':'offline');
+    }
+    hideLoading();closeModal();renderStockTable();
+    toast(`"${name}" added to all stores`,'success');
+  }
+}
+async function deleteStockItem(id){
+  const tpl=D.StockTemplate.find(t=>t.id===id);
+  if(!tpl)return;
+  if(!confirm(`Delete "${tpl.name}"?\n\nThis will remove it from ALL stores and future weekly counts.`))return;
+  showLoading('Deleting...');
+  // Remove from StockTemplate
+  D.StockTemplate=D.StockTemplate.filter(t=>t.id!==id);
+  // Remove from StoreStock for all stores
+  D.StoreStock=D.StoreStock.filter(s=>String(s.itemId)!==id);
+  LS.set('StockTemplate',D.StockTemplate);
+  LS.set('StoreStock',D.StoreStock);
+  // Save both to cloud
+  if(API.mode==='cloud'){
+    updateSyncStatus('syncing');
+    const r1=await API.post({action:'saveSheet',sheet:'StockTemplate',rows:D.StockTemplate});
+    const r2=await API.post({action:'saveSheet',sheet:'StoreStock',rows:D.StoreStock});
+    updateSyncStatus(r1&&!r1.error&&r2&&!r2.error?'online':'offline');
+  }
+  hideLoading();renderStockTable();
+  toast(`"${tpl.name}" deleted from all stores`,'success');
 }
 
 // ==================== ORDER LIST ====================
 function renderOrders(c) {
   c.innerHTML=`<div class="filters">
-    <select id="orderStore" onchange="renderOrderTable()"><option value="">Select Store</option>${D.Stores.map(s=>`<option value="${s.id}">${s.name}</option>`).join('')}</select>
+    <select id="orderStore" onchange="renderOrderTable()"><option value="">Select Store</option>${getAccessibleStores().map(s=>`<option value="${s.id}">${s.name}</option>`).join('')}</select>
     <button class="btn btn-sm btn-success" onclick="exportOrder()"><i class="fas fa-download"></i> Export CSV</button>
     <button class="btn btn-sm btn-primary" onclick="printOrder()"><i class="fas fa-print"></i> Print</button>
   </div><div class="card"><div class="table-wrap"><table><thead><tr><th>Category</th><th>Item</th><th>Unit</th><th>Min</th><th>Current</th><th>Order QTY</th></tr></thead><tbody id="orderBody"></tbody></table></div></div>`;
@@ -836,12 +1637,614 @@ function exportOrder() {
 }
 function printOrder(){window.print();}
 
+// ==================== SUPPLIER MANAGEMENT ====================
+async function renderSuppliers(c){
+  // Auto-fetch if Suppliers data is empty
+  if(D.Suppliers.length===0 && API.mode==='cloud'){
+    showLoading('Loading suppliers...');
+    try{
+      const r=await API.get('getSheet',{sheet:'Suppliers'});
+      console.log('[TBMS] Direct Suppliers fetch:', r);
+      if(r && Array.isArray(r.data) && r.data.length>0){
+        D.Suppliers=r.data.map(row=>normalizeRow('Suppliers',row));
+        LS.set('Suppliers',D.Suppliers);
+        console.log('[TBMS] Direct fetch got',D.Suppliers.length,'suppliers');
+      }
+    }catch(e){console.error('[TBMS] Direct Suppliers fetch error:',e);}
+    hideLoading();
+  }
+  c.innerHTML=`<div class="card">
+    <div class="card-header"><h3><i class="fas fa-truck-field" style="color:var(--accent);margin-right:8px"></i>Suppliers</h3>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn btn-outline btn-sm" onclick="diagnoseSuppliersAPI()" title="Diagnose"><i class="fas fa-stethoscope"></i></button>
+        <button class="btn btn-primary btn-sm" onclick="openSupplierModal()"><i class="fas fa-plus"></i> Add Supplier</button>
+      </div></div>
+    <div id="supDiag" class="hidden" style="padding:12px;background:#fff3cd;border-radius:8px;margin-bottom:12px;font-size:12px;font-family:monospace;white-space:pre-wrap"></div>
+    <div class="table-wrap"><table><thead><tr>
+      <th>#</th><th>ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Website</th><th>Actions</th>
+    </tr></thead><tbody id="supBody"></tbody></table></div>
+  </div>`;
+  renderSupplierTable();
+}
+async function diagnoseSuppliersAPI(){
+  const diag=$('supDiag'); diag.classList.remove('hidden');
+  diag.textContent='Testing API...\n';
+  try{
+    diag.textContent+='1. Fetching getAll...\n';
+    const all=await API.get('getAll');
+    const keys=all?Object.keys(all.data||{}):'NO DATA';
+    diag.textContent+=`   Response keys: ${JSON.stringify(keys)}\n`;
+    diag.textContent+=`   Has Suppliers? ${all?.data?.Suppliers?'YES ('+all.data.Suppliers.length+' rows)':'NO'}\n`;
+    if(all?.error) diag.textContent+=`   ERROR: ${all.error}\n`;
+    if(all?.data?.Suppliers?.length>0){
+      diag.textContent+=`   First row: ${JSON.stringify(all.data.Suppliers[0])}\n`;
+    }
+    diag.textContent+='\n2. Fetching getSheet(Suppliers)...\n';
+    const single=await API.get('getSheet',{sheet:'Suppliers'});
+    diag.textContent+=`   Result: ${single?.data?single.data.length+' rows':'ERROR: '+(single?.error||'no data')}\n`;
+    if(single?.data?.length>0){
+      diag.textContent+=`   First row: ${JSON.stringify(single.data[0])}\n`;
+      // Auto-load if we got data
+      D.Suppliers=single.data.map(r=>normalizeRow('Suppliers',r));
+      LS.set('Suppliers',D.Suppliers);
+      renderSupplierTable();
+      diag.textContent+=`\n✅ Loaded ${D.Suppliers.length} suppliers! Table updated.\n`;
+    }
+    diag.textContent+=`\n3. Current D.Suppliers: ${D.Suppliers.length} items\n`;
+    diag.textContent+=`4. API URL: ${API.url}\n`;
+  }catch(e){diag.textContent+=`\nERROR: ${e.message}\n`;}
+}
+function renderSupplierTable(){
+  const sups=D.Suppliers;
+  $('supBody').innerHTML=sups.length?sups.map((s,i)=>{
+    const web=s.website?`<a href="${escHtml(s.website.startsWith('http')?s.website:'https://'+s.website)}" target="_blank" style="color:var(--accent);font-size:13px">${escHtml(s.website.replace(/^https?:\/\/(www\.)?/,''))}</a>`:'—';
+    return`<tr>
+      <td style="color:var(--text-light);font-size:12px">${i+1}</td>
+      <td style="font-size:12px;color:var(--text-light)">${escHtml(s.id)}</td>
+      <td><strong>${escHtml(s.name)}</strong>${s.memo?`<br><span style="font-size:11px;color:var(--text-light)">${escHtml(s.memo)}</span>`:''}</td>
+      <td style="font-size:13px">${s.email?`<a href="mailto:${escHtml(s.email)}">${escHtml(s.email)}</a>`:'—'}</td>
+      <td style="font-size:13px">${s.phone||'—'}</td>
+      <td>${web}</td>
+      <td>
+        <button class="btn-icon btn-outline" onclick="openSupplierModal('${s.id}')" title="Edit"><i class="fas fa-pen" style="font-size:12px"></i></button>
+        <button class="btn-icon" style="color:var(--danger)" onclick="deleteSupplier('${s.id}')" title="Delete"><i class="fas fa-trash" style="font-size:12px"></i></button>
+      </td></tr>`;
+  }).join(''):'<tr><td colspan="7" style="text-align:center;color:var(--text-light)">No suppliers. Click "Add Supplier" to get started.</td></tr>';
+}
+function openSupplierModal(editId){
+  const existing=editId?D.Suppliers.find(s=>s.id===editId):null;
+  const isNew=!existing;
+  const title=isNew?'Add Supplier':'Edit Supplier';
+  const v=existing||{name:'',email:'',phone:'',address:'',website:'',memo:''};
+  const body=`
+    <div class="form-group"><label>Company Name *</label>
+      <input type="text" id="supName" value="${escHtml(v.name)}" placeholder="e.g. Pan Asia" style="padding:10px;border:2px solid var(--border);border-radius:8px"></div>
+    <div class="form-row">
+      <div class="form-group"><label>Email</label>
+        <input type="email" id="supEmail" value="${escHtml(v.email)}" placeholder="orders@supplier.com" style="padding:10px;border:2px solid var(--border);border-radius:8px"></div>
+      <div class="form-group"><label>Phone</label>
+        <input type="tel" id="supPhone" value="${escHtml(v.phone)}" placeholder="020 1234 5678" style="padding:10px;border:2px solid var(--border);border-radius:8px"></div>
+    </div>
+    <div class="form-group"><label>Address</label>
+      <input type="text" id="supAddr" value="${escHtml(v.address)}" placeholder="Full address" style="padding:10px;border:2px solid var(--border);border-radius:8px"></div>
+    <div class="form-group"><label>Website / Order Link</label>
+      <input type="url" id="supWeb" value="${escHtml(v.website)}" placeholder="https://..." style="padding:10px;border:2px solid var(--border);border-radius:8px"></div>
+    <div class="form-group"><label>Memo</label>
+      <textarea id="supMemo" rows="2" placeholder="Notes about this supplier..." style="padding:10px;border:2px solid var(--border);border-radius:8px;resize:vertical">${escHtml(v.memo)}</textarea></div>`;
+  const footer=`<button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+    <button class="btn btn-primary" onclick="saveSupplier('${editId||''}')">${isNew?'<i class="fas fa-plus"></i> Add':'<i class="fas fa-save"></i> Save'}</button>`;
+  openModal(title,body,footer);
+}
+async function saveSupplier(editId){
+  const name=($('supName')?.value||'').trim();
+  if(!name){toast('Company name is required','error');return;}
+  const dup=D.Suppliers.find(s=>s.name.toLowerCase()===name.toLowerCase()&&s.id!==editId);
+  if(dup){toast(`"${name}" already exists`,'error');return;}
+  const row={
+    id:editId||genId('sup'), name,
+    email:($('supEmail')?.value||'').trim(),
+    phone:($('supPhone')?.value||'').trim(),
+    address:($('supAddr')?.value||'').trim(),
+    website:($('supWeb')?.value||'').trim(),
+    memo:($('supMemo')?.value||'').trim(),
+    active:true
+  };
+  showLoading('Saving...');
+  await saveRow('Suppliers',row);
+  hideLoading();closeModal();renderSupplierTable();
+  toast(`${name} ${editId?'updated':'added'}`,'success');
+}
+async function deleteSupplier(id){
+  const s=D.Suppliers.find(x=>x.id===id);if(!s)return;
+  if(!confirm(`Delete supplier "${s.name}"?`))return;
+  showLoading('Deleting...');
+  await deleteData('Suppliers',id);
+  hideLoading();renderSupplierTable();
+  toast(`${s.name} deleted`,'success');
+}
+
+// ==================== WEEKLY STOCK COUNT ====================
+function getISOWeek(d){d=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));var dn=d.getUTCDay()||7;d.setUTCDate(d.getUTCDate()+4-dn);var ys=new Date(Date.UTC(d.getUTCFullYear(),0,1));return d.getUTCFullYear()*100+Math.ceil((((d-ys)/86400000)+1)/7);}
+
+// ==================== ITEM ICON MAPPING ====================
+function stockItemIcon(name){
+  const n=(name||'').toLowerCase();
+  // Grains & Rice
+  if(n.includes('rice')) return 'fa-bowl-rice';
+  if(n.includes('noodle')) return 'fa-utensils';
+  if(n.includes('flour')||n.includes('starch')||n.includes('corn flour')) return 'fa-wheat-awn';
+  if(n.includes('bread crumb')) return 'fa-bread-slice';
+  if(n.includes('baking powder')) return 'fa-cookie';
+  // Seasoning & Spices
+  if(n.includes('sugar')) return 'fa-cubes-stacked';
+  if(n.includes('salt')) return 'fa-cube';
+  if(n.includes('msg')) return 'fa-mortar-pestle';
+  if(n.includes('chilli')||n.includes('hot')) return 'fa-pepper-hot';
+  if(n.includes('curry')) return 'fa-fire';
+  if(n.includes('sesame seed')) return 'fa-seedling';
+  if(n.includes('garlic flake')||n.includes('garlic peeled')) return 'fa-clover';
+  if(n.includes('black pepper')) return 'fa-circle';
+  if(n.includes('ginger')) return 'fa-leaf';
+  // Sauces & Liquids
+  if(n.includes('soy sauce')) return 'fa-bottle-droplet';
+  if(n.includes('go chu jang')) return 'fa-jar-wheat';
+  if(n.includes('mirine')||n.includes('wine')) return 'fa-wine-bottle';
+  if(n.includes('golden syrup')) return 'fa-bottle-droplet';
+  if(n.includes('sesame oil')||n.includes('rapeseed oil')) return 'fa-oil-can';
+  if(n.includes('udon sauce')) return 'fa-bottle-droplet';
+  if(n.includes('vinegar')) return 'fa-flask';
+  if(n.includes('ketchup')||n.includes('sriracha')||n.includes('crazy hot')) return 'fa-bottle-droplet';
+  if(n.includes('mayonnaise')) return 'fa-jar-wheat';
+  if(n.includes('lime juice')) return 'fa-lemon';
+  // Dried goods
+  if(n.includes('radish')) return 'fa-carrot';
+  if(n.includes('seaweed')) return 'fa-leaf';
+  // Meat
+  if(n.includes('chicken')) return 'fa-drumstick-bite';
+  if(n.includes('beef')||n.includes('bulgogi')) return 'fa-cow';
+  if(n.includes('pork')) return 'fa-bacon';
+  // Vegetables
+  if(n.includes('cabbage')) return 'fa-leaf';
+  if(n.includes('onion')&&!n.includes('spring')) return 'fa-circle';
+  if(n.includes('spring onion')) return 'fa-seedling';
+  if(n.includes('carrot')) return 'fa-carrot';
+  if(n.includes('spinach')) return 'fa-leaf';
+  if(n.includes('beansprout')) return 'fa-seedling';
+  if(n.includes('courgette')) return 'fa-leaf';
+  if(n.includes('mushroom')) return 'fa-cloud';
+  // Others
+  if(n.includes('egg')) return 'fa-egg';
+  if(n.includes('tofu')) return 'fa-cube';
+  return 'fa-box-open';
+}
+function stockIconClass(category){return (category||'').toLowerCase().includes('dry')?'dry':'fresh';}
+
+// ==================== REORDER FUNCTIONS ====================
+let scReorderMode=false;
+function toggleReorderMode(){
+  scReorderMode=!scReorderMode;
+  const btn=$('scReorderBtn');
+  if(btn){
+    btn.innerHTML=scReorderMode?'<i class="fas fa-check"></i> Done':'<i class="fas fa-arrows-up-down"></i> Reorder';
+    btn.className=scReorderMode?'btn btn-success btn-sm':'btn btn-outline btn-sm';
+  }
+  renderStockCountTable();
+}
+function moveStockItem(itemId, direction){
+  const storeId=$('scStore')?.value;if(!storeId) return;
+  const catFilter=$('scCat')?.value||'';
+  let items=D.StoreStock.filter(s=>String(s.storeId)===storeId);
+  if(catFilter)items=items.filter(s=>s.category===catFilter);
+  // Get sortOrder from StockTemplate
+  items.forEach(it=>{const tpl=D.StockTemplate.find(t=>t.id===it.itemId);it._so=tpl?tpl.sortOrder:9999;});
+  items.sort((a,b)=>(a.category||'').localeCompare(b.category||'')||a._so-b._so);
+  // Find within same category
+  const item=items.find(i=>String(i.itemId)===String(itemId));if(!item) return;
+  const catItems=items.filter(i=>i.category===item.category);
+  const idx=catItems.findIndex(i=>String(i.itemId)===String(itemId));if(idx<0) return;
+  const swapIdx=idx+direction;
+  if(swapIdx<0||swapIdx>=catItems.length) return;
+  // Swap sortOrder in StockTemplate
+  const tplA=D.StockTemplate.find(t=>t.id===catItems[idx].itemId);
+  const tplB=D.StockTemplate.find(t=>t.id===catItems[swapIdx].itemId);
+  if(tplA&&tplB){
+    const tmp=tplA.sortOrder;tplA.sortOrder=tplB.sortOrder;tplB.sortOrder=tmp;
+    LS.set('StockTemplate',D.StockTemplate);
+    renderStockCountTable();
+  }
+}
+async function saveStockOrder(){
+  const btn=$('scSaveOrderBtn');
+  if(btn){btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Saving...';}
+  try{
+    await saveData('StockTemplate');
+    toast('Item order saved','success');
+  }catch(e){toast('Save error: '+e.message,'error');}
+  if(btn){btn.disabled=false;btn.innerHTML='<i class="fas fa-cloud-arrow-up"></i> Save Order';}
+}
+
+function renderStockCount(c){
+  const stores=getAccessibleStores();
+  const today=new Date().toISOString().split('T')[0];
+  const week=getISOWeek(new Date());
+  const cats=[...new Set(D.StockTemplate.map(t=>t.category))].sort();
+  c.innerHTML=`<div class="card" style="margin-bottom:16px">
+    <h3 style="margin-bottom:16px"><i class="fas fa-clipboard-check" style="color:var(--accent);margin-right:8px"></i>Weekly Stock Count — Week ${String(week).slice(-2)} (${String(week).slice(0,4)})</h3>
+    <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end">
+      <div class="form-group" style="margin:0;flex:1;min-width:180px"><label>Store</label>
+        <select id="scStore" onchange="renderStockCountTable()" style="width:100%;padding:10px;border:2px solid var(--border);border-radius:8px;font-size:15px;font-weight:600">${stores.map(s=>`<option value="${s.id}">${escHtml(s.name)}</option>`).join('')}</select></div>
+      <div class="form-group" style="margin:0"><label>Category</label>
+        <select id="scCat" onchange="renderStockCountTable()" style="padding:10px;border:2px solid var(--border);border-radius:8px">
+          <option value="">All Categories</option>${cats.map(cat=>`<option>${escHtml(cat)}</option>`).join('')}</select></div>
+      <div class="form-group" style="margin:0"><label>Count Date</label>
+        <input type="date" id="scDate" value="${today}" style="padding:10px;border:2px solid var(--border);border-radius:8px"></div>
+      <button class="btn btn-outline btn-sm" id="scReorderBtn" onclick="toggleReorderMode()" style="height:44px"><i class="fas fa-arrows-up-down"></i> Reorder</button>
+      <button class="btn btn-primary" id="scSubmitBtn" onclick="submitStockCount()" style="height:44px"><i class="fas fa-check"></i> Submit Count</button>
+    </div>
+  </div>
+  <div id="scStoreBanner" style="margin-bottom:16px"></div>
+  <div id="scReorderBar" class="hidden reorder-toolbar">
+    <i class="fas fa-arrows-up-down" style="color:var(--accent)"></i>
+    <span>Use <strong>▲▼</strong> arrows to reorder items within each category</span>
+    <button class="btn btn-primary btn-sm" id="scSaveOrderBtn" onclick="saveStockOrder()" style="margin-left:auto"><i class="fas fa-cloud-arrow-up"></i> Save Order</button>
+  </div>
+  <div class="card"><div class="table-wrap"><table><thead><tr>
+    <th id="scThSort" class="hidden" style="width:50px">Sort</th>
+    <th>Item</th><th>Unit</th><th>Last Count</th><th>New Count</th><th>Usage(Δ)</th>
+  </tr></thead><tbody id="scBody"></tbody></table></div></div>
+  <div id="scProgress" style="text-align:center;padding:8px;font-size:13px;color:var(--text-light)"></div>`;
+  if(stores.length)renderStockCountTable();
+}
+function renderStockCountTable(){
+  const cols=scReorderMode?6:5;
+  const storeId=$('scStore')?.value;
+  if(!storeId){$('scBody').innerHTML=`<tr><td colspan="${cols}" style="text-align:center">Select a store</td></tr>`;$('scStoreBanner').innerHTML='';return;}
+  const store=D.Stores.find(s=>String(s.id)===storeId);
+  const storeCode=store?store.code:'';
+  const storeName=store?store.name:'';
+  // Store banner
+  $('scStoreBanner').innerHTML=`<div style="background:linear-gradient(135deg,var(--primary),var(--accent));color:#fff;padding:16px 24px;border-radius:12px;display:flex;align-items:center;gap:16px">
+    <div style="width:48px;height:48px;background:rgba(255,255,255,.2);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800">${escHtml(storeCode)}</div>
+    <div><div style="font-size:20px;font-weight:700">${escHtml(storeName)}</div><div style="font-size:13px;opacity:.7">Weekly stock count submission</div></div>
+  </div>`;
+  // Toggle reorder bar and sort column
+  const reorderBar=$('scReorderBar');if(reorderBar)reorderBar.classList.toggle('hidden',!scReorderMode);
+  const thSort=$('scThSort');if(thSort)thSort.classList.toggle('hidden',!scReorderMode);
+  const catFilter=$('scCat')?.value||'';
+  let items=D.StoreStock.filter(s=>String(s.storeId)===storeId);
+  if(catFilter)items=items.filter(s=>s.category===catFilter);
+  // Sort by sortOrder from StockTemplate (not alphabetical)
+  items.forEach(it=>{const tpl=D.StockTemplate.find(t=>t.id===it.itemId);it._so=tpl?tpl.sortOrder:9999;});
+  items.sort((a,b)=>(a.category||'').localeCompare(b.category||'')||a._so-b._so);
+  // Group by category with section headers
+  let html='';let lastCat='';
+  items.forEach((item,idx)=>{
+    if(item.category!==lastCat){
+      lastCat=item.category;
+      const catCount=items.filter(i=>i.category===lastCat).length;
+      const catIcon=lastCat.toLowerCase().includes('dry')?'fa-boxes-stacked':'fa-seedling';
+      html+=`<tr><td colspan="${cols}" style="background:var(--primary);color:#fff;font-weight:700;font-size:14px;padding:10px 16px;border:none">
+        <i class="fas ${catIcon}" style="margin-right:8px"></i>${escHtml(lastCat)} <span style="opacity:.6;font-weight:400;font-size:12px;margin-left:8px">${catCount} items</span></td></tr>`;
+    }
+    const prev=getLastCount(storeId,item.itemId);
+    const icon=stockItemIcon(item.name);
+    const iconCls=stockIconClass(item.category);
+    const catItems=items.filter(i=>i.category===item.category);
+    const posInCat=catItems.findIndex(i=>String(i.itemId)===String(item.itemId));
+    const isFirst=posInCat===0;
+    const isLast=posInCat===catItems.length-1;
+    const sortCell=scReorderMode?`<td style="text-align:center;padding:4px"><div class="sort-arrows">
+      <button onclick="moveStockItem('${item.itemId}',-1)"${isFirst?' disabled':''}><i class="fas fa-chevron-up"></i></button>
+      <button onclick="moveStockItem('${item.itemId}',1)"${isLast?' disabled':''}><i class="fas fa-chevron-down"></i></button>
+    </div></td>`:'';
+    html+=`<tr data-itemid="${item.itemId}">
+      ${sortCell}
+      <td><div style="display:flex;align-items:center"><span class="item-icon ${iconCls}"><i class="fas ${icon}"></i></span><strong>${escHtml(item.name)}</strong></div></td>
+      <td>${escHtml(item.unit)}</td>
+      <td style="text-align:center;color:var(--text-light)">${prev!==null?prev:'—'}</td>
+      <td><input type="number" min="0" step="0.5" class="sc-qty" data-item="${item.itemId}" data-cat="${escHtml(item.category)}" data-name="${escHtml(item.name)}" data-unit="${escHtml(item.unit)}" value="${prev!==null?prev:''}" placeholder="0" style="width:80px;padding:8px;border:2px solid var(--border);border-radius:8px;font-size:14px;font-weight:600;text-align:center" oninput="updateScDelta(this)"></td>
+      <td style="text-align:center"><span class="sc-delta" data-item="${item.itemId}">—</span></td>
+    </tr>`;
+  });
+  $('scBody').innerHTML=html||`<tr><td colspan="${cols}" style="text-align:center">No items found</td></tr>`;
+  updateScProgress();
+}
+function getLastCount(storeId,itemId){
+  const recs=D.StockCount.filter(sc=>String(sc.storeId)===storeId&&String(sc.itemId)===itemId).sort((a,b)=>(b.countDate||'').localeCompare(a.countDate||''));
+  return recs.length?Number(recs[0].qty):null;
+}
+function updateScDelta(el){
+  const newQty=parseFloat(el.value)||0;
+  const prev=getLastCount($('scStore')?.value,el.dataset.item);
+  const delta=prev!==null?(newQty-prev):null;
+  const span=document.querySelector(`.sc-delta[data-item="${el.dataset.item}"]`);
+  if(span){
+    if(delta===null){span.textContent='—';span.style.color='';}
+    else if(delta<0){span.textContent=delta.toFixed(1);span.style.color='var(--danger);font-weight:700';}
+    else if(delta>0){span.textContent='+'+delta.toFixed(1);span.style.color='var(--success);font-weight:700';}
+    else{span.textContent='0';span.style.color='var(--text-light)';}
+  }
+  updateScProgress();
+}
+function updateScProgress(){
+  const all=document.querySelectorAll('.sc-qty');
+  const filled=[...all].filter(el=>el.value!=='').length;
+  const p=$('scProgress');if(p)p.textContent=`${filled} / ${all.length} items entered`;
+}
+async function submitStockCount(){
+  const storeId=$('scStore')?.value;
+  const countDate=$('scDate')?.value;
+  if(!storeId){toast('Select a store','error');return;}
+  if(!countDate){toast('Select a date','error');return;}
+  const items=[];
+  document.querySelectorAll('.sc-qty').forEach(el=>{
+    if(el.value!==''){
+      items.push({itemId:el.dataset.item,category:el.dataset.cat,name:el.dataset.name,unit:el.dataset.unit,qty:parseFloat(el.value)||0});
+    }
+  });
+  if(items.length===0){toast('Enter at least one item','error');return;}
+  const btn=$('scSubmitBtn');if(btn){btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Saving...';}
+  try{
+    const r=await API.post({action:'saveStockCount',storeId,countDate,items,submittedBy:currentUser?.id||''});
+    if(r&&!r.error){
+      // Update local StoreStock qty
+      items.forEach(item=>{
+        const ss=D.StoreStock.find(s=>String(s.storeId)===storeId&&String(s.itemId)===item.itemId);
+        if(ss)ss.qty=item.qty;
+      });
+      LS.set('StoreStock',D.StoreStock);
+      // Add to local StockCount
+      const week=getISOWeek(new Date(countDate));
+      const ts=new Date().toISOString();
+      items.forEach(item=>{
+        D.StockCount.push({id:'sc'+Date.now()+Math.random().toString(36).substr(2,4),storeId,week,countDate,itemId:item.itemId,category:item.category,name:item.name,unit:item.unit,qty:item.qty,submittedBy:currentUser?.id||'',submittedAt:ts});
+      });
+      LS.set('StockCount',D.StockCount);
+      const store=D.Stores.find(s=>String(s.id)===storeId);
+      toast(`Week ${week}: ${items.length} items saved for ${store?store.name:'store'}`,'success');
+      navigate('stock-history');
+    }else{toast('Failed: '+(r?.error||'Unknown error'),'error');}
+  }catch(e){toast('Error: '+e.message,'error');}
+  if(btn){btn.disabled=false;btn.innerHTML='<i class="fas fa-check"></i> Submit Count';}
+}
+
+// ==================== COUNT HISTORY ====================
+function renderStockHistory(c){
+  const stores=getAccessibleStores();
+  c.innerHTML=`<div class="card">
+    <h3 style="margin-bottom:16px"><i class="fas fa-history" style="color:var(--accent);margin-right:8px"></i>Stock Count History</h3>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px">
+      <select id="shStore" onchange="renderStockHistoryTable()" style="padding:8px 12px;border:2px solid var(--border);border-radius:8px">
+        <option value="">All Stores</option>${stores.map(s=>`<option value="${s.id}">${escHtml(s.name)}</option>`).join('')}</select>
+      <select id="shCat" onchange="renderStockHistoryTable()" style="padding:8px 12px;border:2px solid var(--border);border-radius:8px">
+        <option value="">All Categories</option>${[...new Set(D.StockTemplate.map(t=>t.category))].map(cat=>`<option>${escHtml(cat)}</option>`).join('')}</select>
+      <select id="shRange" onchange="renderStockHistoryTable()" style="padding:8px 12px;border:2px solid var(--border);border-radius:8px">
+        <option value="30">Last 30 days</option><option value="90" selected>Last 13 weeks</option><option value="180">Last 6 months</option><option value="365">Last year</option></select>
+      <select id="shItem" onchange="renderStockHistoryTable()" style="padding:8px 12px;border:2px solid var(--border);border-radius:8px">
+        <option value="">All Items</option>${D.StockTemplate.sort((a,b)=>(a.name||'').localeCompare(b.name||'')).map(t=>`<option value="${t.id}">${escHtml(t.name)}</option>`).join('')}</select>
+    </div>
+    <div id="shSummary" style="margin-bottom:12px"></div>
+    <div class="table-wrap"><table><thead><tr>
+      <th>Date</th><th>Week</th><th>Store</th><th>Category</th><th>Item</th><th>Unit</th><th>Qty</th><th>Submitted By</th>
+    </tr></thead><tbody id="shBody"></tbody></table></div>
+  </div>`;
+  renderStockHistoryTable();
+}
+function renderStockHistoryTable(){
+  const storeF=$('shStore')?.value||'';
+  const catF=$('shCat')?.value||'';
+  const itemF=$('shItem')?.value||'';
+  const days=parseInt($('shRange')?.value||90);
+  const cutoff=new Date(Date.now()-days*86400000).toISOString().split('T')[0];
+  let recs=D.StockCount.filter(sc=>sc.countDate>=cutoff&&hasStoreAccess(sc.storeId));
+  if(storeF)recs=recs.filter(sc=>String(sc.storeId)===storeF);
+  if(catF)recs=recs.filter(sc=>sc.category===catF);
+  if(itemF)recs=recs.filter(sc=>String(sc.itemId)===itemF);
+  recs.sort((a,b)=>(b.countDate||'').localeCompare(a.countDate||'')||(a.name||'').localeCompare(b.name||''));
+  const weeks=[...new Set(recs.map(r=>r.week))];
+  $('shSummary').innerHTML=`<span style="font-size:13px;color:var(--text-light)">${recs.length} records found across ${weeks.length} weeks</span>`;
+  $('shBody').innerHTML=recs.length?recs.slice(0,500).map(sc=>{
+    const store=D.Stores.find(s=>String(s.id)===String(sc.storeId));
+    const user=D.Users.find(u=>String(u.id)===String(sc.submittedBy));
+    return`<tr>
+      <td>${sc.countDate}</td><td style="font-weight:600">W${String(sc.week).slice(-2)}</td>
+      <td>${store?escHtml(store.name):sc.storeId}</td>
+      <td style="font-size:12px;color:var(--text-light)">${escHtml(sc.category)}</td>
+      <td><strong>${escHtml(sc.name)}</strong></td><td>${escHtml(sc.unit)}</td>
+      <td style="font-weight:700;text-align:center">${sc.qty}</td>
+      <td style="font-size:12px">${user?escHtml(user.name):'—'}</td></tr>`;
+  }).join(''):'<tr><td colspan="8" style="text-align:center;color:var(--text-light)">No records found</td></tr>';
+}
+
+// ==================== WEEKLY SALES ====================
+function renderSalesInput(c){
+  const stores=getAccessibleStores();
+  const today=new Date();const weekNo=getISOWeek(today);
+  const monday=new Date(today);monday.setDate(today.getDate()-(today.getDay()||7)+1);
+  const weekStart=monday.toISOString().split('T')[0];
+  c.innerHTML=`<div class="card" style="margin-bottom:16px">
+    <h3 style="margin-bottom:16px"><i class="fas fa-chart-bar" style="color:var(--accent);margin-right:8px"></i>Weekly Sales Input</h3>
+    <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end">
+      <div class="form-group" style="margin:0;flex:1;min-width:180px"><label>Store</label>
+        <select id="wsStore" onchange="renderSalesHistory()" style="width:100%;padding:10px;border:2px solid var(--border);border-radius:8px">${stores.map(s=>`<option value="${s.id}">${escHtml(s.name)}</option>`).join('')}</select></div>
+      <div class="form-group" style="margin:0"><label>Week Start (Monday)</label>
+        <input type="date" id="wsDate" value="${weekStart}" style="padding:10px;border:2px solid var(--border);border-radius:8px"></div>
+      <div class="form-group" style="margin:0"><label>Total Sales (£)</label>
+        <input type="number" id="wsSales" min="0" step="0.01" placeholder="0.00" style="padding:10px;border:2px solid var(--border);border-radius:8px;width:140px;font-size:16px;font-weight:700"></div>
+      <div class="form-group" style="margin:0;flex:1;min-width:140px"><label>Notes</label>
+        <input type="text" id="wsNotes" placeholder="e.g. Bank holiday week" style="width:100%;padding:10px;border:2px solid var(--border);border-radius:8px"></div>
+      <button class="btn btn-primary" id="wsSaveBtn" onclick="submitWeeklySales()" style="height:44px"><i class="fas fa-save"></i> Save</button>
+    </div>
+  </div>
+  <div class="card">
+    <h3 style="margin-bottom:12px">Sales History</h3>
+    <div class="table-wrap"><table><thead><tr>
+      <th>Week</th><th>Week Start</th><th>Store</th><th>Total Sales</th><th>Notes</th><th>Submitted</th>
+    </tr></thead><tbody id="wsBody"></tbody></table></div>
+  </div>`;
+  renderSalesHistory();
+}
+function renderSalesHistory(){
+  const storeId=$('wsStore')?.value||'';
+  let recs=D.WeeklySales.filter(ws=>hasStoreAccess(ws.storeId));
+  if(storeId)recs=recs.filter(ws=>String(ws.storeId)===storeId);
+  recs.sort((a,b)=>(b.week||0)-(a.week||0));
+  $('wsBody').innerHTML=recs.length?recs.slice(0,52).map(ws=>{
+    const store=D.Stores.find(s=>String(s.id)===String(ws.storeId));
+    const user=D.Users.find(u=>String(u.id)===String(ws.submittedBy));
+    return`<tr>
+      <td style="font-weight:700">W${String(ws.week).slice(-2)}</td>
+      <td>${ws.weekStart||'—'}</td>
+      <td>${store?escHtml(store.name):ws.storeId}</td>
+      <td style="font-size:16px;font-weight:700;color:var(--success)">£${Number(ws.totalSales).toLocaleString('en-GB',{minimumFractionDigits:2})}</td>
+      <td style="font-size:12px;color:var(--text-light)">${ws.notes?escHtml(ws.notes):'—'}</td>
+      <td style="font-size:12px">${user?escHtml(user.name):'—'}</td></tr>`;
+  }).join(''):'<tr><td colspan="6" style="text-align:center;color:var(--text-light)">No sales data yet</td></tr>';
+}
+async function submitWeeklySales(){
+  const storeId=$('wsStore')?.value;
+  const weekStart=$('wsDate')?.value;
+  const totalSales=parseFloat($('wsSales')?.value||0);
+  const notes=$('wsNotes')?.value||'';
+  if(!storeId){toast('Select a store','error');return;}
+  if(!weekStart){toast('Select week start date','error');return;}
+  if(totalSales<=0){toast('Enter sales amount','error');return;}
+  const week=getISOWeek(new Date(weekStart));
+  const id='ws_'+week+'_'+storeId;
+  const row={id,storeId,week,weekStart,totalSales,notes,submittedBy:currentUser?.id||'',submittedAt:new Date().toISOString()};
+  const btn=$('wsSaveBtn');if(btn){btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin"></i>';}
+  try{
+    await saveRow('WeeklySales',row);
+    toast(`Week ${week} sales saved: £${totalSales.toFixed(2)}`,'success');
+    $('wsSales').value='';$('wsNotes').value='';
+    renderSalesHistory();
+  }catch(e){toast('Error: '+e.message,'error');}
+  if(btn){btn.disabled=false;btn.innerHTML='<i class="fas fa-save"></i> Save';}
+}
+
+// ==================== USAGE ANALYTICS ====================
+function renderAnalytics(c){
+  const stores=getAccessibleStores();
+  c.innerHTML=`<div class="card" style="margin-bottom:16px">
+    <h3 style="margin-bottom:16px"><i class="fas fa-chart-line" style="color:var(--accent);margin-right:8px"></i>Usage Analytics & Predictions</h3>
+    <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end">
+      <div class="form-group" style="margin:0;flex:1;min-width:180px"><label>Store</label>
+        <select id="anStore" onchange="populateAnalyticsItems()" style="width:100%;padding:10px;border:2px solid var(--border);border-radius:8px">
+          <option value="">Select Store</option>${stores.map(s=>`<option value="${s.id}">${escHtml(s.name)}</option>`).join('')}</select></div>
+      <div class="form-group" style="margin:0;flex:1;min-width:180px"><label>Item</label>
+        <select id="anItem" onchange="renderAnalyticsContent()" style="width:100%;padding:10px;border:2px solid var(--border);border-radius:8px">
+          <option value="">— Select Store first —</option></select></div>
+      <div class="form-group" style="margin:0"><label>Period</label>
+        <select id="anWeeks" onchange="renderAnalyticsContent()" style="padding:10px;border:2px solid var(--border);border-radius:8px">
+          <option value="8">8 weeks</option><option value="13" selected>13 weeks</option><option value="26">26 weeks</option><option value="52">52 weeks</option></select></div>
+    </div>
+  </div>
+  <div id="anCards" style="display:none">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:16px">
+      <div class="card" style="text-align:center;padding:20px"><div style="font-size:28px;font-weight:700;color:var(--accent)" id="anAvgUse">—</div><div style="font-size:12px;color:var(--text-light);margin-top:4px">Avg Weekly Usage</div></div>
+      <div class="card" style="text-align:center;padding:20px"><div style="font-size:28px;font-weight:700;color:var(--success)" id="anPer100">—</div><div style="font-size:12px;color:var(--text-light);margin-top:4px">Per £1,000 Revenue</div></div>
+      <div class="card" style="text-align:center;padding:20px"><div style="font-size:28px;font-weight:700" id="anTrend">—</div><div style="font-size:12px;color:var(--text-light);margin-top:4px">Trend</div></div>
+      <div class="card" style="text-align:center;padding:20px"><div style="font-size:28px;font-weight:700;color:var(--warning)" id="anPredict">—</div><div style="font-size:12px;color:var(--text-light);margin-top:4px">Suggested Next Order</div></div>
+    </div>
+    <div class="card" style="margin-bottom:16px">
+      <h3 style="margin-bottom:12px">Weekly Usage Chart</h3>
+      <div id="anChart" style="height:200px;display:flex;align-items:flex-end;gap:4px;padding:16px;background:var(--bg);border-radius:8px"></div>
+      <div id="anChartLabels" style="display:flex;gap:4px;padding:0 16px;margin-top:4px"></div>
+    </div>
+    <div class="card">
+      <h3 style="margin-bottom:8px">Prediction Detail</h3>
+      <div id="anDetail" style="font-size:13px;line-height:1.8;color:var(--text-light)"></div>
+    </div>
+  </div>`;
+}
+function populateAnalyticsItems(){
+  const storeId=$('anStore')?.value;
+  const sel=$('anItem');
+  if(!storeId){sel.innerHTML='<option value="">— Select Store first —</option>';$('anCards').style.display='none';return;}
+  const items=D.StoreStock.filter(s=>String(s.storeId)===storeId).sort((a,b)=>(a.category||'').localeCompare(b.category||'')||(a.name||'').localeCompare(b.name||''));
+  sel.innerHTML='<option value="">Select Item</option>'+items.map(s=>`<option value="${s.itemId}">[${escHtml(s.category)}] ${escHtml(s.name)}</option>`).join('');
+}
+function renderAnalyticsContent(){
+  const storeId=$('anStore')?.value;
+  const itemId=$('anItem')?.value;
+  const maxWeeks=parseInt($('anWeeks')?.value||13);
+  if(!storeId||!itemId){$('anCards').style.display='none';return;}
+  // Get stock count history for this item
+  const allRecs=D.StockCount.filter(sc=>String(sc.storeId)===storeId&&String(sc.itemId)===itemId).sort((a,b)=>(a.countDate||'').localeCompare(b.countDate||''));
+  if(allRecs.length<2){$('anCards').style.display='none';toast('Need at least 2 weeks of data','info');return;}
+  // Group by week, take last record per week
+  const byWeek={};allRecs.forEach(r=>{byWeek[r.week]=r;});
+  const weekKeys=Object.keys(byWeek).sort().slice(-maxWeeks);
+  const weekData=weekKeys.map(w=>byWeek[w]);
+  // Calculate usage (delta between consecutive weeks)
+  const usages=[];
+  for(let i=1;i<weekData.length;i++){
+    const usage=Number(weekData[i].qty)-Number(weekData[i-1].qty);
+    usages.push({week:weekData[i].week,countDate:weekData[i].countDate,qty:Number(weekData[i].qty),usage,prevQty:Number(weekData[i-1].qty)});
+  }
+  if(usages.length===0){$('anCards').style.display='none';toast('Need more data for analysis','info');return;}
+  // Avg usage (negative = consumption)
+  const avgUsage=usages.reduce((s,u)=>s+u.usage,0)/usages.length;
+  // Get sales data for these weeks
+  const salesMap={};D.WeeklySales.filter(ws=>String(ws.storeId)===storeId).forEach(ws=>{salesMap[ws.week]=Number(ws.totalSales)||0;});
+  const salesWeeks=usages.filter(u=>salesMap[u.week]>0);
+  const avgRevenue=salesWeeks.length?salesWeeks.reduce((s,u)=>s+salesMap[u.week],0)/salesWeeks.length:0;
+  const usagePer1000=avgRevenue>0?(Math.abs(avgUsage)/(avgRevenue/1000)):0;
+  // Trend
+  const slope=linearSlope(usages.map(u=>u.usage));
+  const trendLabel=slope<-0.1?'↘ Increasing Use':slope>0.1?'↗ Decreasing Use':'→ Stable';
+  const trendColor=slope<-0.1?'var(--danger)':slope>0.1?'var(--success)':'var(--text-light)';
+  // Prediction
+  const consumption=Math.abs(avgUsage);
+  const currentQty=weekData[weekData.length-1].qty;
+  const suggestedOrder=Math.max(0,Math.ceil(consumption-currentQty+Number(D.StockTemplate.find(t=>String(t.id)===itemId)?.min||0)));
+  const confidence=usages.length>=10?'HIGH':usages.length>=5?'MEDIUM':'LOW';
+  const confColor=confidence==='HIGH'?'var(--success)':confidence==='MEDIUM'?'var(--warning)':'var(--danger)';
+  // Render cards
+  $('anAvgUse').textContent=Math.abs(avgUsage).toFixed(1)+' / week';
+  $('anPer100').textContent=usagePer1000.toFixed(2);
+  $('anTrend').textContent=trendLabel;$('anTrend').style.color=trendColor;
+  $('anPredict').textContent=suggestedOrder+' '+escHtml(weekData[0].unit);
+  // Chart
+  const maxAbs=Math.max(...usages.map(u=>Math.abs(u.usage)),1);
+  $('anChart').innerHTML=usages.map(u=>{
+    const h=Math.max(4,(Math.abs(u.usage)/maxAbs)*180);
+    const col=u.usage<0?'var(--accent)':'var(--success)';
+    return`<div title="W${String(u.week).slice(-2)}: ${u.usage>0?'+':''}${u.usage.toFixed(1)}" style="flex:1;height:${h}px;background:${col};border-radius:4px 4px 0 0;cursor:help;min-width:12px;opacity:0.85"></div>`;
+  }).join('');
+  $('anChartLabels').innerHTML=usages.map(u=>`<div style="flex:1;text-align:center;font-size:10px;color:var(--text-light);min-width:12px">W${String(u.week).slice(-2)}</div>`).join('');
+  // Detail
+  const item=D.StockTemplate.find(t=>String(t.id)===itemId);
+  $('anDetail').innerHTML=`
+    <div style="padding:12px;background:var(--bg);border-radius:8px;margin-bottom:8px">
+      <span style="display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;background:${confColor};color:#fff;margin-right:8px">Confidence: ${confidence}</span>
+      Based on <strong>${usages.length} weeks</strong> of data${salesWeeks.length?' + <strong>'+salesWeeks.length+' weeks</strong> sales correlation':''}
+    </div>
+    <p><strong>Analysis:</strong></p>
+    <p>• Average weekly consumption: <strong>${consumption.toFixed(1)} ${escHtml(weekData[0].unit)}</strong></p>
+    <p>• Current stock: <strong>${currentQty} ${escHtml(weekData[0].unit)}</strong></p>
+    <p>• Min stock level: <strong>${item?item.min:'?'} ${escHtml(weekData[0].unit)}</strong></p>
+    ${avgRevenue>0?`<p>• Avg weekly revenue: <strong>£${avgRevenue.toFixed(0)}</strong></p><p>• Usage per £1,000 revenue: <strong>${usagePer1000.toFixed(2)} ${escHtml(weekData[0].unit)}</strong></p>`:'<p style="color:var(--warning)">⚠ No sales data linked — enter Weekly Sales for better predictions</p>'}
+    <p>• Trend: <strong style="color:${trendColor}">${trendLabel}</strong> (slope: ${slope.toFixed(3)})</p>
+    <p style="margin-top:12px;padding:12px;background:#fff3e0;border-radius:8px;border-left:4px solid var(--warning)">
+      <strong>Suggested order: ${suggestedOrder} ${escHtml(weekData[0].unit)}</strong><br>
+      <span style="font-size:12px">= avg consumption (${consumption.toFixed(1)}) − current stock (${currentQty}) + min level (${item?item.min:'?'})</span>
+    </p>`;
+  $('anCards').style.display='block';
+}
+function linearSlope(vals){
+  if(vals.length<2)return 0;
+  const n=vals.length;let sx=0,sy=0,sxy=0,sx2=0;
+  for(let i=0;i<n;i++){const x=i+1;sx+=x;sy+=vals[i];sxy+=x*vals[i];sx2+=x*x;}
+  return(n*sxy-sx*sy)/(n*sx2-sx*sx);
+}
+
 // ==================== SETTINGS ====================
 function renderSettings(c) {
   const cfg=LS.getConfig();
   c.innerHTML=`<div class="card"><div class="card-header"><h3>Connection Settings</h3></div>
     <div class="form-group"><label>Mode</label><p style="font-size:16px;font-weight:600">${API.mode==='cloud'?'☁️ Cloud (Google Sheets)':'💾 Local (Browser Storage)'}</p></div>
-    ${API.mode==='cloud'?`<div class="form-group"><label>API URL</label><input value="${escHtml(cfg.apiUrl||'')}" readonly style="background:#f5f5f5"></div>`:''}
+    ${API.mode==='cloud'?`<div class="form-group"><label>API URL</label><div style="display:flex;gap:8px;align-items:center"><input id="settingsApiUrl" value="${escHtml(cfg.apiUrl||'')}" style="flex:1"><button class="btn btn-primary btn-sm" onclick="updateApiUrl()" style="white-space:nowrap"><i class="fas fa-save"></i> Save</button></div></div>`:''}
     <div style="display:flex;gap:12px;flex-wrap:wrap">
       <button class="btn btn-warning btn-sm" onclick="syncData()"><i class="fas fa-sync"></i> Sync Now</button>
       <button class="btn btn-accent btn-sm" onclick="resetData()"><i class="fas fa-undo"></i> Reset to Defaults</button>
@@ -850,6 +2253,13 @@ function renderSettings(c) {
     <div class="card"><div class="card-header"><h3>Change Password</h3></div>
     <div class="form-row"><div class="form-group"><label>New Password</label><input id="newPwd" type="password"></div><div class="form-group"><label>Confirm</label><input id="confirmPwd" type="password"></div></div>
     <button class="btn btn-primary btn-sm" onclick="changePwd()"><i class="fas fa-key"></i> Change Password</button></div>`;
+}
+async function updateApiUrl(){
+  const newUrl=$('settingsApiUrl').value.trim();
+  if(!newUrl){toast('URL is empty','error');return;}
+  API.url=newUrl;LS.set('config',{apiUrl:newUrl,mode:'cloud'});
+  toast('API URL saved! Syncing...','success');
+  showLoading('Connecting...');await loadAllData();hideLoading();renderPage(currentPage);
 }
 async function syncData(){showLoading('Syncing...');await loadAllData();hideLoading();renderPage(currentPage);toast('Data synced!','success');}
 async function resetData(){
@@ -868,8 +2278,11 @@ async function changePwd(){
 
 // ==================== INITIALIZATION ====================
 async function init() {
-  // Always use cloud mode with built-in URL
-  API.mode = 'cloud'; API.url = CLOUD_URL;
+  // Always use built-in CLOUD_URL. If code is updated with a new URL,
+  // localStorage old URL is automatically replaced.
+  const savedCfg = LS.getConfig();
+  API.mode = 'cloud';
+  API.url = CLOUD_URL;
   LS.set('config', {apiUrl: CLOUD_URL, mode: 'cloud'});
   // Load data from cloud
   await loadAllData();

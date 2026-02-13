@@ -1,5 +1,5 @@
 // ============================================================
-//  TBMS - The Bap Management System v2.0
+//  TBMS - The Bap Management System v2.1
 //  Google Apps Script Backend (Code.gs)
 // ============================================================
 //  SETUP:
@@ -13,22 +13,30 @@
 // ============================================================
 
 const SHEETS = {
-  Users:         ['id','username','password','name','role','email','storeId'],
-  Stores:        ['id','code','name','company','companyNo','address','phone','email','manager','memo','active'],
-  Staff:         ['id','storeId','name','clothSize','kioskPwd','dob','address','niNo','eVisa','mobile','startDate','rate','sortCode','accountNo','email','memo','active'],
-  Attendance:    ['id','staffId','storeId','date','clockIn','clockOut'],
-  StockTemplate: ['id','category','name','unit','min'],
-  StoreStock:    ['storeId','itemId','category','name','unit','min','qty']
+  Users:         ['id','username','password','name','role','email','storeId','permissions'],
+  Stores:        ['id','code','name','company','companyNo','vatNo','address','phone','email','manager','memo','active'],
+  Staff:         ['id','storeId','name','nickName','clothSize','kioskPwd','dob','address','niNo','eVisa','mobile','startDate','leftDate','rate','sortCode','accountNo','email','memo','active'],
+  Attendance:    ['id','staffId','storeId','date','clockIn','clockOut','photoIn','photoOut','source'],
+  Suppliers:     ['id','name','email','phone','address','website','memo','active'],
+  StockTemplate: ['id','category','name','unit','min','sortOrder','supplier1','supplier2','supplier3','memo'],
+  StoreStock:    ['storeId','itemId','category','name','unit','min','qty'],
+  StockCount:    ['id','storeId','week','countDate','itemId','category','name','unit','qty','submittedBy','submittedAt'],
+  WeeklySales:   ['id','storeId','week','weekStart','totalSales','notes','submittedBy','submittedAt']
 };
 
 // Fields that should remain numeric
-const NUMERIC_FIELDS = ['rate','min','qty'];
+const NUMERIC_FIELDS = ['rate','min','qty','totalSales','sortOrder'];
 // Fields that are boolean
 const BOOL_FIELDS = ['active'];
 // Fields that are time (HH:mm format)
 const TIME_FIELDS = ['clockIn','clockOut'];
 // Fields that are date (yyyy-MM-dd format)
-const DATE_FIELDS = ['dob','startDate','date'];
+const DATE_FIELDS = ['dob','startDate','leftDate','date','countDate','weekStart'];
+
+// Normalize header for fuzzy matching: "Nick Name" → "nickname", "nickName" → "nickname"
+function normalizeHeader(h) {
+  return String(h).replace(/[\s_-]+/g, '').toLowerCase();
+}
 
 function doGet(e) {
   try {
@@ -39,7 +47,7 @@ function doGet(e) {
       case 'getAll':   result = getAllData(); break;
       case 'getSheet': result = getSheetData(sheet); break;
       case 'init':     result = initSheets(); break;
-      case 'ping':     result = {status:'ok', time: new Date().toISOString(), version:'TBMS 2.0'}; break;
+      case 'ping':     result = {status:'ok', time: new Date().toISOString(), version:'TBMS 2.1'}; break;
       default:         result = {error:'Unknown action: '+action};
     }
     return ContentService.createTextOutput(JSON.stringify(result)).setMimeType(ContentService.MimeType.JSON);
@@ -59,6 +67,9 @@ function doPost(e) {
       case 'upsert':     result = upsertRow(data.sheet, data.row); break;
       case 'deleteRow':  result = deleteRow(data.sheet, data.id); break;
       case 'appendRow':  result = appendNewRow(data.sheet, data.row); break;
+      case 'clockInPhoto':  result = clockInWithPhoto(data); break;
+      case 'clockOutPhoto': result = clockOutWithPhoto(data); break;
+      case 'saveStockCount': result = saveStockCount(data); break;
       case 'initData':   result = initWithData(data); break;
       default:           result = {error:'Unknown action: '+data.action};
     }
@@ -70,18 +81,81 @@ function doPost(e) {
   }
 }
 
+// ============================================================
+//  initSheets — creates sheets, fixes headers, remaps data
+//  Uses normalizeHeader() to match "Nick Name" → "nickName" etc.
+// ============================================================
 function initSheets() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var created = [];
+  var updated = [];
   for (var name in SHEETS) {
     var sheet = ss.getSheetByName(name);
     if (!sheet) { sheet = ss.insertSheet(name); created.push(name); }
     var headers = SHEETS[name];
-    var firstRow = sheet.getRange(1, 1, 1, headers.length).getValues()[0];
+    var lastCol = sheet.getLastColumn();
+    var firstRow = lastCol > 0 ? sheet.getRange(1, 1, 1, lastCol).getValues()[0] : [];
     if (!firstRow[0]) {
+      // Brand new sheet — write headers
       sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
       sheet.getRange(1, 1, 1, headers.length).setFontWeight('bold');
       sheet.setFrozenRows(1);
+    } else {
+      // Existing sheet — read current headers (stop at first empty)
+      var currentHeaders = [];
+      for (var ci = 0; ci < firstRow.length; ci++) {
+        var ch = String(firstRow[ci]).trim();
+        if (ch === '') break;
+        currentHeaders.push(ch);
+      }
+      // Check if headers match EXACTLY (name and count)
+      var needsUpdate = false;
+      if (currentHeaders.length !== headers.length) {
+        needsUpdate = true;
+      } else {
+        for (var hi = 0; hi < headers.length; hi++) {
+          if (currentHeaders[hi] !== headers[hi]) {
+            needsUpdate = true;
+            break;
+          }
+        }
+      }
+      if (needsUpdate) {
+        // Build normalized mapping: normalizedOldHeader → column index
+        var normMap = {};
+        for (var mi = 0; mi < currentHeaders.length; mi++) {
+          normMap[normalizeHeader(currentHeaders[mi])] = mi;
+        }
+        // Remap existing data to new column order
+        var dataRows = sheet.getLastRow() - 1;
+        if (dataRows > 0) {
+          var oldData = sheet.getRange(2, 1, dataRows, currentHeaders.length).getValues();
+          var newData = oldData.map(function(row) {
+            return headers.map(function(h) {
+              var normH = normalizeHeader(h);
+              var oldIdx = normMap[normH];
+              return (oldIdx !== undefined && oldIdx < row.length) ? row[oldIdx] : '';
+            });
+          });
+          // Clear extra columns if old sheet had more
+          if (currentHeaders.length > headers.length) {
+            sheet.getRange(1, headers.length + 1, sheet.getLastRow(), currentHeaders.length - headers.length).clearContent();
+          }
+          // Write corrected headers and remapped data
+          sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+          sheet.getRange(1, 1, 1, headers.length).setFontWeight('bold');
+          sheet.getRange(2, 1, dataRows, headers.length).setValues(newData);
+        } else {
+          // No data rows — just fix headers
+          if (currentHeaders.length > headers.length) {
+            sheet.getRange(1, headers.length + 1, 1, currentHeaders.length - headers.length).clearContent();
+          }
+          sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+          sheet.getRange(1, 1, 1, headers.length).setFontWeight('bold');
+        }
+        sheet.setFrozenRows(1);
+        updated.push(name);
+      }
     }
   }
   // Set clockIn/clockOut columns to plain text format to prevent auto-conversion
@@ -95,7 +169,7 @@ function initSheets() {
   }
   var def = ss.getSheetByName('Sheet1');
   if (def && ss.getSheets().length > 1) { try { ss.deleteSheet(def); } catch(e) {} }
-  return {status:'ok', created: created};
+  return {status:'ok', created: created, updated: updated};
 }
 
 function getAllData() {
@@ -104,19 +178,43 @@ function getAllData() {
   return {status:'ok', data: result};
 }
 
+// ============================================================
+//  readSheet — Uses SHEETS[name] for property keys + header
+//  name matching for correct column mapping.
+//  "Nick Name" in sheet → matched to "nickName" in SHEETS → obj.nickName
+// ============================================================
 function readSheet(name) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName(name);
   if (!sheet) return [];
   var data = sheet.getDataRange().getValues();
   if (data.length <= 1) return [];
-  var headers = data[0];
+  var canonicalHeaders = SHEETS[name];
+  // Read actual sheet headers (stop at first empty)
+  var actualHeaders = [];
+  for (var k = 0; k < data[0].length; k++) {
+    var hh = String(data[0][k]).trim();
+    if (hh === '') break;
+    actualHeaders.push(hh);
+  }
+  // Build normalized map: normalizedName → actual column index
+  var normToCol = {};
+  for (var ai = 0; ai < actualHeaders.length; ai++) {
+    normToCol[normalizeHeader(actualHeaders[ai])] = ai;
+  }
+  // Build column map: canonical field name → actual column index
+  var colMap = [];
+  for (var ci = 0; ci < canonicalHeaders.length; ci++) {
+    var normKey = normalizeHeader(canonicalHeaders[ci]);
+    colMap.push(normToCol[normKey] !== undefined ? normToCol[normKey] : -1);
+  }
   var rows = [];
   for (var i = 1; i < data.length; i++) {
     var obj = {};
-    for (var j = 0; j < headers.length; j++) {
-      var h = headers[j];
-      var val = data[i][j];
+    for (var j = 0; j < canonicalHeaders.length; j++) {
+      var h = canonicalHeaders[j];
+      var colIdx = colMap[j];
+      var val = (colIdx >= 0 && colIdx < data[i].length) ? data[i][colIdx] : '';
       if (val instanceof Date && TIME_FIELDS.indexOf(h) >= 0) {
         val = Utilities.formatDate(val, Session.getScriptTimeZone(), 'HH:mm');
       } else if (val instanceof Date && DATE_FIELDS.indexOf(h) >= 0) {
@@ -132,7 +230,18 @@ function readSheet(name) {
       }
       obj[h] = val;
     }
-    if (obj[headers[0]] !== '' && obj[headers[0]] !== null && obj[headers[0]] !== undefined) {
+    // Check if row has any meaningful data (skip truly empty rows)
+    var hasData = false;
+    for (var hk = 0; hk < canonicalHeaders.length; hk++) {
+      var fld = canonicalHeaders[hk];
+      if (BOOL_FIELDS.indexOf(fld) >= 0 || NUMERIC_FIELDS.indexOf(fld) >= 0) continue;
+      if (obj[fld] !== '' && obj[fld] !== null && obj[fld] !== undefined) { hasData = true; break; }
+    }
+    // Auto-generate id if missing
+    if (hasData && canonicalHeaders[0] === 'id' && !obj.id) {
+      obj.id = name.toLowerCase().substring(0,3) + '_' + Utilities.getUuid().substring(0,8);
+    }
+    if (hasData) {
       rows.push(obj);
     }
   }
@@ -163,25 +272,42 @@ function saveSheet(name, rows) {
   return {status:'ok', count: rows ? rows.length : 0};
 }
 
+// ============================================================
+//  upsertRow — Fixes headers first, then writes data using
+//  SHEETS[name] for column mapping. This ensures "Nick Name"
+//  gets corrected to "nickName" on every save.
+// ============================================================
 function upsertRow(name, row) {
   if (!name || !SHEETS[name] || !row) return {error: 'Invalid parameters'};
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName(name);
   if (!sheet) return {error: 'Sheet not found: ' + name};
   var headers = SHEETS[name];
-  var idValue = row[headers[0]];
+  // Always ensure header row matches canonical names
+  sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+  // Now read data (headers are guaranteed correct)
   var data = sheet.getDataRange().getValues();
+  var idValue = row[headers[0]];
   var found = false;
+  var targetRow = -1;
   for (var i = 1; i < data.length; i++) {
     if (String(data[i][0]) === String(idValue)) {
       var vals = headers.map(function(h) { var v = row[h]; return (v === null || v === undefined) ? '' : v; });
       sheet.getRange(i + 1, 1, 1, headers.length).setValues([vals]);
-      found = true; break;
+      found = true; targetRow = i + 1; break;
     }
   }
   if (!found) {
     var vals = headers.map(function(h) { var v = row[h]; return (v === null || v === undefined) ? '' : v; });
     sheet.appendRow(vals);
+    targetRow = sheet.getLastRow();
+  }
+  // Force plain text for time fields
+  if (name === 'Attendance' && targetRow > 0) {
+    var ciCol = headers.indexOf('clockIn') + 1;
+    var coCol = headers.indexOf('clockOut') + 1;
+    if (ciCol > 0) { sheet.getRange(targetRow, ciCol).setNumberFormat('@'); if (row.clockIn) sheet.getRange(targetRow, ciCol).setValue(String(row.clockIn)); }
+    if (coCol > 0) { sheet.getRange(targetRow, coCol).setNumberFormat('@'); if (row.clockOut) sheet.getRange(targetRow, coCol).setValue(String(row.clockOut)); }
   }
   return {status:'ok', action: found ? 'updated' : 'inserted'};
 }
@@ -198,14 +324,27 @@ function deleteRow(name, id) {
   return {status:'ok', deleted: false};
 }
 
+// ============================================================
+//  appendNewRow — Fixes headers, then appends using SHEETS[name]
+// ============================================================
 function appendNewRow(name, row) {
   if (!name || !SHEETS[name] || !row) return {error: 'Invalid parameters'};
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName(name);
   if (!sheet) return {error: 'Sheet not found'};
   var headers = SHEETS[name];
+  // Always ensure header row matches canonical names
+  sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
   var vals = headers.map(function(h) { var v = row[h]; return (v === null || v === undefined) ? '' : v; });
   sheet.appendRow(vals);
+  // Force plain text for time fields to prevent Google Sheets auto-conversion
+  if (name === 'Attendance') {
+    var lastRow = sheet.getLastRow();
+    var ciCol = headers.indexOf('clockIn') + 1;
+    var coCol = headers.indexOf('clockOut') + 1;
+    if (ciCol > 0) { sheet.getRange(lastRow, ciCol).setNumberFormat('@'); if (row.clockIn) sheet.getRange(lastRow, ciCol).setValue(String(row.clockIn)); }
+    if (coCol > 0) { sheet.getRange(lastRow, coCol).setNumberFormat('@'); if (row.clockOut) sheet.getRange(lastRow, coCol).setValue(String(row.clockOut)); }
+  }
   return {status:'ok'};
 }
 
@@ -225,4 +364,170 @@ function initWithData(data) {
     }
   }
   return {status:'ok', results: results};
+}
+
+// ============================================================
+//  Fix existing time data in Attendance sheet
+//  Run this ONCE after deploying updated code to convert
+//  Date objects (1899-12-30 23:02:00) back to plain text "23:02"
+// ============================================================
+function fixTimeColumns() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName('Attendance');
+  if (!sheet) return {status:'error', message:'Attendance sheet not found'};
+  var headers = SHEETS.Attendance;
+  var ciCol = headers.indexOf('clockIn') + 1;
+  var coCol = headers.indexOf('clockOut') + 1;
+  if (ciCol <= 0) return {status:'error', message:'clockIn column not found'};
+  var lastRow = sheet.getLastRow();
+  if (lastRow <= 1) return {status:'ok', message:'No data rows', fixed: 0};
+  var fixed = 0;
+  // Set entire columns to plain text first
+  sheet.getRange(2, ciCol, lastRow - 1, 1).setNumberFormat('@');
+  if (coCol > 0) sheet.getRange(2, coCol, lastRow - 1, 1).setNumberFormat('@');
+  // Now read and fix each cell
+  for (var row = 2; row <= lastRow; row++) {
+    // Fix clockIn
+    var ciCell = sheet.getRange(row, ciCol);
+    var ciVal = ciCell.getValue();
+    if (ciVal instanceof Date) {
+      var timeStr = Utilities.formatDate(ciVal, Session.getScriptTimeZone(), 'HH:mm');
+      ciCell.setValue(timeStr);
+      fixed++;
+    }
+    // Fix clockOut
+    if (coCol > 0) {
+      var coCell = sheet.getRange(row, coCol);
+      var coVal = coCell.getValue();
+      if (coVal instanceof Date) {
+        var timeStr2 = Utilities.formatDate(coVal, Session.getScriptTimeZone(), 'HH:mm');
+        coCell.setValue(timeStr2);
+        fixed++;
+      }
+    }
+  }
+  return {status:'ok', message:'Fixed ' + fixed + ' cells', fixed: fixed};
+}
+
+// ============================================================
+//  Selfie Photo Functions — Save photos to Google Drive
+// ============================================================
+function getPhotoFolder() {
+  var folders = DriveApp.getFoldersByName('TBMS_Photos');
+  if (folders.hasNext()) return folders.next();
+  return DriveApp.createFolder('TBMS_Photos');
+}
+
+function savePhotoToDrive(base64Data, fileName) {
+  try {
+    var folder = getPhotoFolder();
+    var decoded = Utilities.base64Decode(base64Data);
+    var blob = Utilities.newBlob(decoded, 'image/jpeg', fileName + '.jpg');
+    var file = folder.createFile(blob);
+    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    return file.getId();
+  } catch(e) {
+    Logger.log('Photo save error: ' + e.toString());
+    return '';
+  }
+}
+
+function clockInWithPhoto(data) {
+  if (!data.row) return {error: 'Missing row data'};
+  if (data.photo) {
+    var fileName = data.row.staffId + '_' + data.row.date + '_in_' + Date.now();
+    var fileId = savePhotoToDrive(data.photo, fileName);
+    data.row.photoIn = fileId;
+  }
+  return appendNewRow('Attendance', data.row);
+}
+
+function clockOutWithPhoto(data) {
+  if (!data.row) return {error: 'Missing row data'};
+  if (data.photo) {
+    var fileName = data.row.staffId + '_' + data.row.date + '_out_' + Date.now();
+    var fileId = savePhotoToDrive(data.photo, fileName);
+    data.row.photoOut = fileId;
+  }
+  return upsertRow('Attendance', data.row);
+}
+
+// ============================================================
+//  Stock Count — Batch save weekly stock count + sync StoreStock
+// ============================================================
+function getISOWeek(dateStr) {
+  var d = new Date(dateStr);
+  d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  var dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  var yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  var weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+  return d.getUTCFullYear() * 100 + weekNo;
+}
+
+function saveStockCount(data) {
+  if (!data.storeId || !data.countDate || !data.items || !data.items.length) {
+    return {error: 'Missing required fields: storeId, countDate, items'};
+  }
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var scSheet = ss.getSheetByName('StockCount');
+  if (!scSheet) return {error: 'StockCount sheet not found. Run initSheets() first.'};
+  var headers = SHEETS.StockCount;
+  // Ensure headers
+  scSheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+
+  var week = getISOWeek(data.countDate);
+  var timestamp = new Date().toISOString();
+  var submittedBy = data.submittedBy || '';
+
+  // Build rows for batch append
+  var rows = [];
+  for (var i = 0; i < data.items.length; i++) {
+    var item = data.items[i];
+    var id = 'sc' + Date.now().toString(36) + Math.random().toString(36).substr(2, 4) + i;
+    rows.push([
+      id,
+      data.storeId,
+      week,
+      data.countDate,
+      item.itemId,
+      item.category || '',
+      item.name || '',
+      item.unit || '',
+      Number(item.qty) || 0,
+      submittedBy,
+      timestamp
+    ]);
+  }
+
+  // Batch append all rows at once
+  if (rows.length > 0) {
+    scSheet.getRange(scSheet.getLastRow() + 1, 1, rows.length, headers.length).setValues(rows);
+    // Force text format for date column
+    var lastRow = scSheet.getLastRow();
+    var dateCol = headers.indexOf('countDate') + 1;
+    if (dateCol > 0) {
+      scSheet.getRange(lastRow - rows.length + 1, dateCol, rows.length, 1).setNumberFormat('@');
+    }
+  }
+
+  // Sync StoreStock qty for each item
+  var ssSheet = ss.getSheetByName('StoreStock');
+  if (ssSheet) {
+    var ssData = ssSheet.getDataRange().getValues();
+    var ssHeaders = SHEETS.StoreStock;
+    var storeCol = ssHeaders.indexOf('storeId');
+    var itemCol = ssHeaders.indexOf('itemId');
+    var qtyCol = ssHeaders.indexOf('qty');
+    for (var j = 0; j < data.items.length; j++) {
+      for (var r = 1; r < ssData.length; r++) {
+        if (String(ssData[r][storeCol]) === String(data.storeId) && String(ssData[r][itemCol]) === String(data.items[j].itemId)) {
+          ssSheet.getRange(r + 1, qtyCol + 1).setValue(Number(data.items[j].qty) || 0);
+          break;
+        }
+      }
+    }
+  }
+
+  return {status: 'ok', week: week, count: rows.length};
 }

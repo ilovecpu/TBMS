@@ -1992,13 +1992,15 @@ function moveStockItem(itemId, direction){
   const catFilter=$('scCat')?.value||'';
   let items=D.StoreStock.filter(s=>String(s.storeId)===storeId);
   if(catFilter)items=items.filter(s=>s.category===catFilter);
-  // Get sortOrder from StockTemplate
-  items.forEach(it=>{const tpl=D.StockTemplate.find(t=>t.id===it.itemId);it._so=tpl?tpl.sortOrder:9999;});
+  // Get sortOrder from StockTemplate, assign sequential index if all zero
+  items.forEach(it=>{const tpl=D.StockTemplate.find(t=>t.id===it.itemId);it._so=tpl?(tpl.sortOrder||0):9999;});
   const _ci2=getSortedCategories();
-  items.sort((a,b)=>{const ci=_ci2.indexOf(a.category)-_ci2.indexOf(b.category);return ci!==0?ci:a._so-b._so;});
+  items.sort((a,b)=>{const ci=_ci2.indexOf(a.category)-_ci2.indexOf(b.category);return ci!==0?ci:a._so-b._so||(a.name||'').localeCompare(b.name||'');});
   // Find within same category
   const item=items.find(i=>String(i.itemId)===String(itemId));if(!item) return;
   const catItems=items.filter(i=>i.category===item.category);
+  // Ensure unique sequential sortOrder within category
+  catItems.forEach((ci,i)=>{const tpl=D.StockTemplate.find(t=>t.id===ci.itemId);if(tpl)tpl.sortOrder=i+1;});
   const idx=catItems.findIndex(i=>String(i.itemId)===String(itemId));if(idx<0) return;
   const swapIdx=idx+direction;
   if(swapIdx<0||swapIdx>=catItems.length) return;

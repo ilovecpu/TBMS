@@ -254,6 +254,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
           <div class="menu-item sub" data-page="staff" onclick="navigate('staff')"><i class="fas fa-list-ul"></i>Staff List</div>
           <div class="menu-item sub" data-page="attendance" onclick="navigate('attendance')"><i class="fas fa-clipboard-check"></i>Attendance</div>
           <div class="menu-item sub" data-page="payroll" onclick="navigate('payroll')"><i class="fas fa-calculator"></i>Payroll</div>
+          <div class="menu-item sub" data-page="messages" onclick="navigate('messages')"><i class="fas fa-envelope"></i>Messages</div>
         </div>
       </div>
       <div class="menu-group open">
@@ -315,6 +316,7 @@ const ALL_PAGES=[
   {id:'staff',label:'Staff List',icon:'fa-list-ul'},
   {id:'attendance',label:'Attendance',icon:'fa-clipboard-check'},
   {id:'payroll',label:'Payroll',icon:'fa-calculator'},
+  {id:'messages',label:'Messages',icon:'fa-envelope'},
   {id:'stock',label:'Stock List',icon:'fa-warehouse'},
   {id:'stock-count',label:'Weekly Count',icon:'fa-clipboard-check'},
   {id:'stock-history',label:'Count History',icon:'fa-history'},
@@ -457,7 +459,7 @@ DEFAULT_DATA.Stores.forEach(store => {
 });
 
 // ==================== DATA LAYER ====================
-const D = { Users:[], Stores:[], Staff:[], Attendance:[], Suppliers:[], StockTemplate:[], StoreStock:[], StockCount:[], WeeklySales:[] };
+const D = { Users:[], Stores:[], Staff:[], Attendance:[], Suppliers:[], StockTemplate:[], StoreStock:[], StockCount:[], WeeklySales:[], StaffMessages:[] };
 
 // Canonical field names — must match Apps Script SHEETS definition exactly
 const FIELD_SCHEMA = {
@@ -469,7 +471,8 @@ const FIELD_SCHEMA = {
   StockTemplate:['id','category','name','unit','min','sortOrder','supplier1','supplier2','supplier3','memo'],
   StoreStock:['storeId','itemId','category','name','unit','min','qty'],
   StockCount:['id','storeId','week','countDate','itemId','category','name','unit','qty','submittedBy','submittedAt'],
-  WeeklySales:['id','storeId','week','weekStart','totalSales','notes','submittedBy','submittedAt']
+  WeeklySales:['id','storeId','week','weekStart','totalSales','notes','submittedBy','submittedAt'],
+  StaffMessages:['id','storeId','staffId','type','message','active','createdBy','createdAt']
 };
 // Normalize row keys: "Nick Name" → "nickName", "Left Date" → "leftDate"
 function normalizeRow(sheetName, row) {
@@ -666,7 +669,7 @@ $('loginUser').addEventListener('keydown',e=>{if(e.key==='Enter')$('loginPass').
 // ==================== NAVIGATION ====================
 function toggleSidebar() { $('sidebar').classList.toggle('open');$('sidebarOverlay').classList.toggle('show'); }
 function toggleMenuGroup(el){el.parentElement.classList.toggle('open');}
-const pageTitles={dashboard:'Dashboard',stores:'Store Management',users:'User Management',staff:'Staff List',attendance:'Attendance Records',payroll:'Payroll',stock:'Stock Management','stock-count':'Weekly Stock Count','stock-history':'Count History',sales:'Weekly Sales',analytics:'Usage Analytics',orders:'Order List',suppliers:'Supplier Management',settings:'General Settings'};
+const pageTitles={dashboard:'Dashboard',stores:'Store Management',users:'User Management',staff:'Staff List',attendance:'Attendance Records',payroll:'Payroll',messages:'Staff Messages',stock:'Stock Management','stock-count':'Weekly Stock Count','stock-history':'Count History',sales:'Weekly Sales',analytics:'Usage Analytics',orders:'Order List',suppliers:'Supplier Management',settings:'General Settings'};
 let currentPage='dashboard';
 function navigate(page) {
   // Permission check
@@ -703,6 +706,7 @@ function renderPage(page) {
     case 'analytics': renderAnalytics(c); break;
     case 'orders': renderOrders(c); break;
     case 'suppliers': renderSuppliers(c); break;
+    case 'messages': renderMessages(c); break;
     case 'settings': renderSettings(c); break;
     default: c.innerHTML='<p>Page not found</p>';
   }
@@ -1761,6 +1765,120 @@ async function deleteSupplier(id){
   await deleteData('Suppliers',id);
   hideLoading();renderSupplierTable();
   toast(`${s.name} deleted`,'success');
+}
+
+// ==================== STAFF MESSAGES ====================
+function renderMessages(c){
+  const stores=D.Stores.filter(s=>s.active!==false);
+  const activeStaff=D.Staff.filter(s=>s.active!==false);
+  c.innerHTML=`<div class="card">
+    <div class="card-header"><h3><i class="fas fa-envelope" style="color:var(--accent);margin-right:8px"></i>Staff Messages</h3>
+      <button class="btn btn-primary btn-sm" onclick="openMessageModal()"><i class="fas fa-plus"></i> New Message</button></div>
+    <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+      <select id="msgFilterStore" onchange="renderMessageTable()" style="padding:8px 12px;border:2px solid var(--border);border-radius:8px">
+        <option value="">All Stores</option>${stores.map(s=>`<option value="${s.id}">${escHtml(s.code)} — ${escHtml(s.name)}</option>`).join('')}
+      </select>
+      <select id="msgFilterType" onchange="renderMessageTable()" style="padding:8px 12px;border:2px solid var(--border);border-radius:8px">
+        <option value="">All Types</option><option value="checkin">Check-In</option><option value="checkout">Check-Out</option>
+      </select>
+    </div>
+    <div class="table-wrap"><table><thead><tr>
+      <th>Store</th><th>To</th><th>Type</th><th>Message</th><th>Active</th><th>Created</th><th>Actions</th>
+    </tr></thead><tbody id="msgBody"></tbody></table></div>
+  </div>`;
+  renderMessageTable();
+}
+
+function renderMessageTable(){
+  const storeF=$('msgFilterStore')?.value||'';
+  const typeF=$('msgFilterType')?.value||'';
+  let msgs=[...D.StaffMessages];
+  if(storeF) msgs=msgs.filter(m=>m.storeId===storeF||m.storeId==='ALL');
+  if(typeF) msgs=msgs.filter(m=>m.type===typeF);
+  msgs.sort((a,b)=>String(b.createdAt||'').localeCompare(String(a.createdAt||'')));
+  const storeName=id=>{if(id==='ALL')return'<span style="color:var(--accent);font-weight:600">All Stores</span>';const s=D.Stores.find(x=>x.id===id);return s?escHtml(s.code):id;};
+  const staffName=id=>{if(id==='ALL')return'<span style="color:var(--accent);font-weight:600">All Staff</span>';const s=D.Staff.find(x=>x.id===id);return s?escHtml(s.nickName||s.name):id;};
+  const typeBadge=t=>t==='checkin'?'<span style="background:#e8f5e9;color:#2e7d32;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600"><i class="fas fa-sign-in-alt"></i> Check-In</span>':'<span style="background:#ffebee;color:#c62828;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600"><i class="fas fa-sign-out-alt"></i> Check-Out</span>';
+  $('msgBody').innerHTML=msgs.length?msgs.map(m=>`<tr>
+    <td>${storeName(m.storeId)}</td>
+    <td>${staffName(m.staffId)}</td>
+    <td>${typeBadge(m.type)}</td>
+    <td style="max-width:300px;white-space:pre-wrap;font-size:13px">${escHtml(m.message)}</td>
+    <td>${m.active===true||m.active==='true'?'<span style="color:var(--success)"><i class="fas fa-check-circle"></i> On</span>':'<span style="color:var(--text-light)"><i class="fas fa-pause-circle"></i> Off</span>'}</td>
+    <td style="font-size:12px;color:var(--text-light)">${m.createdAt?new Date(m.createdAt).toLocaleDateString('en-GB'):''}</td>
+    <td>
+      <button class="btn-icon btn-outline" onclick="openMessageModal('${m.id}')" title="Edit"><i class="fas fa-pen" style="font-size:12px"></i></button>
+      <button class="btn-icon" style="color:var(--danger)" onclick="deleteMessage('${m.id}')" title="Delete"><i class="fas fa-trash" style="font-size:12px"></i></button>
+    </td>
+  </tr>`).join(''):'<tr><td colspan="7" style="text-align:center;color:var(--text-light)">No messages. Click "New Message" to create one.</td></tr>';
+}
+
+function openMessageModal(editId){
+  const existing=editId?D.StaffMessages.find(m=>m.id===editId):null;
+  const isNew=!existing;
+  const title=isNew?'New Message':'Edit Message';
+  const v=existing||{storeId:'ALL',staffId:'ALL',type:'checkin',message:'',active:true};
+  const stores=D.Stores.filter(s=>s.active!==false);
+  const allStaff=D.Staff.filter(s=>s.active!==false);
+  const body=`
+    <div class="form-row">
+      <div class="form-group"><label>Store</label>
+        <select id="msgStore" style="padding:10px;border:2px solid var(--border);border-radius:8px;width:100%" onchange="updateMsgStaffList()">
+          <option value="ALL"${v.storeId==='ALL'?' selected':''}>All Stores</option>
+          ${stores.map(s=>`<option value="${s.id}"${v.storeId===s.id?' selected':''}>${escHtml(s.code)} — ${escHtml(s.name)}</option>`).join('')}
+        </select></div>
+      <div class="form-group"><label>Type</label>
+        <select id="msgType" style="padding:10px;border:2px solid var(--border);border-radius:8px;width:100%">
+          <option value="checkin"${v.type==='checkin'?' selected':''}>Check-In Message</option>
+          <option value="checkout"${v.type==='checkout'?' selected':''}>Check-Out Message</option>
+        </select></div>
+    </div>
+    <div class="form-group"><label>To</label>
+      <select id="msgStaff" style="padding:10px;border:2px solid var(--border);border-radius:8px;width:100%">
+        <option value="ALL"${v.staffId==='ALL'?' selected':''}>📢 All Staff (Broadcast)</option>
+        ${allStaff.map(s=>`<option value="${s.id}"${v.staffId===s.id?' selected':''}>${escHtml(s.nickName||s.name)} (${escHtml(D.Stores.find(x=>x.id===s.storeId)?.code||s.storeId)})</option>`).join('')}
+      </select></div>
+    <div class="form-group"><label>Message *</label>
+      <textarea id="msgText" rows="4" placeholder="Enter message to show during clock in/out..." style="padding:10px;border:2px solid var(--border);border-radius:8px;resize:vertical;font-size:15px">${escHtml(v.message)}</textarea></div>
+    <div class="form-group"><label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+      <input type="checkbox" id="msgActive" ${v.active===true||v.active==='true'?'checked':''} style="width:18px;height:18px"> Active (show to staff)
+    </label></div>`;
+  const footer=`<button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+    <button class="btn btn-primary" onclick="saveMessage('${editId||''}')">${isNew?'<i class="fas fa-paper-plane"></i> Send':'<i class="fas fa-save"></i> Save'}</button>`;
+  openModal(title,body,footer);
+}
+
+function updateMsgStaffList(){
+  const storeId=$('msgStaff')?$('msgStore')?.value:'';
+  // No need to filter - show all staff in dropdown regardless
+}
+
+async function saveMessage(editId){
+  const message=($('msgText')?.value||'').trim();
+  if(!message){toast('Message is required','error');return;}
+  const row={
+    id:editId||genId('msg'),
+    storeId:$('msgStore')?.value||'ALL',
+    staffId:$('msgStaff')?.value||'ALL',
+    type:$('msgType')?.value||'checkin',
+    message,
+    active:$('msgActive')?.checked??true,
+    createdBy:currentUser?.name||'Admin',
+    createdAt:editId?(D.StaffMessages.find(m=>m.id===editId)?.createdAt||new Date().toISOString()):new Date().toISOString()
+  };
+  showLoading('Saving...');
+  await saveRow('StaffMessages',row);
+  hideLoading();closeModal();renderMessageTable();
+  toast(`Message ${editId?'updated':'sent'}`,'success');
+}
+
+async function deleteMessage(id){
+  const m=D.StaffMessages.find(x=>x.id===id);if(!m)return;
+  if(!confirm('Delete this message?'))return;
+  showLoading('Deleting...');
+  await deleteData('StaffMessages',id);
+  hideLoading();renderMessageTable();
+  toast('Message deleted','success');
 }
 
 // ==================== WEEKLY STOCK COUNT ====================

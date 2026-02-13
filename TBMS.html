@@ -1488,7 +1488,8 @@ function renderStoreQtyTable(){
   let items=D.StoreStock.filter(s=>String(s.storeId)===storeId);
   if(catF)items=items.filter(s=>s.category===catF);
   items.forEach(it=>{const tpl=D.StockTemplate.find(t=>t.id===it.itemId);it._so=tpl?tpl.sortOrder:9999;});
-  items.sort((a,b)=>(a.category||'').localeCompare(b.category||'')||a._so-b._so);
+  const _ci1=getSortedCategories();
+  items.sort((a,b)=>{const ci=_ci1.indexOf(a.category)-_ci1.indexOf(b.category);return ci!==0?ci:a._so-b._so;});
   $('storeQtyBody').innerHTML=items.map(s=>{
     const qty=Number(s.qty)||0;const min=Number(s.min)||0;
     const status=qty<=0?'badge-danger':qty<=min?'badge-warning':'badge-success';
@@ -1993,7 +1994,8 @@ function moveStockItem(itemId, direction){
   if(catFilter)items=items.filter(s=>s.category===catFilter);
   // Get sortOrder from StockTemplate
   items.forEach(it=>{const tpl=D.StockTemplate.find(t=>t.id===it.itemId);it._so=tpl?tpl.sortOrder:9999;});
-  items.sort((a,b)=>(a.category||'').localeCompare(b.category||'')||a._so-b._so);
+  const _ci2=getSortedCategories();
+  items.sort((a,b)=>{const ci=_ci2.indexOf(a.category)-_ci2.indexOf(b.category);return ci!==0?ci:a._so-b._so;});
   // Find within same category
   const item=items.find(i=>String(i.itemId)===String(itemId));if(!item) return;
   const catItems=items.filter(i=>i.category===item.category);
@@ -2069,9 +2071,10 @@ function renderStockCountTable(){
   const catFilter=$('scCat')?.value||'';
   let items=D.StoreStock.filter(s=>String(s.storeId)===storeId);
   if(catFilter)items=items.filter(s=>s.category===catFilter);
-  // Sort by sortOrder from StockTemplate (not alphabetical)
+  // Sort by custom category order + sortOrder from StockTemplate
   items.forEach(it=>{const tpl=D.StockTemplate.find(t=>t.id===it.itemId);it._so=tpl?tpl.sortOrder:9999;});
-  items.sort((a,b)=>(a.category||'').localeCompare(b.category||'')||a._so-b._so);
+  const _ci3=getSortedCategories();
+  items.sort((a,b)=>{const ci=_ci3.indexOf(a.category)-_ci3.indexOf(b.category);return ci!==0?ci:a._so-b._so;});
   // Group by category with section headers
   let html='';let lastCat='';
   items.forEach((item,idx)=>{

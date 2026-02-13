@@ -6,10 +6,14 @@
 <title>The Bap Bristol - Clock In/Out</title>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+<link rel="manifest" href="manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-:root{--primary:#1a237e;--success:#43a047;--danger:#e53935;--bg:#1b5e20;--card:#fff;--text:#333;--text-light:#666;--border:#ddd}
-body{font-family:'Noto Sans KR',sans-serif;background:linear-gradient(135deg,#1b5e20 0%,#2e7d32 100%);min-height:100vh;display:flex;flex-direction:column;align-items:center;color:var(--text);overflow-x:hidden;-webkit-user-select:none;user-select:none}
+:root{--primary:#1a237e;--success:#e65100;--danger:#e53935;--bg:#e65100;--card:#fff;--text:#333;--text-light:#666;--border:#ddd}
+body{font-family:'Noto Sans KR',sans-serif;background:linear-gradient(135deg,#e65100 0%,#ef6c00 100%);min-height:100vh;display:flex;flex-direction:column;align-items:center;color:var(--text);overflow-x:hidden;-webkit-user-select:none;user-select:none}
 .toast-box{position:fixed;top:16px;right:16px;z-index:1000}
 .toast{padding:14px 24px;border-radius:12px;color:#fff;font-size:15px;font-weight:500;display:flex;align-items:center;gap:10px;animation:slideIn .3s;box-shadow:0 4px 20px rgba(0,0,0,.3);margin-bottom:8px}
 .toast.success{background:var(--success)}.toast.error{background:var(--danger)}.toast.info{background:var(--primary)}
@@ -21,12 +25,12 @@ body{font-family:'Noto Sans KR',sans-serif;background:linear-gradient(135deg,#1b
 .clock{font-size:56px;font-weight:700;color:var(--primary);text-align:center;font-variant-numeric:tabular-nums;letter-spacing:2px}
 .date{text-align:center;color:var(--text-light);font-size:15px;margin-top:4px;margin-bottom:24px}
 .staff-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:12px;width:100%;max-height:360px;overflow-y:auto;padding:4px}
-.staff-btn{padding:18px 8px;background:#e8f5e9;border-radius:14px;text-align:center;cursor:pointer;transition:all .2s;border:2px solid #43a047}
+.staff-btn{padding:18px 8px;background:#ffe0b2;border-radius:14px;text-align:center;cursor:pointer;transition:all .2s;border:2px solid #e65100}
 .staff-btn:hover,.staff-btn:active{transform:scale(1.03);filter:brightness(0.97)}
 .staff-btn.clocked-in{border-color:#e84393;background:#fff0f3}
 .staff-btn.clocked-in .avatar{background:#e84393}
 .staff-btn.clocked-in .status-dot{display:block}
-.staff-btn .avatar{width:52px;height:52px;background:#43a047;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 10px;font-weight:700;font-size:20px;position:relative}
+.staff-btn .avatar{width:52px;height:52px;background:#e65100;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 10px;font-weight:700;font-size:20px;position:relative}
 .staff-btn .status-dot{display:none;position:absolute;bottom:0;right:0;width:14px;height:14px;background:#e84393;border:2px solid #fff;border-radius:50%}
 .staff-btn .name{font-size:13px;font-weight:600;line-height:1.3;word-break:keep-all}
 .pw-section{text-align:center;width:100%}
@@ -43,7 +47,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:linear-gradient(135deg,#1b
 .key-btn.fn{background:transparent;font-size:24px;color:var(--text-light)}
 .key-btn.fn:active{background:#f0f0f0;transform:scale(.9)}
 .key-btn.confirm{background:var(--success);color:#fff;font-size:24px}
-.key-btn.confirm:active{background:#388e3c;transform:scale(.9)}
+.key-btn.confirm:active{background:#bf360c;transform:scale(.9)}
 .btn{padding:14px 28px;border-radius:12px;font-size:16px;font-weight:600;border:none;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:10px;transition:all .2s;width:100%}
 .btn:active{transform:scale(.97)}
 .btn-primary{background:var(--primary);color:#fff}
@@ -53,7 +57,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:linear-gradient(135deg,#1b
 .action-btns{display:flex;flex-direction:column;gap:14px;width:100%;margin-top:20px}
 .action-btn{padding:24px;border-radius:14px;font-size:22px;font-weight:700;color:#fff;cursor:pointer;text-align:center;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:12px;border:none}
 .action-btn:active{transform:scale(.97)}
-.action-btn.in{background:linear-gradient(135deg,#43a047,#2e7d32)}
+.action-btn.in{background:linear-gradient(135deg,#e65100,#bf360c)}
 .action-btn.out{background:linear-gradient(135deg,#e53935,#c62828)}
 .result{text-align:center;width:100%}
 .result .icon{font-size:72px;margin-bottom:16px}
@@ -61,7 +65,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:linear-gradient(135deg,#1b
 .result .time{font-size:36px;color:var(--primary);font-weight:700}
 .result .who{margin-top:12px;color:var(--text-light);font-size:16px}
 .status-bar{color:rgba(255,255,255,.6);font-size:12px;padding:8px;display:flex;align-items:center;gap:6px;position:fixed;bottom:8px}
-.status-dot{width:8px;height:8px;border-radius:50%;background:#43a047}
+.status-dot{width:8px;height:8px;border-radius:50%;background:#e65100}
 .status-dot.off{background:#fb8c00}
 .loading-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;color:#fff;font-size:16px}
 .loading-overlay.hidden{display:none}
@@ -81,6 +85,11 @@ body{font-family:'Noto Sans KR',sans-serif;background:linear-gradient(135deg,#1b
 .today-records h4{font-size:12px;color:var(--text-light);margin-bottom:8px}
 .today-records .rec{font-size:13px;display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #eee}
 .today-records .rec:last-child{border:none}
+.fs-overlay{position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:2000;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:20px;color:#fff;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.fs-overlay .fs-icon{font-size:72px;animation:fsPulse 2s infinite}
+.fs-overlay h2{font-size:28px;font-weight:700}
+.fs-overlay p{font-size:15px;opacity:.6}
+@keyframes fsPulse{0%,100%{opacity:.7;transform:scale(1)}50%{opacity:1;transform:scale(1.1)}}
 @media(max-width:400px){
   .clock{font-size:42px}
   .staff-grid{grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:8px}
@@ -102,7 +111,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:linear-gradient(135deg,#1b
 <div class="status-bar"><span class="status-dot" id="statusDot"></span><span id="statusText">Connecting...</span></div>
 <script>
 const STORE_ID='TBB',STORE_NAME='The Bap Bristol';
-const API_URL='https://script.google.com/macros/s/AKfycbyLDhT4YaaqkIVUPPX42JEADYfgkZosd1tL7mRAGaicrUHMR8TR8TolZAJOvlT063IT/exec';
+const API_URL= 'https://script.google.com/macros/s/AKfycbyLDhT4YaaqkIVUPPX42JEADYfgkZosd1tL7mRAGaicrUHMR8TR8TolZAJOvlT063IT/exec';
 const $=id=>document.getElementById(id);
 function toast(msg,type='info'){const t=document.createElement('div');t.className='toast '+type;t.innerHTML='<i class="fas fa-'+(type==='error'?'exclamation-circle':type==='success'?'check-circle':'info-circle')+'"></i>'+msg;$('toastBox').appendChild(t);setTimeout(()=>t.remove(),3000);}
 function showLoad(t){$('loadingText').textContent=t;$('loading').classList.remove('hidden');}
@@ -269,7 +278,7 @@ function showCameraRetryModal(type,attId,errMsg){
       <div style="font-size:48px;margin-bottom:16px">📷</div>
       <div class="cam-title" style="color:#ff6b6b"><i class="fas fa-exclamation-triangle"></i> Camera Failed</div>
       <p style="color:rgba(255,255,255,.7);font-size:14px;margin:8px 0 20px">${errMsg}<br>Attempt ${cameraRetries} of ${MAX_RETRIES}</p>
-      <button onclick="startCamera()" style="padding:14px 40px;background:#43a047;color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;margin:6px"><i class="fas fa-redo"></i> Retry Camera</button>
+      <button onclick="startCamera()" style="padding:14px 40px;background:#e65100;color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;margin:6px"><i class="fas fa-redo"></i> Retry Camera</button>
       <br><button onclick="closeCamera()" style="padding:10px 30px;background:transparent;color:rgba(255,255,255,.5);border:1px solid rgba(255,255,255,.3);border-radius:10px;font-size:14px;cursor:pointer;margin-top:12px"><i class="fas fa-times"></i> Cancel</button>
     </div>`;
   document.body.appendChild(modal);
@@ -344,8 +353,35 @@ async function init(){
   if(ok)showStaffList();
   else $('mainCard').innerHTML='<div style="text-align:center"><p style="color:var(--danger);font-size:18px;margin-bottom:16px"><i class="fas fa-exclamation-triangle"></i> Connection Failed</p><button class="btn btn-primary" onclick="init()"><i class="fas fa-redo"></i> Retry</button></div>';
 }
+
+// ===== Fullscreen Mode =====
+function goFullscreen(){
+  const el=document.documentElement;
+  if(el.requestFullscreen)el.requestFullscreen();
+  else if(el.webkitRequestFullscreen)el.webkitRequestFullscreen();
+  else if(el.msRequestFullscreen)el.msRequestFullscreen();
+  const ov=document.getElementById('fsOverlay');if(ov)ov.remove();
+}
+function exitFsHandler(){
+  if(!document.fullscreenElement&&!document.webkitFullscreenElement){
+    // Show overlay again if user exits fullscreen
+    if(!document.getElementById('fsOverlay'))showFsOverlay();
+  }
+}
+function showFsOverlay(){
+  const ov=document.createElement('div');ov.className='fs-overlay';ov.id='fsOverlay';
+  ov.innerHTML='<div class="fs-icon"><i class="fas fa-expand"></i></div><h2>Tap to Start</h2><p>Full screen kiosk mode</p>';
+  ov.addEventListener('click',goFullscreen);
+  document.body.appendChild(ov);
+}
+document.addEventListener('fullscreenchange',exitFsHandler);
+document.addEventListener('webkitfullscreenchange',exitFsHandler);
+// Don't show overlay if already in standalone PWA mode
+if(!window.matchMedia('(display-mode: standalone)').matches&&!window.matchMedia('(display-mode: fullscreen)').matches){
+  showFsOverlay();
+}
+
 init();
 </script>
 </body>
 </html>
-

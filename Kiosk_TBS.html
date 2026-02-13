@@ -24,15 +24,15 @@ body{font-family:'Noto Sans KR',sans-serif;background:linear-gradient(135deg,#15
 .main-card{background:#fff;border-radius:20px;padding:28px;width:calc(100% - 40px);max-width:480px;box-shadow:0 20px 60px rgba(0,0,0,.25);margin:8px 0 20px;min-height:400px;display:flex;flex-direction:column;align-items:center;justify-content:center}
 .clock{font-size:56px;font-weight:700;color:var(--primary);text-align:center;font-variant-numeric:tabular-nums;letter-spacing:2px}
 .date{text-align:center;color:var(--text-light);font-size:15px;margin-top:4px;margin-bottom:24px}
-.staff-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;width:100%;max-height:none;overflow-y:auto;padding:4px}
-.staff-btn{padding:10px 4px;background:#e3f2fd;border-radius:10px;text-align:center;cursor:pointer;transition:all .2s;border:2px solid #1565c0}
-.staff-btn:hover,.staff-btn:active{transform:scale(1.03);filter:brightness(0.97)}
+.staff-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:14px;width:100%;max-height:none;overflow-y:auto;padding:4px}
+.staff-btn{padding:14px 8px;background:#e3f2fd;border-radius:16px;text-align:center;cursor:pointer;transition:all .2s;border:2.5px solid #1565c0}
+.staff-btn:hover,.staff-btn:active{transform:scale(1.05);filter:brightness(0.97)}
 .staff-btn.clocked-in{border-color:#e84393;background:#fff0f3}
 .staff-btn.clocked-in .avatar{background:#e84393}
 .staff-btn.clocked-in .status-dot{display:block}
-.staff-btn .avatar{width:40px;height:40px;background:#1565c0;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 10px;font-weight:700;font-size:16px;position:relative}
-.staff-btn .status-dot{display:none;position:absolute;bottom:0;right:0;width:14px;height:14px;background:#e84393;border:2px solid #fff;border-radius:50%}
-.staff-btn .name{font-size:11px;font-weight:600;line-height:1.2;word-break:keep-all}
+.staff-btn .avatar{width:56px;height:56px;background:#1565c0;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 8px;font-weight:700;font-size:22px;position:relative}
+.staff-btn .status-dot{display:none;position:absolute;bottom:0;right:0;width:16px;height:16px;background:#e84393;border:2px solid #fff;border-radius:50%}
+.staff-btn .name{font-size:14px;font-weight:600;line-height:1.3;word-break:keep-all}
 .pw-section{text-align:center;width:100%}
 .pw-section .avatar-lg{width:64px;height:64px;background:var(--primary);color:#fff;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:26px;font-weight:700;margin-bottom:10px}
 .pw-section h3{font-size:20px;margin-bottom:16px}
@@ -100,11 +100,11 @@ body{font-family:'Noto Sans KR',sans-serif;background:linear-gradient(135deg,#15
 @keyframes msgPop{from{transform:scale(.8);opacity:0}to{transform:scale(1);opacity:1}}
 @media(max-width:400px){
   .clock{font-size:42px}
-  .staff-grid{grid-template-columns:repeat(4,1fr);gap:6px}
-  .staff-btn{padding:8px 3px}
-  .staff-btn .avatar{width:34px;height:34px;font-size:14px}
-  .staff-btn .name{font-size:10px}
-  .main-card{padding:20px}
+  .staff-grid{grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:10px}
+  .staff-btn{padding:10px 6px}
+  .staff-btn .avatar{width:48px;height:48px;font-size:20px}
+  .staff-btn .name{font-size:12px}
+  .main-card{padding:16px}
   .key-btn{height:58px;font-size:26px}
 }
 </style>
@@ -120,7 +120,8 @@ body{font-family:'Noto Sans KR',sans-serif;background:linear-gradient(135deg,#15
 <div class="status-bar"><span class="status-dot" id="statusDot"></span><span id="statusText">Connecting...</span></div>
 <script>
 const STORE_ID='TBS',STORE_NAME='The Bap Swindon';
-const API_URL= 'https://script.google.com/macros/s/AKfycbz1IRMcShaZJUPWe8mCIej4uBF3AeYlpAPHxZuwipJfhkN0QmyOMzSdJHfympz2s9jH/exec';
+const DEFAULT_API='https://script.google.com/macros/s/AKfycbz1IRMcShaZJUPWe8mCIej4uBF3AeYlpAPHxZuwipJfhkN0QmyOMzSdJHfympz2s9jH/exec';
+const API_URL=(function(){try{const c=JSON.parse(localStorage.getItem('tbms_config'));return(c&&c.apiUrl)?c.apiUrl:DEFAULT_API;}catch(e){return DEFAULT_API;}})();
 const $=id=>document.getElementById(id);
 function toast(msg,type='info'){const t=document.createElement('div');t.className='toast '+type;t.innerHTML='<i class="fas fa-'+(type==='error'?'exclamation-circle':type==='success'?'check-circle':'info-circle')+'"></i>'+msg;$('toastBox').appendChild(t);setTimeout(()=>t.remove(),3000);}
 function showLoad(t){$('loadingText').textContent=t;$('loading').classList.remove('hidden');}
@@ -139,31 +140,20 @@ const ATT_FIELDS=['id','staffId','storeId','date','clockIn','clockOut','photoIn'
 const MSG_FIELDS=['id','storeId','staffId','type','message','active','createdBy','createdAt'];
 function nrmRow(fields,row){const m={};for(const k in row)m[k.replace(/[\s_\-]+/g,'').toLowerCase()]=row[k];const r={};for(const f of fields){const n=f.replace(/[\s_\-]+/g,'').toLowerCase();r[f]=m[n]!==undefined?m[n]:'';}return r;}
 
-async function loadData(){
-  showLoad('Loading staff data...');
+async function loadData(silent){
+  if(!silent)showLoad('Loading staff data...');
   const result=await apiGet('getAll');
   if(result&&result.data&&!result.error){
-    const dataKeys=Object.keys(result.data);
-    console.log('[KIOSK] API data keys:',dataKeys);
     staff=(result.data.Staff||[]).map(r=>nrmRow(STAFF_FIELDS,r)).filter(s=>String(s.storeId)===STORE_ID&&(s.active===true||s.active==='true'||s.active==='TRUE'));
     attendance=(result.data.Attendance||[]).map(r=>nrmRow(ATT_FIELDS,r));
     const rawMsgs=result.data.StaffMessages||[];
-    console.log('[KIOSK] Raw StaffMessages from server:',rawMsgs.length,JSON.stringify(rawMsgs));
     staffMessages=rawMsgs.map(r=>nrmRow(MSG_FIELDS,r)).filter(m=>(String(m.storeId)===STORE_ID||String(m.storeId)==='ALL')&&(m.active===true||m.active==='true'||m.active==='TRUE'));
-    console.log('[KIOSK] Filtered staffMessages for '+STORE_ID+':',staffMessages.length,JSON.stringify(staffMessages));
-    $('statusDot').className='status-dot';
-    $('statusText').textContent='Cloud | Staff:'+staff.length+' Msgs:'+staffMessages.length;
-    if(!dataKeys.includes('StaffMessages')){
-      toast('⚠️ StaffMessages not in API! Redeploy Apps Script','error');
-      console.log('[KIOSK] WARNING: StaffMessages NOT in API response. Keys:',dataKeys);
-    }else if(rawMsgs.length>0&&staffMessages.length===0){
-      toast('Msgs found('+rawMsgs.length+') but none match store '+STORE_ID,'error');
-      console.log('[KIOSK] Raw msgs exist but filter removed all. Raw:',JSON.stringify(rawMsgs));
-    }
-    hideLoad();return true;
+    $('statusDot').className='status-dot';$('statusText').textContent='Connected';
+    if(!silent)hideLoad();return true;
   }
   $('statusDot').className='status-dot off';$('statusText').textContent='Offline';
-  hideLoad();toast('Cannot connect to server','error');return false;
+  if(!silent){hideLoad();toast('Cannot connect to server','error');}
+  return false;
 }
 
 function pressKey(n){if(pinCode.length>=MAX_PIN)return;pinCode+=String(n);updatePinDisplay();}
@@ -212,19 +202,11 @@ function showMessage(msgs,callback){
 }
 
 function checkMsgThenClock(type,attId){
-  console.log('[KIOSK] checkMsgThenClock called. type='+type+', staffId='+currentStaff.id+', allMsgs='+staffMessages.length);
   const msgType=type==='in'?'checkin':'checkout';
   const msgs=getMessages(currentStaff.id,msgType);
-  console.log('[KIOSK] getMessages('+currentStaff.id+','+msgType+') returned:',msgs.length,JSON.stringify(msgs));
   if(msgs.length>0){
     showMessage(msgs,function(){openCamera(type,attId);});
   }else{
-    if(staffMessages.length===0){
-      toast('No messages loaded from server','info');
-    }else{
-      toast('No '+msgType+' msg for ID:'+currentStaff.id+' (total:'+staffMessages.length+')','info');
-      console.log('[KIOSK] All loaded msgs:',JSON.stringify(staffMessages));
-    }
     openCamera(type,attId);
   }
 }
@@ -418,6 +400,9 @@ async function init(){
   const ok=await loadData();
   if(ok)showStaffList();
   else $('mainCard').innerHTML='<div style="text-align:center"><p style="color:var(--danger);font-size:18px;margin-bottom:16px"><i class="fas fa-exclamation-triangle"></i> Connection Failed</p><button class="btn btn-primary" onclick="init()"><i class="fas fa-redo"></i> Retry</button></div>';
+  setInterval(async()=>{
+    if(!currentStaff){await loadData(true);showStaffList();}
+  },15*60*1000);
 }
 
 // ===== Fullscreen Mode =====

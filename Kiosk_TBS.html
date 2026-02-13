@@ -143,10 +143,23 @@ async function loadData(){
   showLoad('Loading staff data...');
   const result=await apiGet('getAll');
   if(result&&result.data&&!result.error){
+    const dataKeys=Object.keys(result.data);
+    console.log('[KIOSK] API data keys:',dataKeys);
     staff=(result.data.Staff||[]).map(r=>nrmRow(STAFF_FIELDS,r)).filter(s=>String(s.storeId)===STORE_ID&&(s.active===true||s.active==='true'||s.active==='TRUE'));
     attendance=(result.data.Attendance||[]).map(r=>nrmRow(ATT_FIELDS,r));
-    staffMessages=(result.data.StaffMessages||[]).map(r=>nrmRow(MSG_FIELDS,r)).filter(m=>(String(m.storeId)===STORE_ID||m.storeId==='ALL')&&(m.active===true||m.active==='true'||m.active==='TRUE'));
-    $('statusDot').className='status-dot';$('statusText').textContent='Cloud Connected';
+    const rawMsgs=result.data.StaffMessages||[];
+    console.log('[KIOSK] Raw StaffMessages from server:',rawMsgs.length,JSON.stringify(rawMsgs));
+    staffMessages=rawMsgs.map(r=>nrmRow(MSG_FIELDS,r)).filter(m=>(String(m.storeId)===STORE_ID||String(m.storeId)==='ALL')&&(m.active===true||m.active==='true'||m.active==='TRUE'));
+    console.log('[KIOSK] Filtered staffMessages for '+STORE_ID+':',staffMessages.length,JSON.stringify(staffMessages));
+    $('statusDot').className='status-dot';
+    $('statusText').textContent='Cloud | Staff:'+staff.length+' Msgs:'+staffMessages.length;
+    if(!dataKeys.includes('StaffMessages')){
+      toast('⚠️ StaffMessages not in API! Redeploy Apps Script','error');
+      console.log('[KIOSK] WARNING: StaffMessages NOT in API response. Keys:',dataKeys);
+    }else if(rawMsgs.length>0&&staffMessages.length===0){
+      toast('Msgs found('+rawMsgs.length+') but none match store '+STORE_ID,'error');
+      console.log('[KIOSK] Raw msgs exist but filter removed all. Raw:',JSON.stringify(rawMsgs));
+    }
     hideLoad();return true;
   }
   $('statusDot').className='status-dot off';$('statusText').textContent='Offline';
@@ -175,7 +188,7 @@ function shakePin(){
 function startClock(){if(clockTimer)clearInterval(clockTimer);clockTimer=setInterval(()=>{const el=document.querySelector('.clock');if(el)el.textContent=new Date().toLocaleTimeString('en-GB');},1000);}
 
 function getMessages(staffId,type){
-  return staffMessages.filter(m=>(String(m.staffId)===String(staffId)||m.staffId==='ALL')&&m.type===type);
+  return staffMessages.filter(m=>(String(m.staffId)===String(staffId)||String(m.staffId)==='ALL')&&String(m.type).toLowerCase()===String(type).toLowerCase());
 }
 
 function showMessage(msgs,callback){
@@ -199,10 +212,19 @@ function showMessage(msgs,callback){
 }
 
 function checkMsgThenClock(type,attId){
-  const msgs=getMessages(currentStaff.id,type==='in'?'checkin':'checkout');
+  console.log('[KIOSK] checkMsgThenClock called. type='+type+', staffId='+currentStaff.id+', allMsgs='+staffMessages.length);
+  const msgType=type==='in'?'checkin':'checkout';
+  const msgs=getMessages(currentStaff.id,msgType);
+  console.log('[KIOSK] getMessages('+currentStaff.id+','+msgType+') returned:',msgs.length,JSON.stringify(msgs));
   if(msgs.length>0){
     showMessage(msgs,function(){openCamera(type,attId);});
   }else{
+    if(staffMessages.length===0){
+      toast('No messages loaded from server','info');
+    }else{
+      toast('No '+msgType+' msg for ID:'+currentStaff.id+' (total:'+staffMessages.length+')','info');
+      console.log('[KIOSK] All loaded msgs:',JSON.stringify(staffMessages));
+    }
     openCamera(type,attId);
   }
 }

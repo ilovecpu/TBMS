@@ -74,6 +74,11 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
 .loading.hidden{display:none}
 .loading .spinner{width:40px;height:40px;border:4px solid #e0e0e0;border-top-color:var(--primary);border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
+.fs-overlay{position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:2000;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:20px;color:#fff;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.fs-overlay .fs-icon{font-size:72px;animation:fsPulse 2s infinite}
+.fs-overlay h2{font-size:28px;font-weight:700}
+.fs-overlay p{font-size:15px;opacity:.6}
+@keyframes fsPulse{0%,100%{opacity:.7;transform:scale(1)}50%{opacity:1;transform:scale(1.1)}}
 @media(max-width:400px){
   .staff-grid{grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:8px}
   .staff-btn{padding:8px 4px}
@@ -369,6 +374,31 @@ async function init(){
   else $('mainArea').innerHTML='<div style="text-align:center;padding:40px"><p style="color:var(--danger);font-size:18px;margin-bottom:16px"><i class="fas fa-exclamation-triangle"></i> Connection Failed</p><button class="btn btn-primary" onclick="init()"><i class="fas fa-redo"></i> Retry</button></div>';
   setInterval(async()=>{if(!currentStaff){await loadData(true);showStaffList();}},15*60*1000);
 }
+// ===== Fullscreen Mode =====
+function goFullscreen(){
+  const el=document.documentElement;
+  if(el.requestFullscreen)el.requestFullscreen();
+  else if(el.webkitRequestFullscreen)el.webkitRequestFullscreen();
+  else if(el.msRequestFullscreen)el.msRequestFullscreen();
+  const ov=document.getElementById('fsOverlay');if(ov)ov.remove();
+}
+function exitFsHandler(){
+  if(!document.fullscreenElement&&!document.webkitFullscreenElement){
+    if(!document.getElementById('fsOverlay'))showFsOverlay();
+  }
+}
+function showFsOverlay(){
+  const ov=document.createElement('div');ov.className='fs-overlay';ov.id='fsOverlay';
+  ov.innerHTML='<div class="fs-icon"><i class="fas fa-expand"></i></div><h2>Tap to Start</h2><p>Full screen kiosk mode</p>';
+  ov.addEventListener('click',goFullscreen);
+  document.body.appendChild(ov);
+}
+document.addEventListener('fullscreenchange',exitFsHandler);
+document.addEventListener('webkitfullscreenchange',exitFsHandler);
+if(!window.matchMedia('(display-mode: standalone)').matches&&!window.matchMedia('(display-mode: fullscreen)').matches){
+  showFsOverlay();
+}
+
 init();
 </script>
 </body>

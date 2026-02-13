@@ -1467,8 +1467,8 @@ function updateStockQty(el) {
 }
 async function saveStockAll() {
   LS.set('StoreStock',D.StoreStock);
-  if(API.mode==='cloud'){updateSyncStatus('syncing');const r=await API.post({action:'saveSheet',sheet:'StoreStock',rows:D.StoreStock});updateSyncStatus(r&&!r.error?'online':'offline');}
   renderStoreQtyTable(); toast('Stock quantities saved!','success');
+  if(API.mode==='cloud'){updateSyncStatus('syncing');const r=await API.post({action:'saveSheet',sheet:'StoreStock',rows:D.StoreStock});updateSyncStatus(r&&!r.error?'online':'offline');}
 }
 
 // ---- Stock Item Add/Edit Modal ----
@@ -1547,11 +1547,10 @@ async function saveStockItem(editId){
   const dup=D.StockTemplate.find(t=>t.name.toLowerCase()===name.toLowerCase()&&t.id!==editId);
   if(dup){toast('Item "'+name+'" already exists','error');return;}
 
-  showLoading('Saving...');
   if(editId){
     // ---- EDIT existing ----
     const tpl=D.StockTemplate.find(t=>t.id===editId);
-    if(!tpl){hideLoading();toast('Item not found','error');return;}
+    if(!tpl){toast('Item not found','error');return;}
     tpl.category=category;tpl.name=name;tpl.unit=unit;tpl.min=min;tpl.sortOrder=sortOrder;
     tpl.supplier1=supplier1;tpl.supplier2=supplier2;tpl.supplier3=supplier3;tpl.memo=memo;
     // Sync StoreStock for ALL stores
@@ -1562,15 +1561,17 @@ async function saveStockItem(editId){
     });
     LS.set('StockTemplate',D.StockTemplate);
     LS.set('StoreStock',D.StoreStock);
-    // Save both to cloud
+    // Optimistic UI — close immediately, sync in background
+    closeModal();renderStockTable();
+    toast(`"${name}" updated`,'success');
     if(API.mode==='cloud'){
       updateSyncStatus('syncing');
-      const r1=await API.post({action:'saveSheet',sheet:'StockTemplate',rows:D.StockTemplate});
-      const r2=await API.post({action:'saveSheet',sheet:'StoreStock',rows:D.StoreStock});
+      const [r1,r2]=await Promise.all([
+        API.post({action:'saveSheet',sheet:'StockTemplate',rows:D.StockTemplate}),
+        API.post({action:'saveSheet',sheet:'StoreStock',rows:D.StoreStock})
+      ]);
       updateSyncStatus(r1&&!r1.error&&r2&&!r2.error?'online':'offline');
     }
-    hideLoading();closeModal();renderStockTable();
-    toast(`"${name}" updated — synced to all stores`,'success');
   } else {
     // ---- ADD new ----
     const newId=genId('t');
@@ -1582,37 +1583,40 @@ async function saveStockItem(editId){
     });
     LS.set('StockTemplate',D.StockTemplate);
     LS.set('StoreStock',D.StoreStock);
-    // Save both to cloud
+    // Optimistic UI — close immediately, sync in background
+    closeModal();renderStockTable();
+    toast(`"${name}" added to all stores`,'success');
     if(API.mode==='cloud'){
       updateSyncStatus('syncing');
-      const r1=await API.post({action:'saveSheet',sheet:'StockTemplate',rows:D.StockTemplate});
-      const r2=await API.post({action:'saveSheet',sheet:'StoreStock',rows:D.StoreStock});
+      const [r1,r2]=await Promise.all([
+        API.post({action:'saveSheet',sheet:'StockTemplate',rows:D.StockTemplate}),
+        API.post({action:'saveSheet',sheet:'StoreStock',rows:D.StoreStock})
+      ]);
       updateSyncStatus(r1&&!r1.error&&r2&&!r2.error?'online':'offline');
     }
-    hideLoading();closeModal();renderStockTable();
-    toast(`"${name}" added to all stores`,'success');
   }
 }
 async function deleteStockItem(id){
   const tpl=D.StockTemplate.find(t=>t.id===id);
   if(!tpl)return;
   if(!confirm(`Delete "${tpl.name}"?\n\nThis will remove it from ALL stores and future weekly counts.`))return;
-  showLoading('Deleting...');
   // Remove from StockTemplate
   D.StockTemplate=D.StockTemplate.filter(t=>t.id!==id);
   // Remove from StoreStock for all stores
   D.StoreStock=D.StoreStock.filter(s=>String(s.itemId)!==id);
   LS.set('StockTemplate',D.StockTemplate);
   LS.set('StoreStock',D.StoreStock);
-  // Save both to cloud
+  // Optimistic UI — update immediately, sync in background
+  renderStockTable();
+  toast(`"${tpl.name}" deleted from all stores`,'success');
   if(API.mode==='cloud'){
     updateSyncStatus('syncing');
-    const r1=await API.post({action:'saveSheet',sheet:'StockTemplate',rows:D.StockTemplate});
-    const r2=await API.post({action:'saveSheet',sheet:'StoreStock',rows:D.StoreStock});
+    const [r1,r2]=await Promise.all([
+      API.post({action:'saveSheet',sheet:'StockTemplate',rows:D.StockTemplate}),
+      API.post({action:'saveSheet',sheet:'StoreStock',rows:D.StoreStock})
+    ]);
     updateSyncStatus(r1&&!r1.error&&r2&&!r2.error?'online':'offline');
   }
-  hideLoading();renderStockTable();
-  toast(`"${tpl.name}" deleted from all stores`,'success');
 }
 
 // ==================== ORDER LIST ====================
@@ -1753,18 +1757,16 @@ async function saveSupplier(editId){
     memo:($('supMemo')?.value||'').trim(),
     active:true
   };
-  showLoading('Saving...');
-  await saveRow('Suppliers',row);
-  hideLoading();closeModal();renderSupplierTable();
+  closeModal();renderSupplierTable();
   toast(`${name} ${editId?'updated':'added'}`,'success');
+  await saveRow('Suppliers',row);
 }
 async function deleteSupplier(id){
   const s=D.Suppliers.find(x=>x.id===id);if(!s)return;
   if(!confirm(`Delete supplier "${s.name}"?`))return;
-  showLoading('Deleting...');
-  await deleteData('Suppliers',id);
-  hideLoading();renderSupplierTable();
+  renderSupplierTable();
   toast(`${s.name} deleted`,'success');
+  await deleteData('Suppliers',id);
 }
 
 // ==================== STAFF MESSAGES ====================
@@ -1866,19 +1868,17 @@ async function saveMessage(editId){
     createdBy:currentUser?.name||'Admin',
     createdAt:editId?(D.StaffMessages.find(m=>m.id===editId)?.createdAt||new Date().toISOString()):new Date().toISOString()
   };
-  showLoading('Saving...');
-  await saveRow('StaffMessages',row);
-  hideLoading();closeModal();renderMessageTable();
+  closeModal();renderMessageTable();
   toast(`Message ${editId?'updated':'sent'}`,'success');
+  await saveRow('StaffMessages',row);
 }
 
 async function deleteMessage(id){
   const m=D.StaffMessages.find(x=>x.id===id);if(!m)return;
   if(!confirm('Delete this message?'))return;
-  showLoading('Deleting...');
-  await deleteData('StaffMessages',id);
-  hideLoading();renderMessageTable();
+  renderMessageTable();
   toast('Message deleted','success');
+  await deleteData('StaffMessages',id);
 }
 
 // ==================== WEEKLY STOCK COUNT ====================
@@ -1973,11 +1973,11 @@ function moveStockItem(itemId, direction){
 }
 async function saveStockOrder(){
   const btn=$('scSaveOrderBtn');
-  if(btn){btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Saving...';}
+  toast('Item order saved','success');
+  if(btn){btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Syncing...';}
   try{
     await saveData('StockTemplate');
-    toast('Item order saved','success');
-  }catch(e){toast('Save error: '+e.message,'error');}
+  }catch(e){toast('Sync error: '+e.message,'error');}
   if(btn){btn.disabled=false;btn.innerHTML='<i class="fas fa-cloud-arrow-up"></i> Save Order';}
 }
 
@@ -2396,12 +2396,11 @@ async function changePwd(){
 
 // ==================== INITIALIZATION ====================
 async function init() {
-  // Always use built-in CLOUD_URL. If code is updated with a new URL,
-  // localStorage old URL is automatically replaced.
+  // Use saved URL from localStorage if available, otherwise use hardcoded CLOUD_URL
   const savedCfg = LS.getConfig();
   API.mode = 'cloud';
-  API.url = CLOUD_URL;
-  LS.set('config', {apiUrl: CLOUD_URL, mode: 'cloud'});
+  API.url = (savedCfg && savedCfg.apiUrl) ? savedCfg.apiUrl : CLOUD_URL;
+  LS.set('config', {apiUrl: API.url, mode: 'cloud'});
   // Load data from cloud
   await loadAllData();
   // If no users loaded, initialize defaults

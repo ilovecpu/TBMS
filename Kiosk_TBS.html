@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>The Bap Swindon - Clock In/Out</title>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+<link rel="manifest" href="manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--primary:#1a237e;--success:#1565c0;--danger:#e53935;--bg:#1565c0;--card:#fff;--text:#333;--text-light:#666;--border:#ddd}
+body{font-family:'Noto Sans KR',sans-serif;background:linear-gradient(135deg,#1565c0 0%,#1976d2 100%);min-height:100vh;display:flex;flex-direction:column;align-items:center;color:var(--text);overflow-x:hidden;-webkit-user-select:none;user-select:none}
+.toast-box{position:fixed;top:16px;right:16px;z-index:1000}
+.toast{padding:14px 24px;border-radius:12px;color:#fff;font-size:15px;font-weight:500;display:flex;align-items:center;gap:10px;animation:slideIn .3s;box-shadow:0 4px 20px rgba(0,0,0,.3);margin-bottom:8px}
+.toast.success{background:var(--success)}.toast.error{background:var(--danger)}.toast.info{background:var(--primary)}
+@keyframes slideIn{from{transform:translateX(120%);opacity:0}to{transform:translateX(0);opacity:1}}
+.header{text-align:center;color:#fff;padding:24px 20px 16px;width:100%}
+.header h1{font-size:26px;display:flex;align-items:center;justify-content:center;gap:12px;text-shadow:0 2px 8px rgba(0,0,0,.2)}
+.header p{font-size:15px;opacity:.85;margin-top:6px}
+.main-card{background:#fff;border-radius:20px;padding:28px;width:calc(100% - 40px);max-width:480px;box-shadow:0 20px 60px rgba(0,0,0,.25);margin:8px 0 20px;min-height:400px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.clock{font-size:56px;font-weight:700;color:var(--primary);text-align:center;font-variant-numeric:tabular-nums;letter-spacing:2px}
+.date{text-align:center;color:var(--text-light);font-size:15px;margin-top:4px;margin-bottom:24px}
+.staff-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:14px;width:100%;max-height:none;overflow-y:auto;padding:4px}
+.staff-btn{padding:14px 8px;background:#e3f2fd;border-radius:16px;text-align:center;cursor:pointer;transition:all .2s;border:2.5px solid #1565c0}
+.staff-btn:hover,.staff-btn:active{transform:scale(1.05);filter:brightness(0.97)}
+.staff-btn.clocked-in{border-color:#e84393;background:#fff0f3}
+.staff-btn.clocked-in .avatar{background:#e84393}
+.staff-btn.clocked-in .status-dot{display:block}
+.staff-btn .avatar{width:56px;height:56px;background:#1565c0;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 8px;font-weight:700;font-size:22px;position:relative}
+.staff-btn .status-dot{display:none;position:absolute;bottom:0;right:0;width:16px;height:16px;background:#e84393;border:2px solid #fff;border-radius:50%}
+.staff-btn .name{font-size:14px;font-weight:600;line-height:1.3;word-break:keep-all}
+.pw-section{text-align:center;width:100%}
+.pw-section .avatar-lg{width:64px;height:64px;background:var(--primary);color:#fff;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:26px;font-weight:700;margin-bottom:10px}
+.pw-section h3{font-size:20px;margin-bottom:16px}
+.pin-display{display:flex;justify-content:center;gap:14px;margin-bottom:20px;min-height:28px;align-items:center}
+.pin-dot{width:22px;height:22px;border-radius:50%;border:2.5px solid #ccc;background:#fff;transition:all .15s}
+.pin-dot.filled{background:var(--primary);border-color:var(--primary);transform:scale(1.1)}
+.pin-dot.error{background:var(--danger);border-color:var(--danger);animation:shake .4s}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+.keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:100%;max-width:300px;margin:0 auto 16px}
+.key-btn{height:68px;border-radius:16px;font-size:30px;font-weight:600;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .1s;background:#f0f2f5;color:var(--text);-webkit-tap-highlight-color:transparent}
+.key-btn:active{transform:scale(.9);background:#ddd}
+.key-btn.fn{background:transparent;font-size:24px;color:var(--text-light)}
+.key-btn.fn:active{background:#f0f0f0;transform:scale(.9)}
+.key-btn.confirm{background:var(--success);color:#fff;font-size:24px}
+.key-btn.confirm:active{background:#0d47a1;transform:scale(.9)}
+.btn{padding:14px 28px;border-radius:12px;font-size:16px;font-weight:600;border:none;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:10px;transition:all .2s;width:100%}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-success{background:var(--success);color:#fff}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-outline{background:transparent;border:2px solid var(--border);color:var(--text);width:auto;padding:10px 20px;font-size:14px}
+.action-btns{display:flex;flex-direction:column;gap:14px;width:100%;margin-top:20px}
+.action-btn{padding:24px;border-radius:14px;font-size:22px;font-weight:700;color:#fff;cursor:pointer;text-align:center;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:12px;border:none}
+.action-btn:active{transform:scale(.97)}
+.action-btn.in{background:linear-gradient(135deg,#1565c0,#0d47a1)}
+.action-btn.out{background:linear-gradient(135deg,#e53935,#c62828)}
+.result{text-align:center;width:100%}
+.result .icon{font-size:72px;margin-bottom:16px}
+.result .msg{font-size:22px;font-weight:700;margin-bottom:8px}
+.result .time{font-size:36px;color:var(--primary);font-weight:700}
+.result .who{margin-top:12px;color:var(--text-light);font-size:16px}
+.status-bar{color:rgba(255,255,255,.6);font-size:12px;padding:8px;display:flex;align-items:center;gap:6px;position:fixed;bottom:8px}
+.status-dot{width:8px;height:8px;border-radius:50%;background:#1565c0}
+.status-dot.off{background:#fb8c00}
+.loading-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;color:#fff;font-size:16px}
+.loading-overlay.hidden{display:none}
+.camera-modal{position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:900;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px}
+.camera-modal.hidden{display:none}
+.camera-modal video{width:320px;height:240px;border-radius:16px;border:3px solid #fff;object-fit:cover;transform:scaleX(-1)}
+.camera-modal canvas{display:none}
+.camera-modal .cam-title{color:#fff;font-size:20px;font-weight:600;display:flex;align-items:center;gap:10px}
+.camera-modal .cam-preview{width:320px;height:240px;border-radius:16px;border:3px solid var(--success);object-fit:cover}
+.cam-capture{padding:18px 48px;border-radius:50px;font-size:20px;font-weight:700;border:none;cursor:pointer;color:#fff;background:linear-gradient(135deg,#e84393,#d63384);display:flex;align-items:center;gap:12px;box-shadow:0 4px 20px rgba(232,67,147,.4);transition:all .15s}
+.cam-capture:active{transform:scale(.93)}
+.cam-cancel{padding:12px 28px;border-radius:30px;font-size:14px;font-weight:500;border:2px solid rgba(255,255,255,.3);cursor:pointer;color:#fff;background:transparent;margin-top:4px}
+.cam-cancel:active{background:rgba(255,255,255,.1)}
+.spinner{width:44px;height:44px;border:4px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.today-records{width:100%;margin-top:16px;background:#f8faf8;border-radius:10px;padding:12px;max-height:120px;overflow-y:auto}
+.today-records h4{font-size:12px;color:var(--text-light);margin-bottom:8px}
+.today-records .rec{font-size:13px;display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #eee}
+.today-records .rec:last-child{border:none}
+.fs-overlay{position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:2000;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:20px;color:#fff;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.fs-overlay .fs-icon{font-size:72px;animation:fsPulse 2s infinite}
+.fs-overlay h2{font-size:28px;font-weight:700}
+.fs-overlay p{font-size:15px;opacity:.6}
+@keyframes fsPulse{0%,100%{opacity:.7;transform:scale(1)}50%{opacity:1;transform:scale(1.1)}}
+.msg-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:800;display:flex;align-items:center;justify-content:center;padding:20px}
+.msg-box{background:#fff;border-radius:20px;padding:32px;max-width:400px;width:100%;text-align:center;animation:msgPop .3s}
+.msg-box .msg-icon{font-size:48px;margin-bottom:12px}
+.msg-box .msg-title{font-size:13px;font-weight:500;margin-bottom:12px;color:#999;text-transform:uppercase;letter-spacing:1px}
+.msg-box .msg-content{font-size:28px;line-height:1.5;color:#111;font-weight:800;margin-bottom:24px;white-space:pre-wrap}
+.msg-box .msg-ok{padding:14px 40px;background:var(--primary);color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer}
+.msg-box .msg-ok:active{transform:scale(.95)}
+@keyframes msgPop{from{transform:scale(.8);opacity:0}to{transform:scale(1);opacity:1}}
+@media(max-width:400px){
+  .clock{font-size:42px}
+  .staff-grid{grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:10px}
+  .staff-btn{padding:10px 6px}
+  .staff-btn .avatar{width:48px;height:48px;font-size:20px}
+  .staff-btn .name{font-size:12px}
+  .main-card{padding:16px}
+  .key-btn{height:58px;font-size:26px}
+}
+</style>
+</head>
+<body>
+<div class="loading-overlay" id="loading"><div class="spinner"></div><div id="loadingText">Loading...</div></div>
+<div class="toast-box" id="toastBox"></div>
+<div class="header">
+  <h1><i class="fas fa-bowl-food"></i> The Bap Swindon</h1>
+  <p>Swindon - Staff Clock In/Out</p>
+</div>
+<div class="main-card" id="mainCard"></div>
+<div class="status-bar"><span class="status-dot" id="statusDot"></span><span id="statusText">Connecting...</span></div>
+<script>
+const STORE_ID='TBS',STORE_NAME='The Bap Swindon';
+const DEFAULT_API='https://script.google.com/macros/s/AKfycbz1IRMcShaZJUPWe8mCIej4uBF3AeYlpAPHxZuwipJfhkN0QmyOMzSdJHfympz2s9jH/exec';
+const API_URL=(function(){try{const c=JSON.parse(localStorage.getItem('tbms_config'));return(c&&c.apiUrl)?c.apiUrl:DEFAULT_API;}catch(e){return DEFAULT_API;}})();
+const $=id=>document.getElementById(id);
+function toast(msg,type='info'){const t=document.createElement('div');t.className='toast '+type;t.innerHTML='<i class="fas fa-'+(type==='error'?'exclamation-circle':type==='success'?'check-circle':'info-circle')+'"></i>'+msg;$('toastBox').appendChild(t);setTimeout(()=>t.remove(),3000);}
+function showLoad(t){$('loadingText').textContent=t;$('loading').classList.remove('hidden');}
+function hideLoad(){$('loading').classList.add('hidden');}
+function genId(){return 'a_'+Date.now()+'_'+Math.random().toString(36).substr(2,5);}
+function fmtTime(d){return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');}
+function esc(s){if(!s&&s!==0)return'';const d=document.createElement('div');d.textContent=String(s);return d.innerHTML;}
+
+async function apiGet(action){try{const r=await fetch(API_URL+'?action='+action,{redirect:'follow'});return await r.json();}catch(e){console.error(e);return null;}}
+async function apiPost(data){try{const r=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(data),redirect:'follow'});return await r.json();}catch(e){console.error(e);return null;}}
+
+let staff=[],attendance=[],staffMessages=[],clockTimer=null,currentStaff=null,pinCode='';
+const MAX_PIN=10;
+const STAFF_FIELDS=['id','storeId','name','nickName','clothSize','kioskPwd','dob','address','niNo','eVisa','mobile','startDate','leftDate','rate','sortCode','accountNo','email','memo','active'];
+const ATT_FIELDS=['id','staffId','storeId','date','clockIn','clockOut','photoIn','photoOut','source'];
+const MSG_FIELDS=['id','storeId','staffId','type','message','active','createdBy','createdAt'];
+function nrmRow(fields,row){const m={};for(const k in row)m[k.replace(/[\s_\-]+/g,'').toLowerCase()]=row[k];const r={};for(const f of fields){const n=f.replace(/[\s_\-]+/g,'').toLowerCase();r[f]=m[n]!==undefined?m[n]:'';}return r;}
+
+async function loadData(silent){
+  if(!silent)showLoad('Loading staff data...');
+  const result=await apiGet('getAll');
+  if(result&&result.data&&!result.error){
+    staff=(result.data.Staff||[]).map(r=>nrmRow(STAFF_FIELDS,r)).filter(s=>String(s.storeId)===STORE_ID&&(s.active===true||s.active==='true'||s.active==='TRUE'));
+    attendance=(result.data.Attendance||[]).map(r=>nrmRow(ATT_FIELDS,r));
+    const rawMsgs=result.data.StaffMessages||[];
+    staffMessages=rawMsgs.map(r=>nrmRow(MSG_FIELDS,r)).filter(m=>(String(m.storeId)===STORE_ID||String(m.storeId)==='ALL')&&(m.active===true||m.active==='true'||m.active==='TRUE'));
+    $('statusDot').className='status-dot';$('statusText').textContent='Connected';
+    if(!silent)hideLoad();return true;
+  }
+  $('statusDot').className='status-dot off';$('statusText').textContent='Offline';
+  if(!silent){hideLoad();toast('Cannot connect to server','error');}
+  return false;
+}
+
+function pressKey(n){if(pinCode.length>=MAX_PIN)return;pinCode+=String(n);updatePinDisplay();}
+function pressBackspace(){if(!pinCode.length)return;pinCode=pinCode.slice(0,-1);updatePinDisplay();}
+function pressConfirm(){if(pinCode.length>0)verify();}
+function updatePinDisplay(){
+  const container=document.getElementById('pinDots');
+  if(!container)return;
+  container.innerHTML='';
+  const len=Math.max(pinCode.length,4);
+  for(let i=0;i<len;i++){
+    const dot=document.createElement('div');
+    dot.className='pin-dot'+(i<pinCode.length?' filled':'');
+    container.appendChild(dot);
+  }
+}
+function shakePin(){
+  document.querySelectorAll('.pin-dot.filled').forEach(d=>{d.classList.add('error');});
+  setTimeout(()=>{pinCode='';updatePinDisplay();},500);
+}
+
+function startClock(){if(clockTimer)clearInterval(clockTimer);clockTimer=setInterval(()=>{const el=document.querySelector('.clock');if(el)el.textContent=new Date().toLocaleTimeString('en-GB');},1000);}
+
+function getMessages(staffId,type){
+  return staffMessages.filter(m=>(String(m.staffId)===String(staffId)||String(m.staffId)==='ALL')&&String(m.type).toLowerCase()===String(type).toLowerCase());
+}
+
+function showMessage(msgs,callback){
+  if(!msgs.length){callback();return;}
+  const msg=msgs.map(m=>m.message).join('\n\n');
+  const overlay=document.createElement('div');
+  overlay.className='msg-overlay';
+  overlay.id='msgOverlay';
+  overlay.innerHTML=`<div class="msg-box">
+    <div class="msg-icon">📢</div>
+    <div class="msg-title">Message from Management</div>
+    <div class="msg-content">${esc(msg)}</div>
+    <button class="msg-ok">OK</button>
+  </div>`;
+  document.body.appendChild(overlay);
+  overlay._cb=callback;
+  overlay.querySelector('.msg-ok').onclick=function(){
+    overlay.remove();
+    callback();
+  };
+}
+
+function checkMsgThenClock(type,attId){
+  const msgType=type==='in'?'checkin':'checkout';
+  const msgs=getMessages(currentStaff.id,msgType);
+  if(msgs.length>0){
+    showMessage(msgs,function(){openCamera(type,attId);});
+  }else{
+    openCamera(type,attId);
+  }
+}
+
+function isClockedIn(staffId){
+  const today=new Date().toISOString().split('T')[0];
+  return attendance.some(a=>String(a.staffId)===String(staffId)&&a.date===today&&a.clockIn&&!a.clockOut);
+}
+function showStaffList(){
+  currentStaff=null;pinCode='';
+  const now=new Date();
+  $('mainCard').innerHTML=`
+    <div class="clock" id="clock">${now.toLocaleTimeString('en-GB')}</div>
+    <div class="date">${now.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</div>
+    ${staff.length?`<div class="staff-grid">${staff.map(s=>{const dn=s.nickName||s.name;const ci=isClockedIn(s.id);return`
+      <div class="staff-btn${ci?' clocked-in':''}" onclick="selectStaff('${s.id}')">
+        <div class="avatar">${dn.charAt(0).toUpperCase()}<span class="status-dot"></span></div>
+        <div class="name">${esc(dn)}</div>
+      </div>`;}).join('')}</div>`:'<p style="color:var(--text-light)">No staff found for this store</p>'}
+    <div style="margin-top:16px"><button class="btn-outline" onclick="loadData().then(()=>showStaffList())"><i class="fas fa-sync"></i> Refresh</button></div>`;
+  startClock();
+}
+
+function selectStaff(id){
+  currentStaff=staff.find(s=>String(s.id)===String(id));
+  if(!currentStaff)return;
+  pinCode='';
+  const now=new Date();
+  $('mainCard').innerHTML=`
+    <div class="clock" id="clock">${now.toLocaleTimeString('en-GB')}</div>
+    <div class="date">${now.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</div>
+    <div class="pw-section">
+      <div class="avatar-lg">${(currentStaff.nickName||currentStaff.name).charAt(0).toUpperCase()}</div>
+      <h3>${esc(currentStaff.nickName||currentStaff.name)}</h3>
+      <div class="pin-display" id="pinDots"><div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div></div>
+      <div class="keypad">
+        <div class="key-btn" onclick="pressKey(1)">1</div>
+        <div class="key-btn" onclick="pressKey(2)">2</div>
+        <div class="key-btn" onclick="pressKey(3)">3</div>
+        <div class="key-btn" onclick="pressKey(4)">4</div>
+        <div class="key-btn" onclick="pressKey(5)">5</div>
+        <div class="key-btn" onclick="pressKey(6)">6</div>
+        <div class="key-btn" onclick="pressKey(7)">7</div>
+        <div class="key-btn" onclick="pressKey(8)">8</div>
+        <div class="key-btn" onclick="pressKey(9)">9</div>
+        <div class="key-btn fn" onclick="pressBackspace()"><i class="fas fa-delete-left"></i></div>
+        <div class="key-btn" onclick="pressKey(0)">0</div>
+        <div class="key-btn confirm" onclick="pressConfirm()"><i class="fas fa-check"></i></div>
+      </div>
+      <div><button class="btn-outline" onclick="showStaffList()"><i class="fas fa-arrow-left"></i> Back</button></div>
+    </div>`;
+  startClock();
+}
+
+function verify(){
+  if(!currentStaff)return;
+  if(String(currentStaff.kioskPwd)===String(pinCode)){showAction();}
+  else{toast('Wrong password','error');shakePin();}
+}
+
+function showAction(){
+  const now=new Date();const today=now.toISOString().split('T')[0];
+  const todayAtt=attendance.filter(a=>String(a.staffId)===String(currentStaff.id)&&a.date===today);
+  const openAtt=todayAtt.find(a=>a.clockIn&&!a.clockOut);
+  $('mainCard').innerHTML=`
+    <div class="clock" id="clock">${now.toLocaleTimeString('en-GB')}</div>
+    <div class="date">${now.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</div>
+    <div class="pw-section">
+      <div class="avatar-lg">${(currentStaff.nickName||currentStaff.name).charAt(0).toUpperCase()}</div>
+      <h3>${esc(currentStaff.nickName||currentStaff.name)}</h3>
+      <div class="action-btns">
+        ${openAtt?`<button class="action-btn out" onclick="checkMsgThenClock('out','${openAtt.id}')"><i class="fas fa-sign-out-alt"></i> Clock Out</button>`
+        :`<button class="action-btn in" onclick="checkMsgThenClock('in','')"><i class="fas fa-sign-in-alt"></i> Clock In</button>`}
+      </div>
+      ${todayAtt.length?`<div class="today-records"><h4>Today's Records</h4>${todayAtt.map(a=>`<div class="rec"><span>${a.clockIn||'-'} → ${a.clockOut||'...'}</span></div>`).join('')}</div>`:''}
+      <div style="margin-top:14px"><button class="btn-outline" onclick="showStaffList()"><i class="fas fa-arrow-left"></i> Back</button></div>
+    </div>`;
+  startClock();
+}
+
+// ===== Selfie Camera =====
+let cameraStream=null,pendingAction=null,cameraRetries=0;
+const MAX_RETRIES=3;
+function openCamera(type,attId){
+  pendingAction={type,attId};
+  cameraRetries=0;
+  startCamera();
+}
+function startCamera(){
+  const type=pendingAction.type,attId=pendingAction.attId;
+  closeCamera();
+  const modal=document.createElement('div');modal.className='camera-modal';modal.id='cameraModal';
+  modal.innerHTML=`
+    <div class="cam-title"><i class="fas fa-camera"></i> Selfie Verification</div>
+    <p style="color:rgba(255,255,255,.7);font-size:14px;margin:-6px 0 4px">${esc(currentStaff.nickName||currentStaff.name)} — ${type==='in'?'Clock In':'Clock Out'}</p>
+    <video id="camVideo" autoplay playsinline muted></video>
+    <canvas id="camCanvas" width="320" height="240"></canvas>
+    <button class="cam-capture" onclick="capturePhoto()"><i class="fas fa-camera"></i> Take Photo</button>
+    <button class="cam-cancel" onclick="closeCamera()"><i class="fas fa-times"></i> Cancel</button>`;
+  document.body.appendChild(modal);
+  navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:320},height:{ideal:240}}})
+    .then(stream=>{cameraStream=stream;document.getElementById('camVideo').srcObject=stream;})
+    .catch(err=>{
+      cameraRetries++;
+      closeCamera();
+      if(cameraRetries>=MAX_RETRIES){
+        showCameraFailModal(type,attId);
+      }else{
+        showCameraRetryModal(type,attId,err.message);
+      }
+    });
+}
+function showCameraRetryModal(type,attId,errMsg){
+  const modal=document.createElement('div');modal.className='camera-modal';modal.id='cameraModal';
+  modal.innerHTML=`
+    <div style="text-align:center;padding:30px">
+      <div style="font-size:48px;margin-bottom:16px">📷</div>
+      <div class="cam-title" style="color:#ff6b6b"><i class="fas fa-exclamation-triangle"></i> Camera Failed</div>
+      <p style="color:rgba(255,255,255,.7);font-size:14px;margin:8px 0 20px">${errMsg}<br>Attempt ${cameraRetries} of ${MAX_RETRIES}</p>
+      <button onclick="startCamera()" style="padding:14px 40px;background:#1565c0;color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;margin:6px"><i class="fas fa-redo"></i> Retry Camera</button>
+      <br><button onclick="closeCamera()" style="padding:10px 30px;background:transparent;color:rgba(255,255,255,.5);border:1px solid rgba(255,255,255,.3);border-radius:10px;font-size:14px;cursor:pointer;margin-top:12px"><i class="fas fa-times"></i> Cancel</button>
+    </div>`;
+  document.body.appendChild(modal);
+}
+function showCameraFailModal(type,attId){
+  const modal=document.createElement('div');modal.className='camera-modal';modal.id='cameraModal';
+  modal.innerHTML=`
+    <div style="text-align:center;padding:30px">
+      <div style="font-size:48px;margin-bottom:16px">⚠️</div>
+      <div class="cam-title" style="color:#ff6b6b"><i class="fas fa-camera-slash"></i> Camera Unavailable</div>
+      <p style="color:rgba(255,255,255,.7);font-size:14px;margin:8px 0 6px">Camera failed ${MAX_RETRIES} times.</p>
+      <p style="color:#ffc107;font-size:13px;margin:0 0 20px">Proceed without photo?<br>This will be recorded without selfie verification.</p>
+      <button onclick="closeCamera();doClockDirect('${type}','${attId||''}')" style="padding:14px 40px;background:#fb8c00;color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;margin:6px"><i class="fas fa-sign-in-alt"></i> Continue Without Photo</button>
+      <br><button onclick="startCamera()" style="padding:10px 30px;background:transparent;color:rgba(255,255,255,.5);border:1px solid rgba(255,255,255,.3);border-radius:10px;font-size:14px;cursor:pointer;margin-top:8px"><i class="fas fa-redo"></i> Try Again</button>
+      <br><button onclick="closeCamera()" style="padding:10px 30px;background:transparent;color:rgba(255,255,255,.3);border:none;font-size:13px;cursor:pointer;margin-top:6px"><i class="fas fa-times"></i> Cancel</button>
+    </div>`;
+  document.body.appendChild(modal);
+}
+function capturePhoto(){
+  const video=document.getElementById('camVideo'),canvas=document.getElementById('camCanvas');
+  if(!video||!canvas)return;
+  canvas.width=320;canvas.height=240;
+  const ctx=canvas.getContext('2d');
+  ctx.translate(320,0);ctx.scale(-1,1);
+  ctx.drawImage(video,0,0,320,240);
+  const base64=canvas.toDataURL('image/jpeg',0.6).split(',')[1];
+  closeCamera();
+  if(pendingAction.type==='in')doClockIn(base64);
+  else doClockOut(pendingAction.attId,base64);
+}
+function closeCamera(){
+  if(cameraStream){cameraStream.getTracks().forEach(t=>t.stop());cameraStream=null;}
+  const m=document.getElementById('cameraModal');if(m)m.remove();
+}
+function doClockDirect(type,attId){
+  if(type==='in')doClockIn('');else doClockOut(attId,'');
+}
+
+async function doClockIn(photo){
+  const now=new Date();
+  const att={id:genId(),staffId:currentStaff.id,storeId:STORE_ID,date:now.toISOString().split('T')[0],clockIn:fmtTime(now),clockOut:'',photoIn:'',photoOut:'',source:'kiosk'};
+  showLoad('Recording...');
+  const r=await apiPost({action:'clockInPhoto',row:att,photo:photo||''});
+  hideLoad();
+  if(r&&!r.error){if(r.row&&r.row.photoIn)att.photoIn=r.row.photoIn;attendance.push(att);showResult('in',att.clockIn);}
+  else{toast('Failed to save. Try again.','error');}
+}
+async function doClockOut(attId,photo){
+  const att=attendance.find(a=>String(a.id)===String(attId));if(!att)return;
+  att.clockOut=fmtTime(new Date());
+  showLoad('Recording...');
+  const r=await apiPost({action:'clockOutPhoto',row:att,photo:photo||''});
+  hideLoad();
+  if(r&&!r.error){showResult('out',att.clockOut);}
+  else{toast('Failed to save. Try again.','error');}
+}
+
+function showResult(type,time){
+  $('mainCard').innerHTML=`
+    <div class="result">
+      <div class="icon">${type==='in'?'✅':'🏁'}</div>
+      <div class="msg">${type==='in'?'Clock In Recorded!':'Clock Out Recorded!'}</div>
+      <div class="time">${time}</div>
+      <div class="who">${currentStaff?esc(currentStaff.nickName||currentStaff.name):''}</div>
+    </div>`;
+  toast(type==='in'?'Clock In successful!':'Clock Out successful!','success');
+  setTimeout(()=>showStaffList(),3000);
+}
+
+async function init(){
+  const ok=await loadData();
+  if(ok)showStaffList();
+  else $('mainCard').innerHTML='<div style="text-align:center"><p style="color:var(--danger);font-size:18px;margin-bottom:16px"><i class="fas fa-exclamation-triangle"></i> Connection Failed</p><button class="btn btn-primary" onclick="init()"><i class="fas fa-redo"></i> Retry</button></div>';
+  setInterval(async()=>{
+    if(!currentStaff){await loadData(true);showStaffList();}
+  },15*60*1000);
+}
+
+// ===== Fullscreen Mode =====
+function goFullscreen(){
+  const el=document.documentElement;
+  if(el.requestFullscreen)el.requestFullscreen();
+  else if(el.webkitRequestFullscreen)el.webkitRequestFullscreen();
+  else if(el.msRequestFullscreen)el.msRequestFullscreen();
+  const ov=document.getElementById('fsOverlay');if(ov)ov.remove();
+}
+function exitFsHandler(){
+  if(!document.fullscreenElement&&!document.webkitFullscreenElement){
+    // Show overlay again if user exits fullscreen
+    if(!document.getElementById('fsOverlay'))showFsOverlay();
+  }
+}
+function showFsOverlay(){
+  const ov=document.createElement('div');ov.className='fs-overlay';ov.id='fsOverlay';
+  ov.innerHTML='<div class="fs-icon"><i class="fas fa-expand"></i></div><h2>Tap to Start</h2><p>Full screen kiosk mode</p>';
+  ov.addEventListener('click',goFullscreen);
+  document.body.appendChild(ov);
+}
+document.addEventListener('fullscreenchange',exitFsHandler);
+document.addEventListener('webkitfullscreenchange',exitFsHandler);
+// Don't show overlay if already in standalone PWA mode
+if(!window.matchMedia('(display-mode: standalone)').matches&&!window.matchMedia('(display-mode: fullscreen)').matches){
+  showFsOverlay();
+}
+
+init();
+</script>
+</body>
+</html>

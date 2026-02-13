@@ -1368,8 +1368,41 @@ function exportPayroll() {
 }
 
 // ==================== STOCK MANAGEMENT ====================
+function getCatOrder(){return LS.get('catOrder')||[];}
+function saveCatOrder(order){LS.set('catOrder',order);}
+function getSortedCategories(){
+  const allCats=[...new Set(D.StockTemplate.map(t=>t.category))];
+  const order=getCatOrder();
+  const sorted=[];
+  order.forEach(c=>{if(allCats.includes(c))sorted.push(c);});
+  allCats.forEach(c=>{if(!sorted.includes(c))sorted.push(c);});
+  return sorted;
+}
+function openCatOrderModal(){
+  const cats=getSortedCategories();
+  const body=`<div id="catOrderList" style="max-height:400px;overflow-y:auto">${cats.map((c,i)=>`
+    <div class="cat-order-row" data-cat="${escHtml(c)}" style="display:flex;align-items:center;gap:10px;padding:10px 14px;margin-bottom:6px;background:#f8f9fa;border-radius:10px;border:2px solid var(--border)">
+      <span style="width:28px;height:28px;background:var(--primary);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0">${i+1}</span>
+      <span style="flex:1;font-weight:600;font-size:15px">${escHtml(c)}</span>
+      <button onclick="moveCat(${i},-1)" class="btn btn-sm" style="padding:6px 10px;${i===0?'opacity:.3;pointer-events:none':''}"><i class="fas fa-chevron-up"></i></button>
+      <button onclick="moveCat(${i},1)" class="btn btn-sm" style="padding:6px 10px;${i===cats.length-1?'opacity:.3;pointer-events:none':''}"><i class="fas fa-chevron-down"></i></button>
+    </div>`).join('')}</div>
+    <p style="font-size:12px;color:var(--text-light);margin-top:12px"><i class="fas fa-info-circle"></i> Order is saved automatically and applies to all category lists.</p>`;
+  openModal('Category Order',body,`<button class="btn btn-primary" onclick="applyCatOrder()"><i class="fas fa-check"></i> Done</button>`);
+}
+function moveCat(idx,dir){
+  const cats=getSortedCategories();
+  const newIdx=idx+dir;
+  if(newIdx<0||newIdx>=cats.length)return;
+  [cats[idx],cats[newIdx]]=[cats[newIdx],cats[idx]];
+  saveCatOrder(cats);
+  openCatOrderModal();
+}
+function applyCatOrder(){
+  closeModal();renderStock($('content'));
+}
 function renderStock(c) {
-  const cats=[...new Set(D.StockTemplate.map(t=>t.category))].sort();
+  const cats=getSortedCategories();
   const stores=getAccessibleStores();
   c.innerHTML=`<div style="display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap">
     <div style="flex:1">
@@ -1378,6 +1411,7 @@ function renderStock(c) {
           <option value="">All Categories</option>${cats.map(cat=>`<option>${escHtml(cat)}</option>`).join('')}</select>
         <div class="search-box" style="min-width:200px;flex:1"><i class="fas fa-search"></i>
           <input type="text" id="stockSearch" placeholder="Search items..." oninput="renderStockTable()" style="padding:10px 14px 10px 36px;border:2px solid var(--border);border-radius:8px;font-size:14px;width:100%"></div>
+        <button class="btn btn-sm" onclick="openCatOrderModal()" style="background:#f0f0f0;color:#555"><i class="fas fa-sort"></i> Category Order</button>
         <button class="btn btn-primary btn-sm" onclick="openStockItemModal()"><i class="fas fa-plus"></i> Add Item</button>
       </div>
     </div>
@@ -1408,7 +1442,8 @@ function renderStockTable() {
   let items=[...D.StockTemplate];
   if(catF)items=items.filter(t=>t.category===catF);
   if(search)items=items.filter(t=>(t.name||'').toLowerCase().includes(search)||(t.category||'').toLowerCase().includes(search));
-  items.sort((a,b)=>(a.category||'').localeCompare(b.category||'')||(a.sortOrder||0)-(b.sortOrder||0));
+  const catIdx=getSortedCategories();
+  items.sort((a,b)=>{const ci=catIdx.indexOf(a.category)-catIdx.indexOf(b.category);return ci!==0?ci:(a.sortOrder||0)-(b.sortOrder||0);});
   const cnt=$('stockCount');if(cnt)cnt.textContent=`(${items.length} items)`;
   let html='';let lastCat='';
   items.forEach((t,idx)=>{
@@ -1474,7 +1509,7 @@ async function saveStockAll() {
 // ---- Stock Item Add/Edit Modal ----
 function openStockItemModal(editId){
   const existing=editId?D.StockTemplate.find(t=>t.id===editId):null;
-  const cats=[...new Set(D.StockTemplate.map(t=>t.category))].sort();
+  const cats=getSortedCategories();
   const isNew=!existing;
   const title=isNew?'Add New Stock Item':'Edit Stock Item';
   const maxSort=Math.max(0,...D.StockTemplate.map(t=>t.sortOrder||0));
@@ -1985,7 +2020,7 @@ function renderStockCount(c){
   const stores=getAccessibleStores();
   const today=new Date().toISOString().split('T')[0];
   const week=getISOWeek(new Date());
-  const cats=[...new Set(D.StockTemplate.map(t=>t.category))].sort();
+  const cats=getSortedCategories();
   c.innerHTML=`<div class="card" style="margin-bottom:16px">
     <h3 style="margin-bottom:16px"><i class="fas fa-clipboard-check" style="color:var(--accent);margin-right:8px"></i>Weekly Stock Count — Week ${String(week).slice(-2)} (${String(week).slice(0,4)})</h3>
     <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end">
@@ -2135,7 +2170,7 @@ function renderStockHistory(c){
       <select id="shStore" onchange="renderStockHistoryTable()" style="padding:8px 12px;border:2px solid var(--border);border-radius:8px">
         <option value="">All Stores</option>${stores.map(s=>`<option value="${s.id}">${escHtml(s.name)}</option>`).join('')}</select>
       <select id="shCat" onchange="renderStockHistoryTable()" style="padding:8px 12px;border:2px solid var(--border);border-radius:8px">
-        <option value="">All Categories</option>${[...new Set(D.StockTemplate.map(t=>t.category))].map(cat=>`<option>${escHtml(cat)}</option>`).join('')}</select>
+        <option value="">All Categories</option>${getSortedCategories().map(cat=>`<option>${escHtml(cat)}</option>`).join('')}</select>
       <select id="shRange" onchange="renderStockHistoryTable()" style="padding:8px 12px;border:2px solid var(--border);border-radius:8px">
         <option value="30">Last 30 days</option><option value="90" selected>Last 13 weeks</option><option value="180">Last 6 months</option><option value="365">Last year</option></select>
       <select id="shItem" onchange="renderStockHistoryTable()" style="padding:8px 12px;border:2px solid var(--border);border-radius:8px">

@@ -1988,25 +1988,29 @@ function toggleReorderMode(){
   renderStockCountTable();
 }
 function moveStockItem(itemId, direction){
-  const storeId=$('scStore')?.value;if(!storeId) return;
+  const storeId=$('scStore')?.value;if(!storeId)return;
   const catFilter=$('scCat')?.value||'';
-  let items=D.StoreStock.filter(s=>String(s.storeId)===storeId);
-  if(catFilter)items=items.filter(s=>s.category===catFilter);
-  // Get sortOrder from StockTemplate, assign sequential index if all zero
-  items.forEach(it=>{const tpl=D.StockTemplate.find(t=>t.id===it.itemId);it._so=tpl?(tpl.sortOrder||0):9999;});
-  const _ci2=getSortedCategories();
-  items.sort((a,b)=>{const ci=_ci2.indexOf(a.category)-_ci2.indexOf(b.category);return ci!==0?ci:a._so-b._so||(a.name||'').localeCompare(b.name||'');});
-  // Find within same category
-  const item=items.find(i=>String(i.itemId)===String(itemId));if(!item) return;
-  const catItems=items.filter(i=>i.category===item.category);
-  // Ensure unique sequential sortOrder within category
-  catItems.forEach((ci,i)=>{const tpl=D.StockTemplate.find(t=>t.id===ci.itemId);if(tpl)tpl.sortOrder=i+1;});
-  const idx=catItems.findIndex(i=>String(i.itemId)===String(itemId));if(idx<0) return;
+  // Find target item's category
+  const targetSS=D.StoreStock.find(s=>String(s.storeId)===storeId&&String(s.itemId)===String(itemId));
+  if(!targetSS)return;
+  const cat=targetSS.category;
+  // Get all items in same category for this store
+  let catItems=D.StoreStock.filter(s=>String(s.storeId)===storeId&&s.category===cat);
+  // Attach sortOrder from StockTemplate
+  catItems.forEach(ci=>{const tpl=D.StockTemplate.find(t=>String(t.id)===String(ci.itemId));ci._so=tpl?(tpl.sortOrder||0):9999;});
+  catItems.sort((a,b)=>a._so-b._so||(a.name||'').localeCompare(b.name||''));
+  // Assign sequential sortOrder (1,2,3...) to ensure unique values
+  catItems.forEach((ci,i)=>{const tpl=D.StockTemplate.find(t=>String(t.id)===String(ci.itemId));if(tpl)tpl.sortOrder=i+1;});
+  // Re-sort after assignment
+  catItems.forEach(ci=>{const tpl=D.StockTemplate.find(t=>String(t.id)===String(ci.itemId));ci._so=tpl?tpl.sortOrder:9999;});
+  catItems.sort((a,b)=>a._so-b._so);
+  // Find current position and swap
+  const idx=catItems.findIndex(i=>String(i.itemId)===String(itemId));
+  if(idx<0)return;
   const swapIdx=idx+direction;
-  if(swapIdx<0||swapIdx>=catItems.length) return;
-  // Swap sortOrder in StockTemplate
-  const tplA=D.StockTemplate.find(t=>t.id===catItems[idx].itemId);
-  const tplB=D.StockTemplate.find(t=>t.id===catItems[swapIdx].itemId);
+  if(swapIdx<0||swapIdx>=catItems.length)return;
+  const tplA=D.StockTemplate.find(t=>String(t.id)===String(catItems[idx].itemId));
+  const tplB=D.StockTemplate.find(t=>String(t.id)===String(catItems[swapIdx].itemId));
   if(tplA&&tplB){
     const tmp=tplA.sortOrder;tplA.sortOrder=tplB.sortOrder;tplB.sortOrder=tmp;
     LS.set('StockTemplate',D.StockTemplate);

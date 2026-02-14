@@ -242,6 +242,10 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
   <div class="login-actions">
     <button class="btn btn-primary btn-full" onclick="doLogin()"><i class="fas fa-sign-in-alt"></i> Login</button>
   </div>
+  <div style="margin-top:24px;padding-top:16px;border-top:1px solid var(--border);text-align:center;font-size:11px;color:#aaa;line-height:1.6">
+    <div>&copy; 2026 The Bap. All rights reserved.</div>
+    <div style="margin-top:4px">Developed by DJ Kim</div>
+  </div>
 </div>
 </div>
 
@@ -552,8 +556,6 @@ async function loadAllData() {
   showLoading('Loading data...');
   if (API.mode === 'cloud') {
     const result = await API.get('getAll');
-    console.log('[TBMS] Server response keys:', result ? Object.keys(result.data||{}) : 'NO RESULT');
-    console.log('[TBMS] Server Suppliers count:', result?.data?.Suppliers?.length ?? 'NOT IN RESPONSE');
     if (result && result.error) console.error('[TBMS] Server error:', result.error);
     if (result && result.data && !result.error) {
       let loaded = false;

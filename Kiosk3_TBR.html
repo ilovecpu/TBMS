@@ -106,6 +106,9 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
 .cr-badge.pending{background:#fff3cd;color:#856404;border:1px solid #ffc107}
 .cr-badge.approved{background:#d4edda;color:#155724;border:1px solid #28a745}
 .cr-badge.rejected{background:#f8d7da;color:#721c24;border:1px solid #dc3545}
+.cr-ack-btn{padding:4px 12px;border:none;border-radius:8px;background:#28a745;color:#fff;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap}
+.cr-ack-btn:active{transform:scale(.95)}
+.cr-ack-btn.rej{background:#6c757d}
 /* Toast */
 .toast-box{position:fixed;top:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:8px}
 .toast{padding:12px 20px;border-radius:10px;color:#fff;font-size:14px;font-weight:600;animation:toastIn .3s}
@@ -334,21 +337,32 @@ function doLogout(){
 }
 
 // ===== CHANGE REQUESTS DISPLAY =====
+function getAckedCrIds(){
+  try{return JSON.parse(localStorage.getItem('tbms_cr_acked_'+STORE_ID)||'[]');}catch(e){return [];}
+}
+function ackCr(id){
+  const acked=getAckedCrIds();
+  if(!acked.includes(id))acked.push(id);
+  localStorage.setItem('tbms_cr_acked_'+STORE_ID,JSON.stringify(acked));
+  renderChangeRequests();
+}
 function renderChangeRequests(){
   if(!currentStaff){$('crArea').innerHTML='';return;}
+  const acked=getAckedCrIds();
   const myReqs=timeChangeReqs.filter(r=>String(r.staffId)===String(currentStaff.id)&&String(r.storeId)===STORE_ID)
+    .filter(r=>r.status==='pending'||!acked.includes(r.id))
     .sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''));
   if(myReqs.length===0){$('crArea').innerHTML='';return;}
   const pendCount=myReqs.filter(r=>r.status==='pending').length;
   let html=`<div class="cr-card"><h3><i class="fas fa-exchange-alt" style="color:var(--warning);margin-right:6px"></i>My Change Requests ${pendCount>0?`<span style="background:#fff3cd;color:#856404;padding:2px 8px;border-radius:10px;font-size:11px;margin-left:4px">${pendCount} pending</span>`:''}</h3>`;
   myReqs.slice(0,10).forEach(r=>{
-    let badge='';
+    let badge='',ackBtn='';
     if(r.status==='pending')badge='<span class="cr-badge pending">Pending</span>';
-    else if(r.status==='approved')badge='<span class="cr-badge approved">Approved</span>';
-    else if(r.status==='rejected')badge='<span class="cr-badge rejected">Rejected</span>';
+    else if(r.status==='approved'){badge='<span class="cr-badge approved">Approved</span>';ackBtn=`<button class="cr-ack-btn" onclick="event.stopPropagation();ackCr('${r.id}')"><i class="fas fa-check"></i> 확인</button>`;}
+    else if(r.status==='rejected'){badge='<span class="cr-badge rejected">Rejected</span>';ackBtn=`<button class="cr-ack-btn rej" onclick="event.stopPropagation();ackCr('${r.id}')"><i class="fas fa-check"></i> 확인</button>`;}
     html+=`<div class="cr-item">
-      <div><strong>${r.date||'—'}</strong> · ${r.field||''}: ${r.currentValue||'—'} → <span style="color:var(--primary);font-weight:700">${r.requestedValue||'—'}</span></div>
-      <div>${badge}</div>
+      <div style="flex:1"><strong>${r.date||'—'}</strong> · ${r.field||''}: ${r.currentValue||'—'} → <span style="color:var(--primary);font-weight:700">${r.requestedValue||'—'}</span></div>
+      <div style="display:flex;align-items:center;gap:6px">${badge}${ackBtn}</div>
     </div>`;
   });
   if(myReqs.length>10)html+=`<div style="text-align:center;font-size:11px;color:var(--text-light);padding:6px">+${myReqs.length-10} more</div>`;

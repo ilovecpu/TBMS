@@ -58,8 +58,11 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
 .user-bar .user-info{display:flex;align-items:center;gap:8px}
 .user-bar .avatar{width:36px;height:36px;background:var(--primary);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px}
 .user-bar .name{font-weight:700;font-size:14px;color:var(--text)}
-.btn-logout{padding:8px 14px;background:#f5f5f5;border:1.5px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;color:#666;cursor:pointer;font-family:inherit}
+.btn-logout{padding:12px 24px;background:#f5f5f5;border:1.5px solid var(--border);border-radius:10px;font-size:15px;font-weight:700;color:#555;cursor:pointer;font-family:inherit}
 .btn-logout:active{background:#eee}
+.btn-save-top{padding:12px 24px;background:var(--success);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit}
+.btn-save-top:active{filter:brightness(.9)}
+.action-bar{display:flex;gap:10px;justify-content:center;margin:12px 0 4px;flex-wrap:wrap}
 /* Calendar Card */
 .card{background:#fff;border-radius:12px;padding:10px;width:100%;max-width:700px;box-shadow:0 4px 20px rgba(0,0,0,.08);margin-bottom:10px}
 .card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:6px}
@@ -205,6 +208,10 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
     <button class="btn-logout" onclick="doLogout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
   </div>
   <div id="crArea"></div>
+  <div class="action-bar">
+    <button class="btn-save-top" onclick="saveAll()"><i class="fas fa-cloud-upload-alt"></i> Save All</button>
+    <button class="btn-logout" onclick="doLogout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
+  </div>
   <div id="calArea" style="width:100%;display:flex;flex-direction:column;align-items:center"></div>
 </div>
 

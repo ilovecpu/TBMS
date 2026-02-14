@@ -10,27 +10,39 @@
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-:root{--primary:#6a1b9a;--accent:#e84393;--bg:#f5f0fa;--danger:#e74c3c;--success:#27ae60;--warning:#f39c12;--border:#e0e0e0;--text:#2d3436;--text-light:#636e72}
+:root{--primary:#6a1b9a;--primary-light:#ab47bc;--primary-bg:#f3e5f5;--accent:#e84393;--bg:#f5f0fa;--danger:#e74c3c;--success:#27ae60;--warning:#f39c12;--border:#e0e0e0;--text:#2d3436;--text-light:#636e72}
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:0}
 .status-bar{position:fixed;top:0;left:0;right:0;background:var(--primary);color:#fff;font-size:11px;padding:3px 12px;display:flex;align-items:center;gap:6px;z-index:999}
 .status-dot{width:8px;height:8px;border-radius:50%;background:#f39c12;display:inline-block}
 .status-dot.on{background:#2ecc71}
 .status-dot.off{background:#e74c3c}
-/* Login Screen */
-.login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;width:100%}
-.login-box{background:#fff;border-radius:16px;padding:32px 24px;width:100%;max-width:380px;box-shadow:0 8px 32px rgba(0,0,0,.12)}
-.login-logo{text-align:center;margin-bottom:28px}
-.login-logo .icon{width:72px;height:72px;background:var(--primary);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:32px;color:#fff}
-.login-logo h1{font-size:22px;font-weight:800;color:var(--primary)}
-.login-logo p{font-size:12px;color:var(--text-light);margin-top:4px}
-.login-form .form-group{margin-bottom:16px}
-.login-form label{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:var(--text)}
-.login-form input,.login-form select{width:100%;padding:14px 16px;border:2px solid var(--border);border-radius:10px;font-size:16px;font-family:inherit;background:#fff;-webkit-appearance:none}
-.login-form input:focus,.login-form select:focus{outline:none;border-color:var(--primary)}
-.login-btn{width:100%;padding:16px;background:var(--primary);color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:8px}
-.login-btn:active{filter:brightness(.9)}
-.login-error{background:#ffebee;color:#c62828;padding:12px;border-radius:8px;font-size:13px;margin-top:12px;display:none}
+/* Staff Grid Login */
+.login-screen{min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:20px;padding-top:40px;width:100%}
+.login-header{text-align:center;margin-bottom:20px}
+.login-header .icon{width:64px;height:64px;background:var(--primary);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 10px;font-size:28px;color:#fff}
+.login-header h1{font-size:20px;font-weight:800;color:var(--primary)}
+.login-header p{font-size:11px;color:var(--text-light);margin-top:2px}
+.staff-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:10px;width:100%;max-width:500px;padding:4px}
+.staff-btn{padding:12px 6px;background:var(--primary-bg);border-radius:14px;text-align:center;cursor:pointer;transition:all .2s;border:2.5px solid var(--primary-light)}
+.staff-btn:hover,.staff-btn:active{transform:scale(1.05);filter:brightness(0.97)}
+.staff-btn .avatar{width:48px;height:48px;background:var(--primary-light);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 6px;font-weight:700;font-size:18px}
+.staff-btn .name{font-size:12px;font-weight:600;line-height:1.3;word-break:keep-all}
+/* PIN Pad Screen */
+.pin-screen{min-height:100vh;display:none;flex-direction:column;align-items:center;justify-content:center;padding:20px;width:100%}
+.pin-box{background:#fff;border-radius:16px;padding:28px 24px;width:100%;max-width:340px;box-shadow:0 8px 32px rgba(0,0,0,.12);text-align:center}
+.pin-staff{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:20px}
+.pin-staff .avatar{width:44px;height:44px;background:var(--primary-light);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px}
+.pin-staff .name{font-size:16px;font-weight:700;color:var(--text)}
+.pin-dots{display:flex;justify-content:center;gap:12px;margin-bottom:24px;min-height:24px}
+.pin-dot{width:18px;height:18px;border-radius:50%;border:2px solid var(--border);background:#fff;transition:all .2s}
+.pin-dot.filled{background:var(--primary);border-color:var(--primary)}
+.pin-error{color:var(--danger);font-size:13px;font-weight:600;margin-bottom:12px;min-height:20px}
+.pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:260px;margin:0 auto}
+.pin-key{height:60px;border-radius:12px;background:#f5f5f5;border:2px solid var(--border);font-size:22px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:inherit;transition:all .1s;color:var(--text)}
+.pin-key:active{background:var(--primary-bg);border-color:var(--primary-light);transform:scale(0.95)}
+.pin-key.action{font-size:16px;background:#fff}
+.pin-back-btn{margin-top:16px;padding:10px 20px;background:#f5f5f5;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-weight:600;color:#666;cursor:pointer;font-family:inherit}
 /* Main Area */
 .main-wrap{width:100%;padding:10px;padding-top:28px;display:flex;flex-direction:column;align-items:center;display:none}
 .header{text-align:center;padding:8px 0}
@@ -57,7 +69,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
 .time-table td{padding:3px 1px;border-bottom:1px solid #f0f0f0;text-align:center;vertical-align:middle}
 .time-table tr.sat{background:#e3f2fd}
 .time-table tr.sun{background:#fce4ec}
-.time-table tr.today{background:#f3e5f5}
+.time-table tr.today{background:var(--primary-bg)}
 .time-table .date-cell{font-weight:700;font-size:13px;width:28px;white-space:nowrap}
 .time-table .day-cell{font-size:12px;font-weight:700;width:28px}
 .time-table .day-sat{color:#1565c0;font-weight:700}
@@ -77,9 +89,17 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
 .btn{padding:10px 16px;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:5px}
 .btn-primary{background:var(--primary);color:#fff}
 .btn-primary:active{filter:brightness(.9)}
-.btn-back{background:#f0f0f0;color:#555}
 .btn-save{background:var(--success);color:#fff;padding:12px 20px;font-size:14px}
 .btn-save:active{filter:brightness(.9)}
+/* Change Request Card */
+.cr-card{background:#fff;border-radius:12px;padding:14px;width:100%;max-width:700px;box-shadow:0 4px 20px rgba(0,0,0,.08);margin-bottom:10px;border-left:4px solid var(--warning)}
+.cr-card h3{font-size:14px;font-weight:700;color:var(--text);margin-bottom:10px}
+.cr-item{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f5f5f5;font-size:12px;flex-wrap:wrap;gap:4px}
+.cr-item:last-child{border-bottom:none}
+.cr-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700}
+.cr-badge.pending{background:#fff3cd;color:#856404;border:1px solid #ffc107}
+.cr-badge.approved{background:#d4edda;color:#155724;border:1px solid #28a745}
+.cr-badge.rejected{background:#f8d7da;color:#721c24;border:1px solid #dc3545}
 /* Toast */
 .toast-box{position:fixed;top:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:8px}
 .toast{padding:12px 20px;border-radius:10px;color:#fff;font-size:14px;font-weight:600;animation:toastIn .3s}
@@ -90,10 +110,13 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
 .loading.hidden{display:none}
 .loading .spinner{width:40px;height:40px;border:4px solid #e0e0e0;border-top-color:var(--primary);border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-/* Mobile-first responsive */
+/* Mobile responsive */
 @media(max-width:480px){
-  .login-box{padding:24px 20px;border-radius:12px}
-  .login-form input,.login-form select{padding:12px 14px;font-size:16px}
+  .staff-grid{grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:8px}
+  .staff-btn{padding:10px 4px}
+  .staff-btn .avatar{width:42px;height:42px;font-size:16px}
+  .staff-btn .name{font-size:11px}
+  .pin-key{height:54px;font-size:20px}
   .time-sel{width:36px;font-size:13px;padding:3px 0}
   .card{padding:8px;border-radius:10px}
   .month-nav span{font-size:11px;min-width:100px}
@@ -101,6 +124,8 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
   .btn-save{padding:10px 16px;font-size:13px}
 }
 @media(max-width:360px){
+  .staff-grid{grid-template-columns:repeat(3,1fr)}
+  .pin-key{height:48px;font-size:18px}
   .time-sel{width:32px;font-size:12px}
   .time-wrap .colon{font-size:12px}
   .hour-cell{font-size:12px;min-width:30px}
@@ -114,29 +139,41 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
 <div id="toastBox" class="toast-box"></div>
 <div class="loading" id="loading"><div class="spinner"></div><span id="loadingText">Loading...</span></div>
 
-<!-- LOGIN SCREEN -->
+<!-- STAFF GRID LOGIN -->
 <div class="login-screen" id="loginScreen">
-  <div class="login-box">
-    <div class="login-logo">
-      <div class="icon"><i class="fas fa-mobile-alt"></i></div>
-      <h1>The Bap Reading</h1>
-      <p>Mobile Time Entry — Kiosk 3</p>
+  <div class="login-header">
+    <div class="icon"><i class="fas fa-mobile-alt"></i></div>
+    <h1>The Bap Reading</h1>
+    <p>Mobile Time Entry — Kiosk 3</p>
+  </div>
+  <div id="staffGrid" class="staff-grid"></div>
+  <div style="margin-top:16px;text-align:center;font-size:10px;color:#bbb">&copy; 2026 The Bap. Developed by DJ Kim</div>
+</div>
+
+<!-- PIN PAD SCREEN -->
+<div class="pin-screen" id="pinScreen">
+  <div class="pin-box">
+    <div class="pin-staff">
+      <div class="avatar" id="pinAvatar"></div>
+      <span class="name" id="pinName"></span>
     </div>
-    <div class="login-form">
-      <div class="form-group">
-        <label><i class="fas fa-user"></i> Select Your Name</label>
-        <select id="loginStaff">
-          <option value="">— Loading... —</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label><i class="fas fa-lock"></i> Password</label>
-        <input type="password" id="loginPwd" placeholder="Enter your password" inputmode="numeric">
-      </div>
-      <button class="login-btn" onclick="doLogin()"><i class="fas fa-sign-in-alt"></i> Sign In</button>
-      <div class="login-error" id="loginError"></div>
+    <div class="pin-dots" id="pinDots"></div>
+    <div class="pin-error" id="pinError"></div>
+    <div class="pin-pad">
+      <button class="pin-key" onclick="pinPress('1')">1</button>
+      <button class="pin-key" onclick="pinPress('2')">2</button>
+      <button class="pin-key" onclick="pinPress('3')">3</button>
+      <button class="pin-key" onclick="pinPress('4')">4</button>
+      <button class="pin-key" onclick="pinPress('5')">5</button>
+      <button class="pin-key" onclick="pinPress('6')">6</button>
+      <button class="pin-key" onclick="pinPress('7')">7</button>
+      <button class="pin-key" onclick="pinPress('8')">8</button>
+      <button class="pin-key" onclick="pinPress('9')">9</button>
+      <button class="pin-key action" onclick="pinClear()"><i class="fas fa-eraser"></i></button>
+      <button class="pin-key" onclick="pinPress('0')">0</button>
+      <button class="pin-key action" style="background:var(--primary-bg);color:var(--primary)" onclick="pinEnter()"><i class="fas fa-check"></i></button>
     </div>
-    <div style="margin-top:20px;text-align:center;font-size:10px;color:#bbb">&copy; 2026 The Bap. Developed by DJ Kim</div>
+    <button class="pin-back-btn" onclick="pinBack()"><i class="fas fa-arrow-left"></i> Back</button>
   </div>
 </div>
 
@@ -153,6 +190,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
     </div>
     <button class="btn-logout" onclick="doLogout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
   </div>
+  <div id="crArea"></div>
   <div id="calArea" style="width:100%;display:flex;flex-direction:column;align-items:center"></div>
 </div>
 
@@ -168,11 +206,12 @@ function hideLoad(){$('loading').classList.add('hidden');}
 async function apiGet(action){try{const r=await fetch(API_URL+'?action='+action,{redirect:'follow'});return await r.json();}catch(e){return null;}}
 async function apiPost(data){try{const r=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(data),redirect:'follow'});return await r.json();}catch(e){return null;}}
 
-let staff=[],attendance=[],currentStaff=null;
+let staff=[],attendance=[],timeChangeReqs=[],currentStaff=null;
 let viewYear=new Date().getFullYear(), viewMonth=new Date().getMonth();
 if(new Date().getDate()>=26){viewMonth++;if(viewMonth>11){viewMonth=0;viewYear++;}}
 const STAFF_FIELDS=['id','storeId','name','nickName','clothSize','kioskPwd','dob','address','niNo','eVisa','mobile','startDate','leftDate','rate','sortCode','accountNo','email','memo','active'];
 const ATT_FIELDS=['id','staffId','storeId','date','clockIn','clockOut','photoIn','photoOut','source'];
+const TCR_FIELDS=['id','attendanceId','staffId','storeId','date','field','currentValue','requestedValue','reason','status','kioskVersion','createdAt','reviewedBy','reviewedAt'];
 function nrmRow(fields,row){const m={};for(const k in row)m[k.replace(/[\s_\-]+/g,'').toLowerCase()]=row[k];const r={};for(const f of fields){const n=f.replace(/[\s_\-]+/g,'').toLowerCase();r[f]=m[n]!==undefined?m[n]:'';}return r;}
 function genId(){return 'a'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
 
@@ -183,6 +222,7 @@ async function loadData(silent){
   if(result&&result.data&&!result.error){
     staff=(result.data.Staff||[]).map(r=>nrmRow(STAFF_FIELDS,r)).filter(s=>String(s.storeId)===STORE_ID&&(s.active===true||s.active==='true'||s.active==='TRUE'));
     attendance=(result.data.Attendance||[]).map(r=>nrmRow(ATT_FIELDS,r));
+    timeChangeReqs=(result.data.TimeChangeReq||[]).map(r=>nrmRow(TCR_FIELDS,r));
     $('statusDot').className='status-dot on';$('statusText').textContent='Connected';
     if(!silent)hideLoad();return true;
   }
@@ -191,39 +231,102 @@ async function loadData(silent){
   return false;
 }
 
-// ===== LOGIN =====
-function populateStaffDropdown(){
-  const sel=$('loginStaff');
-  sel.innerHTML='<option value="">— Select Your Name —</option>'+
-    staff.map(s=>`<option value="${s.id}">${s.nickName||s.name}</option>`).join('');
+// ===== STAFF GRID LOGIN =====
+function showStaffGrid(){
+  const html=staff.map(s=>{
+    const initials=(s.nickName||s.name||'?').slice(0,2).toUpperCase();
+    return `<div class="staff-btn" onclick="selectStaff('${s.id}')">
+      <div class="avatar">${initials}</div>
+      <div class="name">${s.nickName||s.name}</div>
+    </div>`;
+  }).join('');
+  $('staffGrid').innerHTML=html||'<p style="text-align:center;color:var(--text-light);grid-column:1/-1;padding:20px">No staff found</p>';
 }
 
-function doLogin(){
-  const staffId=$('loginStaff').value;
-  const pwd=$('loginPwd').value;
-  const err=$('loginError');
-  if(!staffId){err.textContent='Please select your name';err.style.display='block';return;}
-  if(!pwd){err.textContent='Please enter your password';err.style.display='block';return;}
-  const s=staff.find(x=>x.id===staffId);
-  if(!s){err.textContent='Staff not found';err.style.display='block';return;}
-  if(String(s.kioskPwd)!==String(pwd)){err.textContent='Incorrect password';err.style.display='block';return;}
-  err.style.display='none';
-  currentStaff=s;
-  const initials=(s.nickName||s.name||'?').slice(0,2).toUpperCase();
-  $('userAvatar').textContent=initials;
-  $('userName').textContent=s.nickName||s.name;
+// ===== PIN PAD =====
+let pinTarget=null, pinValue='';
+function selectStaff(id){
+  pinTarget=staff.find(s=>s.id===id);
+  if(!pinTarget)return;
+  pinValue='';
+  const initials=(pinTarget.nickName||pinTarget.name||'?').slice(0,2).toUpperCase();
+  $('pinAvatar').textContent=initials;
+  $('pinName').textContent=pinTarget.nickName||pinTarget.name;
+  $('pinError').textContent='';
+  renderPinDots();
   $('loginScreen').style.display='none';
+  $('pinScreen').style.display='flex';
+}
+function renderPinDots(){
+  let dots='';
+  for(let i=0;i<Math.max(pinValue.length,4);i++){
+    dots+=`<div class="pin-dot${i<pinValue.length?' filled':''}"></div>`;
+  }
+  if(pinValue.length<4){dots='';for(let i=0;i<4;i++)dots+=`<div class="pin-dot${i<pinValue.length?' filled':''}"></div>`;}
+  $('pinDots').innerHTML=dots;
+}
+function pinPress(n){
+  if(pinValue.length>=10)return;
+  pinValue+=n;
+  $('pinError').textContent='';
+  renderPinDots();
+}
+function pinClear(){
+  pinValue='';
+  $('pinError').textContent='';
+  renderPinDots();
+}
+function pinBack(){
+  pinTarget=null;pinValue='';
+  $('pinScreen').style.display='none';
+  $('loginScreen').style.display='flex';
+}
+function pinEnter(){
+  if(!pinTarget)return;
+  if(!pinValue){$('pinError').textContent='Enter your password';return;}
+  if(String(pinTarget.kioskPwd)!==String(pinValue)){
+    $('pinError').textContent='Incorrect password';
+    pinValue='';renderPinDots();
+    return;
+  }
+  // Login success
+  currentStaff=pinTarget;
+  const initials=(currentStaff.nickName||currentStaff.name||'?').slice(0,2).toUpperCase();
+  $('userAvatar').textContent=initials;
+  $('userName').textContent=currentStaff.nickName||currentStaff.name;
+  $('pinScreen').style.display='none';
   $('mainWrap').style.display='flex';
+  renderChangeRequests();
   renderCalendar();
 }
-$('loginPwd').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
 
 function doLogout(){
-  currentStaff=null;
+  currentStaff=null;pinTarget=null;pinValue='';
   $('mainWrap').style.display='none';
   $('loginScreen').style.display='flex';
-  $('loginPwd').value='';
-  $('loginError').style.display='none';
+}
+
+// ===== CHANGE REQUESTS DISPLAY =====
+function renderChangeRequests(){
+  if(!currentStaff){$('crArea').innerHTML='';return;}
+  const myReqs=timeChangeReqs.filter(r=>String(r.staffId)===String(currentStaff.id)&&String(r.storeId)===STORE_ID)
+    .sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''));
+  if(myReqs.length===0){$('crArea').innerHTML='';return;}
+  const pendCount=myReqs.filter(r=>r.status==='pending').length;
+  let html=`<div class="cr-card"><h3><i class="fas fa-exchange-alt" style="color:var(--warning);margin-right:6px"></i>My Change Requests ${pendCount>0?`<span style="background:#fff3cd;color:#856404;padding:2px 8px;border-radius:10px;font-size:11px;margin-left:4px">${pendCount} pending</span>`:''}</h3>`;
+  myReqs.slice(0,10).forEach(r=>{
+    let badge='';
+    if(r.status==='pending')badge='<span class="cr-badge pending">Pending</span>';
+    else if(r.status==='approved')badge='<span class="cr-badge approved">Approved</span>';
+    else if(r.status==='rejected')badge='<span class="cr-badge rejected">Rejected</span>';
+    html+=`<div class="cr-item">
+      <div><strong>${r.date||'—'}</strong> · ${r.field||''}: ${r.currentValue||'—'} → <span style="color:var(--primary);font-weight:700">${r.requestedValue||'—'}</span></div>
+      <div>${badge}</div>
+    </div>`;
+  });
+  if(myReqs.length>10)html+=`<div style="text-align:center;font-size:11px;color:var(--text-light);padding:6px">+${myReqs.length-10} more</div>`;
+  html+='</div>';
+  $('crArea').innerHTML=html;
 }
 
 // ===== CALENDAR =====
@@ -356,7 +459,7 @@ function recalcTotals(){
   const tdEl=$('totalDays');if(tdEl)tdEl.textContent=totalDays;
 }
 
-// ===== SAVE WITH EDIT LOG =====
+// ===== SAVE WITH EDIT LOG + CHANGE REQUEST =====
 async function saveAll(){
   if(!currentStaff)return;
   const dates=getPeriodDates();
@@ -371,7 +474,6 @@ async function saveAll(){
     const outVal=getTimeVal('out',dateStr);
     if(!inVal&&!outVal)return;
     const existing=attendance.find(a=>String(a.staffId)===String(currentStaff.id)&&a.date===dateStr);
-    // Old record being edited — send change request instead of direct save
     if(existing && dateStr<yesterdayStr){
       const inChanged=existing.clockIn!==inVal;
       const outChanged=existing.clockOut!==outVal;
@@ -391,24 +493,17 @@ async function saveAll(){
       source:'kiosk3'
     };
     rows.push(row);
-    // Build edit logs for changed values
     if(existing){
-      if(existing.clockIn!==inVal){
-        editLogs.push({attendanceId:row.id,staffId:currentStaff.id,storeId:STORE_ID,date:dateStr,fieldChanged:'clockIn',oldValue:existing.clockIn||'',newValue:inVal,kioskVersion:'kiosk3'});
-      }
-      if(existing.clockOut!==outVal){
-        editLogs.push({attendanceId:row.id,staffId:currentStaff.id,storeId:STORE_ID,date:dateStr,fieldChanged:'clockOut',oldValue:existing.clockOut||'',newValue:outVal,kioskVersion:'kiosk3'});
-      }
+      if(existing.clockIn!==inVal)editLogs.push({attendanceId:row.id,staffId:currentStaff.id,storeId:STORE_ID,date:dateStr,fieldChanged:'clockIn',oldValue:existing.clockIn||'',newValue:inVal,kioskVersion:'kiosk3'});
+      if(existing.clockOut!==outVal)editLogs.push({attendanceId:row.id,staffId:currentStaff.id,storeId:STORE_ID,date:dateStr,fieldChanged:'clockOut',oldValue:existing.clockOut||'',newValue:outVal,kioskVersion:'kiosk3'});
       existing.clockIn=inVal;existing.clockOut=outVal;existing.source='kiosk3';
     }else{
-      // New record — log as new entry
       if(inVal)editLogs.push({attendanceId:row.id,staffId:currentStaff.id,storeId:STORE_ID,date:dateStr,fieldChanged:'clockIn',oldValue:'',newValue:inVal,kioskVersion:'kiosk3'});
       if(outVal)editLogs.push({attendanceId:row.id,staffId:currentStaff.id,storeId:STORE_ID,date:dateStr,fieldChanged:'clockOut',oldValue:'',newValue:outVal,kioskVersion:'kiosk3'});
       attendance.push(row);
     }
   });
   if(rows.length===0&&changeReqs.length===0){toast('No hours entered','info');return;}
-  // Handle change requests
   if(changeReqs.length>0){
     const reason=prompt('You are modifying times for past dates ('+changeReqs.length+' change(s)).\nPlease enter a reason:');
     if(!reason){toast('Change request cancelled','info');return;}
@@ -416,23 +511,20 @@ async function saveAll(){
     let crOk=true;
     for(const cr of changeReqs){
       const res=await apiPost({action:'timeChangeReq',...cr,reason:reason});
-      if(!res||res.error)crOk=false;
+      if(res&&!res.error){timeChangeReqs.push({...cr,reason:reason,status:'pending',createdAt:new Date().toISOString(),reviewedBy:'',reviewedAt:''});}
+      else crOk=false;
     }
     if(crOk)toast(changeReqs.length+' change request(s) submitted for approval','success');
     else toast('Some change requests failed to submit','error');
+    renderChangeRequests();
   }
-  // Save direct rows
   if(rows.length>0){
     toast('Saving '+rows.length+' records...','info');
     let ok=true;
-    // Save attendance records
     const attPromises=rows.map(r=>apiPost({action:'upsert',sheet:'Attendance',row:r}));
     const attResults=await Promise.all(attPromises);
     attResults.forEach(r=>{if(!r||r.error)ok=false;});
-    // Save edit logs (fire and forget)
-    if(editLogs.length>0){
-      editLogs.forEach(log=>apiPost({action:'editLog',...log}));
-    }
+    if(editLogs.length>0){editLogs.forEach(log=>apiPost({action:'editLog',...log}));}
     if(ok){
       $('statusDot').className='status-dot on';
       toast('Saved successfully!','success');
@@ -454,14 +546,13 @@ function changeMonth(dir){
 async function init(){
   const ok=await loadData();
   if(ok){
-    populateStaffDropdown();
+    showStaffGrid();
     hideLoad();
   }else{
     hideLoad();
     $('loginScreen').innerHTML='<div style="text-align:center;padding:40px"><p style="color:var(--danger);font-size:18px;margin-bottom:16px"><i class="fas fa-exclamation-triangle"></i> Connection Failed</p><button class="btn btn-primary" onclick="location.reload()"><i class="fas fa-redo"></i> Retry</button></div>';
   }
-  // Auto-refresh when idle
-  setInterval(async()=>{if(!currentStaff){await loadData(true);populateStaffDropdown();}},15*60*1000);
+  setInterval(async()=>{if(!currentStaff){await loadData(true);showStaffGrid();}},15*60*1000);
 }
 init();
 </script>

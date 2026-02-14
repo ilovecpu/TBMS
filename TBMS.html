@@ -469,7 +469,7 @@ const D = { Users:[], Stores:[], Staff:[], Attendance:[], Suppliers:[], StockTem
 // Canonical field names — must match Apps Script SHEETS definition exactly
 const FIELD_SCHEMA = {
   Users:['id','username','password','name','role','email','storeId','permissions'],
-  Stores:['id','code','name','company','companyNo','vatNo','address','phone','email','manager','memo','active'],
+  Stores:['id','code','name','company','companyNo','vatNo','vatQuarter','address','phone','email','manager','memo','active'],
   Staff:['id','storeId','name','nickName','clothSize','kioskPwd','dob','address','niNo','eVisa','mobile','startDate','leftDate','rate','sortCode','accountNo','email','memo','active'],
   Attendance:['id','staffId','storeId','date','clockIn','clockOut','photoIn','photoOut','source'],
   Suppliers:['id','name','email','phone','address','website','memo','active'],

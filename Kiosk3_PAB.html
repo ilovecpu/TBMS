@@ -23,11 +23,17 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
 .login-header .icon{width:64px;height:64px;background:var(--primary);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 10px;font-size:28px;color:#fff}
 .login-header h1{font-size:20px;font-weight:800;color:var(--primary)}
 .login-header p{font-size:11px;color:var(--text-light);margin-top:2px}
-.staff-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:10px;width:100%;max-width:500px;padding:4px}
-.staff-btn{padding:12px 6px;background:var(--primary-bg);border-radius:14px;text-align:center;cursor:pointer;transition:all .2s;border:2.5px solid var(--primary-light)}
+.staff-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:14px;width:100%;max-width:500px;padding:4px}
+.staff-btn{padding:14px 8px;background:var(--primary-bg);border-radius:16px;text-align:center;cursor:pointer;transition:all .2s;border:2.5px solid var(--primary-light)}
 .staff-btn:hover,.staff-btn:active{transform:scale(1.05);filter:brightness(0.97)}
-.staff-btn .avatar{width:48px;height:48px;background:var(--primary-light);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 6px;font-weight:700;font-size:18px}
-.staff-btn .name{font-size:12px;font-weight:600;line-height:1.3;word-break:keep-all}
+.staff-btn .avatar{width:56px;height:56px;background:var(--primary-light);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 6px;font-weight:700;font-size:22px;position:relative}
+.staff-btn .avatar .status-dot{display:none;position:absolute;bottom:0;right:0;width:14px;height:14px;background:#e84393;border:2px solid #fff;border-radius:50%}
+.staff-btn .name{font-size:14px;font-weight:600;line-height:1.3;word-break:keep-all}
+.staff-btn.clocked-in{border-color:#e84393;background:#fff0f3}
+.staff-btn.clocked-in .avatar{background:#e84393}
+.staff-btn.clocked-in .status-dot{display:block}
+.clock{font-size:48px;font-weight:700;color:var(--primary);text-align:center;font-variant-numeric:tabular-nums;letter-spacing:2px;margin-bottom:4px}
+.date-display{text-align:center;color:var(--text-light);font-size:14px;margin-bottom:20px}
 /* PIN Pad Screen */
 .pin-screen{min-height:100vh;display:none;flex-direction:column;align-items:center;justify-content:center;padding:20px;width:100%}
 .pin-box{background:#fff;border-radius:16px;padding:28px 24px;width:100%;max-width:340px;box-shadow:0 8px 32px rgba(0,0,0,.12);text-align:center}
@@ -232,15 +238,31 @@ async function loadData(silent){
 }
 
 // ===== STAFF GRID LOGIN =====
+function isClockedIn(staffId){
+  const today=new Date().toISOString().split('T')[0];
+  return attendance.some(a=>String(a.staffId)===String(staffId)&&a.date===today&&a.clockIn&&!a.clockOut);
+}
+
 function showStaffGrid(){
+  const now=new Date();
   const html=staff.map(s=>{
-    const initials=(s.nickName||s.name||'?').slice(0,2).toUpperCase();
-    return `<div class="staff-btn" onclick="selectStaff('${s.id}')">
-      <div class="avatar">${initials}</div>
+    const initials=(s.nickName||s.name||'?').charAt(0).toUpperCase();
+    const ci=isClockedIn(s.id);
+    return `<div class="staff-btn${ci?' clocked-in':''}" onclick="selectStaff('${s.id}')">
+      <div class="avatar">${initials}<span class="status-dot"></span></div>
       <div class="name">${s.nickName||s.name}</div>
     </div>`;
   }).join('');
-  $('staffGrid').innerHTML=html||'<p style="text-align:center;color:var(--text-light);grid-column:1/-1;padding:20px">No staff found</p>';
+  $('staffGrid').innerHTML=`
+    <div style="grid-column:1/-1;text-align:center">
+      <div class="clock" id="clock">${now.toLocaleTimeString('en-GB')}</div>
+      <div class="date-display">${now.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</div>
+    </div>
+    ${html||'<p style="text-align:center;color:var(--text-light);grid-column:1/-1;padding:20px">No staff found</p>'}
+    <div style="grid-column:1/-1;text-align:center;margin-top:8px"><button class="btn btn-primary" style="font-size:12px;padding:8px 16px" onclick="loadData().then(()=>showStaffGrid())"><i class="fas fa-sync"></i> Refresh</button></div>`;
+  if(!window._clockInterval){
+    window._clockInterval=setInterval(()=>{const el=$('clock');if(el)el.textContent=new Date().toLocaleTimeString('en-GB');},1000);
+  }
 }
 
 // ===== PIN PAD =====

@@ -22,9 +22,9 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
 .status-dot.off{background:#e74c3c}
 /* Staff Grid */
 .staff-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:10px;width:100%;max-width:600px;padding:4px;margin-bottom:16px}
-.staff-btn{padding:12px 6px;background:#e8f5e9;border-radius:14px;text-align:center;cursor:pointer;transition:all .2s;border:2.5px solid #43a047}
+.staff-btn{padding:12px 6px;background:#e8f5e9;border-radius:14px;text-align:center;cursor:pointer;transition:all .2s;border:2.5px solid #4caf50}
 .staff-btn:hover,.staff-btn:active{transform:scale(1.05);filter:brightness(0.97)}
-.staff-btn .avatar{width:48px;height:48px;background:#43a047;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 6px;font-weight:700;font-size:20px}
+.staff-btn .avatar{width:48px;height:48px;background:#4caf50;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 6px;font-weight:700;font-size:20px}
 .staff-btn .name{font-size:13px;font-weight:600;line-height:1.3;word-break:keep-all}
 /* Calendar Card */
 .card{background:#fff;border-radius:12px;padding:10px;width:100%;max-width:700px;box-shadow:0 4px 20px rgba(0,0,0,.08);margin-bottom:10px}
@@ -39,7 +39,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
 .time-table th{background:var(--primary);color:#fff;padding:4px 2px;font-size:10px;font-weight:600;text-align:center}
 .time-table th.sun{background:#c0392b}
 .time-table td{padding:2px 1px;border-bottom:1px solid #f0f0f0;text-align:center;vertical-align:middle}
-.time-table tr.sat{background:#e3f2fd}
+.time-table tr.sat{background:#e8f5e9}
 .time-table tr.sun{background:#fce4ec}
 .time-table tr.today{background:#e8f5e9}
 .time-table .date-cell{font-weight:700;font-size:13px;width:30px;white-space:nowrap}
@@ -321,13 +321,24 @@ async function saveAll(){
   if(!currentStaff)return;
   const dates=getPeriodDates();
   const rows=[];
+  const editLogs=[];
+  const changeReqs=[];
+  const today=new Date();
+  const yesterdayStr=fmtDate(new Date(today.getFullYear(),today.getMonth(),today.getDate()-1));
   dates.forEach(d=>{
     const dateStr=fmtDate(d);
     const inVal=getTimeVal('in',dateStr);
     const outVal=getTimeVal('out',dateStr);
-    if(!inVal&&!outVal)return; // skip empty days
-    // Find existing record
+    if(!inVal&&!outVal)return;
     const existing=attendance.find(a=>String(a.staffId)===String(currentStaff.id)&&a.date===dateStr);
+    // Old record being edited — send change request instead of direct save
+    if(existing && dateStr<yesterdayStr){
+      const inChanged=existing.clockIn!==inVal;
+      const outChanged=existing.clockOut!==outVal;
+      if(inChanged)changeReqs.push({attendanceId:existing.id,staffId:currentStaff.id,storeId:STORE_ID,date:dateStr,field:'clockIn',currentValue:existing.clockIn||'',requestedValue:inVal,kioskVersion:'kiosk2'});
+      if(outChanged)changeReqs.push({attendanceId:existing.id,staffId:currentStaff.id,storeId:STORE_ID,date:dateStr,field:'clockOut',currentValue:existing.clockOut||'',requestedValue:outVal,kioskVersion:'kiosk2'});
+      return;
+    }
     const row={
       id:existing?existing.id:genId(),
       staffId:currentStaff.id,
@@ -337,27 +348,48 @@ async function saveAll(){
       clockOut:outVal,
       photoIn:'',
       photoOut:'',
-      source:'manual'
+      source:'kiosk2'
     };
     rows.push(row);
     if(existing){
-      existing.clockIn=inVal;existing.clockOut=outVal;existing.source='manual';
+      if(existing.clockIn!==inVal)editLogs.push({attendanceId:row.id,staffId:currentStaff.id,storeId:STORE_ID,date:dateStr,fieldChanged:'clockIn',oldValue:existing.clockIn||'',newValue:inVal,kioskVersion:'kiosk2'});
+      if(existing.clockOut!==outVal)editLogs.push({attendanceId:row.id,staffId:currentStaff.id,storeId:STORE_ID,date:dateStr,fieldChanged:'clockOut',oldValue:existing.clockOut||'',newValue:outVal,kioskVersion:'kiosk2'});
+      existing.clockIn=inVal;existing.clockOut=outVal;existing.source='kiosk2';
     }else{
+      if(inVal)editLogs.push({attendanceId:row.id,staffId:currentStaff.id,storeId:STORE_ID,date:dateStr,fieldChanged:'clockIn',oldValue:'',newValue:inVal,kioskVersion:'kiosk2'});
+      if(outVal)editLogs.push({attendanceId:row.id,staffId:currentStaff.id,storeId:STORE_ID,date:dateStr,fieldChanged:'clockOut',oldValue:'',newValue:outVal,kioskVersion:'kiosk2'});
       attendance.push(row);
     }
   });
-  if(rows.length===0){toast('No hours entered','info');return;}
-  toast('Saving '+rows.length+' records...','info');
-  let ok=true;
-  const promises=rows.map(r=>apiPost({action:'upsert',sheet:'Attendance',row:r}));
-  const results=await Promise.all(promises);
-  results.forEach(r=>{if(!r||r.error)ok=false;});
-  if(ok){
-    $('statusDot').className='status-dot on';
-    toast('Saved successfully!','success');
-  }else{
-    $('statusDot').className='status-dot off';
-    toast('Some records failed to save','error');
+  if(rows.length===0&&changeReqs.length===0){toast('No hours entered','info');return;}
+  // Handle change requests
+  if(changeReqs.length>0){
+    const reason=prompt('You are modifying times for past dates ('+changeReqs.length+' change(s)).\nPlease enter a reason:');
+    if(!reason){toast('Change request cancelled','info');return;}
+    toast('Submitting '+changeReqs.length+' change request(s)...','info');
+    let crOk=true;
+    for(const cr of changeReqs){
+      const res=await apiPost({action:'timeChangeReq',...cr,reason:reason});
+      if(!res||res.error)crOk=false;
+    }
+    if(crOk)toast(changeReqs.length+' change request(s) submitted for approval','success');
+    else toast('Some change requests failed to submit','error');
+  }
+  // Save direct rows
+  if(rows.length>0){
+    toast('Saving '+rows.length+' records...','info');
+    let ok=true;
+    const promises=rows.map(r=>apiPost({action:'upsert',sheet:'Attendance',row:r}));
+    const results=await Promise.all(promises);
+    results.forEach(r=>{if(!r||r.error)ok=false;});
+    if(editLogs.length>0){editLogs.forEach(log=>apiPost({action:'editLog',...log}));}
+    if(ok){
+      $('statusDot').className='status-dot on';
+      toast('Saved successfully!','success');
+    }else{
+      $('statusDot').className='status-dot off';
+      toast('Some records failed to save','error');
+    }
   }
 }
 

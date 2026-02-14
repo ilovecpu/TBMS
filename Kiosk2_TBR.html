@@ -321,13 +321,24 @@ async function saveAll(){
   if(!currentStaff)return;
   const dates=getPeriodDates();
   const rows=[];
+  const editLogs=[];
+  const changeReqs=[];
+  const today=new Date();
+  const yesterdayStr=fmtDate(new Date(today.getFullYear(),today.getMonth(),today.getDate()-1));
   dates.forEach(d=>{
     const dateStr=fmtDate(d);
     const inVal=getTimeVal('in',dateStr);
     const outVal=getTimeVal('out',dateStr);
-    if(!inVal&&!outVal)return; // skip empty days
-    // Find existing record
+    if(!inVal&&!outVal)return;
     const existing=attendance.find(a=>String(a.staffId)===String(currentStaff.id)&&a.date===dateStr);
+    // Old record being edited — send change request instead of direct save
+    if(existing && dateStr<yesterdayStr){
+      const inChanged=existing.clockIn!==inVal;
+      const outChanged=existing.clockOut!==outVal;
+      if(inChanged)changeReqs.push({attendanceId:existing.id,staffId:currentStaff.id,storeId:STORE_ID,date:dateStr,field:'clockIn',currentValue:existing.clockIn||'',requestedValue:inVal,kioskVersion:'kiosk2'});
+      if(outChanged)changeReqs.push({attendanceId:existing.id,staffId:currentStaff.id,storeId:STORE_ID,date:dateStr,field:'clockOut',currentValue:existing.clockOut||'',requestedValue:outVal,kioskVersion:'kiosk2'});
+      return;
+    }
     const row={
       id:existing?existing.id:genId(),
       staffId:currentStaff.id,
@@ -337,27 +348,48 @@ async function saveAll(){
       clockOut:outVal,
       photoIn:'',
       photoOut:'',
-      source:'manual'
+      source:'kiosk2'
     };
     rows.push(row);
     if(existing){
-      existing.clockIn=inVal;existing.clockOut=outVal;existing.source='manual';
+      if(existing.clockIn!==inVal)editLogs.push({attendanceId:row.id,staffId:currentStaff.id,storeId:STORE_ID,date:dateStr,fieldChanged:'clockIn',oldValue:existing.clockIn||'',newValue:inVal,kioskVersion:'kiosk2'});
+      if(existing.clockOut!==outVal)editLogs.push({attendanceId:row.id,staffId:currentStaff.id,storeId:STORE_ID,date:dateStr,fieldChanged:'clockOut',oldValue:existing.clockOut||'',newValue:outVal,kioskVersion:'kiosk2'});
+      existing.clockIn=inVal;existing.clockOut=outVal;existing.source='kiosk2';
     }else{
+      if(inVal)editLogs.push({attendanceId:row.id,staffId:currentStaff.id,storeId:STORE_ID,date:dateStr,fieldChanged:'clockIn',oldValue:'',newValue:inVal,kioskVersion:'kiosk2'});
+      if(outVal)editLogs.push({attendanceId:row.id,staffId:currentStaff.id,storeId:STORE_ID,date:dateStr,fieldChanged:'clockOut',oldValue:'',newValue:outVal,kioskVersion:'kiosk2'});
       attendance.push(row);
     }
   });
-  if(rows.length===0){toast('No hours entered','info');return;}
-  toast('Saving '+rows.length+' records...','info');
-  let ok=true;
-  const promises=rows.map(r=>apiPost({action:'upsert',sheet:'Attendance',row:r}));
-  const results=await Promise.all(promises);
-  results.forEach(r=>{if(!r||r.error)ok=false;});
-  if(ok){
-    $('statusDot').className='status-dot on';
-    toast('Saved successfully!','success');
-  }else{
-    $('statusDot').className='status-dot off';
-    toast('Some records failed to save','error');
+  if(rows.length===0&&changeReqs.length===0){toast('No hours entered','info');return;}
+  // Handle change requests
+  if(changeReqs.length>0){
+    const reason=prompt('You are modifying times for past dates ('+changeReqs.length+' change(s)).\nPlease enter a reason:');
+    if(!reason){toast('Change request cancelled','info');return;}
+    toast('Submitting '+changeReqs.length+' change request(s)...','info');
+    let crOk=true;
+    for(const cr of changeReqs){
+      const res=await apiPost({action:'timeChangeReq',...cr,reason:reason});
+      if(!res||res.error)crOk=false;
+    }
+    if(crOk)toast(changeReqs.length+' change request(s) submitted for approval','success');
+    else toast('Some change requests failed to submit','error');
+  }
+  // Save direct rows
+  if(rows.length>0){
+    toast('Saving '+rows.length+' records...','info');
+    let ok=true;
+    const promises=rows.map(r=>apiPost({action:'upsert',sheet:'Attendance',row:r}));
+    const results=await Promise.all(promises);
+    results.forEach(r=>{if(!r||r.error)ok=false;});
+    if(editLogs.length>0){editLogs.forEach(log=>apiPost({action:'editLog',...log}));}
+    if(ok){
+      $('statusDot').className='status-dot on';
+      toast('Saved successfully!','success');
+    }else{
+      $('statusDot').className='status-dot off';
+      toast('Some records failed to save','error');
+    }
   }
 }
 

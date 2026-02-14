@@ -164,6 +164,7 @@ th{background:#fdf0f3;font-weight:600;font-size:13px;color:#555;position:sticky;
 .sync-status .dot{width:8px;height:8px;border-radius:50%}
 .sync-status .dot.online{background:var(--success)}.sync-status .dot.offline{background:var(--warning)}.sync-status .dot.syncing{background:#2196f3;animation:pulse 1s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+@keyframes crPulse{0%,100%{box-shadow:0 0 0 0 rgba(231,76,60,.4)}50%{box-shadow:0 0 0 8px rgba(231,76,60,0)}}
 
 /* Drag Sort */
 .sort-handle{cursor:grab;color:var(--text-light);font-size:16px;padding:4px 8px;user-select:none;transition:color .15s}
@@ -264,6 +265,8 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
           <div class="menu-item sub" data-page="attendance" onclick="navigate('attendance')"><i class="fas fa-clipboard-check"></i>Attendance</div>
           <div class="menu-item sub" data-page="payroll" onclick="navigate('payroll')"><i class="fas fa-calculator"></i>Payroll</div>
           <div class="menu-item sub" data-page="messages" onclick="navigate('messages')"><i class="fas fa-envelope"></i>Messages</div>
+          <div class="menu-item sub" data-page="editlogs" onclick="navigate('editlogs')"><i class="fas fa-history"></i>Edit Logs</div>
+          <div class="menu-item sub" data-page="changerequests" onclick="navigate('changerequests')"><i class="fas fa-exchange-alt"></i>Change Requests<span id="crMenuBadge" style="display:none;margin-left:6px;background:#e74c3c;color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px"></span></div>
         </div>
       </div>
       <div class="menu-group open">
@@ -333,6 +336,8 @@ const ALL_PAGES=[
   {id:'analytics',label:'Usage Analytics',icon:'fa-chart-line'},
   {id:'orders',label:'Order List',icon:'fa-clipboard-list'},
   {id:'suppliers',label:'Suppliers',icon:'fa-truck-field'},
+  {id:'editlogs',label:'Edit Logs',icon:'fa-history'},
+  {id:'changerequests',label:'Change Requests',icon:'fa-exchange-alt'},
   {id:'users',label:'Users',icon:'fa-users-cog'},
   {id:'settings',label:'Settings',icon:'fa-sliders'}
 ];
@@ -468,7 +473,7 @@ DEFAULT_DATA.Stores.forEach(store => {
 });
 
 // ==================== DATA LAYER ====================
-const D = { Users:[], Stores:[], Staff:[], Attendance:[], Suppliers:[], StockTemplate:[], StoreStock:[], StockCount:[], WeeklySales:[], StaffMessages:[] };
+const D = { Users:[], Stores:[], Staff:[], Attendance:[], Suppliers:[], StockTemplate:[], StoreStock:[], StockCount:[], WeeklySales:[], StaffMessages:[], EditLog:[], TimeChangeReq:[] };
 
 // Canonical field names — must match Apps Script SHEETS definition exactly
 const FIELD_SCHEMA = {
@@ -481,7 +486,9 @@ const FIELD_SCHEMA = {
   StoreStock:['storeId','itemId','category','name','unit','min','qty'],
   StockCount:['id','storeId','week','countDate','itemId','category','name','unit','qty','submittedBy','submittedAt'],
   WeeklySales:['id','storeId','week','weekStart','totalSales','notes','submittedBy','submittedAt'],
-  StaffMessages:['id','storeId','staffId','type','message','active','createdBy','createdAt']
+  StaffMessages:['id','storeId','staffId','type','message','active','createdBy','createdAt'],
+  EditLog:['id','attendanceId','staffId','storeId','date','fieldChanged','oldValue','newValue','editTimestamp','kioskVersion'],
+  TimeChangeReq:['id','attendanceId','staffId','storeId','date','field','currentValue','requestedValue','reason','status','kioskVersion','createdAt','reviewedBy','reviewedAt']
 };
 // Normalize row keys: "Nick Name" → "nickName", "Left Date" → "leftDate"
 function normalizeRow(sheetName, row) {
@@ -667,6 +674,7 @@ function doLogin() {
     const firstPage=ALL_PAGES.find(p=>hasPermission(p.id));
     navigate(firstPage?firstPage.id:'dashboard');
     toast('Welcome, ' + user.name + '!', 'success');
+    updateCrBadge();
   } else { toast('Invalid username or password', 'error'); }
 }
 function doLogout() { currentUser=null;$('mainApp').classList.add('hidden');$('loginPage').classList.remove('hidden');$('loginUser').value='';$('loginPass').value=''; }
@@ -714,6 +722,8 @@ function renderPage(page) {
     case 'orders': renderOrders(c); break;
     case 'suppliers': renderSuppliers(c); break;
     case 'messages': renderMessages(c); break;
+    case 'editlogs': renderEditLogs(c); break;
+    case 'changerequests': renderChangeRequests(c); break;
     case 'settings': renderSettings(c); break;
     default: c.innerHTML='<p>Page not found</p>';
   }
@@ -727,9 +737,11 @@ async function refreshDashboard(){
     if(r&&r.data){
       if(r.data.Attendance&&r.data.Attendance.length>0){D.Attendance=r.data.Attendance;LS.set('Attendance',D.Attendance);}
       if(r.data.Staff&&r.data.Staff.length>0){D.Staff=r.data.Staff;LS.set('Staff',D.Staff);}
+      if(r.data.TimeChangeReq&&r.data.TimeChangeReq.length>0){D.TimeChangeReq=r.data.TimeChangeReq.map(r2=>normalizeRow('TimeChangeReq',r2));LS.set('TimeChangeReq',D.TimeChangeReq);}
     }
   }
   if(currentPage==='dashboard')renderDashboardContent();
+  updateCrBadge();
 }
 function renderDashboard(c) {
   c.innerHTML=`<div id="dashContent"></div>`;
@@ -755,6 +767,7 @@ function renderDashboardContent() {
       <div class="stat-card"><div class="stat-icon green"><i class="fas fa-user-tie"></i></div><div class="stat-info"><div class="stat-num">${activeStaff}</div><div class="stat-label">Active Staff</div></div></div>
       <div class="stat-card"><div class="stat-icon orange"><i class="fas fa-clock"></i></div><div class="stat-info"><div class="stat-num">${clockedIn}</div><div class="stat-label">Clocked In Now</div></div></div>
       <div class="stat-card"><div class="stat-icon purple"><i class="fas fa-boxes-stacked"></i></div><div class="stat-info"><div class="stat-num">${D.StockTemplate.length}</div><div class="stat-label">Stock Items</div></div></div>
+      ${(function(){const pend=(D.TimeChangeReq||[]).filter(r=>r.status==='pending'&&hasStoreAccess(r.storeId)).length;return pend>0?`<div class="stat-card" style="cursor:pointer;border:2px solid #e74c3c;animation:crPulse 2s infinite" onclick="navigate('changerequests')"><div class="stat-icon" style="background:#fce4ec;color:#e74c3c"><i class="fas fa-exchange-alt"></i></div><div class="stat-info"><div class="stat-num" style="color:#e74c3c">${pend}</div><div class="stat-label">Pending Requests</div></div></div>`:''})()}
     </div>
     ${clockedIn>0?`<div class="card" style="padding:16px;margin-bottom:16px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><h3 style="font-size:15px;font-weight:600"><i class="fas fa-user-clock" style="color:var(--accent)"></i> Currently Working (${clockedIn})</h3></div>
@@ -1462,8 +1475,15 @@ function renderAttendanceTable(){
     const cin=parseTime(a.clockIn);
     const cout=parseTime(a.clockOut);
     const hrs=calcHours(a.clockIn,a.clockOut);
-    const isManual=a.source==='manual'||String(a.id).startsWith('m');
-    const srcBadge=isManual?'<span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;background:#fff3e0;color:#e65100;border:1px solid #ffcc80"><i class="fas fa-pen" style="margin-right:3px;font-size:10px"></i>Manual</span>':'<span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;background:#e8f5e9;color:#2e7d32;border:1px solid #a5d6a7"><i class="fas fa-camera" style="margin-right:3px;font-size:10px"></i>Kiosk</span>';
+    const srcBadge=(function(src){
+      const bs='display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;';
+      if(src==='kiosk2')return `<span style="${bs}background:#fff3e0;color:#e65100;border:1px solid #ffcc80"><i class="fas fa-pen" style="margin-right:3px;font-size:10px"></i>Kiosk2</span>`;
+      if(src==='kiosk3')return `<span style="${bs}background:#f3e5f5;color:#6a1b9a;border:1px solid #ce93d8"><i class="fas fa-mobile-alt" style="margin-right:3px;font-size:10px"></i>Kiosk3</span>`;
+      if(src==='camera'||src==='kiosk'||src==='kiosk1')return `<span style="${bs}background:#e8f5e9;color:#2e7d32;border:1px solid #a5d6a7"><i class="fas fa-camera" style="margin-right:3px;font-size:10px"></i>Kiosk</span>`;
+      if(src==='manual')return `<span style="${bs}background:#fff3e0;color:#e65100;border:1px solid #ffcc80"><i class="fas fa-pen" style="margin-right:3px;font-size:10px"></i>Manual</span>`;
+      return `<span style="${bs}background:#f5f5f5;color:#999;border:1px solid #ddd">${escHtml(src||'—')}</span>`;
+    })(a.source);
+    const isManual=a.source==='manual'||a.source==='kiosk2'||a.source==='kiosk3';
     return`<tr${isManual?' style="background:#fff8f0"':''}><td>${a.date}</td><td>${s?escHtml(s.name):a.staffId}</td><td>${store?escHtml(store.name):a.storeId}</td>
     <td><input type="time" value="${cin||''}" style="border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:13px;width:100px;background:#e8f5e9;color:#2e7d32;font-weight:600" onchange="editAttTime('${a.id}','clockIn',this.value)"></td>
     <td>${photoThumb(a.photoIn,'Clock In')}</td>
@@ -2180,6 +2200,171 @@ async function deleteSupplier(id){
 }
 
 // ==================== STAFF MESSAGES ====================
+// ==================== EDIT LOGS ====================
+function renderEditLogs(c){
+  const logs=(D.EditLog||[]).slice().sort((a,b)=>(b.editTimestamp||'').localeCompare(a.editTimestamp||''));
+  c.innerHTML=`<div class="card"><div class="card-header"><h3><i class="fas fa-history"></i> Edit Audit Log</h3></div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;align-items:end">
+    <div class="form-group" style="margin:0;min-width:130px"><label style="font-size:11px">From</label><input type="date" id="elFrom" style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;width:100%"></div>
+    <div class="form-group" style="margin:0;min-width:130px"><label style="font-size:11px">To</label><input type="date" id="elTo" style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;width:100%"></div>
+    <div class="form-group" style="margin:0;min-width:120px"><label style="font-size:11px">Store</label><select id="elStore" style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;width:100%"><option value="">All</option>${D.Stores.map(s=>`<option value="${s.id}">${escHtml(s.name)}</option>`).join('')}</select></div>
+    <div class="form-group" style="margin:0;min-width:120px"><label style="font-size:11px">Kiosk</label><select id="elKiosk" style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;width:100%"><option value="">All</option><option value="kiosk2">Kiosk2</option><option value="kiosk3">Kiosk3</option><option value="camera">Camera</option></select></div>
+    <div class="form-group" style="margin:0;min-width:120px"><label style="font-size:11px">Staff</label><select id="elStaff" style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;width:100%"><option value="">All</option>${D.Staff.filter(s=>s.active!==false).map(s=>`<option value="${s.id}">${escHtml(s.nickName||s.name)}</option>`).join('')}</select></div>
+    <button class="btn btn-primary" onclick="filterEditLogs()" style="height:34px"><i class="fas fa-filter"></i> Filter</button>
+  </div>
+  <div class="table-wrap"><table><thead><tr>
+    <th>Edit Time</th><th>Staff</th><th>Date</th><th>Field</th><th>Old</th><th>New</th><th>Kiosk</th><th>Store</th>
+  </tr></thead><tbody id="elBody"></tbody></table></div>
+  <div style="text-align:center;padding:8px;color:var(--text-light);font-size:12px" id="elCount"></div></div>`;
+  renderEditLogRows(logs);
+}
+function filterEditLogs(){
+  let logs=(D.EditLog||[]).slice().sort((a,b)=>(b.editTimestamp||'').localeCompare(a.editTimestamp||''));
+  const from=$('elFrom')?.value,to=$('elTo')?.value,store=$('elStore')?.value,kiosk=$('elKiosk')?.value,staff=$('elStaff')?.value;
+  if(from)logs=logs.filter(l=>l.date>=from);
+  if(to)logs=logs.filter(l=>l.date<=to);
+  if(store)logs=logs.filter(l=>l.storeId===store);
+  if(kiosk)logs=logs.filter(l=>l.kioskVersion===kiosk);
+  if(staff)logs=logs.filter(l=>String(l.staffId)===staff);
+  renderEditLogRows(logs);
+}
+function renderEditLogRows(logs){
+  const body=$('elBody');if(!body)return;
+  const limited=logs.slice(0,200);
+  body.innerHTML=limited.map(l=>{
+    const s=D.Staff.find(x=>String(x.id)===String(l.staffId));
+    const store=D.Stores.find(x=>String(x.id)===String(l.storeId));
+    const ts=l.editTimestamp?new Date(l.editTimestamp).toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}):'—';
+    const bs='display:inline-block;padding:1px 6px;border-radius:8px;font-size:10px;font-weight:600;';
+    let kb='';
+    if(l.kioskVersion==='kiosk2')kb=`<span style="${bs}background:#fff3e0;color:#e65100">K2</span>`;
+    else if(l.kioskVersion==='kiosk3')kb=`<span style="${bs}background:#f3e5f5;color:#6a1b9a">K3</span>`;
+    else if(l.kioskVersion==='camera')kb=`<span style="${bs}background:#e8f5e9;color:#2e7d32">CAM</span>`;
+    else kb=`<span style="${bs}background:#f5f5f5;color:#999">${escHtml(l.kioskVersion||'—')}</span>`;
+    return `<tr>
+      <td style="font-size:12px;white-space:nowrap">${ts}</td>
+      <td>${s?escHtml(s.nickName||s.name):l.staffId}</td>
+      <td style="font-size:12px">${l.date||'—'}</td>
+      <td><strong style="font-size:12px">${escHtml(l.fieldChanged||'')}</strong></td>
+      <td style="font-size:12px;color:#999">${escHtml(l.oldValue||'—')}</td>
+      <td style="font-size:12px;font-weight:600;color:var(--primary)">${escHtml(l.newValue||'—')}</td>
+      <td>${kb}</td>
+      <td style="font-size:12px">${store?escHtml(store.code||store.name):l.storeId}</td>
+    </tr>`;
+  }).join('');
+  const cnt=$('elCount');if(cnt)cnt.textContent=`Showing ${limited.length} of ${logs.length} records`;
+}
+
+// ==================== CHANGE REQUESTS ====================
+function updateCrBadge(){
+  const pend=(D.TimeChangeReq||[]).filter(r=>r.status==='pending'&&hasStoreAccess(r.storeId)).length;
+  const badge=$('crMenuBadge');
+  if(badge){badge.style.display=pend>0?'inline':'none';badge.textContent=pend;}
+}
+function renderChangeRequests(c){
+  const reqs=(D.TimeChangeReq||[]).filter(r=>hasStoreAccess(r.storeId)).sort((a,b)=>{
+    const sa=a.status==='pending'?0:1,sb=b.status==='pending'?0:1;
+    if(sa!==sb)return sa-sb;
+    return(b.createdAt||'').localeCompare(a.createdAt||'');
+  });
+  const pendCount=reqs.filter(r=>r.status==='pending').length;
+  c.innerHTML=`<div class="card"><div class="card-header"><h3><i class="fas fa-exchange-alt" style="color:var(--accent);margin-right:8px"></i>Time Change Requests ${pendCount>0?`<span style="background:#e74c3c;color:#fff;font-size:12px;padding:2px 10px;border-radius:12px;margin-left:8px">${pendCount} pending</span>`:''}</h3>
+    <button class="btn btn-sm btn-primary" onclick="refreshCrData()"><i class="fas fa-sync"></i> Refresh</button></div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;align-items:end">
+    <div class="form-group" style="margin:0;min-width:120px"><label style="font-size:11px">Status</label><select id="crStatus" style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;width:100%"><option value="">All</option><option value="pending" selected>Pending</option><option value="approved">Approved</option><option value="rejected">Rejected</option></select></div>
+    <div class="form-group" style="margin:0;min-width:120px"><label style="font-size:11px">Store</label><select id="crStore" style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;width:100%"><option value="">All</option>${D.Stores.map(s=>`<option value="${s.id}">${escHtml(s.name)}</option>`).join('')}</select></div>
+    <button class="btn btn-primary" onclick="filterChangeRequests()" style="height:34px"><i class="fas fa-filter"></i> Filter</button>
+  </div>
+  <div class="table-wrap"><table><thead><tr>
+    <th>Date</th><th>Staff</th><th>Store</th><th>Field</th><th>Current</th><th>Requested</th><th>Reason</th><th>Source</th><th>Status</th><th>Actions</th>
+  </tr></thead><tbody id="crBody"></tbody></table></div>
+  <div style="text-align:center;padding:8px;color:var(--text-light);font-size:12px" id="crCount"></div></div>`;
+  filterChangeRequests();
+}
+async function refreshCrData(){
+  toast('Refreshing...','info');
+  const r=await API.get('getAll');
+  if(r&&r.data&&r.data.TimeChangeReq){
+    D.TimeChangeReq=r.data.TimeChangeReq.map(r2=>normalizeRow('TimeChangeReq',r2));
+    LS.set('TimeChangeReq',D.TimeChangeReq);
+  }
+  filterChangeRequests();
+  updateCrBadge();
+  toast('Refreshed','success');
+}
+function filterChangeRequests(){
+  let reqs=(D.TimeChangeReq||[]).filter(r=>hasStoreAccess(r.storeId)).sort((a,b)=>{
+    const sa=a.status==='pending'?0:1,sb=b.status==='pending'?0:1;
+    if(sa!==sb)return sa-sb;
+    return(b.createdAt||'').localeCompare(a.createdAt||'');
+  });
+  const status=$('crStatus')?.value,store=$('crStore')?.value;
+  if(status)reqs=reqs.filter(r=>r.status===status);
+  if(store)reqs=reqs.filter(r=>r.storeId===store);
+  renderCrRows(reqs);
+}
+function renderCrRows(reqs){
+  const body=$('crBody');if(!body)return;
+  const limited=reqs.slice(0,200);
+  const bs='display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;';
+  body.innerHTML=limited.map(r=>{
+    const s=D.Staff.find(x=>String(x.id)===String(r.staffId));
+    const store=D.Stores.find(x=>String(x.id)===String(r.storeId));
+    let statusBadge='';
+    if(r.status==='pending')statusBadge=`<span style="${bs}background:#fff3cd;color:#856404;border:1px solid #ffc107">Pending</span>`;
+    else if(r.status==='approved')statusBadge=`<span style="${bs}background:#d4edda;color:#155724;border:1px solid #28a745">Approved</span>`;
+    else if(r.status==='rejected')statusBadge=`<span style="${bs}background:#f8d7da;color:#721c24;border:1px solid #dc3545">Rejected</span>`;
+    else statusBadge=`<span style="${bs}background:#f5f5f5;color:#999">${escHtml(r.status||'—')}</span>`;
+    let kvBadge='';
+    if(r.kioskVersion==='kiosk2')kvBadge=`<span style="${bs}background:#fff3e0;color:#e65100">K2</span>`;
+    else if(r.kioskVersion==='kiosk3')kvBadge=`<span style="${bs}background:#f3e5f5;color:#6a1b9a">K3</span>`;
+    else kvBadge=`<span style="${bs}background:#f5f5f5;color:#999">${escHtml(r.kioskVersion||'—')}</span>`;
+    const actions=r.status==='pending'?`<div style="display:flex;gap:4px">
+      <button class="btn btn-sm" style="background:#28a745;color:#fff;font-size:11px;padding:3px 8px" onclick="reviewCr('${r.id}','approved')"><i class="fas fa-check"></i></button>
+      <button class="btn btn-sm" style="background:#dc3545;color:#fff;font-size:11px;padding:3px 8px" onclick="reviewCr('${r.id}','rejected')"><i class="fas fa-times"></i></button>
+    </div>`:(r.reviewedBy?`<span style="font-size:11px;color:var(--text-light)">${escHtml(r.reviewedBy)}</span>`:'—');
+    return`<tr style="${r.status==='pending'?'background:#fffde7':''}">
+      <td style="font-size:12px;white-space:nowrap">${r.date||'—'}</td>
+      <td>${s?escHtml(s.nickName||s.name):r.staffId}</td>
+      <td style="font-size:12px">${store?escHtml(store.code||store.name):r.storeId}</td>
+      <td><strong style="font-size:12px">${escHtml(r.field||'')}</strong></td>
+      <td style="font-size:12px;color:#999">${escHtml(r.currentValue||'—')}</td>
+      <td style="font-size:12px;font-weight:600;color:var(--primary)">${escHtml(r.requestedValue||'—')}</td>
+      <td style="font-size:12px;max-width:150px;overflow:hidden;text-overflow:ellipsis" title="${escHtml(r.reason||'')}">${escHtml(r.reason||'—')}</td>
+      <td>${kvBadge}</td>
+      <td>${statusBadge}</td>
+      <td>${actions}</td>
+    </tr>`;
+  }).join('');
+  const cnt=$('crCount');if(cnt)cnt.textContent=`Showing ${limited.length} of ${reqs.length} requests`;
+}
+async function reviewCr(id,status){
+  const label=status==='approved'?'approve':'reject';
+  if(!confirm(`Are you sure you want to ${label} this request?`))return;
+  showLoading(status==='approved'?'Approving...':'Rejecting...');
+  const res=await API.post({action:'reviewTimeReq',id:id,status:status,reviewedBy:currentUser.name||currentUser.username||''});
+  hideLoading();
+  if(res&&!res.error){
+    toast(`Request ${status}!`,'success');
+    // Update local data
+    const req=(D.TimeChangeReq||[]).find(r=>r.id===id);
+    if(req){
+      req.status=status;
+      req.reviewedBy=currentUser.name||currentUser.username||'';
+      req.reviewedAt=new Date().toISOString();
+      if(status==='approved'){
+        const att=D.Attendance.find(a=>String(a.id)===String(req.attendanceId));
+        if(att&&req.field){att[req.field]=req.requestedValue;}
+      }
+    }
+    LS.set('TimeChangeReq',D.TimeChangeReq);
+    filterChangeRequests();
+    updateCrBadge();
+  }else{
+    toast('Failed: '+(res?.error||'Unknown error'),'error');
+  }
+}
+
 function renderMessages(c){
   const stores=D.Stores.filter(s=>s.active!==false);
   const activeStaff=D.Staff.filter(s=>s.active!==false);

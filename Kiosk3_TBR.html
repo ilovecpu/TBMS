@@ -205,13 +205,12 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
       <div class="avatar" id="userAvatar"></div>
       <span class="name" id="userName"></span>
     </div>
-    <button class="btn-logout" onclick="doLogout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
+    <div style="display:flex;gap:8px">
+      <button class="btn-save-top" onclick="saveAll()"><i class="fas fa-cloud-upload-alt"></i> Save All</button>
+      <button class="btn-logout" onclick="doLogout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
+    </div>
   </div>
   <div id="crArea"></div>
-  <div class="action-bar">
-    <button class="btn-save-top" onclick="saveAll()"><i class="fas fa-cloud-upload-alt"></i> Save All</button>
-    <button class="btn-logout" onclick="doLogout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
-  </div>
   <div id="calArea" style="width:100%;display:flex;flex-direction:column;align-items:center"></div>
 </div>
 

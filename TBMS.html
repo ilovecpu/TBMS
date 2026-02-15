@@ -2643,9 +2643,9 @@ function renderStockCount(c){
     <span>Use <strong>▲▼</strong> arrows to reorder items within each category</span>
     <button class="btn btn-primary btn-sm" id="scSaveOrderBtn" onclick="saveStockOrder()" style="margin-left:auto"><i class="fas fa-cloud-arrow-up"></i> Save Order</button>
   </div>
-  <div class="card"><div class="table-wrap"><table style="table-layout:fixed;width:100%"><thead><tr>
+  <div class="card"><div class="table-wrap"><table style="width:auto;min-width:0"><thead><tr>
     <th id="scThSort" class="hidden" style="width:40px;padding:4px">Sort</th>
-    <th style="padding:6px 4px;width:40%">Item</th><th style="width:15%;padding:6px 2px;text-align:center">Unit</th><th style="width:15%;padding:6px 2px;text-align:center">Last</th><th style="width:18%;padding:6px 2px;text-align:center">New</th><th style="width:12%;padding:6px 2px;text-align:center">Δ</th>
+    <th style="padding:6px 6px;white-space:nowrap">Item</th><th style="padding:6px 6px;white-space:nowrap;text-align:center">Unit</th><th style="padding:6px 6px;white-space:nowrap;text-align:center">Last</th><th style="padding:6px 6px;white-space:nowrap;text-align:center">New</th><th style="padding:6px 6px;white-space:nowrap;text-align:center">Δ</th>
   </tr></thead><tbody id="scBody"></tbody></table></div></div>
   <div id="scProgress" style="text-align:center;padding:8px;font-size:13px;color:var(--text-light)"></div>`;
   if(stores.length)renderStockCountTable();
@@ -2695,11 +2695,11 @@ function renderStockCountTable(){
     </div></td>`:'';
     html+=`<tr data-itemid="${item.itemId}">
       ${sortCell}
-      <td style="padding:5px 4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><div style="display:flex;align-items:center"><span class="item-icon ${iconCls}" style="width:22px;height:22px;font-size:9px;margin-right:5px;flex-shrink:0"><i class="fas ${icon}"></i></span><strong style="font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(item.name)}</strong></div></td>
-      <td style="text-align:center;padding:3px 2px;font-size:11px">${escHtml(item.unit)}</td>
-      <td style="text-align:center;padding:3px 2px;color:var(--text-light);font-size:12px">${prev!==null?prev:'—'}</td>
-      <td style="padding:3px 2px"><input type="number" min="0" step="0.5" class="sc-qty" data-item="${item.itemId}" data-cat="${escHtml(item.category)}" data-name="${escHtml(item.name)}" data-unit="${escHtml(item.unit)}" value="${prev!==null?prev:''}" placeholder="0" style="width:100%;padding:5px 2px;border:2px solid var(--border);border-radius:6px;font-size:13px;font-weight:600;text-align:center;box-sizing:border-box" oninput="updateScDelta(this)"></td>
-      <td style="text-align:center;padding:3px 2px;font-size:11px"><span class="sc-delta" data-item="${item.itemId}">—</span></td>
+      <td style="padding:5px 6px;white-space:nowrap"><div style="display:flex;align-items:center"><span class="item-icon ${iconCls}" style="width:22px;height:22px;font-size:9px;margin-right:5px;flex-shrink:0"><i class="fas ${icon}"></i></span><strong style="font-size:13px">${escHtml(item.name)}</strong></div></td>
+      <td style="text-align:center;padding:4px 6px;font-size:11px;white-space:nowrap">${escHtml(item.unit)}</td>
+      <td style="text-align:center;padding:4px 6px;color:var(--text-light);font-size:12px;white-space:nowrap">${prev!==null?prev:'—'}</td>
+      <td style="padding:4px 6px;white-space:nowrap"><input type="number" min="0" step="0.5" class="sc-qty" data-item="${item.itemId}" data-cat="${escHtml(item.category)}" data-name="${escHtml(item.name)}" data-unit="${escHtml(item.unit)}" value="${prev!==null?prev:''}" placeholder="0" style="width:60px;padding:5px 2px;border:2px solid var(--border);border-radius:6px;font-size:13px;font-weight:600;text-align:center" oninput="updateScDelta(this)"></td>
+      <td style="text-align:center;padding:4px 6px;font-size:11px;white-space:nowrap"><span class="sc-delta" data-item="${item.itemId}">—</span></td>
     </tr>`;
   });
   $('scBody').innerHTML=html||`<tr><td colspan="${cols}" style="text-align:center">No items found</td></tr>`;

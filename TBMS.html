@@ -2058,22 +2058,19 @@ async function deleteStockItem(id){
 
 // ---- Move Template Item Sort Order ----
 async function moveTemplateItem(id,dir){
-  const catIdx=getSortedCategories();
   const item=D.StockTemplate.find(t=>t.id===id);
   if(!item)return;
+  // Get same category items sorted by current sortOrder
   const sameCat=D.StockTemplate.filter(t=>t.category===item.category).sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0));
+  // Normalize: assign sequential sortOrder 1,2,3... to fix any duplicates/gaps
+  sameCat.forEach((t,i)=>{t.sortOrder=i+1;});
   const pos=sameCat.findIndex(t=>t.id===id);
   const swapIdx=pos+dir;
   if(swapIdx<0||swapIdx>=sameCat.length)return;
-  // Swap sortOrder
-  const tmpSort=sameCat[pos].sortOrder||0;
-  sameCat[pos].sortOrder=sameCat[swapIdx].sortOrder||0;
-  sameCat[swapIdx].sortOrder=tmpSort;
-  // If both were same, assign sequential
-  if(sameCat[pos].sortOrder===sameCat[swapIdx].sortOrder){
-    sameCat[pos].sortOrder=swapIdx+1;
-    sameCat[swapIdx].sortOrder=pos+1;
-  }
+  // Swap the two items' sortOrder
+  const tmp=sameCat[pos].sortOrder;
+  sameCat[pos].sortOrder=sameCat[swapIdx].sortOrder;
+  sameCat[swapIdx].sortOrder=tmp;
   LS.set('StockTemplate',D.StockTemplate);
   renderStockTable();
   if(API.mode==='cloud'){

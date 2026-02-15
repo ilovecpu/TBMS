@@ -1816,7 +1816,7 @@ function renderStock(c) {
       <span style="font-size:12px;color:var(--text-light)"><i class="fas fa-info-circle"></i> Changes apply to <strong>all ${stores.length} stores</strong></span>
     </div>
     <div class="table-wrap"><table><thead><tr>
-      <th style="width:40px">#</th><th>Item</th><th>Category</th><th>Unit</th><th>Min</th><th>Supplier</th><th style="width:100px">Actions</th>
+      <th style="width:40px">#</th><th style="width:50px">Sort</th><th>Item</th><th>Category</th><th>Unit</th><th>Min</th><th>Supplier</th><th style="width:100px">Actions</th>
     </tr></thead><tbody id="stockBody"></tbody></table></div>
   </div>
   <div class="card">
@@ -1845,7 +1845,7 @@ function renderStockTable() {
       lastCat=t.category;
       const catItems=items.filter(i=>i.category===lastCat);
       const catIcon=lastCat.toLowerCase().includes('dry')?'fa-boxes-stacked':'fa-seedling';
-      html+=`<tr><td colspan="7" style="background:var(--primary);color:#fff;font-weight:700;font-size:14px;padding:10px 16px;border:none">
+      html+=`<tr><td colspan="8" style="background:var(--primary);color:#fff;font-weight:700;font-size:14px;padding:10px 16px;border:none">
         <i class="fas ${catIcon}" style="margin-right:8px"></i>${escHtml(lastCat)} <span style="opacity:.6;font-weight:400;font-size:12px;margin-left:8px">${catItems.length} items</span></td></tr>`;
     }
     const icon=stockItemIcon(t.name);
@@ -1856,8 +1856,15 @@ function renderStockTable() {
     const supDisplay=sup1?`<span>${escHtml(supName(sup1))}</span>`:'<span style="color:#ccc">—</span>';
     const supExtra=supCount>1?`<span style="font-size:11px;color:var(--accent);margin-left:4px;cursor:help" title="${[sup2,sup3].filter(Boolean).map(c=>supName(c)).join(', ')}">+${supCount-1}</span>`:'';
     const memoIcon=t.memo?`<i class="fas fa-sticky-note" style="color:var(--warning);margin-left:6px;font-size:11px;cursor:help" title="${escHtml(t.memo)}"></i>`:'';
+    const sameCat=items.filter(i=>i.category===t.category);
+    const posInCat=sameCat.findIndex(i=>i.id===t.id);
+    const isFirst=posInCat===0;const isLast=posInCat===sameCat.length-1;
     html+=`<tr>
       <td style="color:var(--text-light);font-size:12px">${idx+1}</td>
+      <td style="text-align:center;padding:4px"><div class="sort-arrows">
+        <button onclick="moveTemplateItem('${t.id}',-1)"${isFirst?' disabled':''}><i class="fas fa-chevron-up"></i></button>
+        <button onclick="moveTemplateItem('${t.id}',1)"${isLast?' disabled':''}><i class="fas fa-chevron-down"></i></button>
+      </div></td>
       <td><div style="display:flex;align-items:center"><span class="item-icon ${iconCls}"><i class="fas ${icon}"></i></span><strong>${escHtml(t.name)}</strong>${memoIcon}</div></td>
       <td><span style="font-size:12px;color:var(--text-light)">${escHtml(t.category)}</span></td>
       <td>${escHtml(t.unit)}</td>
@@ -1869,7 +1876,7 @@ function renderStockTable() {
       </td>
     </tr>`;
   });
-  $('stockBody').innerHTML=html||'<tr><td colspan="7" style="text-align:center;color:var(--text-light)">No items found</td></tr>';
+  $('stockBody').innerHTML=html||'<tr><td colspan="8" style="text-align:center;color:var(--text-light)">No items found</td></tr>';
 }
 // ---- Store QTY Snapshot table ----
 function renderStoreQtyTable(){
@@ -2046,6 +2053,33 @@ async function deleteStockItem(id){
       API.post({action:'saveSheet',sheet:'StoreStock',rows:D.StoreStock})
     ]);
     updateSyncStatus(r1&&!r1.error&&r2&&!r2.error?'online':'offline');
+  }
+}
+
+// ---- Move Template Item Sort Order ----
+async function moveTemplateItem(id,dir){
+  const catIdx=getSortedCategories();
+  const item=D.StockTemplate.find(t=>t.id===id);
+  if(!item)return;
+  const sameCat=D.StockTemplate.filter(t=>t.category===item.category).sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0));
+  const pos=sameCat.findIndex(t=>t.id===id);
+  const swapIdx=pos+dir;
+  if(swapIdx<0||swapIdx>=sameCat.length)return;
+  // Swap sortOrder
+  const tmpSort=sameCat[pos].sortOrder||0;
+  sameCat[pos].sortOrder=sameCat[swapIdx].sortOrder||0;
+  sameCat[swapIdx].sortOrder=tmpSort;
+  // If both were same, assign sequential
+  if(sameCat[pos].sortOrder===sameCat[swapIdx].sortOrder){
+    sameCat[pos].sortOrder=swapIdx+1;
+    sameCat[swapIdx].sortOrder=pos+1;
+  }
+  LS.set('StockTemplate',D.StockTemplate);
+  renderStockTable();
+  if(API.mode==='cloud'){
+    updateSyncStatus('syncing');
+    const r=await API.post({action:'saveSheet',sheet:'StockTemplate',rows:D.StockTemplate});
+    updateSyncStatus(r&&!r.error?'online':'offline');
   }
 }
 
@@ -2610,8 +2644,8 @@ function renderStockCount(c){
     <button class="btn btn-primary btn-sm" id="scSaveOrderBtn" onclick="saveStockOrder()" style="margin-left:auto"><i class="fas fa-cloud-arrow-up"></i> Save Order</button>
   </div>
   <div class="card"><div class="table-wrap"><table><thead><tr>
-    <th id="scThSort" class="hidden" style="width:50px">Sort</th>
-    <th>Item</th><th>Unit</th><th>Last Count</th><th>New Count</th><th>Usage(Δ)</th>
+    <th id="scThSort" class="hidden" style="width:40px;padding:4px">Sort</th>
+    <th style="padding:6px 4px">Item</th><th style="width:45px;padding:6px 4px;text-align:center">Unit</th><th style="width:55px;padding:6px 4px;text-align:center">Last</th><th style="width:70px;padding:6px 4px;text-align:center">New</th><th style="width:50px;padding:6px 4px;text-align:center">Δ</th>
   </tr></thead><tbody id="scBody"></tbody></table></div></div>
   <div id="scProgress" style="text-align:center;padding:8px;font-size:13px;color:var(--text-light)"></div>`;
   if(stores.length)renderStockCountTable();
@@ -2661,11 +2695,11 @@ function renderStockCountTable(){
     </div></td>`:'';
     html+=`<tr data-itemid="${item.itemId}">
       ${sortCell}
-      <td><div style="display:flex;align-items:center"><span class="item-icon ${iconCls}"><i class="fas ${icon}"></i></span><strong>${escHtml(item.name)}</strong></div></td>
-      <td>${escHtml(item.unit)}</td>
-      <td style="text-align:center;color:var(--text-light)">${prev!==null?prev:'—'}</td>
-      <td><input type="number" min="0" step="0.5" class="sc-qty" data-item="${item.itemId}" data-cat="${escHtml(item.category)}" data-name="${escHtml(item.name)}" data-unit="${escHtml(item.unit)}" value="${prev!==null?prev:''}" placeholder="0" style="width:80px;padding:8px;border:2px solid var(--border);border-radius:8px;font-size:14px;font-weight:600;text-align:center" oninput="updateScDelta(this)"></td>
-      <td style="text-align:center"><span class="sc-delta" data-item="${item.itemId}">—</span></td>
+      <td style="padding:6px 4px"><div style="display:flex;align-items:center"><span class="item-icon ${iconCls}" style="width:24px;height:24px;font-size:10px;margin-right:6px;flex-shrink:0"><i class="fas ${icon}"></i></span><strong style="font-size:13px">${escHtml(item.name)}</strong></div></td>
+      <td style="text-align:center;padding:4px;font-size:12px">${escHtml(item.unit)}</td>
+      <td style="text-align:center;padding:4px;color:var(--text-light);font-size:13px">${prev!==null?prev:'—'}</td>
+      <td style="padding:4px"><input type="number" min="0" step="0.5" class="sc-qty" data-item="${item.itemId}" data-cat="${escHtml(item.category)}" data-name="${escHtml(item.name)}" data-unit="${escHtml(item.unit)}" value="${prev!==null?prev:''}" placeholder="0" style="width:60px;padding:6px;border:2px solid var(--border);border-radius:6px;font-size:13px;font-weight:600;text-align:center" oninput="updateScDelta(this)"></td>
+      <td style="text-align:center;padding:4px;font-size:12px"><span class="sc-delta" data-item="${item.itemId}">—</span></td>
     </tr>`;
   });
   $('scBody').innerHTML=html||`<tr><td colspan="${cols}" style="text-align:center">No items found</td></tr>`;

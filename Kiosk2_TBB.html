@@ -107,7 +107,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
 
 <script>
 const STORE_ID='TBB',STORE_NAME='The Bap Bristol';
-const DEFAULT_API='https://script.google.com/macros/s/AKfycbw5bJyHr_DNpDm0H5d1VXpnMxJM1zjTxYH6fQ3JxwB_lIIKhkOSzdiPL9H5SUMkH4nT/exec';
+const DEFAULT_API='https://script.google.com/macros/s/AKfycbwuf-gkffDNVGu4D_5dwtv3I3CISJjcCJw8ioN1kSaoPyCPuoDOYJkY6eeuJERn2iHj/exec';
 const API_URL=(function(){try{const c=JSON.parse(localStorage.getItem('tbms_config'));return(c&&c.apiUrl)?c.apiUrl:DEFAULT_API;}catch(e){return DEFAULT_API;}})();
 const $=id=>document.getElementById(id);
 function toast(msg,type='info'){const t=document.createElement('div');t.className='toast '+type;t.innerHTML='<i class="fas fa-'+(type==='error'?'exclamation-circle':type==='success'?'check-circle':'info-circle')+'"></i> '+msg;$('toastBox').appendChild(t);setTimeout(()=>t.remove(),3000);}

@@ -507,21 +507,40 @@ function recalcTotals(){
 }
 
 // ===== SAVE WITH EDIT LOG + CHANGE REQUEST =====
+function askReason(count){
+  return new Promise(resolve=>{
+    const ov=document.createElement('div');
+    ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1500;display:flex;align-items:center;justify-content:center;padding:20px';
+    ov.innerHTML=`<div style="background:#fff;border-radius:20px;padding:28px;max-width:400px;width:100%;text-align:center">
+      <div style="font-size:36px;margin-bottom:8px">📝</div>
+      <div style="font-size:16px;font-weight:700;color:#e65100;margin-bottom:6px"><i class="fas fa-exclamation-triangle"></i> Time Change Request</div>
+      <div style="font-size:14px;color:#555;margin-bottom:16px">You are requesting <strong>${count}</strong> time change(s) for past dates.<br>These need manager approval.</div>
+      <textarea id="crReasonInput" rows="3" placeholder="Enter reason for the change..." style="width:100%;padding:12px;border:2px solid #ddd;border-radius:10px;font-size:15px;font-family:inherit;resize:none;margin-bottom:16px"></textarea>
+      <div style="display:flex;gap:10px">
+        <button id="crReasonCancel" style="flex:1;padding:14px;border:2px solid #ddd;border-radius:10px;font-size:15px;font-weight:600;background:#fff;cursor:pointer">Cancel</button>
+        <button id="crReasonSubmit" style="flex:1;padding:14px;border:none;border-radius:10px;font-size:15px;font-weight:600;background:#e65100;color:#fff;cursor:pointer">Submit</button>
+      </div>
+    </div>`;
+    document.body.appendChild(ov);
+    ov.querySelector('#crReasonCancel').onclick=()=>{ov.remove();resolve(null);};
+    ov.querySelector('#crReasonSubmit').onclick=()=>{const v=ov.querySelector('#crReasonInput').value.trim();if(!v){ov.querySelector('#crReasonInput').style.borderColor='#e53935';return;}ov.remove();resolve(v);};
+    setTimeout(()=>ov.querySelector('#crReasonInput').focus(),100);
+  });
+}
 async function saveAll(){
   if(!currentStaff)return;
   const dates=getPeriodDates();
   const rows=[];
   const editLogs=[];
   const changeReqs=[];
-  const today=new Date();
-  const yesterdayStr=fmtDate(new Date(today.getFullYear(),today.getMonth(),today.getDate()-1));
+  const todayStr=fmtDate(new Date());
   dates.forEach(d=>{
     const dateStr=fmtDate(d);
     const inVal=getTimeVal('in',dateStr);
     const outVal=getTimeVal('out',dateStr);
     if(!inVal&&!outVal)return;
     const existing=attendance.find(a=>String(a.staffId)===String(currentStaff.id)&&a.date===dateStr);
-    if(existing && dateStr<yesterdayStr){
+    if(existing && dateStr<todayStr){
       const inChanged=existing.clockIn!==inVal;
       const outChanged=existing.clockOut!==outVal;
       if(inChanged)changeReqs.push({attendanceId:existing.id,staffId:currentStaff.id,storeId:STORE_ID,date:dateStr,field:'clockIn',currentValue:existing.clockIn||'',requestedValue:inVal,kioskVersion:'kiosk3'});
@@ -552,7 +571,7 @@ async function saveAll(){
   });
   if(rows.length===0&&changeReqs.length===0){toast('No hours entered','info');return;}
   if(changeReqs.length>0){
-    const reason=prompt('You are modifying times for past dates ('+changeReqs.length+' change(s)).\nPlease enter a reason:');
+    const reason=await askReason(changeReqs.length);
     if(!reason){toast('Change request cancelled','info');return;}
     toast('Submitting '+changeReqs.length+' change request(s)...','info');
     let crOk=true;

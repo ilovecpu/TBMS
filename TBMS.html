@@ -532,7 +532,6 @@ const API = {
 };
 
 async function saveData(sheet) {
-  LS.set(sheet, D[sheet]);
   if (API.mode === 'cloud') {
     updateSyncStatus('syncing');
     const r = await API.post({action:'saveSheet', sheet, rows: D[sheet]});
@@ -542,7 +541,6 @@ async function saveData(sheet) {
 async function saveRow(sheet, row) {
   const idx = D[sheet].findIndex(r => r.id === row.id);
   if (idx >= 0) D[sheet][idx] = row; else D[sheet].push(row);
-  LS.set(sheet, D[sheet]);
   if (API.mode === 'cloud') {
     updateSyncStatus('syncing');
     const r = await API.post({action:'upsert', sheet, row});
@@ -551,7 +549,6 @@ async function saveRow(sheet, row) {
 }
 async function deleteData(sheet, id) {
   D[sheet] = D[sheet].filter(r => String(r.id) !== String(id));
-  LS.set(sheet, D[sheet]);
   if (API.mode === 'cloud') {
     updateSyncStatus('syncing');
     const r = await API.post({action:'deleteRow', sheet, id});
@@ -569,34 +566,28 @@ async function loadAllData() {
       for (let sheet in result.data) {
         if (Array.isArray(result.data[sheet]) && result.data[sheet].length > 0) {
           D[sheet] = result.data[sheet].map(r => normalizeRow(sheet, r));
-          LS.set(sheet, D[sheet]); loaded = true;
+          loaded = true;
           console.log(`[TBMS] Loaded ${sheet}: ${D[sheet].length} rows`);
         }
       }
       if (loaded) {
-        // Fill any sheets still empty from localStorage
-        for (let sheet in D) {
-          if (D[sheet].length === 0) {
-            const local = LS.get(sheet);
-            if (local && local.length > 0) { D[sheet] = local.map(r => normalizeRow(sheet, r)); console.log(`[TBMS] ${sheet}: filled from localStorage (${D[sheet].length} rows)`); }
-            else console.warn(`[TBMS] ${sheet}: EMPTY (not from server, not in localStorage)`);
-          }
-        }
+        // Load catOrder from cloud
+        try{const catRes=await API.get('getSetting',{key:'catOrder'});if(catRes&&catRes.value){LS.set('catOrder',catRes.value);console.log('[TBMS] catOrder loaded from cloud:',catRes.value);}}catch(e){}
+        // Load timeRounding from cloud
+        try{const trRes=await API.get('getSetting',{key:'timeRounding'});if(trRes&&trRes.value!==null){LS.set('timeRounding',trRes.value);console.log('[TBMS] timeRounding loaded from cloud:',trRes.value);}}catch(e){}
         hideLoading(); updateSyncStatus('online'); return true;
       }
     }
   }
-  // Fallback to localStorage
-  for (let sheet in D) {
-    const local = LS.get(sheet);
-    if (local && local.length > 0) D[sheet] = local.map(r => normalizeRow(sheet, r));
-  }
-  hideLoading(); updateSyncStatus('offline'); return true;
+  // Fallback — cloud failed, show error
+  hideLoading(); updateSyncStatus('offline');
+  console.warn('[TBMS] Cloud load failed — no local fallback');
+  return true;
 }
 
 async function initDefaultData() {
   showLoading('Initializing data...');
-  for (let sheet in DEFAULT_DATA) { D[sheet] = DEFAULT_DATA[sheet]; LS.set(sheet, D[sheet]); }
+  for (let sheet in DEFAULT_DATA) { D[sheet] = DEFAULT_DATA[sheet]; }
   if (API.mode === 'cloud') {
     await API.post({action:'initData', sheets: DEFAULT_DATA});
   }
@@ -642,7 +633,7 @@ async function completeSetup() {
 function skipSetup() {
   API.mode = 'local';
   LS.set('config', {mode: 'local'});
-  for (let sheet in DEFAULT_DATA) { D[sheet] = DEFAULT_DATA[sheet]; LS.set(sheet, D[sheet]); }
+  for (let sheet in DEFAULT_DATA) { D[sheet] = DEFAULT_DATA[sheet]; }
   $('setupPage').classList.add('hidden');
   $('loginPage').classList.remove('hidden');
   toast('Running in local mode');
@@ -656,9 +647,7 @@ function doLogin() {
   const password = $('loginPass').value;
   // Ensure D.Users has data
   if (!D.Users || D.Users.length === 0) {
-    const local = LS.get('Users');
-    if (local && local.length > 0) D.Users = local;
-    else { D.Users = DEFAULT_DATA.Users; LS.set('Users', D.Users); }
+    D.Users = DEFAULT_DATA.Users;
   }
   // String comparison to handle type differences from Google Sheets
   const user = D.Users.find(u => String(u.username) === String(username) && String(u.password) === String(password));
@@ -735,9 +724,9 @@ async function refreshDashboard(){
   if(API.mode==='cloud'){
     const r=await API.get('getAll');
     if(r&&r.data){
-      if(r.data.Attendance&&r.data.Attendance.length>0){D.Attendance=r.data.Attendance;LS.set('Attendance',D.Attendance);}
-      if(r.data.Staff&&r.data.Staff.length>0){D.Staff=r.data.Staff;LS.set('Staff',D.Staff);}
-      if(r.data.TimeChangeReq&&r.data.TimeChangeReq.length>0){D.TimeChangeReq=r.data.TimeChangeReq.map(r2=>normalizeRow('TimeChangeReq',r2));LS.set('TimeChangeReq',D.TimeChangeReq);}
+      if(r.data.Attendance&&r.data.Attendance.length>0){D.Attendance=r.data.Attendance;}
+      if(r.data.Staff&&r.data.Staff.length>0){D.Staff=r.data.Staff;}
+      if(r.data.TimeChangeReq&&r.data.TimeChangeReq.length>0){D.TimeChangeReq=r.data.TimeChangeReq.map(r2=>normalizeRow('TimeChangeReq',r2));}
     }
   }
   if(currentPage==='dashboard')renderDashboardContent();
@@ -883,7 +872,6 @@ async function saveStore(id) {
   // Update local data
   const idx=D.Stores.findIndex(r=>r.id===s.id);
   if(idx>=0)D.Stores[idx]=s;else D.Stores.push(s);
-  LS.set('Stores',D.Stores);
   closeModal();renderStores($('pageContent'));toast('Store saved','success');
   // Save entire Stores sheet to cloud (ensures new columns like vatQuarter are created)
   if(API.mode==='cloud'){
@@ -1422,7 +1410,7 @@ async function refreshAttendance(){
   if(API.mode==='cloud'){
     const r=await API.get('getAll');
     if(r&&r.data&&r.data.Attendance){
-      D.Attendance=r.data.Attendance.map(r=>normalizeRow('Attendance',r));LS.set('Attendance',D.Attendance);
+      D.Attendance=r.data.Attendance.map(r=>normalizeRow('Attendance',r));
     }
   }
   if(currentPage==='attendance')renderAttendanceTable();
@@ -1587,7 +1575,7 @@ async function saveManualAtt(){
 // ==================== PAYROLL ====================
 let payrollData=[];
 function getTimeRounding(){return Number(LS.get('timeRounding'))||0;}
-function setTimeRounding(v){LS.set('timeRounding',v);}
+function setTimeRounding(v){LS.set('timeRounding',v);if(API.mode==='cloud')API.post({action:'saveSetting',key:'timeRounding',value:v});}
 function roundTime(timeStr,roundMin){
   if(!timeStr||!roundMin)return timeStr;
   const[h,m]=timeStr.split(':').map(Number);
@@ -1763,7 +1751,10 @@ function exportPayroll() {
 
 // ==================== STOCK MANAGEMENT ====================
 function getCatOrder(){return LS.get('catOrder')||[];}
-function saveCatOrder(order){LS.set('catOrder',order);}
+function saveCatOrder(order){
+  LS.set('catOrder',order);
+  if(API.mode==='cloud')API.post({action:'saveSetting',key:'catOrder',value:order});
+}
 function getSortedCategories(){
   const allCats=[...new Set(D.StockTemplate.map(t=>t.category))];
   const order=getCatOrder();
@@ -1903,7 +1894,6 @@ function updateStockQty(el) {
   if(item)item.qty=qty;
 }
 async function saveStockAll() {
-  LS.set('StoreStock',D.StoreStock);
   renderStoreQtyTable(); toast('Stock quantities saved!','success');
   if(API.mode==='cloud'){updateSyncStatus('syncing');const r=await API.post({action:'saveSheet',sheet:'StoreStock',rows:D.StoreStock});updateSyncStatus(r&&!r.error?'online':'offline');}
 }
@@ -1996,8 +1986,6 @@ async function saveStockItem(editId){
         ss.category=category;ss.name=name;ss.unit=unit;ss.min=min;
       }
     });
-    LS.set('StockTemplate',D.StockTemplate);
-    LS.set('StoreStock',D.StoreStock);
     // Optimistic UI — close immediately, sync in background
     closeModal();renderStockTable();
     toast(`"${name}" updated`,'success');
@@ -2018,8 +2006,6 @@ async function saveStockItem(editId){
     D.Stores.forEach(store=>{
       D.StoreStock.push({storeId:store.id,itemId:newId,category,name,unit,min,qty:0});
     });
-    LS.set('StockTemplate',D.StockTemplate);
-    LS.set('StoreStock',D.StoreStock);
     // Optimistic UI — close immediately, sync in background
     closeModal();renderStockTable();
     toast(`"${name}" added to all stores`,'success');
@@ -2041,8 +2027,6 @@ async function deleteStockItem(id){
   D.StockTemplate=D.StockTemplate.filter(t=>t.id!==id);
   // Remove from StoreStock for all stores
   D.StoreStock=D.StoreStock.filter(s=>String(s.itemId)!==id);
-  LS.set('StockTemplate',D.StockTemplate);
-  LS.set('StoreStock',D.StoreStock);
   // Optimistic UI — update immediately, sync in background
   renderStockTable();
   toast(`"${tpl.name}" deleted from all stores`,'success');
@@ -2071,7 +2055,6 @@ async function moveTemplateItem(id,dir){
   const tmp=sameCat[pos].sortOrder;
   sameCat[pos].sortOrder=sameCat[swapIdx].sortOrder;
   sameCat[swapIdx].sortOrder=tmp;
-  LS.set('StockTemplate',D.StockTemplate);
   renderStockTable();
   if(API.mode==='cloud'){
     updateSyncStatus('syncing');
@@ -2116,7 +2099,6 @@ async function renderSuppliers(c){
       console.log('[TBMS] Direct Suppliers fetch:', r);
       if(r && Array.isArray(r.data) && r.data.length>0){
         D.Suppliers=r.data.map(row=>normalizeRow('Suppliers',row));
-        LS.set('Suppliers',D.Suppliers);
         console.log('[TBMS] Direct fetch got',D.Suppliers.length,'suppliers');
       }
     }catch(e){console.error('[TBMS] Direct Suppliers fetch error:',e);}
@@ -2155,7 +2137,6 @@ async function diagnoseSuppliersAPI(){
       diag.textContent+=`   First row: ${JSON.stringify(single.data[0])}\n`;
       // Auto-load if we got data
       D.Suppliers=single.data.map(r=>normalizeRow('Suppliers',r));
-      LS.set('Suppliers',D.Suppliers);
       renderSupplierTable();
       diag.textContent+=`\n✅ Loaded ${D.Suppliers.length} suppliers! Table updated.\n`;
     }
@@ -2317,7 +2298,6 @@ async function refreshCrData(){
   const r=await API.get('getAll');
   if(r&&r.data&&r.data.TimeChangeReq){
     D.TimeChangeReq=r.data.TimeChangeReq.map(r2=>normalizeRow('TimeChangeReq',r2));
-    LS.set('TimeChangeReq',D.TimeChangeReq);
   }
   filterChangeRequests();
   updateCrBadge();
@@ -2388,7 +2368,6 @@ async function reviewCr(id,status){
         if(att&&req.field){att[req.field]=req.requestedValue;}
       }
     }
-    LS.set('TimeChangeReq',D.TimeChangeReq);
     filterChangeRequests();
     updateCrBadge();
   }else{
@@ -2600,7 +2579,6 @@ function moveStockItem(itemId, direction){
   const tplB=D.StockTemplate.find(t=>String(t.id)===String(catItems[swapIdx].itemId));
   if(tplA&&tplB){
     const tmp=tplA.sortOrder;tplA.sortOrder=tplB.sortOrder;tplB.sortOrder=tmp;
-    LS.set('StockTemplate',D.StockTemplate);
     renderStockCountTable();
   }
 }
@@ -2745,14 +2723,12 @@ async function submitStockCount(){
         const ss=D.StoreStock.find(s=>String(s.storeId)===storeId&&String(s.itemId)===item.itemId);
         if(ss)ss.qty=item.qty;
       });
-      LS.set('StoreStock',D.StoreStock);
       // Add to local StockCount
       const week=getISOWeek(new Date(countDate));
       const ts=new Date().toISOString();
       items.forEach(item=>{
         D.StockCount.push({id:'sc'+Date.now()+Math.random().toString(36).substr(2,4),storeId,week,countDate,itemId:item.itemId,category:item.category,name:item.name,unit:item.unit,qty:item.qty,submittedBy:currentUser?.id||'',submittedAt:ts});
       });
-      LS.set('StockCount',D.StockCount);
       const store=D.Stores.find(s=>String(s.id)===storeId);
       toast(`Week ${week}: ${items.length} items saved for ${store?store.name:'store'}`,'success');
       navigate('stock-history');
@@ -3101,7 +3077,7 @@ async function updateApiUrl(){
 async function syncData(){showLoading('Syncing...');await loadAllData();hideLoading();renderPage(currentPage);toast('Data synced!','success');}
 async function resetData(){
   if(!confirm('Reset ALL data to defaults? This cannot be undone.'))return;
-  for(let sheet in DEFAULT_DATA){D[sheet]=DEFAULT_DATA[sheet];LS.set(sheet,D[sheet]);}
+  for(let sheet in DEFAULT_DATA){D[sheet]=DEFAULT_DATA[sheet];}
   if(API.mode==='cloud'){showLoading('Resetting cloud...');await API.post({action:'initData',sheets:DEFAULT_DATA});hideLoading();}
   toast('Data reset to defaults');navigate('dashboard');
 }

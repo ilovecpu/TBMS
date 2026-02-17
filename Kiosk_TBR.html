@@ -274,12 +274,31 @@ function showAction(){
   const now=new Date();const today=now.toISOString().split('T')[0];
   const todayAtt=attendance.filter(a=>String(a.staffId)===String(currentStaff.id)&&a.date===today);
   const openAtt=todayAtt.find(a=>a.clockIn&&!a.clockOut);
+  // Detect missed checkout from previous days
+  const missedAtt=attendance.find(a=>String(a.staffId)===String(currentStaff.id)&&a.date!==today&&a.clockIn&&!a.clockOut);
+  const dn=esc(currentStaff.nickName||currentStaff.name);
+  const initial=(currentStaff.nickName||currentStaff.name).charAt(0).toUpperCase();
+  let missedHtml='';
+  if(missedAtt&&!openAtt){
+    missedHtml=`<div style="background:#fff3e0;border:2px solid #ff9800;border-radius:14px;padding:16px;margin:12px 0 8px;text-align:left;width:100%">
+      <div style="font-size:18px;font-weight:700;color:#e65100;margin-bottom:8px;text-align:center"><i class="fas fa-exclamation-triangle"></i> Missed Clock Out!</div>
+      <div style="font-size:14px;color:#333;margin-bottom:6px"><i class="fas fa-calendar-day" style="color:#e65100;width:20px"></i> <strong>Date:</strong> ${missedAtt.date}</div>
+      <div style="font-size:14px;color:#333;margin-bottom:10px"><i class="fas fa-clock" style="color:#e65100;width:20px"></i> <strong>Clock In:</strong> ${missedAtt.clockIn} → <span style="color:#e53935;font-weight:700">No Clock Out</span></div>
+      <div style="background:#fff8e1;border-radius:8px;padding:10px;font-size:13px;color:#555;line-height:1.5">
+        <i class="fas fa-phone" style="color:#e65100"></i> <strong>Please contact your manager</strong> to confirm your clock-out time for this shift.
+      </div>
+      <div style="background:#fbe9e7;border-radius:8px;padding:10px;margin-top:8px;font-size:13px;color:#c62828;line-height:1.5;text-align:center;font-weight:600">
+        <i class="fas fa-bell"></i> Always remember to Clock In AND Clock Out!
+      </div>
+    </div>`;
+  }
   $('mainCard').innerHTML=`
     <div class="clock" id="clock">${now.toLocaleTimeString('en-GB')}</div>
     <div class="date">${now.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</div>
     <div class="pw-section">
-      <div class="avatar-lg">${(currentStaff.nickName||currentStaff.name).charAt(0).toUpperCase()}</div>
-      <h3>${esc(currentStaff.nickName||currentStaff.name)}</h3>
+      <div class="avatar-lg">${initial}</div>
+      <h3>${dn}</h3>
+      ${missedHtml}
       <div class="action-btns">
         ${openAtt?`<button class="action-btn out" onclick="checkMsgThenClock('out','${openAtt.id}')"><i class="fas fa-sign-out-alt"></i> Clock Out</button>`
         :`<button class="action-btn in" onclick="checkMsgThenClock('in','')"><i class="fas fa-sign-in-alt"></i> Clock In</button>`}

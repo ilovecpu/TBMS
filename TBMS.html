@@ -772,7 +772,7 @@ function renderDashboardContent() {
             let dur='-';
             if(cin){const[h,m]=cin.split(':').map(Number);const now=new Date();const mins=now.getHours()*60+now.getMinutes()-h*60-m;if(mins>=0){const hh=Math.floor(mins/60);const mm=mins%60;dur=hh+'h '+mm+'m';}}
             return`<div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;padding:3px 0;${sw.indexOf(a)<sw.length-1?'border-bottom:1px solid rgba(232,67,147,.1)':''}">
-              <span style="font-weight:500">${s?escHtml(s.name):a.staffId}</span>
+              <span style="font-weight:500">${s?escHtml(s.nickName||s.name):a.staffId}</span>
               <span style="color:var(--text-light);font-size:11px">${cin||'-'} ${dur!=='-'?'('+dur+')':''}</span>
             </div>`;
           }).join('')}

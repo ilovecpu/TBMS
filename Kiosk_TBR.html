@@ -374,6 +374,8 @@ async function doClockIn(photo){
   showLoad('Recording...');
   const r=await apiPost({action:'clockInPhoto',row:att,photo:photo||''});
   hideLoad();
+  if(r&&!r.error){if(r.row&&r.row.photoIn)att.photoIn=r.row.photoIn;attendance.push(att);showResult('in',att.clockIn);}
+  else{toast('Failed to save. Try again.','error');}
 }
 async function doClockOut(attId,photo){
   const att=attendance.find(a=>String(a.id)===String(attId));if(!att)return;
@@ -382,6 +384,7 @@ async function doClockOut(attId,photo){
   const r=await apiPost({action:'clockOutPhoto',row:att,photo:photo||''});
   hideLoad();
   if(r&&!r.error){showResult('out',att.clockOut);}
+  else{toast('Failed to save. Try again.','error');}
 }
 
 function showResult(type,time){

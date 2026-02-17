@@ -1517,16 +1517,12 @@ function viewPhoto(fileId,label){
   document.body.appendChild(modal);
 }
 function renderAttendanceDaily(){
-  $('attContent').innerHTML=`<div class="card"><div class="table-wrap"><table><thead><tr><th>Date</th><th>Staff</th><th>Store</th><th>Clock In</th><th>Photo</th><th>Clock Out</th><th>Photo</th><th>Hours</th><th>Source</th></tr></thead><tbody id="attBody"></tbody></table></div></div>`;
-  renderAttendanceTable();
-}
-function renderAttendanceTable(){
   let att=[...D.Attendance].filter(a=>hasStoreAccess(a.storeId)).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
   const storeF=$('attStore')?.value||'';
   const dateF=$('attDate')?.value||'';
   if(storeF)att=att.filter(a=>String(a.storeId)===storeF);
   if(dateF)att=att.filter(a=>a.date===dateF);
-  $('attBody').innerHTML=att.slice(0,100).map(a=>{
+  const rows=att.slice(0,100).map(a=>{
     const s=D.Staff.find(x=>String(x.id)===String(a.staffId));
     const store=D.Stores.find(x=>String(x.id)===String(a.storeId));
     const cin=parseTime(a.clockIn);
@@ -1549,6 +1545,11 @@ function renderAttendanceTable(){
     <td>${hrs}</td>
     <td>${srcBadge}</td></tr>`;
   }).join('');
+  $('attContent').innerHTML=`<div class="card"><div class="table-wrap"><table><thead><tr><th>Date</th><th>Staff</th><th>Store</th><th>Clock In</th><th>Photo</th><th>Clock Out</th><th>Photo</th><th>Hours</th><th>Source</th></tr></thead><tbody id="attBody">${rows}</tbody></table></div></div>`;
+}
+function renderAttendanceTable(){
+  if(!$('attBody'))return;
+  renderAttendanceDaily();
 }
 async function editAttTime(attId,field,value){
   const a=D.Attendance.find(x=>String(x.id)===String(attId));

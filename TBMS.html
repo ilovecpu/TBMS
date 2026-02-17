@@ -1362,6 +1362,7 @@ function printStockCount(){
 // ==================== ATTENDANCE ====================
 let attAutoRefresh=null;
 let attViewMode='daily'; // 'daily' or 'weekly'
+let payViewMode='summary'; // 'summary' or 'weekly'
 function parseTime(t) {
   if(t===null||t===undefined||t==='')return null;
   // Handle numbers directly (Google Sheets decimal time)
@@ -1674,12 +1675,20 @@ function renderPayroll(c) {
       <option value="15" ${rnd===15?'selected':''}>15 min</option>
       <option value="20" ${rnd===20?'selected':''}>20 min</option>
     </select></div>
+    <div style="display:inline-flex;border:2px solid var(--border);border-radius:8px;overflow:hidden;margin:0 4px">
+      <button id="payViewSummary" class="btn btn-sm" style="border:none;border-radius:0;font-size:12px;padding:6px 14px;background:var(--primary);color:#fff" onclick="payViewMode='summary';renderPayView()"><i class="fas fa-table"></i> Summary</button>
+      <button id="payViewWeekly" class="btn btn-sm" style="border:none;border-radius:0;font-size:12px;padding:6px 14px;background:#fff;color:var(--text)" onclick="payViewMode='weekly';renderPayView()"><i class="fas fa-calendar-week"></i> Weekly</button>
+    </div>
     <button class="btn btn-sm btn-primary" onclick="togglePayDetail()"><i class="fas fa-list-alt"></i> Detail View</button>
     <button class="btn btn-sm btn-success" onclick="exportPayroll()"><i class="fas fa-download"></i> Export CSV</button>
   </div>
-  <div class="card"><div class="table-wrap"><table><thead><tr><th>Staff</th><th>Store</th><th>Days</th><th>Total Hours</th><th>Rate</th><th>Total Pay</th></tr></thead><tbody id="payBody"></tbody><tfoot id="payFoot"></tfoot></table></div></div>
-  <div id="payDetailWrap" class="hidden"><div class="card"><h3 style="margin-bottom:12px"><i class="fas fa-clock"></i> Detailed Attendance (with rounding)</h3><div class="table-wrap"><table><thead><tr><th>Date</th><th>Staff</th><th>Store</th><th>Clock In</th><th>Rounded In</th><th>Clock Out</th><th>Rounded Out</th><th>Raw Hrs</th><th>Paid Hrs</th></tr></thead><tbody id="payDetailBody"></tbody></table></div></div></div>
-  <div id="staffDetailWrap" class="hidden" data-staff-id=""><div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><h3 style="margin:0"><i class="fas fa-user-clock"></i> <span id="staffDetailName"></span> — Hours Detail</h3><button class="btn btn-sm" onclick="$('staffDetailWrap').classList.add('hidden');$('staffDetailWrap').dataset.staffId=''" style="background:var(--border);color:var(--text)"><i class="fas fa-times"></i> Close</button></div><div id="staffDetailSummary" style="margin-bottom:10px"></div><div class="table-wrap"><table><thead><tr><th>Date</th><th>Store</th><th>Clock In</th><th>Rounded In</th><th>Clock Out</th><th>Rounded Out</th><th>Raw Hrs</th><th>Paid Hrs</th></tr></thead><tbody id="staffDetailBody"></tbody></table></div></div></div>`;
+  <div id="payMainContent"></div>`;
+  calcPayroll();
+}
+function renderPayView(){
+  const b1=$('payViewSummary'),b2=$('payViewWeekly');
+  if(b1)b1.style.cssText='border:none;border-radius:0;font-size:12px;padding:6px 14px;'+(payViewMode==='summary'?'background:var(--primary);color:#fff':'background:#fff;color:var(--text)');
+  if(b2)b2.style.cssText='border:none;border-radius:0;font-size:12px;padding:6px 14px;'+(payViewMode==='weekly'?'background:var(--primary);color:#fff':'background:#fff;color:var(--text)');
   calcPayroll();
 }
 function togglePayDetail(){
@@ -1712,14 +1721,101 @@ function calcPayroll() {
     const store=D.Stores.find(x=>String(x.id)===String(s.storeId));
     payrollData.push({id:s.id,name:s.name,nickName:s.nickName,store:store?store.name:s.storeId,storeId:s.storeId,days:att.length,hrs:hrs.toFixed(1),rate:Number(s.rate),pay:pay.toFixed(2),att});
   });
-  $('payBody').innerHTML=payrollData.map(r=>`<tr>
-    <td><a href="#" onclick="showStaffPayDetail('${r.id}');return false" style="color:var(--accent);font-weight:600;text-decoration:underline;cursor:pointer">${escHtml(r.name)}</a></td>
-    <td>${escHtml(r.store)}</td><td>${r.days}</td><td>${r.hrs}h</td><td>£${r.rate.toFixed(2)}</td><td><strong>£${r.pay}</strong></td></tr>`).join('');
-  $('payFoot').innerHTML=`<tr><td colspan="5" style="text-align:right;font-weight:700">Total</td><td><strong>£${grandTotal.toFixed(2)}</strong></td></tr>`;
-  if(!$('payDetailWrap')?.classList.contains('hidden'))renderPayDetail();
-  // Keep staff detail open if already showing
-  const sdw=$('staffDetailWrap');
-  if(sdw&&!sdw.classList.contains('hidden')){const sid=sdw.dataset.staffId;if(sid)showStaffPayDetail(sid);}
+  if(payViewMode==='weekly'){
+    renderPayrollWeekly(period,rnd,grandTotal);
+  }else{
+    $('payMainContent').innerHTML=`<div class="card"><div class="table-wrap"><table><thead><tr><th>Staff</th><th>Store</th><th>Days</th><th>Total Hours</th><th>Rate</th><th>Total Pay</th></tr></thead><tbody id="payBody"></tbody><tfoot id="payFoot"></tfoot></table></div></div>
+    <div id="payDetailWrap" class="hidden"><div class="card"><h3 style="margin-bottom:12px"><i class="fas fa-clock"></i> Detailed Attendance (with rounding)</h3><div class="table-wrap"><table><thead><tr><th>Date</th><th>Staff</th><th>Store</th><th>Clock In</th><th>Rounded In</th><th>Clock Out</th><th>Rounded Out</th><th>Raw Hrs</th><th>Paid Hrs</th></tr></thead><tbody id="payDetailBody"></tbody></table></div></div></div>
+    <div id="staffDetailWrap" class="hidden" data-staff-id=""><div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><h3 style="margin:0"><i class="fas fa-user-clock"></i> <span id="staffDetailName"></span> — Hours Detail</h3><button class="btn btn-sm" onclick="$('staffDetailWrap').classList.add('hidden');$('staffDetailWrap').dataset.staffId=''" style="background:var(--border);color:var(--text)"><i class="fas fa-times"></i> Close</button></div><div id="staffDetailSummary" style="margin-bottom:10px"></div><div class="table-wrap"><table><thead><tr><th>Date</th><th>Store</th><th>Clock In</th><th>Rounded In</th><th>Clock Out</th><th>Rounded Out</th><th>Raw Hrs</th><th>Paid Hrs</th></tr></thead><tbody id="staffDetailBody"></tbody></table></div></div></div>`;
+    $('payBody').innerHTML=payrollData.map(r=>`<tr>
+      <td><a href="#" onclick="showStaffPayDetail('${r.id}');return false" style="color:var(--accent);font-weight:600;text-decoration:underline;cursor:pointer">${escHtml(r.nickName||r.name)}</a></td>
+      <td>${escHtml(r.store)}</td><td>${r.days}</td><td>${r.hrs}h</td><td>£${r.rate.toFixed(2)}</td><td><strong>£${r.pay}</strong></td></tr>`).join('');
+    $('payFoot').innerHTML=`<tr><td colspan="5" style="text-align:right;font-weight:700">Total</td><td><strong>£${grandTotal.toFixed(2)}</strong></td></tr>`;
+    if(!$('payDetailWrap')?.classList.contains('hidden'))renderPayDetail();
+    const sdw=$('staffDetailWrap');
+    if(sdw&&!sdw.classList.contains('hidden')){const sid=sdw.dataset.staffId;if(sid)showStaffPayDetail(sid);}
+  }
+}
+let payWeekIdx=0;
+function renderPayrollWeekly(period,rnd,grandTotal){
+  // Build all weeks in the period
+  const weeks=[];
+  let cur=new Date(period.start);
+  const dow=cur.getDay()||7;
+  cur.setDate(cur.getDate()-(dow-1));
+  while(cur<=period.end){
+    const wk=[];
+    for(let i=0;i<7;i++){const dd=new Date(cur);dd.setDate(cur.getDate()+i);wk.push(dd.toISOString().split('T')[0]);}
+    weeks.push(wk);
+    cur.setDate(cur.getDate()+7);
+  }
+  if(payWeekIdx>=weeks.length)payWeekIdx=weeks.length-1;
+  if(payWeekIdx<0)payWeekIdx=0;
+  // Find which week contains "today" for initial selection
+  const todayStr=new Date().toISOString().split('T')[0];
+  if(payWeekIdx===0){
+    const ti=weeks.findIndex(wk=>todayStr>=wk[0]&&todayStr<=wk[6]);
+    if(ti>=0)payWeekIdx=ti;
+  }
+  const wk=weeks[payWeekIdx]||weeks[0];
+  if(!wk){$('payMainContent').innerHTML='<div class="card" style="padding:40px;text-align:center;color:var(--text-light)">No weeks in this period</div>';return;}
+  const dayLabels=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const weekLabel=wk[0].slice(5)+' ~ '+wk[6].slice(5);
+  let rows='';let weekGrandHrs=0;let weekGrandPay=0;
+  payrollData.sort((a,b)=>a.store.localeCompare(b.store)||(a.nickName||a.name).localeCompare(b.nickName||b.name)).forEach(st=>{
+    let weekHrs=0;let hasData=false;
+    const cells=wk.map(wd=>{
+      const rec=st.att.find(a=>a.date===wd);
+      if(!rec)return`<td style="text-align:center;color:#ddd;font-size:11px;padding:3px 2px">—</td>`;
+      hasData=true;
+      const t1=parseTime(rec.clockIn),t2=parseTime(rec.clockOut);
+      const rIn=rnd&&t1?roundTimeUp(t1,rnd):t1;
+      const rOut=rnd&&t2?roundTime(t2,rnd):t2;
+      let hrs=0;
+      if(rIn&&rOut){const[h1,m1]=rIn.split(':').map(Number);const[h2,m2]=rOut.split(':').map(Number);hrs=Math.max(0,(h2*60+m2-h1*60-m1)/60);}
+      weekHrs+=hrs;
+      const bg=hrs>=8?'#e8f5e9':hrs>0?'#fff8e1':'';
+      return`<td style="text-align:center;font-size:10px;padding:3px 2px;${bg?'background:'+bg:''}">
+        <div style="color:#2e7d32;font-weight:600">${rIn||t1||'-'}</div>
+        <div style="color:#c62828">${rOut||t2||(t1?'...':'-')}</div>
+        <div style="font-weight:700;color:var(--primary);font-size:11px">${hrs>0?hrs.toFixed(1):'—'}</div>
+      </td>`;
+    }).join('');
+    if(!hasData)return;
+    const weekPay=weekHrs*st.rate;
+    weekGrandHrs+=weekHrs;weekGrandPay+=weekPay;
+    rows+=`<tr>${cells}
+      <td style="text-align:center;font-weight:700;font-size:13px;color:var(--primary)">${weekHrs.toFixed(1)}</td>
+      <td style="text-align:right;font-size:12px;font-weight:600;color:#2e7d32">£${weekPay.toFixed(2)}</td>
+      <td style="font-weight:600;white-space:nowrap"><a href="#" onclick="payViewMode='summary';renderPayView();setTimeout(()=>showStaffPayDetail('${st.id}'),100);return false" style="color:var(--accent);text-decoration:underline">${escHtml(st.nickName||st.name)}</a></td>
+      <td style="font-size:11px;color:var(--text-light)">${escHtml(st.store)}</td>
+    </tr>`;
+  });
+  if(rows){
+    rows+=`<tr style="background:#f5f5f5;font-weight:700">
+      ${wk.map(()=>'<td></td>').join('')}
+      <td style="text-align:center;font-size:13px;color:var(--primary)">${weekGrandHrs.toFixed(1)}</td>
+      <td style="text-align:right;font-size:12px;color:#2e7d32">£${weekGrandPay.toFixed(2)}</td>
+      <td colspan="2" style="text-align:right;font-size:11px;color:var(--text-light)">Week Total</td>
+    </tr>`;
+  }else{
+    rows=`<tr><td colspan="11" style="text-align:center;padding:40px;color:var(--text-light)">No attendance data for this week</td></tr>`;
+  }
+  const weekHeaders=dayLabels.map((d,i)=>`<th style="text-align:center;min-width:62px"><div>${d}</div><div style="font-weight:400;font-size:9px;color:var(--text-light)">${wk[i].slice(5)}</div></th>`).join('');
+  $('payMainContent').innerHTML=`
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center">
+      <div style="padding:8px 16px;background:var(--pink-bg);border-radius:10px;font-size:13px;font-weight:600;color:var(--accent)">
+        <i class="fas fa-calendar-week"></i> Week ${payWeekIdx+1}/${weeks.length}: ${weekLabel}
+      </div>
+      <div style="display:flex;gap:4px">
+        <button class="btn btn-sm" style="padding:4px 12px" onclick="payWeekIdx--;calcPayroll()" ${payWeekIdx<=0?'disabled':''}><i class="fas fa-chevron-left"></i></button>
+        <button class="btn btn-sm" style="padding:4px 12px" onclick="payWeekIdx++;calcPayroll()" ${payWeekIdx>=weeks.length-1?'disabled':''}><i class="fas fa-chevron-right"></i></button>
+      </div>
+      <div style="padding:8px 16px;background:#e8f5e9;border-radius:10px;font-size:13px"><strong>${payrollData.length}</strong> staff</div>
+      <div style="padding:8px 16px;background:#e3f2fd;border-radius:10px;font-size:13px">Period: <strong>${payrollData.reduce((s,r)=>s+parseFloat(r.hrs),0).toFixed(1)}h</strong> · £${grandTotal.toFixed(2)}</div>
+      ${rnd?`<div style="padding:8px 16px;background:#fff3e0;border-radius:10px;font-size:13px">Rounding: <strong>${rnd}min</strong></div>`:''}
+    </div>
+    <div class="card"><div class="table-wrap"><table style="font-size:12px"><thead><tr>${weekHeaders}<th style="text-align:center">Hrs</th><th style="text-align:right">Pay</th><th>Staff</th><th>Store</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
 }
 function renderPayDetail(){
   const rnd=getTimeRounding();

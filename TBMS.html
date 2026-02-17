@@ -2815,30 +2815,47 @@ function renderSalesInput(c){
   const today=new Date();const weekNo=getISOWeek(today);
   const monday=new Date(today);monday.setDate(today.getDate()-(today.getDay()||7)+1);
   const weekStart=monday.toISOString().split('T')[0];
+  const storeColors={PAB:'#1b5e20',TBS:'#1565c0',TBR:'#6a1b9a',TBB:'#e65100'};
   c.innerHTML=`<div class="card" style="margin-bottom:16px">
-    <h3 style="margin-bottom:16px"><i class="fas fa-chart-bar" style="color:var(--accent);margin-right:8px"></i>Weekly Sales Input</h3>
-    <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end">
-      <div class="form-group" style="margin:0;flex:1;min-width:180px"><label>Store</label>
-        <select id="wsStore" onchange="renderSalesHistory()" style="width:100%;padding:10px;border:2px solid var(--border);border-radius:8px">${stores.map(s=>`<option value="${s.id}">${escHtml(s.name)}</option>`).join('')}</select></div>
+    <h3 style="margin-bottom:16px"><i class="fas fa-chart-bar" style="color:var(--accent);margin-right:8px"></i>Weekly Sales Input — Week ${String(weekNo).slice(-2)}</h3>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:16px">
       <div class="form-group" style="margin:0"><label>Week Start (Monday)</label>
         <input type="date" id="wsDate" value="${weekStart}" style="padding:10px;border:2px solid var(--border);border-radius:8px"></div>
-      <div class="form-group" style="margin:0"><label>Total Sales (£)</label>
-        <input type="number" id="wsSales" min="0" step="0.01" placeholder="0.00" style="padding:10px;border:2px solid var(--border);border-radius:8px;width:140px;font-size:16px;font-weight:700"></div>
-      <div class="form-group" style="margin:0;flex:1;min-width:140px"><label>Notes</label>
-        <input type="text" id="wsNotes" placeholder="e.g. Bank holiday week" style="width:100%;padding:10px;border:2px solid var(--border);border-radius:8px"></div>
-      <button class="btn btn-primary" id="wsSaveBtn" onclick="submitWeeklySales()" style="height:44px"><i class="fas fa-save"></i> Save</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+    ${stores.map(s=>{
+      const clr=storeColors[s.code]||'var(--primary)';
+      return `<div style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:#f8f9fa;border-radius:12px;border-left:4px solid ${clr}">
+        <div style="min-width:140px"><strong style="font-size:15px;color:${clr}">${escHtml(s.name)}</strong></div>
+        <div style="display:flex;align-items:center;gap:4px"><span style="font-size:18px;font-weight:700;color:#555">£</span>
+          <input type="number" min="0" step="0.01" placeholder="0.00" id="wsSales_${s.id}" style="padding:10px;border:2px solid var(--border);border-radius:8px;width:130px;font-size:16px;font-weight:700;text-align:right"></div>
+        <input type="text" placeholder="Notes..." id="wsNotes_${s.id}" style="flex:1;min-width:120px;padding:10px;border:2px solid var(--border);border-radius:8px;font-size:13px">
+        <button class="btn btn-primary btn-sm" onclick="submitWeeklySalesFor('${s.id}')" style="height:40px;white-space:nowrap"><i class="fas fa-save"></i> Save</button>
+      </div>`}).join('')}
     </div>
   </div>
   <div class="card">
-    <h3 style="margin-bottom:12px">Sales History</h3>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <h3>Sales History</h3>
+      <select id="wsHistStore" onchange="renderSalesHistory()" style="padding:8px 12px;border:2px solid var(--border);border-radius:8px;font-size:13px">
+        <option value="">All Stores</option>${stores.map(s=>`<option value="${s.id}">${escHtml(s.name)}</option>`).join('')}</select>
+    </div>
     <div class="table-wrap"><table><thead><tr>
       <th>Week</th><th>Week Start</th><th>Store</th><th>Total Sales</th><th>Notes</th><th>Submitted</th>
     </tr></thead><tbody id="wsBody"></tbody></table></div>
   </div>`;
+  // Pre-fill existing data for current week
+  stores.forEach(s=>{
+    const existing=D.WeeklySales.find(ws=>String(ws.storeId)===String(s.id)&&String(ws.week)===String(weekNo));
+    if(existing){
+      const salesEl=$('wsSales_'+s.id);if(salesEl)salesEl.value=existing.totalSales||'';
+      const notesEl=$('wsNotes_'+s.id);if(notesEl)notesEl.value=existing.notes||'';
+    }
+  });
   renderSalesHistory();
 }
 function renderSalesHistory(){
-  const storeId=$('wsStore')?.value||'';
+  const storeId=$('wsHistStore')?.value||'';
   let recs=D.WeeklySales.filter(ws=>hasStoreAccess(ws.storeId));
   if(storeId)recs=recs.filter(ws=>String(ws.storeId)===storeId);
   recs.sort((a,b)=>(b.week||0)-(a.week||0));
@@ -2854,25 +2871,21 @@ function renderSalesHistory(){
       <td style="font-size:12px">${user?escHtml(user.name):'—'}</td></tr>`;
   }).join(''):'<tr><td colspan="6" style="text-align:center;color:var(--text-light)">No sales data yet</td></tr>';
 }
-async function submitWeeklySales(){
-  const storeId=$('wsStore')?.value;
+async function submitWeeklySalesFor(storeId){
   const weekStart=$('wsDate')?.value;
-  const totalSales=parseFloat($('wsSales')?.value||0);
-  const notes=$('wsNotes')?.value||'';
-  if(!storeId){toast('Select a store','error');return;}
+  const totalSales=parseFloat($('wsSales_'+storeId)?.value||0);
+  const notes=$('wsNotes_'+storeId)?.value||'';
   if(!weekStart){toast('Select week start date','error');return;}
   if(totalSales<=0){toast('Enter sales amount','error');return;}
   const week=getISOWeek(new Date(weekStart));
   const id='ws_'+week+'_'+storeId;
+  const store=D.Stores.find(s=>String(s.id)===storeId);
   const row={id,storeId,week,weekStart,totalSales,notes,submittedBy:currentUser?.id||'',submittedAt:new Date().toISOString()};
-  const btn=$('wsSaveBtn');if(btn){btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin"></i>';}
   try{
     await saveRow('WeeklySales',row);
-    toast(`Week ${week} sales saved: £${totalSales.toFixed(2)}`,'success');
-    $('wsSales').value='';$('wsNotes').value='';
+    toast(`${store?store.name:storeId} — Week ${String(week).slice(-2)}: £${totalSales.toFixed(2)} saved`,'success');
     renderSalesHistory();
   }catch(e){toast('Error: '+e.message,'error');}
-  if(btn){btn.disabled=false;btn.innerHTML='<i class="fas fa-save"></i> Save';}
 }
 
 // ==================== USAGE ANALYTICS ====================

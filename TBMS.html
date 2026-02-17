@@ -1361,6 +1361,7 @@ function printStockCount(){
 
 // ==================== ATTENDANCE ====================
 let attAutoRefresh=null;
+let attViewMode='daily'; // 'daily' or 'weekly'
 function parseTime(t) {
   if(t===null||t===undefined||t==='')return null;
   // Handle numbers directly (Google Sheets decimal time)
@@ -1413,22 +1414,86 @@ async function refreshAttendance(){
       D.Attendance=r.data.Attendance.map(r=>normalizeRow('Attendance',r));
     }
   }
-  if(currentPage==='attendance')renderAttendanceTable();
+  if(currentPage==='attendance')switchAttView();
 }
 function renderAttendance(c) {
   const today=new Date().toISOString().split('T')[0];
   c.innerHTML=`<div class="filters">
-    <select id="attStore" onchange="renderAttendanceTable()"><option value="">All Stores</option>${getAccessibleStores().map(s=>`<option value="${s.id}">${s.name}</option>`).join('')}</select>
-    <input type="date" id="attDate" value="${today}" onchange="renderAttendanceTable()">
+    <select id="attStore" onchange="switchAttView()"><option value="">All Stores</option>${getAccessibleStores().map(s=>`<option value="${s.id}">${s.name}</option>`).join('')}</select>
+    <input type="date" id="attDate" value="${today}" onchange="switchAttView()">
+    <div style="display:inline-flex;border:2px solid var(--border);border-radius:8px;overflow:hidden;margin:0 4px">
+      <button id="attViewDaily" class="btn btn-sm" style="border:none;border-radius:0;font-size:12px;padding:6px 14px;${attViewMode==='daily'?'background:var(--primary);color:#fff':'background:#fff;color:var(--text)'}" onclick="attViewMode='daily';switchAttView()"><i class="fas fa-list"></i> Daily</button>
+      <button id="attViewWeekly" class="btn btn-sm" style="border:none;border-radius:0;font-size:12px;padding:6px 14px;${attViewMode==='weekly'?'background:var(--primary);color:#fff':'background:#fff;color:var(--text)'}" onclick="attViewMode='weekly';switchAttView()"><i class="fas fa-calendar-week"></i> Weekly</button>
+    </div>
     <button class="btn btn-sm btn-success" onclick="refreshAttendance()"><i class="fas fa-sync"></i> Refresh</button>
     <button class="btn btn-sm btn-primary" onclick="openManualAttPopup()"><i class="fas fa-plus"></i> Add Manual</button>
     <span style="font-size:12px;color:var(--text-light)">Auto-refresh: 30s</span>
   </div>
-  <div class="card"><div class="table-wrap"><table><thead><tr><th>Date</th><th>Staff</th><th>Store</th><th>Clock In</th><th>Photo</th><th>Clock Out</th><th>Photo</th><th>Hours</th><th>Source</th></tr></thead><tbody id="attBody"></tbody></table></div></div>`;
-  renderAttendanceTable();
-  // Auto-refresh every 30 seconds
+  <div id="attContent"></div>`;
+  switchAttView();
   if(attAutoRefresh)clearInterval(attAutoRefresh);
   attAutoRefresh=setInterval(refreshAttendance,30000);
+}
+function switchAttView(){
+  const btn1=$('attViewDaily'),btn2=$('attViewWeekly');
+  if(btn1)btn1.style.cssText='border:none;border-radius:0;font-size:12px;padding:6px 14px;'+(attViewMode==='daily'?'background:var(--primary);color:#fff':'background:#fff;color:var(--text)');
+  if(btn2)btn2.style.cssText='border:none;border-radius:0;font-size:12px;padding:6px 14px;'+(attViewMode==='weekly'?'background:var(--primary);color:#fff':'background:#fff;color:var(--text)');
+  if(attViewMode==='weekly')renderAttendanceWeekly();
+  else renderAttendanceDaily();
+}
+function getWeekRange(dateStr){
+  const d=new Date(dateStr+'T00:00:00');
+  const dow=d.getDay()||7;
+  const mon=new Date(d);mon.setDate(d.getDate()-(dow-1));
+  const sun=new Date(mon);sun.setDate(mon.getDate()+6);
+  const dates=[];
+  for(let i=0;i<7;i++){const dd=new Date(mon);dd.setDate(mon.getDate()+i);dates.push(dd.toISOString().split('T')[0]);}
+  return dates;
+}
+function renderAttendanceWeekly(){
+  const dateF=$('attDate')?.value||new Date().toISOString().split('T')[0];
+  const storeF=$('attStore')?.value||'';
+  const weekDates=getWeekRange(dateF);
+  const dayLabels=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const weekLabel=weekDates[0].slice(5)+' ~ '+weekDates[6].slice(5);
+  let att=[...D.Attendance].filter(a=>hasStoreAccess(a.storeId)&&weekDates.includes(a.date));
+  if(storeF)att=att.filter(a=>String(a.storeId)===storeF);
+  const staffIds=[...new Set(att.map(a=>a.staffId))];
+  const staffList=staffIds.map(sid=>{
+    const s=D.Staff.find(x=>String(x.id)===String(sid));
+    const store=D.Stores.find(x=>x.id===(s?s.storeId:''));
+    return{sid,name:s?(s.nickName||s.name):sid,storeName:store?store.name:'',records:att.filter(a=>String(a.staffId)===String(sid))};
+  }).sort((a,b)=>a.storeName.localeCompare(b.storeName)||a.name.localeCompare(b.name));
+  let rows='';
+  staffList.forEach(st=>{
+    let weekTotal=0;
+    rows+=`<tr><td style="font-weight:600;white-space:nowrap">${escHtml(st.name)}</td><td style="font-size:11px;color:var(--text-light)">${escHtml(st.storeName)}</td>`;
+    weekDates.forEach(wd=>{
+      const rec=st.records.find(a=>a.date===wd);
+      if(rec){
+        const cin=parseTime(rec.clockIn);
+        const cout=parseTime(rec.clockOut);
+        const hrs=calcHours(rec.clockIn,rec.clockOut);
+        weekTotal+=parseFloat(hrs)||0;
+        const hrsNum=parseFloat(hrs)||0;
+        const bg=hrsNum>=8?'#e8f5e9':hrsNum>0?'#fff8e1':'';
+        rows+=`<td style="text-align:center;font-size:11px;padding:4px 2px;${bg?'background:'+bg:''}">
+          <div style="color:#2e7d32;font-weight:600">${cin||'-'}</div>
+          <div style="color:#c62828">${cout||(cin?'...':'-')}</div>
+          <div style="font-weight:700;color:var(--primary);font-size:12px;margin-top:2px">${hrsNum>0?hrs:'—'}</div>
+        </td>`;
+      }else{
+        rows+=`<td style="text-align:center;color:#ccc;font-size:11px">—</td>`;
+      }
+    });
+    rows+=`<td style="text-align:center;font-weight:700;font-size:14px;color:var(--primary)">${weekTotal>0?weekTotal.toFixed(1):'—'}</td></tr>`;
+  });
+  if(!rows)rows='<tr><td colspan="10" style="text-align:center;color:var(--text-light);padding:40px">No attendance records for this week</td></tr>';
+  $('attContent').innerHTML=`<div class="card"><div style="padding:12px 16px;background:var(--pink-bg);border-bottom:1px solid var(--border);font-size:13px;font-weight:600;color:var(--accent)"><i class="fas fa-calendar-week"></i> Week: ${weekLabel}
+    <span style="margin-left:12px;font-weight:400;color:var(--text-light)">(${staffList.length} staff)</span>
+    <button class="btn btn-sm" style="margin-left:8px;padding:2px 10px;font-size:11px" onclick="document.getElementById('attDate').valueAsDate=new Date(new Date(document.getElementById('attDate').value+'T00:00:00').getTime()-7*86400000);switchAttView()"><i class="fas fa-chevron-left"></i></button>
+    <button class="btn btn-sm" style="padding:2px 10px;font-size:11px" onclick="document.getElementById('attDate').valueAsDate=new Date(new Date(document.getElementById('attDate').value+'T00:00:00').getTime()+7*86400000);switchAttView()"><i class="fas fa-chevron-right"></i></button>
+  </div><div class="table-wrap"><table style="font-size:13px"><thead><tr><th>Staff</th><th>Store</th>${weekDates.map((wd,i)=>`<th style="text-align:center;min-width:70px"><div>${dayLabels[i]}</div><div style="font-weight:400;font-size:10px;color:var(--text-light)">${wd.slice(5)}</div></th>`).join('')}<th style="text-align:center">Total</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
 }
 function photoThumb(fileId,label){
   if(!fileId)return'<span style="color:#ccc;font-size:11px">—</span>';
@@ -1450,6 +1515,10 @@ function viewPhoto(fileId,label){
       <button onclick="event.stopPropagation();this.closest('#photoViewerModal').remove()" style="padding:10px 24px;background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:8px;cursor:pointer;font-size:14px"><i class="fas fa-times"></i> Close</button>
     </div>`;
   document.body.appendChild(modal);
+}
+function renderAttendanceDaily(){
+  $('attContent').innerHTML=`<div class="card"><div class="table-wrap"><table><thead><tr><th>Date</th><th>Staff</th><th>Store</th><th>Clock In</th><th>Photo</th><th>Clock Out</th><th>Photo</th><th>Hours</th><th>Source</th></tr></thead><tbody id="attBody"></tbody></table></div></div>`;
+  renderAttendanceTable();
 }
 function renderAttendanceTable(){
   let att=[...D.Attendance].filter(a=>hasStoreAccess(a.storeId)).sort((a,b)=>(b.date||'').localeCompare(a.date||''));

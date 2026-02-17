@@ -1363,6 +1363,7 @@ function printStockCount(){
 let attAutoRefresh=null;
 let attViewMode='daily'; // 'daily' or 'weekly'
 let payViewMode='summary'; // 'summary' or 'weekly'
+let salesHistView='list'; // 'list' or 'calendar'
 function parseTime(t) {
   if(t===null||t===undefined||t==='')return null;
   // Handle numbers directly (Google Sheets decimal time)
@@ -2977,14 +2978,18 @@ function renderSalesInput(c){
     </div>
   </div>
   <div class="card">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:12px">
       <h3>Sales History</h3>
-      <select id="wsHistStore" onchange="renderSalesHistory()" style="padding:8px 12px;border:2px solid var(--border);border-radius:8px;font-size:13px">
-        <option value="">All Stores</option>${stores.map(s=>`<option value="${s.id}">${escHtml(s.name)}</option>`).join('')}</select>
+      <div style="display:flex;gap:8px;align-items:center">
+        <div style="display:inline-flex;border:2px solid var(--border);border-radius:8px;overflow:hidden">
+          <button id="shViewList" class="btn btn-sm" style="border:none;border-radius:0;font-size:12px;padding:6px 14px;background:var(--primary);color:#fff" onclick="salesHistView='list';renderSalesHistView()"><i class="fas fa-list"></i> List</button>
+          <button id="shViewCal" class="btn btn-sm" style="border:none;border-radius:0;font-size:12px;padding:6px 14px;background:#fff;color:var(--text)" onclick="salesHistView='calendar';renderSalesHistView()"><i class="fas fa-calendar-alt"></i> Calendar</button>
+        </div>
+        <select id="wsHistStore" onchange="renderSalesHistView()" style="padding:8px 12px;border:2px solid var(--border);border-radius:8px;font-size:13px">
+          <option value="">All Stores</option>${stores.map(s=>`<option value="${s.id}">${escHtml(s.name)}</option>`).join('')}</select>
+      </div>
     </div>
-    <div class="table-wrap"><table><thead><tr>
-      <th>Week</th><th>Week Start</th><th>Store</th><th>Total Sales</th><th>Notes</th><th>Submitted</th>
-    </tr></thead><tbody id="wsBody"></tbody></table></div>
+    <div id="wsHistContent"></div>
   </div>`;
   // Pre-fill existing data for current week
   stores.forEach(s=>{
@@ -2994,14 +2999,22 @@ function renderSalesInput(c){
       const notesEl=$('wsNotes_'+s.id);if(notesEl)notesEl.value=existing.notes||'';
     }
   });
-  renderSalesHistory();
+  renderSalesHistView();
+}
+function renderSalesHistView(){
+  const btn1=$('shViewList'),btn2=$('shViewCal');
+  if(btn1)btn1.style.cssText='border:none;border-radius:0;font-size:12px;padding:6px 14px;'+(salesHistView==='list'?'background:var(--primary);color:#fff':'background:#fff;color:var(--text)');
+  if(btn2)btn2.style.cssText='border:none;border-radius:0;font-size:12px;padding:6px 14px;'+(salesHistView==='calendar'?'background:var(--primary);color:#fff':'background:#fff;color:var(--text)');
+  if(salesHistView==='calendar')renderSalesCalendar();
+  else renderSalesHistory();
 }
 function renderSalesHistory(){
   const storeId=$('wsHistStore')?.value||'';
   let recs=D.WeeklySales.filter(ws=>hasStoreAccess(ws.storeId));
   if(storeId)recs=recs.filter(ws=>String(ws.storeId)===storeId);
   recs.sort((a,b)=>(b.week||0)-(a.week||0));
-  $('wsBody').innerHTML=recs.length?recs.slice(0,52).map(ws=>{
+  const el=$('wsHistContent');if(!el)return;
+  el.innerHTML=recs.length?`<table class="data-table"><thead><tr><th>Week</th><th>Start</th><th>Store</th><th>Sales</th><th>Notes</th><th>By</th></tr></thead><tbody>`+recs.slice(0,52).map(ws=>{
     const store=D.Stores.find(s=>String(s.id)===String(ws.storeId));
     const user=D.Users.find(u=>String(u.id)===String(ws.submittedBy));
     return`<tr>
@@ -3011,7 +3024,115 @@ function renderSalesHistory(){
       <td style="font-size:16px;font-weight:700;color:var(--success)">£${Number(ws.totalSales).toLocaleString('en-GB',{minimumFractionDigits:2})}</td>
       <td style="font-size:12px;color:var(--text-light)">${ws.notes?escHtml(ws.notes):'—'}</td>
       <td style="font-size:12px">${user?escHtml(user.name):'—'}</td></tr>`;
-  }).join(''):'<tr><td colspan="6" style="text-align:center;color:var(--text-light)">No sales data yet</td></tr>';
+  }).join('')+`</tbody></table>`:'<div style="text-align:center;color:var(--text-light);padding:40px">No sales data yet</div>';
+}
+let salesCalYear=new Date().getFullYear();
+function renderSalesCalendar(){
+  const el=$('wsHistContent');if(!el)return;
+  const storeId=$('wsHistStore')?.value||'';
+  const stores=getAccessibleStores().filter(s=>!storeId||String(s.id)===storeId);
+  const storeColors={PAB:'#1b5e20',TBS:'#1565c0',TBR:'#6a1b9a',TBB:'#e65100'};
+  let recs=D.WeeklySales.filter(ws=>hasStoreAccess(ws.storeId));
+  if(storeId)recs=recs.filter(ws=>String(ws.storeId)===storeId);
+  // Filter by selected year
+  recs=recs.filter(ws=>{
+    const wk=String(ws.week);
+    if(wk.length>=6)return wk.slice(0,4)===String(salesCalYear);
+    const ws2=ws.weekStart;if(ws2)return ws2.startsWith(String(salesCalYear));
+    return false;
+  });
+  // Build week map: weekNum -> {storeId: totalSales}
+  const weekMap={};
+  recs.forEach(ws=>{
+    const wk=String(ws.week).slice(-2);
+    if(!weekMap[wk])weekMap[wk]={};
+    weekMap[wk][ws.storeId]=ws;
+  });
+  // Get all weeks 1-52
+  const weeks=[];
+  for(let w=1;w<=52;w++)weeks.push(String(w).padStart(2,'0'));
+  // Helper: get Monday of ISO week
+  function getMonday(yr,wk){
+    const jan4=new Date(yr,0,4);
+    const dow=jan4.getDay()||7;
+    const mon=new Date(jan4);mon.setDate(jan4.getDate()-(dow-1)+(wk-1)*7);
+    return mon;
+  }
+  // Build calendar grid by month
+  let html=`<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+    <button class="btn btn-sm" onclick="salesCalYear--;renderSalesCalendar()" style="padding:6px 12px">◀</button>
+    <span style="font-size:20px;font-weight:700">${salesCalYear}</span>
+    <button class="btn btn-sm" onclick="salesCalYear++;renderSalesCalendar()" style="padding:6px 12px">▶</button>
+  </div>`;
+  // Yearly total
+  let yearTotal=0;
+  recs.forEach(ws=>yearTotal+=Number(ws.totalSales)||0);
+  html+=`<div style="margin-bottom:16px;padding:12px 16px;background:linear-gradient(135deg,#111,#333);color:#fff;border-radius:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+    <span style="font-size:14px;font-weight:600">${salesCalYear} Total Sales</span>
+    <span style="font-size:22px;font-weight:800">£${yearTotal.toLocaleString('en-GB',{minimumFractionDigits:2})}</span>
+  </div>`;
+  // Table with months as groups
+  html+=`<div style="overflow-x:auto"><table class="data-table" style="font-size:13px"><thead><tr>
+    <th style="width:60px">Week</th><th style="width:90px">Date</th>`;
+  stores.forEach(s=>{
+    const clr=storeColors[s.code]||'var(--primary)';
+    html+=`<th style="color:${clr}">${escHtml(s.name)}</th>`;
+  });
+  html+=`<th style="font-weight:800">Total</th></tr></thead><tbody>`;
+  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  let lastMonth=-1;
+  let monthTotal=0;
+  let monthStoreTotals={};
+  stores.forEach(s=>monthStoreTotals[s.id]=0);
+  weeks.forEach((wk,idx)=>{
+    const mon=getMonday(salesCalYear,parseInt(wk));
+    const curMonth=mon.getMonth();
+    // Month separator
+    if(curMonth!==lastMonth){
+      if(lastMonth!==-1){
+        // Print month total row
+        html+=`<tr style="background:#f0f0f0;font-weight:700"><td colspan="2" style="text-align:right;font-size:12px">${months[lastMonth]} Total</td>`;
+        stores.forEach(s=>{
+          const v=monthStoreTotals[s.id];
+          html+=`<td style="color:${v?'var(--success)':'#ccc'}">${v?'£'+v.toLocaleString('en-GB',{minimumFractionDigits:2}):'—'}</td>`;
+        });
+        html+=`<td style="font-size:15px;font-weight:800;color:var(--success)">£${monthTotal.toLocaleString('en-GB',{minimumFractionDigits:2})}</td></tr>`;
+        html+=`<tr><td colspan="${stores.length+3}" style="padding:2px;background:var(--border)"></td></tr>`;
+      }
+      lastMonth=curMonth;
+      monthTotal=0;
+      stores.forEach(s=>monthStoreTotals[s.id]=0);
+    }
+    const dateStr=mon.toISOString().split('T')[0];
+    const data=weekMap[wk]||{};
+    let weekTotal=0;
+    let hasData=false;
+    stores.forEach(s=>{if(data[s.id])hasData=true;});
+    html+=`<tr style="${hasData?'':'opacity:0.5'}">
+      <td style="font-weight:700;font-size:12px">W${wk}</td>
+      <td style="font-size:12px;white-space:nowrap">${dateStr.slice(5)}</td>`;
+    stores.forEach(s=>{
+      const ws=data[s.id];
+      const val=ws?Number(ws.totalSales):0;
+      weekTotal+=val;
+      monthTotal+=val;
+      monthStoreTotals[s.id]+=val;
+      const clr=storeColors[s.code]||'var(--primary)';
+      html+=`<td style="font-weight:${val?'700':'400'};color:${val?clr:'#ddd'};font-size:${val?'14px':'12px'}">${val?'£'+val.toLocaleString('en-GB',{minimumFractionDigits:2}):'—'}</td>`;
+    });
+    html+=`<td style="font-weight:800;color:${weekTotal?'var(--success)':'#ddd'};font-size:${weekTotal?'14px':'12px'}">${weekTotal?'£'+weekTotal.toLocaleString('en-GB',{minimumFractionDigits:2}):'—'}</td></tr>`;
+  });
+  // Last month total
+  if(lastMonth!==-1){
+    html+=`<tr style="background:#f0f0f0;font-weight:700"><td colspan="2" style="text-align:right;font-size:12px">${months[lastMonth]} Total</td>`;
+    stores.forEach(s=>{
+      const v=monthStoreTotals[s.id];
+      html+=`<td style="color:${v?'var(--success)':'#ccc'}">${v?'£'+v.toLocaleString('en-GB',{minimumFractionDigits:2}):'—'}</td>`;
+    });
+    html+=`<td style="font-size:15px;font-weight:800;color:var(--success)">£${monthTotal.toLocaleString('en-GB',{minimumFractionDigits:2})}</td></tr>`;
+  }
+  html+=`</tbody></table></div>`;
+  el.innerHTML=html;
 }
 async function submitWeeklySalesFor(storeId){
   const weekStart=$('wsDate')?.value;
@@ -3027,7 +3148,7 @@ async function submitWeeklySalesFor(storeId){
     await saveRow('WeeklySales',row);
     toast(`${store?store.name:storeId} — Week ${String(week).slice(-2)}: £${totalSales.toFixed(2)} saved`,'success');
     fillSalesForDate();
-    renderSalesHistory();
+    renderSalesHistView();
   }catch(e){toast('Error: '+e.message,'error');}
 }
 function fillSalesForDate(){
@@ -3046,7 +3167,6 @@ function fillSalesForDate(){
     if(notesEl)notesEl.value=existing?existing.notes||'':'';
   });
 }
-let salesCalYear=new Date().getFullYear();
 function openStoreSalesModal(storeId,year){
   salesCalYear=year||new Date().getFullYear();
   const store=D.Stores.find(s=>String(s.id)===storeId);

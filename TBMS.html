@@ -2820,13 +2820,13 @@ function renderSalesInput(c){
     <h3 style="margin-bottom:16px"><i class="fas fa-chart-bar" style="color:var(--accent);margin-right:8px"></i>Weekly Sales Input — Week ${String(weekNo).slice(-2)}</h3>
     <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:16px">
       <div class="form-group" style="margin:0"><label>Week Start (Monday)</label>
-        <input type="date" id="wsDate" value="${weekStart}" style="padding:10px;border:2px solid var(--border);border-radius:8px"></div>
+        <input type="date" id="wsDate" value="${weekStart}" onchange="fillSalesForDate()" style="padding:10px;border:2px solid var(--border);border-radius:8px"></div>
     </div>
     <div style="display:flex;flex-direction:column;gap:12px">
     ${stores.map(s=>{
       const clr=storeColors[s.code]||'var(--primary)';
       return `<div style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:#f8f9fa;border-radius:12px;border-left:4px solid ${clr}">
-        <div style="min-width:140px"><strong style="font-size:15px;color:${clr}">${escHtml(s.name)}</strong></div>
+        <div style="min-width:140px"><strong style="font-size:15px;color:${clr};cursor:pointer;text-decoration:underline;text-decoration-style:dotted" onclick="openStoreSalesModal('${s.id}')">${escHtml(s.name)}</strong></div>
         <div style="display:flex;align-items:center;gap:4px"><span style="font-size:18px;font-weight:700;color:#555">£</span>
           <input type="number" min="0" step="0.01" placeholder="0.00" id="wsSales_${s.id}" style="padding:10px;border:2px solid var(--border);border-radius:8px;width:130px;font-size:16px;font-weight:700;text-align:right"></div>
         <input type="text" placeholder="Notes..." id="wsNotes_${s.id}" style="flex:1;min-width:120px;padding:10px;border:2px solid var(--border);border-radius:8px;font-size:13px">
@@ -2884,8 +2884,71 @@ async function submitWeeklySalesFor(storeId){
   try{
     await saveRow('WeeklySales',row);
     toast(`${store?store.name:storeId} — Week ${String(week).slice(-2)}: £${totalSales.toFixed(2)} saved`,'success');
+    fillSalesForDate();
     renderSalesHistory();
   }catch(e){toast('Error: '+e.message,'error');}
+}
+function fillSalesForDate(){
+  const dateVal=$('wsDate')?.value;
+  if(!dateVal)return;
+  const week=getISOWeek(new Date(dateVal));
+  // Update header week number
+  const h3=document.querySelector('#content .card h3');
+  if(h3&&h3.textContent.includes('Weekly Sales Input'))h3.innerHTML=`<i class="fas fa-chart-bar" style="color:var(--accent);margin-right:8px"></i>Weekly Sales Input — Week ${String(week).slice(-2)}`;
+  const stores=getAccessibleStores();
+  stores.forEach(s=>{
+    const existing=D.WeeklySales.find(ws=>String(ws.storeId)===String(s.id)&&String(ws.week)===String(week));
+    const salesEl=$('wsSales_'+s.id);
+    const notesEl=$('wsNotes_'+s.id);
+    if(salesEl)salesEl.value=existing?existing.totalSales:'';
+    if(notesEl)notesEl.value=existing?existing.notes||'':'';
+  });
+}
+function openStoreSalesModal(storeId){
+  const store=D.Stores.find(s=>String(s.id)===storeId);
+  const storeName=store?store.name:storeId;
+  const storeColors={PAB:'#1b5e20',TBS:'#1565c0',TBR:'#6a1b9a',TBB:'#e65100'};
+  const clr=storeColors[store?.code]||'var(--primary)';
+  const recs=D.WeeklySales.filter(ws=>String(ws.storeId)===storeId).sort((a,b)=>(a.weekStart||'').localeCompare(b.weekStart||''));
+  if(recs.length===0){toast('No sales data for '+storeName,'info');return;}
+  // Group by month
+  const months={};
+  recs.forEach(ws=>{
+    const d=ws.weekStart||'';
+    const mKey=d.slice(0,7);// YYYY-MM
+    if(!months[mKey])months[mKey]={total:0,weeks:[],count:0};
+    months[mKey].total+=Number(ws.totalSales)||0;
+    months[mKey].count++;
+    months[mKey].weeks.push(ws);
+  });
+  const sortedMonths=Object.keys(months).sort().reverse();
+  const grandTotal=recs.reduce((s,ws)=>s+(Number(ws.totalSales)||0),0);
+  let body=`<div style="text-align:center;margin-bottom:16px">
+    <div style="font-size:28px;font-weight:800;color:${clr}">£${grandTotal.toLocaleString('en-GB',{minimumFractionDigits:2})}</div>
+    <div style="font-size:12px;color:var(--text-light)">Total from ${recs.length} weeks</div>
+  </div>
+  <div style="max-height:400px;overflow-y:auto">`;
+  sortedMonths.forEach(mKey=>{
+    const m=months[mKey];
+    const [y,mo]=mKey.split('-');
+    const mName=new Date(y,mo-1).toLocaleString('en-GB',{month:'long',year:'numeric'});
+    body+=`<div style="margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:${clr}11;border-radius:10px;border-left:4px solid ${clr}">
+        <strong style="color:${clr}">${mName}</strong>
+        <div style="text-align:right"><div style="font-size:16px;font-weight:700">£${m.total.toLocaleString('en-GB',{minimumFractionDigits:2})}</div>
+          <div style="font-size:11px;color:var(--text-light)">${m.count} week${m.count>1?'s':''} · avg £${(m.total/m.count).toLocaleString('en-GB',{minimumFractionDigits:2})}</div></div>
+      </div>
+      <div style="padding:4px 14px">`;
+    m.weeks.sort((a,b)=>(a.weekStart||'').localeCompare(b.weekStart||'')).forEach(ws=>{
+      body+=`<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:13px;border-bottom:1px solid #f0f0f0">
+        <span style="color:var(--text-light)">W${String(ws.week).slice(-2)} · ${ws.weekStart||''}</span>
+        <span style="font-weight:600">£${Number(ws.totalSales).toLocaleString('en-GB',{minimumFractionDigits:2})}</span>
+      </div>`;
+    });
+    body+=`</div></div>`;
+  });
+  body+=`</div>`;
+  openModal(`<span style="color:${clr}"><i class="fas fa-chart-line" style="margin-right:8px"></i>${escHtml(storeName)}</span> — Monthly Sales`,body,`<button class="btn btn-outline" onclick="closeModal()">Close</button>`,'max-width:500px');
 }
 
 // ==================== USAGE ANALYTICS ====================

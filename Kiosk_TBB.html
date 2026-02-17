@@ -123,7 +123,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:linear-gradient(135deg,#e6
 <div class="status-bar"><span class="status-dot" id="statusDot"></span><span id="statusText">Connecting...</span></div>
 <script>
 const STORE_ID='TBB',STORE_NAME='The Bap Bristol';
-const DEFAULT_API='https://script.google.com/macros/s/AKfycbxsWPNd9HOzsKgxIR0keF95morrScrcNFoIx_ZVkH0T3fgh9kNLHA8Simx3mpDSzB-X/exec';
+const DEFAULT_API='https://script.google.com/macros/s/AKfycbwSOMl-XHmrkRxS-7RJlWjoo1cKu0SK5fTEMRMO9mNHM4WqIJ3T8GofnRXtZOtX2ci9/exec';
 const API_URL=(function(){try{const c=JSON.parse(localStorage.getItem('tbms_config'));return(c&&c.apiUrl)?c.apiUrl:DEFAULT_API;}catch(e){return DEFAULT_API;}})();
 const $=id=>document.getElementById(id);
 function toast(msg,type='info'){const t=document.createElement('div');t.className='toast '+type;t.innerHTML='<i class="fas fa-'+(type==='error'?'exclamation-circle':type==='success'?'check-circle':'info-circle')+'"></i>'+msg;$('toastBox').appendChild(t);setTimeout(()=>t.remove(),3000);}
@@ -374,8 +374,9 @@ async function doClockIn(photo){
   showLoad('Recording...');
   const r=await apiPost({action:'clockInPhoto',row:att,photo:photo||''});
   hideLoad();
-  if(r&&!r.error){if(r.row&&r.row.photoIn)att.photoIn=r.row.photoIn;attendance.push(att);showResult('in',att.clockIn);}
-  else{toast('Failed to save. Try again.','error');}
+  console.log('[DEBUG] clockIn response:',JSON.stringify(r));
+  if(r&&!r.error){if(r.row&&r.row.photoIn)att.photoIn=r.row.photoIn;console.log('[DEBUG] att.photoIn after clockIn:',att.photoIn);attendance.push(att);showResult('in',att.clockIn);}
+  else{console.log('[DEBUG] clockIn FAILED:',JSON.stringify(r));toast('Failed to save. Try again.','error');}
 }
 async function doClockOut(attId,photo){
   const att=attendance.find(a=>String(a.id)===String(attId));if(!att)return;
@@ -383,8 +384,10 @@ async function doClockOut(attId,photo){
   showLoad('Recording...');
   const r=await apiPost({action:'clockOutPhoto',row:att,photo:photo||''});
   hideLoad();
+  console.log('[DEBUG] clockOut response:',JSON.stringify(r));
+  console.log('[DEBUG] att sent to server:',JSON.stringify({id:att.id,photoIn:att.photoIn,photoOut:att.photoOut,clockOut:att.clockOut}));
   if(r&&!r.error){showResult('out',att.clockOut);}
-  else{toast('Failed to save. Try again.','error');}
+  else{console.log('[DEBUG] clockOut FAILED:',JSON.stringify(r));toast('Failed to save. Try again.','error');}
 }
 
 function showResult(type,time){
@@ -435,6 +438,5 @@ if(!window.matchMedia('(display-mode: standalone)').matches&&!window.matchMedia(
 
 init();
 </script>
-<div style="text-align:center;padding:12px 0 8px;font-size:11px;color:#aaa;letter-spacing:.5px">&copy; 2026 The Bap. All rights reserved. &middot; Programmed by DJ Kim</div>
 </body>
 </html>

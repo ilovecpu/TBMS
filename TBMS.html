@@ -488,7 +488,7 @@ const FIELD_SCHEMA = {
   WeeklySales:['id','storeId','week','weekStart','totalSales','notes','submittedBy','submittedAt'],
   StaffMessages:['id','storeId','staffId','type','message','active','createdBy','createdAt'],
   EditLog:['id','attendanceId','staffId','storeId','date','fieldChanged','oldValue','newValue','editTimestamp','kioskVersion'],
-  TimeChangeReq:['id','attendanceId','staffId','storeId','date','field','currentValue','requestedValue','reason','status','kioskVersion','createdAt','reviewedBy','reviewedAt']
+  TimeChangeReq:['id','attendanceId','staffId','storeId','date','field','currentValue','requestedValue','reason','status','kioskVersion','createdAt','reviewedBy','reviewedAt','acknowledgedAt']
 };
 // Normalize row keys: "Nick Name" → "nickName", "Left Date" → "leftDate"
 function normalizeRow(sheetName, row) {
@@ -510,7 +510,7 @@ const LS = {
   set(k, v) { localStorage.setItem('tbms_'+k, JSON.stringify(v)); },
   getConfig() { return this.get('config') || {}; }
 };
-const CLOUD_URL = 'https://script.google.com/macros/s/AKfycbzGl1ZQaXCOo1U1j9FDEtRiakCJ6yxdyLiECNSfJap9sdwEYhs9uCtReLchU6NqEUvd/exec';
+const CLOUD_URL = 'https://script.google.com/macros/s/AKfycbwYNemQh1JWIBWUQhGPSCEJBf0zKzXrn9yF3BEBR5ENNQeSVCvn_7khdm9syG0l9gns/exec';
 const API = {
   url: CLOUD_URL, mode: 'cloud',
   async get(action, params={}) {

@@ -217,7 +217,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
 
 <script>
 const STORE_ID='TBR',STORE_NAME='The Bap Reading';
-const DEFAULT_API='https://script.google.com/macros/s/AKfycbzGl1ZQaXCOo1U1j9FDEtRiakCJ6yxdyLiECNSfJap9sdwEYhs9uCtReLchU6NqEUvd/exec';
+const DEFAULT_API='https://script.google.com/macros/s/AKfycbwYNemQh1JWIBWUQhGPSCEJBf0zKzXrn9yF3BEBR5ENNQeSVCvn_7khdm9syG0l9gns/exec';
 const API_URL=(function(){try{const c=JSON.parse(localStorage.getItem('tbms_config'));return(c&&c.apiUrl)?c.apiUrl:DEFAULT_API;}catch(e){return DEFAULT_API;}})();
 const $=id=>document.getElementById(id);
 function toast(msg,type='info'){const t=document.createElement('div');t.className='toast '+type;t.innerHTML='<i class="fas fa-'+(type==='error'?'exclamation-circle':type==='success'?'check-circle':'info-circle')+'"></i> '+msg;$('toastBox').appendChild(t);setTimeout(()=>t.remove(),3000);}
@@ -359,20 +359,16 @@ function doLogout(){
 }
 
 // ===== CHANGE REQUESTS DISPLAY =====
-function getAckedCrIds(){
-  try{return JSON.parse(localStorage.getItem('tbms_cr_acked_'+STORE_ID)||'[]');}catch(e){return [];}
-}
 function ackCr(id){
-  const acked=getAckedCrIds();
-  if(!acked.includes(id))acked.push(id);
-  localStorage.setItem('tbms_cr_acked_'+STORE_ID,JSON.stringify(acked));
+  const req=timeChangeReqs.find(r=>r.id===id);
+  if(req)req.acknowledgedAt=new Date().toISOString();
   renderChangeRequests();
+  apiPost({action:'ackTimeReq',id:id});
 }
 function renderChangeRequests(){
   if(!currentStaff){$('crArea').innerHTML='';return;}
-  const acked=getAckedCrIds();
   const myReqs=timeChangeReqs.filter(r=>String(r.staffId)===String(currentStaff.id)&&String(r.storeId)===STORE_ID)
-    .filter(r=>r.status==='pending'||!acked.includes(r.id))
+    .filter(r=>r.status==='pending'||!r.acknowledgedAt)
     .sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''));
   if(myReqs.length===0){$('crArea').innerHTML='';return;}
   const pendCount=myReqs.filter(r=>r.status==='pending').length;
@@ -539,9 +535,9 @@ function updateRowDisplay(dateStr){
   const hasChanges=dateStr<todayStr&&(inVal!==(orig.clockIn||'')||outVal!==(orig.clockOut||''));
   if(hrEl){
     if(hasChanges){
-      hrEl.innerHTML=`<div style="display:flex;flex-direction:column;align-items:center;gap:2px">
-        <button onclick="submitDateChange('${dateStr}')" style="padding:3px 8px;border:none;border-radius:6px;background:#e65100;color:#fff;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap"><i class="fas fa-paper-plane"></i> Submit</button>
-        <button onclick="cancelDateChange('${dateStr}')" style="padding:2px 6px;border:1px solid #ccc;border-radius:4px;background:#fff;color:#888;font-size:9px;cursor:pointer;white-space:nowrap">Cancel</button>
+      hrEl.innerHTML=`<div style="display:flex;flex-direction:row;align-items:center;gap:4px;justify-content:center">
+        <button onclick="submitDateChange('${dateStr}')" style="padding:6px 10px;border:none;border-radius:8px;background:#e65100;color:#fff;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap"><i class="fas fa-paper-plane"></i> Submit</button>
+        <button onclick="cancelDateChange('${dateStr}')" style="padding:5px 10px;border:1px solid #ccc;border-radius:8px;background:#fff;color:#666;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap">Cancel</button>
       </div>`;
     }else{
       hrEl.textContent=hrs>0?hrs.toFixed(1):'—';

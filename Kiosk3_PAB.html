@@ -527,24 +527,53 @@ function askReason(count){
     setTimeout(()=>ov.querySelector('#crReasonInput').focus(),100);
   });
 }
+function setSaveBtnsDisabled(disabled){
+  document.querySelectorAll('.btn-save, .btn-save-top').forEach(b=>{b.disabled=disabled;b.style.opacity=disabled?'0.5':'1';b.style.pointerEvents=disabled?'none':'auto';});
+}
 async function saveAll(){
   if(!currentStaff)return;
+  const now=new Date();
+  const todayStr=fmtDate(now);
+  const nowH=now.getHours(),nowM=now.getMinutes();
+  // --- Future time validation ---
   const dates=getPeriodDates();
+  for(const d of dates){
+    const dateStr=fmtDate(d);
+    const inVal=getTimeVal('in',dateStr);
+    const outVal=getTimeVal('out',dateStr);
+    if(!inVal&&!outVal)continue;
+    if(dateStr>todayStr){
+      if(inVal||outVal){toast('미래 날짜('+dateStr+')에는 시간을 입력할 수 없습니다','error');return;}
+    }
+    if(dateStr===todayStr){
+      if(inVal){const[ih,im]=inVal.split(':').map(Number);if(ih>nowH||(ih===nowH&&im>nowM)){toast('현재 시간 이후의 Clock In은 입력할 수 없습니다 ('+inVal+')','error');return;}}
+      if(outVal){const[oh,om]=outVal.split(':').map(Number);if(oh>nowH||(oh===nowH&&om>nowM)){toast('현재 시간 이후의 Clock Out은 입력할 수 없습니다 ('+outVal+')','error');return;}}
+    }
+  }
+  // --- Disable Save buttons ---
+  setSaveBtnsDisabled(true);
+  try{
   const rows=[];
   const editLogs=[];
   const changeReqs=[];
-  const todayStr=fmtDate(new Date());
   dates.forEach(d=>{
     const dateStr=fmtDate(d);
     const inVal=getTimeVal('in',dateStr);
     const outVal=getTimeVal('out',dateStr);
     if(!inVal&&!outVal)return;
     const existing=attendance.find(a=>String(a.staffId)===String(currentStaff.id)&&a.date===dateStr);
-    if(existing && dateStr<todayStr){
-      const inChanged=existing.clockIn!==inVal;
-      const outChanged=existing.clockOut!==outVal;
-      if(inChanged)changeReqs.push({attendanceId:existing.id,staffId:currentStaff.id,storeId:STORE_ID,date:dateStr,field:'clockIn',currentValue:existing.clockIn||'',requestedValue:inVal,kioskVersion:'kiosk3'});
-      if(outChanged)changeReqs.push({attendanceId:existing.id,staffId:currentStaff.id,storeId:STORE_ID,date:dateStr,field:'clockOut',currentValue:existing.clockOut||'',requestedValue:outVal,kioskVersion:'kiosk3'});
+    // Past dates: ANY change or new entry requires change request
+    if(dateStr<todayStr){
+      if(existing){
+        const inChanged=existing.clockIn!==inVal;
+        const outChanged=existing.clockOut!==outVal;
+        if(inChanged)changeReqs.push({attendanceId:existing.id,staffId:currentStaff.id,storeId:STORE_ID,date:dateStr,field:'clockIn',currentValue:existing.clockIn||'',requestedValue:inVal,kioskVersion:'kiosk3'});
+        if(outChanged)changeReqs.push({attendanceId:existing.id,staffId:currentStaff.id,storeId:STORE_ID,date:dateStr,field:'clockOut',currentValue:existing.clockOut||'',requestedValue:outVal,kioskVersion:'kiosk3'});
+      }else{
+        // No existing record for past date — also needs change request
+        if(inVal)changeReqs.push({attendanceId:'new_'+dateStr,staffId:currentStaff.id,storeId:STORE_ID,date:dateStr,field:'clockIn',currentValue:'',requestedValue:inVal,kioskVersion:'kiosk3'});
+        if(outVal)changeReqs.push({attendanceId:'new_'+dateStr,staffId:currentStaff.id,storeId:STORE_ID,date:dateStr,field:'clockOut',currentValue:'',requestedValue:outVal,kioskVersion:'kiosk3'});
+      }
       return;
     }
     const row={
@@ -599,6 +628,7 @@ async function saveAll(){
       toast('Some records failed to save','error');
     }
   }
+  }finally{setSaveBtnsDisabled(false);}
 }
 
 function changeMonth(dir){

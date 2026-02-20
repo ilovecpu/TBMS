@@ -492,13 +492,15 @@ function revertTime(prefix,dateStr){
   if(mEl){mEl.value='00';mEl.className='time-sel';}
 }
 function showFutureAlert(msg){
+  const old=document.getElementById('futureAlertOv');if(old)old.remove();
   const ov=document.createElement('div');
+  ov.id='futureAlertOv';
   ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1500;display:flex;align-items:center;justify-content:center;padding:20px';
   ov.innerHTML=`<div style="background:#fff;border-radius:20px;padding:28px;max-width:380px;width:100%;text-align:center">
     <div style="font-size:40px;margin-bottom:8px">⚠️</div>
     <div style="font-size:16px;font-weight:700;color:var(--danger);margin-bottom:10px">Cannot Set Future Time</div>
     <div style="font-size:14px;color:#555;margin-bottom:20px;line-height:1.5">${msg}</div>
-    <button onclick="this.closest('div[style]').remove()" style="padding:12px 32px;border:none;border-radius:10px;font-size:15px;font-weight:600;background:var(--primary);color:#fff;cursor:pointer">OK</button>
+    <button onclick="document.getElementById('futureAlertOv').remove()" style="padding:12px 32px;border:none;border-radius:10px;font-size:15px;font-weight:600;background:var(--primary);color:#fff;cursor:pointer">OK</button>
   </div>`;
   document.body.appendChild(ov);
 }

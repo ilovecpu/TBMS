@@ -207,6 +207,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
     </div>
     <div style="display:flex;gap:8px">
       <button class="btn-save-top" onclick="saveAll()"><i class="fas fa-cloud-upload-alt"></i> Save All</button>
+      <button id="btnRefresh" class="btn-logout" onclick="doRefresh()" style="padding:12px 14px"><i class="fas fa-sync-alt"></i></button>
       <button class="btn-logout" onclick="doLogout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
     </div>
   </div>
@@ -344,6 +345,13 @@ function pinEnter(){
   renderCalendar();
 }
 
+async function doRefresh(){
+  const btn=$('btnRefresh');if(btn){btn.disabled=true;btn.innerHTML='<i class="fas fa-sync-alt fa-spin"></i>';}
+  await loadData(true);
+  if(currentStaff){renderChangeRequests();renderCalendar();}
+  if(btn){btn.disabled=false;btn.innerHTML='<i class="fas fa-sync-alt"></i>';}
+  toast('Data refreshed','success');
+}
 function doLogout(){
   currentStaff=null;pinTarget=null;pinValue='';
   $('mainWrap').style.display='none';

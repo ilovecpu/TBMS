@@ -2504,18 +2504,21 @@ async function reviewCr(id,status){
       req.reviewedBy=currentUser.name||currentUser.username||'';
       req.reviewedAt=new Date().toISOString();
       if(status==='approved'&&req.field){
+        // Update or create local Attendance record
+        let att;
         if(String(req.attendanceId).startsWith('new_')){
-          // Find existing record by staffId+date, or create new
-          let att=D.Attendance.find(a=>String(a.staffId)===String(req.staffId)&&a.date===req.date);
-          if(att){att[req.field]=req.requestedValue;}
-          else{
-            const newAtt={id:genId('a'),staffId:req.staffId,storeId:req.storeId,date:req.date,clockIn:'',clockOut:'',photoIn:'',photoOut:'',source:'kiosk3_cr'};
-            newAtt[req.field]=req.requestedValue;
-            D.Attendance.push(newAtt);
+          att=D.Attendance.find(a=>String(a.staffId)===String(req.staffId)&&a.date===req.date);
+          if(!att){
+            att={id:genId('a'),staffId:req.staffId,storeId:req.storeId,date:req.date,clockIn:'',clockOut:'',photoIn:'',photoOut:'',source:'kiosk3_cr'};
+            D.Attendance.push(att);
           }
         }else{
-          const att=D.Attendance.find(a=>String(a.id)===String(req.attendanceId));
-          if(att){att[req.field]=req.requestedValue;}
+          att=D.Attendance.find(a=>String(a.id)===String(req.attendanceId));
+        }
+        if(att){
+          att[req.field]=req.requestedValue;
+          // Directly save to server via upsert (belt-and-suspenders)
+          saveRow('Attendance',att);
         }
       }
     }

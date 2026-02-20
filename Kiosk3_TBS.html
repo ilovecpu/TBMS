@@ -626,20 +626,24 @@ function onTimeChange(prefix,dateStr){
   const todayStr=fmtDate(now);
   // --- Future date block ---
   if(dateStr>todayStr){
-    const val=getTimeVal(prefix,dateStr);
-    if(val){showFutureAlert('You cannot enter time for a future date ('+dateStr+').');revertTime(prefix,dateStr);}
+    const hEl=$(prefix+'H_'+dateStr),mEl=$(prefix+'M_'+dateStr);
+    if((hEl&&hEl.value!=='')||(mEl&&mEl.value!=='00')){
+      showFutureAlert('You cannot enter time for a future date ('+dateStr+').');
+      revertTime(prefix,dateStr);
+    }
     updateRowDisplay(dateStr);
     return;
   }
   // --- Today: future time block ---
   if(dateStr===todayStr){
     const nowH=now.getHours(),nowM=now.getMinutes();
-    const val=getTimeVal(prefix,dateStr);
-    if(val){
-      const[h,m]=val.split(':').map(Number);
+    const hEl=$(prefix+'H_'+dateStr),mEl=$(prefix+'M_'+dateStr);
+    const hv=hEl?hEl.value:'',mv=mEl?mEl.value:'00';
+    if(hv!==''){
+      const h=parseInt(hv),m=parseInt(mv);
       if(h>nowH||(h===nowH&&m>nowM)){
         const label=prefix==='in'?'Clock In':'Clock Out';
-        showFutureAlert(label+' time ('+val+') is later than now. You cannot enter a future time.');
+        showFutureAlert(label+' time ('+hv+':'+mv+') is later than now. You cannot enter a future time.');
         revertTime(prefix,dateStr);
       }
     }

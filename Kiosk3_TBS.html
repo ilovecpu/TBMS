@@ -216,7 +216,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
 
 <script>
 const STORE_ID='TBS',STORE_NAME='The Bap Swindon';
-const DEFAULT_API='https://script.google.com/macros/s/AKfycbx59e-xpIQUA0qXHDvGJJon25nXcv2O3lelMUty1koJ86ln0T5eDDh67uyIAmakigFq/exec';
+const DEFAULT_API='https://script.google.com/macros/s/AKfycbyo0hNx3bc_PZvrexsf6Hxq8-jHweFsienZNybK7cudz1ZQOecDlEiXgSDRb0Dz8nsN/exec';
 const API_URL=(function(){try{const c=JSON.parse(localStorage.getItem('tbms_config'));return(c&&c.apiUrl)?c.apiUrl:DEFAULT_API;}catch(e){return DEFAULT_API;}})();
 const $=id=>document.getElementById(id);
 function toast(msg,type='info'){const t=document.createElement('div');t.className='toast '+type;t.innerHTML='<i class="fas fa-'+(type==='error'?'exclamation-circle':type==='success'?'check-circle':'info-circle')+'"></i> '+msg;$('toastBox').appendChild(t);setTimeout(()=>t.remove(),3000);}
@@ -236,15 +236,23 @@ function nrmRow(fields,row){const m={};for(const k in row)m[k.replace(/[\s_\-]+/
 function genId(){return 'a'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
 
 // ===== DATA LOADING =====
+let _lastDataHash='';
 async function loadData(silent){
   if(!silent)showLoad('Loading data...');
-  const result=await apiGet('getAll');
+  const result=silent
+    ?await apiGet('getStoreData&store='+STORE_ID+'&sheets=Staff,Attendance,TimeChangeReq')
+    :await apiGet('getAll');
   if(result&&result.data&&!result.error){
-    staff=(result.data.Staff||[]).map(r=>nrmRow(STAFF_FIELDS,r)).filter(s=>String(s.storeId)===STORE_ID&&(s.active===true||s.active==='true'||s.active==='TRUE'));
-    attendance=(result.data.Attendance||[]).map(r=>nrmRow(ATT_FIELDS,r));
-    timeChangeReqs=(result.data.TimeChangeReq||[]).map(r=>nrmRow(TCR_FIELDS,r));
+    const newStaff=(result.data.Staff||[]).map(r=>nrmRow(STAFF_FIELDS,r)).filter(s=>String(s.storeId)===STORE_ID&&(s.active===true||s.active==='true'||s.active==='TRUE'));
+    const newAtt=(result.data.Attendance||[]).map(r=>nrmRow(ATT_FIELDS,r));
+    const newTcr=(result.data.TimeChangeReq||[]).map(r=>nrmRow(TCR_FIELDS,r));
+    const hash=JSON.stringify({s:newStaff.map(s=>s.id),a:newAtt.map(a=>a.id+a.clockIn+a.clockOut),t:newTcr.map(t=>t.id+t.status)});
+    const changed=hash!==_lastDataHash;
+    _lastDataHash=hash;
+    staff=newStaff;attendance=newAtt;timeChangeReqs=newTcr;
     $('statusDot').className='status-dot on';$('statusText').textContent='Connected';
-    if(!silent)hideLoad();return true;
+    if(!silent)hideLoad();
+    return changed?true:'nochange';
   }
   $('statusDot').className='status-dot off';$('statusText').textContent='Offline';
   if(!silent){hideLoad();toast('Cannot connect to server','error');}
@@ -478,7 +486,38 @@ function calcHours(inTime,outTime){
   if(mins<0)mins+=24*60;
   return Math.round(mins/6)/10;
 }
+function revertTime(prefix,dateStr){
+  const hEl=$(prefix+'H_'+dateStr),mEl=$(prefix+'M_'+dateStr);
+  if(hEl){hEl.value='';hEl.className='time-sel';}
+  if(mEl){mEl.value='00';mEl.className='time-sel';}
+}
+function showFutureAlert(msg){
+  const ov=document.createElement('div');
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1500;display:flex;align-items:center;justify-content:center;padding:20px';
+  ov.innerHTML=`<div style="background:#fff;border-radius:20px;padding:28px;max-width:380px;width:100%;text-align:center">
+    <div style="font-size:40px;margin-bottom:8px">⚠️</div>
+    <div style="font-size:16px;font-weight:700;color:var(--danger);margin-bottom:10px">Cannot Set Future Time</div>
+    <div style="font-size:14px;color:#555;margin-bottom:20px;line-height:1.5">${msg}</div>
+    <button onclick="this.closest('div[style]').remove()" style="padding:12px 32px;border:none;border-radius:10px;font-size:15px;font-weight:600;background:var(--primary);color:#fff;cursor:pointer">OK</button>
+  </div>`;
+  document.body.appendChild(ov);
+}
 function calcRow(dateStr){
+  const now=new Date();
+  const todayStr=fmtDate(now);
+  const nowH=now.getHours(),nowM=now.getMinutes();
+  if(dateStr>todayStr){
+    const inVal=getTimeVal('in',dateStr);
+    const outVal=getTimeVal('out',dateStr);
+    if(inVal){showFutureAlert('You cannot enter time for a future date ('+dateStr+').');revertTime('in',dateStr);}
+    if(outVal){showFutureAlert('You cannot enter time for a future date ('+dateStr+').');revertTime('out',dateStr);}
+  }
+  if(dateStr===todayStr){
+    const inVal=getTimeVal('in',dateStr);
+    if(inVal){const[ih,im]=inVal.split(':').map(Number);if(ih>nowH||(ih===nowH&&im>nowM)){showFutureAlert('Clock In time ('+inVal+') is later than now. You cannot enter a future time.');revertTime('in',dateStr);}}
+    const outVal=getTimeVal('out',dateStr);
+    if(outVal){const[oh,om]=outVal.split(':').map(Number);if(oh>nowH||(oh===nowH&&om>nowM)){showFutureAlert('Clock Out time ('+outVal+') is later than now. You cannot enter a future time.');revertTime('out',dateStr);}}
+  }
   const inVal=getTimeVal('in',dateStr);
   const outVal=getTimeVal('out',dateStr);
   const hrs=calcHours(inVal,outVal);
@@ -532,24 +571,8 @@ function setSaveBtnsDisabled(disabled){
 }
 async function saveAll(){
   if(!currentStaff)return;
-  const now=new Date();
-  const todayStr=fmtDate(now);
-  const nowH=now.getHours(),nowM=now.getMinutes();
-  // --- Future time validation ---
+  const todayStr=fmtDate(new Date());
   const dates=getPeriodDates();
-  for(const d of dates){
-    const dateStr=fmtDate(d);
-    const inVal=getTimeVal('in',dateStr);
-    const outVal=getTimeVal('out',dateStr);
-    if(!inVal&&!outVal)continue;
-    if(dateStr>todayStr){
-      if(inVal||outVal){toast('미래 날짜('+dateStr+')에는 시간을 입력할 수 없습니다','error');return;}
-    }
-    if(dateStr===todayStr){
-      if(inVal){const[ih,im]=inVal.split(':').map(Number);if(ih>nowH||(ih===nowH&&im>nowM)){toast('현재 시간 이후의 Clock In은 입력할 수 없습니다 ('+inVal+')','error');return;}}
-      if(outVal){const[oh,om]=outVal.split(':').map(Number);if(oh>nowH||(oh===nowH&&om>nowM)){toast('현재 시간 이후의 Clock Out은 입력할 수 없습니다 ('+outVal+')','error');return;}}
-    }
-  }
   // --- Disable Save buttons ---
   setSaveBtnsDisabled(true);
   try{
@@ -648,7 +671,8 @@ async function init(){
     hideLoad();
     $('loginScreen').innerHTML='<div style="text-align:center;padding:40px"><p style="color:var(--danger);font-size:18px;margin-bottom:16px"><i class="fas fa-exclamation-triangle"></i> Connection Failed</p><button class="btn btn-primary" onclick="location.reload()"><i class="fas fa-redo"></i> Retry</button></div>';
   }
-  setInterval(async()=>{if(!currentStaff){await loadData(true);showStaffGrid();}},15*60*1000);
+  // Auto-refresh every 5 minutes (lightweight store-specific fetch)
+  setInterval(async()=>{const r=await loadData(true);if(r&&r!=='nochange'&&!currentStaff)showStaffGrid();},5*60*1000);
 }
 // ===== Fullscreen Mode =====
 function goFullscreen(){

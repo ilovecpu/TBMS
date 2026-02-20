@@ -510,7 +510,7 @@ const LS = {
   set(k, v) { localStorage.setItem('tbms_'+k, JSON.stringify(v)); },
   getConfig() { return this.get('config') || {}; }
 };
-const CLOUD_URL = 'https://script.google.com/macros/s/AKfycbx59e-xpIQUA0qXHDvGJJon25nXcv2O3lelMUty1koJ86ln0T5eDDh67uyIAmakigFq/exec';
+const CLOUD_URL = 'https://script.google.com/macros/s/AKfycbyo0hNx3bc_PZvrexsf6Hxq8-jHweFsienZNybK7cudz1ZQOecDlEiXgSDRb0Dz8nsN/exec';
 const API = {
   url: CLOUD_URL, mode: 'cloud',
   async get(action, params={}) {

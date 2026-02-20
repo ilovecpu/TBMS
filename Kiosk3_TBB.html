@@ -417,6 +417,7 @@ function renderCalendar(){
   const today=new Date();const todayStr=fmtDate(today);
   const dateSet=new Set(dates.map(d=>fmtDate(d)));
   const myAtt=attendance.filter(a=>String(a.staffId)===String(s.id)&&dateSet.has(a.date));
+    _origValues={};
   let rows='',totalHours=0,totalDays=0,lastMonth=-1;
   const mNames=['January','February','March','April','May','June','July','August','September','October','November','December'];
   dates.forEach(dateObj=>{
@@ -431,6 +432,7 @@ function renderCalendar(){
         <i class="fas fa-calendar" style="margin-right:4px"></i>${mNames[dm]} ${dateObj.getFullYear()}</td></tr>`;
     }
     const rec=myAtt.find(a=>a.date===dateStr);
+    _origValues[dateStr]={clockIn:rec?rec.clockIn:'',clockOut:rec?rec.clockOut:''};
     const clockIn=rec?rec.clockIn:'';
     const clockOut=rec?rec.clockOut:'';
     const hours=calcHours(clockIn,clockOut);
@@ -471,6 +473,7 @@ function renderCalendar(){
 }
 
 // ===== TIME SELECT HELPERS =====
+let _origValues={};
 function timeSelHtml(prefix,ds,val){
   const [vh,vm]=val?val.split(':'):['','00'];
   const rvm=vm?String(Math.round(parseInt(vm)/10)*10).padStart(2,'0'):'00';
@@ -479,7 +482,7 @@ function timeSelHtml(prefix,ds,val){
   const mins=['00','10','20','30','40','50'];
   let mOpts='';mins.forEach(mm=>{mOpts+=`<option value="${mm}"${mm===rvm?' selected':''}>${mm}</option>`;});
   const fc=vh?'filled':'';
-  return `<span class="time-wrap"><select id="${prefix}H_${ds}" onchange="calcRow('${ds}')" class="time-sel ${fc}">${hOpts}</select><span class="colon">:</span><select id="${prefix}M_${ds}" onchange="calcRow('${ds}')" class="time-sel ${fc}">${mOpts}</select></span>`;
+  return `<span class="time-wrap"><select id="${prefix}H_${ds}" onchange="onTimeChange('${prefix}','${ds}')" class="time-sel ${fc}">${hOpts}</select><span class="colon">:</span><select id="${prefix}M_${ds}" onchange="onTimeChange('${prefix}','${ds}')" class="time-sel ${fc}">${mOpts}</select></span>`;
 }
 function getTimeVal(prefix,ds){
   const h=$(prefix+'H_'+ds),m=$(prefix+'M_'+ds);
@@ -499,6 +502,20 @@ function revertTime(prefix,dateStr){
   if(hEl){hEl.value='';hEl.className='time-sel';}
   if(mEl){mEl.value='00';mEl.className='time-sel';}
 }
+function revertToOrig(prefix,dateStr){
+  const orig=_origValues[dateStr]||{};
+  const field=prefix==='in'?'clockIn':'clockOut';
+  const origVal=orig[field]||'';
+  const hEl=$(prefix+'H_'+dateStr),mEl=$(prefix+'M_'+dateStr);
+  if(origVal){
+    const [h,m]=origVal.split(':');
+    if(hEl){hEl.value=h;hEl.className='time-sel filled';}
+    if(mEl){mEl.value=String(Math.round(parseInt(m)/10)*10).padStart(2,'0');mEl.className='time-sel filled';}
+  }else{
+    if(hEl){hEl.value='';hEl.className='time-sel';}
+    if(mEl){mEl.value='00';mEl.className='time-sel';}
+  }
+}
 function showFutureAlert(msg){
   const old=document.getElementById('futureAlertOv');if(old)old.remove();
   const ov=document.createElement('div');
@@ -512,22 +529,7 @@ function showFutureAlert(msg){
   </div>`;
   document.body.appendChild(ov);
 }
-function calcRow(dateStr){
-  const now=new Date();
-  const todayStr=fmtDate(now);
-  const nowH=now.getHours(),nowM=now.getMinutes();
-  if(dateStr>todayStr){
-    const inVal=getTimeVal('in',dateStr);
-    const outVal=getTimeVal('out',dateStr);
-    if(inVal){showFutureAlert('You cannot enter time for a future date ('+dateStr+').');revertTime('in',dateStr);}
-    if(outVal){showFutureAlert('You cannot enter time for a future date ('+dateStr+').');revertTime('out',dateStr);}
-  }
-  if(dateStr===todayStr){
-    const inVal=getTimeVal('in',dateStr);
-    if(inVal){const[ih,im]=inVal.split(':').map(Number);if(ih>nowH||(ih===nowH&&im>nowM)){showFutureAlert('Clock In time ('+inVal+') is later than now. You cannot enter a future time.');revertTime('in',dateStr);}}
-    const outVal=getTimeVal('out',dateStr);
-    if(outVal){const[oh,om]=outVal.split(':').map(Number);if(oh>nowH||(oh===nowH&&om>nowM)){showFutureAlert('Clock Out time ('+outVal+') is later than now. You cannot enter a future time.');revertTime('out',dateStr);}}
-  }
+function updateRowDisplay(dateStr){
   const inVal=getTimeVal('in',dateStr);
   const outVal=getTimeVal('out',dateStr);
   const hrs=calcHours(inVal,outVal);
@@ -536,10 +538,93 @@ function calcRow(dateStr){
   ['in','out'].forEach(p=>{
     const v=p==='in'?inVal:outVal;
     const hEl=$(p+'H_'+dateStr),mEl=$(p+'M_'+dateStr);
-    if(hEl){hEl.className='time-sel'+(v?' filled':'');}
-    if(mEl){mEl.className='time-sel'+(v?' filled':'');}
+    if(hEl)hEl.className='time-sel'+(v?' filled':'');
+    if(mEl)mEl.className='time-sel'+(v?' filled':'');
   });
   recalcTotals();
+}
+function askChangeReason(dateStr,field,oldVal,newVal){
+  return new Promise(resolve=>{
+    const old=document.getElementById('crReasonOv');if(old)old.remove();
+    const fieldLabel=field==='clockIn'?'Clock In':'Clock Out';
+    const ov=document.createElement('div');
+    ov.id='crReasonOv';
+    ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1500;display:flex;align-items:center;justify-content:center;padding:20px';
+    ov.innerHTML=`<div style="background:#fff;border-radius:20px;padding:28px;max-width:400px;width:100%;text-align:center">
+      <div style="font-size:36px;margin-bottom:8px">📝</div>
+      <div style="font-size:16px;font-weight:700;color:#e65100;margin-bottom:6px"><i class="fas fa-exclamation-triangle"></i> Time Change Request</div>
+      <div style="font-size:14px;color:#555;margin-bottom:8px;line-height:1.5">
+        <strong>${dateStr}</strong> — ${fieldLabel}<br>
+        ${oldVal||'(empty)'} → <span style="color:var(--primary);font-weight:700">${newVal||'(empty)'}</span>
+      </div>
+      <div style="font-size:13px;color:#888;margin-bottom:12px">This change requires manager approval.</div>
+      <textarea id="crReasonInput" rows="3" placeholder="Enter reason for the change..." style="width:100%;padding:12px;border:2px solid #ddd;border-radius:10px;font-size:15px;font-family:inherit;resize:none;margin-bottom:16px"></textarea>
+      <div style="display:flex;gap:10px">
+        <button id="crReasonCancel" style="flex:1;padding:14px;border:2px solid #ddd;border-radius:10px;font-size:15px;font-weight:600;background:#fff;cursor:pointer">Cancel</button>
+        <button id="crReasonSubmit" style="flex:1;padding:14px;border:none;border-radius:10px;font-size:15px;font-weight:600;background:#e65100;color:#fff;cursor:pointer">Submit</button>
+      </div>
+    </div>`;
+    document.body.appendChild(ov);
+    ov.querySelector('#crReasonCancel').onclick=()=>{ov.remove();resolve(null);};
+    ov.querySelector('#crReasonSubmit').onclick=()=>{const v=ov.querySelector('#crReasonInput').value.trim();if(!v){ov.querySelector('#crReasonInput').style.borderColor='#e53935';return;}ov.remove();resolve(v);};
+    setTimeout(()=>ov.querySelector('#crReasonInput').focus(),100);
+  });
+}
+async function onTimeChange(prefix,dateStr){
+  const now=new Date();
+  const todayStr=fmtDate(now);
+  // --- Future date block ---
+  if(dateStr>todayStr){
+    const val=getTimeVal(prefix,dateStr);
+    if(val){showFutureAlert('You cannot enter time for a future date ('+dateStr+').');revertTime(prefix,dateStr);}
+    updateRowDisplay(dateStr);
+    return;
+  }
+  // --- Today: future time block ---
+  if(dateStr===todayStr){
+    const nowH=now.getHours(),nowM=now.getMinutes();
+    const val=getTimeVal(prefix,dateStr);
+    if(val){
+      const[h,m]=val.split(':').map(Number);
+      if(h>nowH||(h===nowH&&m>nowM)){
+        const label=prefix==='in'?'Clock In':'Clock Out';
+        showFutureAlert(label+' time ('+val+') is later than now. You cannot enter a future time.');
+        revertTime(prefix,dateStr);
+      }
+    }
+    updateRowDisplay(dateStr);
+    return;
+  }
+  // --- Past date: immediate change request ---
+  const field=prefix==='in'?'clockIn':'clockOut';
+  const newVal=getTimeVal(prefix,dateStr);
+  const orig=_origValues[dateStr]||{};
+  const origVal=orig[field]||'';
+  if(newVal!==origVal){
+    const reason=await askChangeReason(dateStr,field,origVal,newVal);
+    if(reason){
+      // Submit change request immediately
+      const existing=attendance.find(a=>String(a.staffId)===String(currentStaff.id)&&a.date===dateStr);
+      const cr={attendanceId:existing?existing.id:'new_'+dateStr,staffId:currentStaff.id,storeId:STORE_ID,date:dateStr,field:field,currentValue:origVal,requestedValue:newVal,reason:reason,kioskVersion:'kiosk3'};
+      toast('Submitting change request...','info');
+      const res=await apiPost({action:'timeChangeReq',...cr});
+      if(res&&!res.error){
+        timeChangeReqs.push({...cr,status:'pending',createdAt:new Date().toISOString(),reviewedBy:'',reviewedAt:''});
+        // Update origValues so minute adjustments don't re-trigger
+        if(!_origValues[dateStr])_origValues[dateStr]={clockIn:'',clockOut:''};
+        _origValues[dateStr][field]=newVal;
+        toast('Change request submitted','success');
+        renderChangeRequests();
+      }else{
+        toast('Failed to submit change request','error');
+        revertToOrig(prefix,dateStr);
+      }
+    }else{
+      // Cancel — revert to original
+      revertToOrig(prefix,dateStr);
+    }
+  }
+  updateRowDisplay(dateStr);
 }
 function recalcTotals(){
   const dates=getPeriodDates();
@@ -555,27 +640,7 @@ function recalcTotals(){
   const tdEl=$('totalDays');if(tdEl)tdEl.textContent=totalDays;
 }
 
-// ===== SAVE WITH EDIT LOG + CHANGE REQUEST =====
-function askReason(count){
-  return new Promise(resolve=>{
-    const ov=document.createElement('div');
-    ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1500;display:flex;align-items:center;justify-content:center;padding:20px';
-    ov.innerHTML=`<div style="background:#fff;border-radius:20px;padding:28px;max-width:400px;width:100%;text-align:center">
-      <div style="font-size:36px;margin-bottom:8px">📝</div>
-      <div style="font-size:16px;font-weight:700;color:#e65100;margin-bottom:6px"><i class="fas fa-exclamation-triangle"></i> Time Change Request</div>
-      <div style="font-size:14px;color:#555;margin-bottom:16px">You are requesting <strong>${count}</strong> time change(s) for past dates.<br>These need manager approval.</div>
-      <textarea id="crReasonInput" rows="3" placeholder="Enter reason for the change..." style="width:100%;padding:12px;border:2px solid #ddd;border-radius:10px;font-size:15px;font-family:inherit;resize:none;margin-bottom:16px"></textarea>
-      <div style="display:flex;gap:10px">
-        <button id="crReasonCancel" style="flex:1;padding:14px;border:2px solid #ddd;border-radius:10px;font-size:15px;font-weight:600;background:#fff;cursor:pointer">Cancel</button>
-        <button id="crReasonSubmit" style="flex:1;padding:14px;border:none;border-radius:10px;font-size:15px;font-weight:600;background:#e65100;color:#fff;cursor:pointer">Submit</button>
-      </div>
-    </div>`;
-    document.body.appendChild(ov);
-    ov.querySelector('#crReasonCancel').onclick=()=>{ov.remove();resolve(null);};
-    ov.querySelector('#crReasonSubmit').onclick=()=>{const v=ov.querySelector('#crReasonInput').value.trim();if(!v){ov.querySelector('#crReasonInput').style.borderColor='#e53935';return;}ov.remove();resolve(v);};
-    setTimeout(()=>ov.querySelector('#crReasonInput').focus(),100);
-  });
-}
+// ===== SAVE (today/future only — past dates handled by real-time change requests) =====
 function setSaveBtnsDisabled(disabled){
   document.querySelectorAll('.btn-save, .btn-save-top').forEach(b=>{b.disabled=disabled;b.style.opacity=disabled?'0.5':'1';b.style.pointerEvents=disabled?'none':'auto';});
 }
@@ -583,32 +648,17 @@ async function saveAll(){
   if(!currentStaff)return;
   const todayStr=fmtDate(new Date());
   const dates=getPeriodDates();
-  // --- Disable Save buttons ---
   setSaveBtnsDisabled(true);
   try{
   const rows=[];
   const editLogs=[];
-  const changeReqs=[];
   dates.forEach(d=>{
     const dateStr=fmtDate(d);
+    if(dateStr<todayStr)return; // Past dates handled by real-time change requests
     const inVal=getTimeVal('in',dateStr);
     const outVal=getTimeVal('out',dateStr);
     if(!inVal&&!outVal)return;
     const existing=attendance.find(a=>String(a.staffId)===String(currentStaff.id)&&a.date===dateStr);
-    // Past dates: ANY change or new entry requires change request
-    if(dateStr<todayStr){
-      if(existing){
-        const inChanged=existing.clockIn!==inVal;
-        const outChanged=existing.clockOut!==outVal;
-        if(inChanged)changeReqs.push({attendanceId:existing.id,staffId:currentStaff.id,storeId:STORE_ID,date:dateStr,field:'clockIn',currentValue:existing.clockIn||'',requestedValue:inVal,kioskVersion:'kiosk3'});
-        if(outChanged)changeReqs.push({attendanceId:existing.id,staffId:currentStaff.id,storeId:STORE_ID,date:dateStr,field:'clockOut',currentValue:existing.clockOut||'',requestedValue:outVal,kioskVersion:'kiosk3'});
-      }else{
-        // No existing record for past date — also needs change request
-        if(inVal)changeReqs.push({attendanceId:'new_'+dateStr,staffId:currentStaff.id,storeId:STORE_ID,date:dateStr,field:'clockIn',currentValue:'',requestedValue:inVal,kioskVersion:'kiosk3'});
-        if(outVal)changeReqs.push({attendanceId:'new_'+dateStr,staffId:currentStaff.id,storeId:STORE_ID,date:dateStr,field:'clockOut',currentValue:'',requestedValue:outVal,kioskVersion:'kiosk3'});
-      }
-      return;
-    }
     const row={
       id:existing?existing.id:genId(),
       staffId:currentStaff.id,
@@ -631,35 +681,19 @@ async function saveAll(){
       attendance.push(row);
     }
   });
-  if(rows.length===0&&changeReqs.length===0){toast('No hours entered','info');return;}
-  if(changeReqs.length>0){
-    const reason=await askReason(changeReqs.length);
-    if(!reason){toast('Change request cancelled','info');return;}
-    toast('Submitting '+changeReqs.length+' change request(s)...','info');
-    let crOk=true;
-    for(const cr of changeReqs){
-      const res=await apiPost({action:'timeChangeReq',...cr,reason:reason});
-      if(res&&!res.error){timeChangeReqs.push({...cr,reason:reason,status:'pending',createdAt:new Date().toISOString(),reviewedBy:'',reviewedAt:''});}
-      else crOk=false;
-    }
-    if(crOk)toast(changeReqs.length+' change request(s) submitted for approval','success');
-    else toast('Some change requests failed to submit','error');
-    renderChangeRequests();
-  }
-  if(rows.length>0){
-    toast('Saving '+rows.length+' records...','info');
-    let ok=true;
-    const attPromises=rows.map(r=>apiPost({action:'upsert',sheet:'Attendance',row:r}));
-    const attResults=await Promise.all(attPromises);
-    attResults.forEach(r=>{if(!r||r.error)ok=false;});
-    if(editLogs.length>0){editLogs.forEach(log=>apiPost({action:'editLog',...log}));}
-    if(ok){
-      $('statusDot').className='status-dot on';
-      toast('Saved successfully!','success');
-    }else{
-      $('statusDot').className='status-dot off';
-      toast('Some records failed to save','error');
-    }
+  if(rows.length===0){toast('No hours to save','info');return;}
+  toast('Saving '+rows.length+' records...','info');
+  let ok=true;
+  const attPromises=rows.map(r=>apiPost({action:'upsert',sheet:'Attendance',row:r}));
+  const attResults=await Promise.all(attPromises);
+  attResults.forEach(r=>{if(!r||r.error)ok=false;});
+  if(editLogs.length>0){editLogs.forEach(log=>apiPost({action:'editLog',...log}));}
+  if(ok){
+    $('statusDot').className='status-dot on';
+    toast('Saved successfully!','success');
+  }else{
+    $('statusDot').className='status-dot off';
+    toast('Some records failed to save','error');
   }
   }finally{setSaveBtnsDisabled(false);}
 }

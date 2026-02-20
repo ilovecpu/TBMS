@@ -510,7 +510,7 @@ const LS = {
   set(k, v) { localStorage.setItem('tbms_'+k, JSON.stringify(v)); },
   getConfig() { return this.get('config') || {}; }
 };
-const CLOUD_URL = 'https://script.google.com/macros/s/AKfycbyo0hNx3bc_PZvrexsf6Hxq8-jHweFsienZNybK7cudz1ZQOecDlEiXgSDRb0Dz8nsN/exec';
+const CLOUD_URL = 'https://script.google.com/macros/s/AKfycbxWROG4A4DV3LyGwt8fAaVL9d9G62-kQTmfiTFSf5mxxdabiTmAUCeY5JoDuYchnBO9/exec';
 const API = {
   url: CLOUD_URL, mode: 'cloud',
   async get(action, params={}) {
@@ -2503,9 +2503,20 @@ async function reviewCr(id,status){
       req.status=status;
       req.reviewedBy=currentUser.name||currentUser.username||'';
       req.reviewedAt=new Date().toISOString();
-      if(status==='approved'){
-        const att=D.Attendance.find(a=>String(a.id)===String(req.attendanceId));
-        if(att&&req.field){att[req.field]=req.requestedValue;}
+      if(status==='approved'&&req.field){
+        if(String(req.attendanceId).startsWith('new_')){
+          // Find existing record by staffId+date, or create new
+          let att=D.Attendance.find(a=>String(a.staffId)===String(req.staffId)&&a.date===req.date);
+          if(att){att[req.field]=req.requestedValue;}
+          else{
+            const newAtt={id:genId('a'),staffId:req.staffId,storeId:req.storeId,date:req.date,clockIn:'',clockOut:'',photoIn:'',photoOut:'',source:'kiosk3_cr'};
+            newAtt[req.field]=req.requestedValue;
+            D.Attendance.push(newAtt);
+          }
+        }else{
+          const att=D.Attendance.find(a=>String(a.id)===String(req.attendanceId));
+          if(att){att[req.field]=req.requestedValue;}
+        }
       }
     }
     filterChangeRequests();

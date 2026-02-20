@@ -510,7 +510,7 @@ const LS = {
   set(k, v) { localStorage.setItem('tbms_'+k, JSON.stringify(v)); },
   getConfig() { return this.get('config') || {}; }
 };
-const CLOUD_URL = 'https://script.google.com/macros/s/AKfycbytHZQKoPSXc_033J11UkORB6muOWfOMvbKNsvxCDODtJ4ZsJKThwuG4IKZjQBQkrKu/exec';
+const CLOUD_URL = 'https://script.google.com/macros/s/AKfycbzGl1ZQaXCOo1U1j9FDEtRiakCJ6yxdyLiECNSfJap9sdwEYhs9uCtReLchU6NqEUvd/exec';
 const API = {
   url: CLOUD_URL, mode: 'cloud',
   async get(action, params={}) {
@@ -2517,8 +2517,10 @@ async function reviewCr(id,status){
         }
         if(att){
           att[req.field]=req.requestedValue;
-          // Directly save to server via upsert (belt-and-suspenders)
-          saveRow('Attendance',att);
+          // Save to server via awaited upsert (ensures record exists before next approval)
+          showLoading('Updating attendance...');
+          await API.post({action:'upsert',sheet:'Attendance',row:att});
+          hideLoading();
         }
       }
     }

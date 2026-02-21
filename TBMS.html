@@ -3405,6 +3405,14 @@ async function loadDiaryData(){
 // ==================== DIARY CONFIG ====================
 async function renderDiaryConfig(c){
   await loadDiaryData();
+  // Server diagnostic — check if deployed Apps Script knows DiaryConfig
+  const diag=await API.get('diagSheets');
+  console.log('[DiaryConfig] Server diagSheets:', JSON.stringify(diag));
+  if(diag&&diag.sheets&&!diag.sheets.includes('DiaryConfig')){
+    toast('⚠️ Server does not have DiaryConfig! Please update Apps Script code and redeploy.','error');
+  } else if(!diag||diag.error){
+    console.log('[DiaryConfig] diagSheets not available (old deployment). Server ping:', await API.get('ping'));
+  }
   const storeFilter=currentUser.storeId||'';
   const stores=D.Stores.filter(s=>s.active!==false&&s.active!=='false');
   let selStore=storeFilter||stores[0]?.code||'';
@@ -3464,7 +3472,11 @@ async function addDiaryConfigItem(type){
   const item={id:genId('dc'),storeId:store,configType:type,name:name.trim(),sortOrder:order,active:'true'};
   D.DiaryConfig.push(item);
   renderDiaryConfigBody();
-  const res=await API.post({action:'upsert',sheet:'DiaryConfig',row:item});
+  const postData={action:'upsert',sheet:'DiaryConfig',row:item};
+  console.log('[DiaryConfig] POST URL:', API.url);
+  console.log('[DiaryConfig] POST data:', JSON.stringify(postData));
+  const res=await API.post(postData);
+  console.log('[DiaryConfig] Response:', JSON.stringify(res));
   if(res&&!res.error){toast('Added '+name,'success');}
   else{toast('Save error: '+(res?.error||'unknown'),'error');}
 }

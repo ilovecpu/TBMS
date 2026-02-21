@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>The Bap — Daily Shop Diary</title>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--primary:#111;--accent:#e84393;--bg:#f5f5f5;--card:#fff;--border:#e0e0e0;--text:#2d3436;--text-light:#636e72;--success:#27ae60;--danger:#e74c3c;--warning:#f39c12;--radius:14px;--shadow:0 2px 12px rgba(0,0,0,.08)}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh;color:var(--text)}
+/* ===== Store Selection ===== */
+.store-screen{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:20px}
+.store-screen h1{font-size:28px;font-weight:800;color:var(--primary);margin-bottom:4px}
+.store-screen p{font-size:14px;color:var(--text-light);margin-bottom:12px}
+.store-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;width:100%;max-width:420px}
+.store-card{padding:28px 16px;border-radius:var(--radius);text-align:center;cursor:pointer;transition:all .2s;border:3px solid transparent;color:#fff;font-weight:700;font-size:18px;box-shadow:var(--shadow)}
+.store-card:active{transform:scale(.96)}
+.store-card .icon{font-size:36px;margin-bottom:8px;display:block}
+.store-card .sub{font-size:11px;font-weight:500;opacity:.85;margin-top:4px}
+/* ===== Status Bar ===== */
+.status-bar{position:fixed;top:0;left:0;right:0;height:32px;display:flex;align-items:center;padding:0 12px;font-size:11px;font-weight:600;color:#fff;z-index:999;gap:8px}
+.status-bar .dot{width:8px;height:8px;border-radius:50%;background:#2ecc71}
+.status-bar .right{margin-left:auto;display:flex;gap:10px;align-items:center}
+.status-bar button{background:rgba(255,255,255,.2);border:none;color:#fff;padding:4px 10px;border-radius:8px;font-size:11px;cursor:pointer;font-family:inherit;font-weight:600}
+.status-bar button:active{background:rgba(255,255,255,.35)}
+/* ===== Main Layout ===== */
+.main-wrap{display:none;padding-top:36px;padding-bottom:80px;max-width:700px;margin:0 auto;width:100%}
+.diary-header{padding:12px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.diary-header h2{font-size:18px;font-weight:800;flex:1}
+.diary-header .date-nav{display:flex;align-items:center;gap:6px}
+.diary-header .date-nav button{width:36px;height:36px;border-radius:10px;border:2px solid var(--border);background:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.diary-header .date-nav button:active{background:#f0f0f0}
+.diary-header .date-display{font-size:15px;font-weight:700;min-width:140px;text-align:center}
+/* ===== Sections / Accordion ===== */
+.section{margin:8px 12px;background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+.section-head{padding:16px 18px;display:flex;align-items:center;gap:12px;cursor:pointer;user-select:none;font-weight:700;font-size:15px;border-bottom:1px solid transparent;transition:all .2s}
+.section-head:active{background:#f9f9f9}
+.section-head .num{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0}
+.section-head .title{flex:1}
+.section-head .status-icon{font-size:18px;color:#ccc;transition:all .2s}
+.section-head .status-icon.done{color:var(--success)}
+.section-head .chevron{font-size:14px;color:#aaa;transition:transform .2s}
+.section.open .section-head{border-bottom:1px solid var(--border)}
+.section.open .chevron{transform:rotate(180deg)}
+.section-body{display:none;padding:16px 18px}
+.section.open .section-body{display:block}
+/* ===== Check Items (Opening/Closing) ===== */
+.check-list{display:flex;flex-direction:column;gap:10px}
+.check-item{display:flex;align-items:center;gap:12px;padding:10px 14px;background:#f8f9fa;border-radius:10px;font-size:14px;font-weight:500}
+.check-item .label{flex:1;line-height:1.4}
+.toggle{position:relative;width:56px;height:32px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0}
+.toggle .slider{position:absolute;inset:0;background:#ddd;border-radius:16px;cursor:pointer;transition:all .2s}
+.toggle .slider::before{content:'';position:absolute;width:26px;height:26px;border-radius:50%;background:#fff;top:3px;left:3px;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.toggle input:checked+.slider{background:var(--success)}
+.toggle input:checked+.slider::before{transform:translateX(24px)}
+/* ===== Fridge/Freezer Temps ===== */
+.fridge-grid{display:flex;flex-direction:column;gap:8px}
+.fridge-row{display:grid;grid-template-columns:1fr 80px 80px;gap:8px;align-items:center;padding:8px 12px;background:#f8f9fa;border-radius:10px}
+.fridge-row.header{background:none;font-weight:700;font-size:12px;color:var(--text-light);padding:4px 12px}
+.fridge-row .name{font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px}
+.fridge-row .name i{font-size:14px}
+.temp-input{width:100%;padding:8px;border:2px solid var(--border);border-radius:8px;font-size:16px;font-weight:600;text-align:center;font-family:inherit;background:#fff}
+.temp-input:focus{border-color:var(--accent);outline:none}
+.fridge-type-label{font-size:12px;font-weight:800;color:#fff;padding:6px 14px;border-radius:8px;margin:8px 0 4px}
+/* ===== Delivery / Cooking / Cooling / Leftover ===== */
+.data-table{width:100%;border-collapse:separate;border-spacing:0 6px}
+.data-table th{font-size:11px;font-weight:700;color:var(--text-light);text-align:left;padding:4px 8px}
+.data-table td{padding:6px 8px;background:#f8f9fa;font-size:13px}
+.data-table td:first-child{border-radius:8px 0 0 8px}
+.data-table td:last-child{border-radius:0 8px 8px 0}
+.data-table input[type=text],.data-table input[type=number]{width:100%;padding:8px;border:2px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;background:#fff}
+.data-table input:focus{border-color:var(--accent);outline:none}
+.mini-toggle{position:relative;width:44px;height:26px;flex-shrink:0;display:inline-block}
+.mini-toggle input{opacity:0;width:0;height:0}
+.mini-toggle .slider{position:absolute;inset:0;background:#ddd;border-radius:13px;cursor:pointer;transition:all .2s}
+.mini-toggle .slider::before{content:'';position:absolute;width:20px;height:20px;border-radius:50%;background:#fff;top:3px;left:3px;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,.15)}
+.mini-toggle input:checked+.slider{background:var(--success)}
+.mini-toggle input:checked+.slider::before{transform:translateX(18px)}
+.add-row-btn{display:flex;align-items:center;justify-content:center;gap:6px;padding:12px;border:2px dashed var(--border);border-radius:10px;background:none;cursor:pointer;font-size:14px;font-weight:600;color:var(--text-light);width:100%;margin-top:8px;font-family:inherit}
+.add-row-btn:active{background:#f0f0f0}
+.del-btn{width:28px;height:28px;border-radius:50%;border:none;background:#fee;color:var(--danger);cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.del-btn:active{background:#fdd}
+/* ===== Hold Temp Grid ===== */
+.hold-grid{width:100%;overflow-x:auto}
+.hold-table{width:100%;border-collapse:collapse;font-size:12px}
+.hold-table th{padding:8px 4px;font-weight:700;font-size:11px;color:var(--text-light);text-align:center;border-bottom:2px solid var(--border);white-space:nowrap}
+.hold-table th:first-child{text-align:left;min-width:100px}
+.hold-table td{padding:4px;text-align:center;border-bottom:1px solid #f0f0f0}
+.hold-table td:first-child{text-align:left;font-weight:600;font-size:12px}
+.hold-input{width:52px;padding:6px 2px;border:2px solid var(--border);border-radius:6px;font-size:14px;font-weight:600;text-align:center;font-family:inherit}
+.hold-input:focus{border-color:var(--accent);outline:none}
+.hold-input.newly{border-color:var(--warning);background:#fff8e1}
+.n-check{display:flex;align-items:center;justify-content:center;gap:2px;margin-top:2px}
+.n-check label{font-size:10px;font-weight:700;color:var(--warning)}
+.n-check input{width:14px;height:14px;accent-color:var(--warning)}
+/* ===== Extra / Issues / SignOff ===== */
+.textarea-wrap textarea{width:100%;padding:14px;border:2px solid var(--border);border-radius:10px;font-size:14px;font-family:inherit;resize:vertical;min-height:80px}
+.textarea-wrap textarea:focus{border-color:var(--accent);outline:none}
+.signoff-row{display:flex;align-items:center;gap:12px;padding:12px;background:#f8f9fa;border-radius:10px}
+.signoff-row label{font-weight:600;font-size:14px;min-width:60px}
+.signoff-row input{flex:1;padding:10px;border:2px solid var(--border);border-radius:8px;font-size:15px;font-family:inherit}
+.signoff-row input:focus{border-color:var(--accent);outline:none}
+/* ===== Bottom Save Bar ===== */
+.save-bar{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--border);padding:10px 16px;display:flex;gap:10px;z-index:900;justify-content:center}
+.save-bar button{padding:14px 28px;border-radius:12px;border:none;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:8px}
+.save-bar button:active{transform:scale(.97)}
+.btn-save{background:var(--accent);color:#fff;flex:1;max-width:300px;justify-content:center}
+.btn-inspector{background:#2d3436;color:#fff;padding:14px 20px !important}
+/* ===== Inspector View ===== */
+.inspector-overlay{display:none;position:fixed;inset:0;background:#fff;z-index:2000;overflow-y:auto}
+.inspector-overlay.show{display:block}
+.inspector-bar{position:sticky;top:0;background:#2d3436;color:#fff;padding:10px 16px;display:flex;align-items:center;gap:12px;z-index:10}
+.inspector-bar h3{flex:1;font-size:15px}
+.inspector-bar button{padding:8px 16px;border-radius:8px;border:none;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
+.inspector-content{padding:20px;max-width:800px;margin:0 auto}
+.insp-section{margin-bottom:20px}
+.insp-section h4{font-size:14px;font-weight:700;padding:8px 14px;border-radius:8px;color:#fff;margin-bottom:8px}
+.insp-table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:4px}
+.insp-table th,.insp-table td{padding:6px 10px;border:1px solid #ddd;text-align:left}
+.insp-table th{background:#f5f5f5;font-weight:700;font-size:11px}
+.insp-table .yes{color:var(--success);font-weight:700}
+.insp-table .no{color:var(--danger);font-weight:700}
+/* ===== Toast ===== */
+.toast{position:fixed;top:44px;left:50%;transform:translateX(-50%);padding:12px 24px;border-radius:12px;font-size:14px;font-weight:600;color:#fff;z-index:3000;box-shadow:0 4px 20px rgba(0,0,0,.2);opacity:0;transition:opacity .3s;pointer-events:none}
+.toast.show{opacity:1}
+.toast.success{background:var(--success)}
+.toast.error{background:var(--danger)}
+/* ===== Print ===== */
+@media print{
+  .status-bar,.save-bar,.inspector-bar,.date-nav button{display:none !important}
+  .inspector-overlay{position:static !important}
+  .inspector-content{padding:10px}
+  body{background:#fff}
+  .insp-table th,.insp-table td{padding:4px 6px;font-size:11px}
+}
+/* ===== Dropdown select ===== */
+.action-select{padding:8px;border:2px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;background:#fff;min-width:90px}
+.action-select:focus{border-color:var(--accent);outline:none}
+</style>
+</head>
+<body>
+
+<!-- ===== STORE SELECTION ===== -->
+<div id="storeScreen" class="store-screen">
+  <div style="text-align:center">
+    <div style="font-size:48px;margin-bottom:8px">📋</div>
+    <h1>Daily Shop Diary</h1>
+    <p>Select your store to begin</p>
+  </div>
+  <div class="store-grid">
+    <div class="store-card" style="background:linear-gradient(135deg,#1b5e20,#4caf50)" onclick="selectStore('PAB')">
+      <span class="icon">🟢</span>Pick A Bap<div class="sub">Farnborough</div>
+    </div>
+    <div class="store-card" style="background:linear-gradient(135deg,#1565c0,#42a5f5)" onclick="selectStore('TBS')">
+      <span class="icon">🔵</span>The Bap<div class="sub">Swindon</div>
+    </div>
+    <div class="store-card" style="background:linear-gradient(135deg,#6a1b9a,#ab47bc)" onclick="selectStore('TBR')">
+      <span class="icon">🟣</span>The Bap<div class="sub">Reading</div>
+    </div>
+    <div class="store-card" style="background:linear-gradient(135deg,#e65100,#ff9800)" onclick="selectStore('TBB')">
+      <span class="icon">🟠</span>The Bap<div class="sub">Bristol</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MAIN DIARY ===== -->
+<div id="statusBar" class="status-bar" style="display:none">
+  <span class="dot"></span>
+  <span id="storeName">—</span>
+  <span>· Daily Diary</span>
+  <div class="right">
+    <button onclick="showInspector()"><i class="fas fa-search"></i> Inspector</button>
+    <button onclick="backToStores()"><i class="fas fa-arrow-left"></i> Stores</button>
+  </div>
+</div>
+
+<div id="mainWrap" class="main-wrap">
+  <div class="diary-header">
+    <h2 id="diaryTitle">Shop Diary</h2>
+    <div class="date-nav">
+      <button onclick="changeDate(-1)"><i class="fas fa-chevron-left"></i></button>
+      <div class="date-display" id="dateDisplay">—</div>
+      <button onclick="changeDate(1)"><i class="fas fa-chevron-right"></i></button>
+    </div>
+  </div>
+
+  <div id="sectionsArea"></div>
+</div>
+
+<!-- ===== SAVE BAR ===== -->
+<div id="saveBar" class="save-bar" style="display:none">
+  <button class="btn-save" onclick="saveDiary()"><i class="fas fa-save"></i> Save Diary</button>
+</div>
+
+<!-- ===== INSPECTOR OVERLAY ===== -->
+<div id="inspectorOv" class="inspector-overlay">
+  <div class="inspector-bar">
+    <h3><i class="fas fa-clipboard-check"></i> Diary Inspector</h3>
+    <button style="background:#fff;color:#333" onclick="window.print()"><i class="fas fa-print"></i> Print</button>
+    <button style="background:var(--accent);color:#fff" onclick="closeInspector()"><i class="fas fa-times"></i> Close</button>
+  </div>
+  <div class="inspector-content" id="inspectorContent"></div>
+</div>
+
+<!-- ===== TOAST ===== -->
+<div id="toast" class="toast"></div>
+
+<script>
+// ============================================================
+//  CONFIG
+// ============================================================
+const DEFAULT_API='https://script.google.com/macros/s/AKfycbwYNemQh1JWIBWUQhGPSCEJBf0zKzXrn9yF3BEBR5ENNQeSVCvn_7khdm9syG0l9gns/exec';
+const API_URL=(function(){try{const c=JSON.parse(localStorage.getItem('tbms_config'));return(c&&c.apiUrl)?c.apiUrl:DEFAULT_API;}catch(e){return DEFAULT_API;}})();
+
+const STORE_COLORS={PAB:'#1b5e20',TBS:'#1565c0',TBR:'#6a1b9a',TBB:'#e65100'};
+const STORE_NAMES={PAB:'Pick A Bap — Farnborough',TBS:'The Bap — Swindon',TBR:'The Bap — Reading',TBB:'The Bap — Bristol'};
+
+const OPENING_CHECKS=[
+  {key:'petFree',label:'a) Premises are free from signs of pest activity'},
+  {key:'equipOk',label:'b) All equipment in good working order'},
+  {key:'hotWater',label:'c) Hot water, soap and towels available'},
+  {key:'aprons',label:'d) Clean aprons available'},
+  {key:'premisesClean',label:'e) Premises clean and tidy'},
+  {key:'sanitiser',label:'f) Enough sanitiser and clean cloths'},
+  {key:'foodInDate',label:'g) All food is in date'},
+  {key:'structureOk',label:'h) Structure of premises is OK'}
+];
+const CLOSING_CHECKS=[
+  {key:'outOfDate',label:'a) Out-of-date food discarded'},
+  {key:'wasteBagged',label:'b) Waste bagged and removed'},
+  {key:'surfacesCleaned',label:'c) All surfaces and equipment cleaned'},
+  {key:'foodStored',label:'d) All food properly stored / covered'},
+  {key:'premisesSecure',label:'e) Premises secured'}
+];
+const EXTRA_CHECKS=[
+  {key:'deepCleaning',label:'Deep Cleaning'},
+  {key:'extractionCleaning',label:'Extraction Cleaning'},
+  {key:'calibration',label:'Calibration'}
+];
+const HOLD_TIMES=['13:00','15:00','17:00','19:00'];
+
+// ============================================================
+//  STATE
+// ============================================================
+let currentStore='';
+let currentDate=new Date();
+let diaryConfig=[];   // DiaryConfig rows
+let diaryEntry=null;  // Current day entry
+let allEntries=[];    // All DiaryEntry rows for current store
+let _dirty=false;
+
+const $=id=>document.getElementById(id);
+
+// ============================================================
+//  API
+// ============================================================
+async function apiGet(action){try{const r=await fetch(API_URL+'?action='+action,{redirect:'follow'});return await r.json();}catch(e){return null;}}
+async function apiPost(data){try{const r=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(data),redirect:'follow'});return await r.json();}catch(e){return null;}}
+function bgPost(data){fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(data),redirect:'follow'}).catch(()=>{});}
+
+// ============================================================
+//  STORE SELECTION
+// ============================================================
+async function selectStore(code){
+  currentStore=code;
+  $('storeScreen').style.display='none';
+  $('statusBar').style.display='flex';
+  $('statusBar').style.background=STORE_COLORS[code];
+  $('mainWrap').style.display='block';
+  $('saveBar').style.display='flex';
+  $('storeName').textContent=STORE_NAMES[code];
+  $('diaryTitle').textContent='Shop Diary';
+
+  // Load config + entries
+  showToast('Loading data...','success');
+  const res=await apiGet('getStoreData&store='+code+'&sheets=DiaryConfig,DiaryEntry');
+  if(res&&res.data){
+    diaryConfig=(res.data.DiaryConfig||[]).filter(c=>c.active===true||c.active==='true'||c.active==='TRUE');
+    allEntries=res.data.DiaryEntry||[];
+  }else{
+    diaryConfig=[];allEntries=[];
+  }
+  setDate(new Date());
+}
+
+function backToStores(){
+  $('storeScreen').style.display='flex';
+  $('statusBar').style.display='none';
+  $('mainWrap').style.display='none';
+  $('saveBar').style.display='none';
+  currentStore='';diaryEntry=null;allEntries=[];
+}
+
+// ============================================================
+//  DATE NAVIGATION
+// ============================================================
+function fmtDate(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function niceDate(d){const days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];const m=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];return days[d.getDay()]+', '+d.getDate()+' '+m[d.getMonth()]+' '+d.getFullYear();}
+
+function setDate(d){
+  currentDate=d;
+  $('dateDisplay').textContent=niceDate(d);
+  loadDayEntry();
+  renderSections();
+}
+function changeDate(delta){
+  const d=new Date(currentDate);
+  d.setDate(d.getDate()+delta);
+  setDate(d);
+}
+
+function loadDayEntry(){
+  const ds=fmtDate(currentDate);
+  const found=allEntries.find(e=>e.date===ds);
+  if(found){
+    diaryEntry={...found};
+    // Parse JSON fields
+    ['openChecks','fridgeTemps','deliveries','cookingTemps','coolingRecords','leftovers','closingChecks','holdTemps','extraChecks'].forEach(f=>{
+      if(typeof diaryEntry[f]==='string'&&diaryEntry[f]){try{diaryEntry[f]=JSON.parse(diaryEntry[f]);}catch(e){}}
+      if(!diaryEntry[f])diaryEntry[f]=null;
+    });
+  }else{
+    diaryEntry={id:'',storeId:currentStore,date:ds,openChecks:null,fridgeTemps:null,deliveries:null,cookingTemps:null,coolingRecords:null,leftovers:null,closingChecks:null,holdTemps:null,extraChecks:null,issues:'',signedBy:'',submittedBy:'',submittedAt:''};
+  }
+  _dirty=false;
+}
+
+// ============================================================
+//  GET CONFIG ITEMS
+// ============================================================
+function getFridges(){return diaryConfig.filter(c=>c.configType==='fridge').sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0));}
+function getFreezers(){return diaryConfig.filter(c=>c.configType==='freezer').sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0));}
+function getMenuItems(){return diaryConfig.filter(c=>c.configType==='menuItem').sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0));}
+
+// ============================================================
+//  RENDER ALL SECTIONS
+// ============================================================
+function renderSections(){
+  const fridges=getFridges(),freezers=getFreezers(),menuItems=getMenuItems();
+  const clr=STORE_COLORS[currentStore];
+  let html='';
+
+  // 1. Opening Checks
+  html+=sectionWrap(1,'Opening Checks','fa-door-open',clr,renderOpenChecks());
+  // 2. Cold Storage
+  html+=sectionWrap(2,'Cold Storage Temperatures','fa-thermometer-half',clr,renderColdStorage(fridges,freezers));
+  // 3. Delivery
+  html+=sectionWrap(3,'Delivery Checks','fa-truck',clr,renderDelivery());
+  // 4. Cooking Temperature
+  html+=sectionWrap(4,'Cooking Temperature','fa-fire',clr,renderCooking(menuItems));
+  // 5. Food Hold Temperature
+  html+=sectionWrap(5,'Food Hold Temperature','fa-clock',clr,renderHoldTemp(menuItems));
+  // 6. Cooling
+  html+=sectionWrap(6,'Cooling Records','fa-snowflake',clr,renderCooling());
+  // 7. Leftovers
+  html+=sectionWrap(7,'Any Left Over','fa-box-open',clr,renderLeftovers());
+  // 8. Closing Checks
+  html+=sectionWrap(8,'Closing Checks','fa-door-closed',clr,renderClosingChecks());
+  // 9. Extra Checks + Issues + Sign Off
+  html+=sectionWrap(9,'Extra Checks, Issues & Sign Off','fa-clipboard-check',clr,renderExtra());
+
+  $('sectionsArea').innerHTML=html;
+}
+
+function sectionWrap(num,title,icon,clr,body){
+  const done=isSectionDone(num);
+  return `<div class="section" id="sec_${num}">
+    <div class="section-head" onclick="toggleSection(${num})">
+      <div class="num" style="background:${clr}">${num}</div>
+      <div class="title"><i class="fas ${icon}" style="margin-right:6px;color:${clr}"></i>${title}</div>
+      <i class="fas fa-check-circle status-icon ${done?'done':''}"></i>
+      <i class="fas fa-chevron-down chevron"></i>
+    </div>
+    <div class="section-body">${body}</div>
+  </div>`;
+}
+
+function toggleSection(n){
+  const el=$('sec_'+n);
+  if(el)el.classList.toggle('open');
+}
+
+function isSectionDone(n){
+  if(!diaryEntry)return false;
+  switch(n){
+    case 1: return diaryEntry.openChecks&&Object.keys(diaryEntry.openChecks).length>0;
+    case 2: return diaryEntry.fridgeTemps&&diaryEntry.fridgeTemps.length>0;
+    case 3: return diaryEntry.deliveries&&diaryEntry.deliveries.length>0;
+    case 4: return diaryEntry.cookingTemps&&diaryEntry.cookingTemps.length>0;
+    case 5: return diaryEntry.holdTemps&&diaryEntry.holdTemps.length>0;
+    case 6: return diaryEntry.coolingRecords&&diaryEntry.coolingRecords.length>0;
+    case 7: return diaryEntry.leftovers&&diaryEntry.leftovers.length>0;
+    case 8: return diaryEntry.closingChecks&&Object.keys(diaryEntry.closingChecks).length>0;
+    case 9: return !!(diaryEntry.signedBy);
+  }
+  return false;
+}
+
+// ============================================================
+//  1. OPENING CHECKS
+// ============================================================
+function renderOpenChecks(){
+  const data=diaryEntry.openChecks||{};
+  let html='<div class="check-list">';
+  OPENING_CHECKS.forEach(c=>{
+    const checked=data[c.key]?'checked':'';
+    html+=`<div class="check-item">
+      <div class="label">${c.label}</div>
+      <label class="toggle"><input type="checkbox" ${checked} onchange="markDirty()" data-section="open" data-key="${c.key}"><span class="slider"></span></label>
+    </div>`;
+  });
+  html+='</div>';
+  return html;
+}
+
+// ============================================================
+//  2. COLD STORAGE
+// ============================================================
+function renderColdStorage(fridges,freezers){
+  const data=diaryEntry.fridgeTemps||[];
+  const getTemp=(name,period)=>{const f=data.find(d=>d.name===name);return f?f[period]||'':'';};
+
+  let html='';
+  if(fridges.length>0){
+    html+=`<div class="fridge-type-label" style="background:${STORE_COLORS[currentStore]}"><i class="fas fa-temperature-low"></i> Fridges (0°C – 8°C)</div>`;
+    html+='<div class="fridge-grid">';
+    html+='<div class="fridge-row header"><div>Name</div><div style="text-align:center">AM °C</div><div style="text-align:center">PM °C</div></div>';
+    fridges.forEach(f=>{
+      html+=`<div class="fridge-row">
+        <div class="name"><i class="fas fa-temperature-low" style="color:#2196f3"></i> ${f.name}</div>
+        <input type="number" class="temp-input" data-cs-name="${f.name}" data-cs-period="am" value="${getTemp(f.name,'am')}" onchange="markDirty()" placeholder="—" inputmode="decimal">
+        <input type="number" class="temp-input" data-cs-name="${f.name}" data-cs-period="pm" value="${getTemp(f.name,'pm')}" onchange="markDirty()" placeholder="—" inputmode="decimal">
+      </div>`;
+    });
+    html+='</div>';
+  }
+  if(freezers.length>0){
+    html+=`<div class="fridge-type-label" style="background:#37474f;margin-top:12px"><i class="fas fa-icicles"></i> Freezers (-18°C or below)</div>`;
+    html+='<div class="fridge-grid">';
+    html+='<div class="fridge-row header"><div>Name</div><div style="text-align:center">AM °C</div><div style="text-align:center">PM °C</div></div>';
+    freezers.forEach(f=>{
+      html+=`<div class="fridge-row">
+        <div class="name"><i class="fas fa-icicles" style="color:#607d8b"></i> ${f.name}</div>
+        <input type="number" class="temp-input" data-cs-name="${f.name}" data-cs-period="am" value="${getTemp(f.name,'am')}" onchange="markDirty()" placeholder="—" inputmode="decimal">
+        <input type="number" class="temp-input" data-cs-name="${f.name}" data-cs-period="pm" value="${getTemp(f.name,'pm')}" onchange="markDirty()" placeholder="—" inputmode="decimal">
+      </div>`;
+    });
+    html+='</div>';
+  }
+  if(fridges.length===0&&freezers.length===0){
+    html+='<div style="text-align:center;padding:20px;color:var(--text-light)"><i class="fas fa-info-circle"></i> No fridges/freezers configured for this store. Add them in TBMS → Diary Config.</div>';
+  }
+  return html;
+}
+
+// ============================================================
+//  3. DELIVERY
+// ============================================================
+function renderDelivery(){
+  const data=diaryEntry.deliveries||[{product:'',visualOk:false,tempOk:false,accepted:false}];
+  let html='<table class="data-table"><thead><tr><th>Product / Company</th><th style="text-align:center">Visual OK</th><th style="text-align:center">Temp OK</th><th style="text-align:center">Accepted</th><th></th></tr></thead><tbody id="delRows">';
+  data.forEach((d,i)=>{
+    html+=deliveryRow(d,i);
+  });
+  html+='</tbody></table>';
+  html+=`<button class="add-row-btn" onclick="addDeliveryRow()"><i class="fas fa-plus"></i> Add Delivery</button>`;
+  return html;
+}
+function deliveryRow(d,i){
+  return `<tr>
+    <td><input type="text" value="${d.product||''}" data-del="${i}" data-field="product" onchange="markDirty()" placeholder="Enter product/company"></td>
+    <td style="text-align:center"><label class="mini-toggle"><input type="checkbox" ${d.visualOk?'checked':''} data-del="${i}" data-field="visualOk" onchange="markDirty()"><span class="slider"></span></label></td>
+    <td style="text-align:center"><label class="mini-toggle"><input type="checkbox" ${d.tempOk?'checked':''} data-del="${i}" data-field="tempOk" onchange="markDirty()"><span class="slider"></span></label></td>
+    <td style="text-align:center"><label class="mini-toggle"><input type="checkbox" ${d.accepted?'checked':''} data-del="${i}" data-field="accepted" onchange="markDirty()"><span class="slider"></span></label></td>
+    <td><button class="del-btn" onclick="removeDeliveryRow(${i})"><i class="fas fa-times"></i></button></td>
+  </tr>`;
+}
+function addDeliveryRow(){
+  collectFormData();
+  if(!diaryEntry.deliveries)diaryEntry.deliveries=[];
+  diaryEntry.deliveries.push({product:'',visualOk:false,tempOk:false,accepted:false});
+  _dirty=true;
+  renderSections();
+  $('sec_3').classList.add('open');
+}
+function removeDeliveryRow(i){
+  collectFormData();
+  diaryEntry.deliveries.splice(i,1);
+  _dirty=true;
+  renderSections();
+  $('sec_3').classList.add('open');
+}
+
+// ============================================================
+//  4. COOKING TEMPERATURE
+// ============================================================
+function renderCooking(menuItems){
+  const data=diaryEntry.cookingTemps||[];
+  if(menuItems.length===0)return '<div style="text-align:center;padding:20px;color:var(--text-light)"><i class="fas fa-info-circle"></i> No menu items configured. Add them in TBMS → Diary Config.</div>';
+  let html='<div style="font-size:12px;color:var(--text-light);margin-bottom:10px"><i class="fas fa-info-circle"></i> Record temperature when food is cooked. Target: 75°C+</div>';
+  html+='<div class="fridge-grid">';
+  html+='<div class="fridge-row header"><div>Menu Item</div><div style="text-align:center">Temp °C</div><div></div></div>';
+  menuItems.forEach(m=>{
+    const rec=data.find(d=>d.item===m.name);
+    html+=`<div class="fridge-row">
+      <div class="name"><i class="fas fa-utensils" style="color:${STORE_COLORS[currentStore]}"></i> ${m.name}</div>
+      <input type="number" class="temp-input" data-cook="${m.name}" value="${rec?rec.temp:''}" onchange="markDirty()" placeholder="—" inputmode="decimal">
+      <div></div>
+    </div>`;
+  });
+  html+='</div>';
+  return html;
+}
+
+// ============================================================
+//  5. FOOD HOLD TEMPERATURE
+// ============================================================
+function renderHoldTemp(menuItems){
+  const data=diaryEntry.holdTemps||[];
+  if(menuItems.length===0)return '<div style="text-align:center;padding:20px;color:var(--text-light)"><i class="fas fa-info-circle"></i> No menu items configured.</div>';
+  let html='<div style="font-size:12px;color:var(--text-light);margin-bottom:10px"><i class="fas fa-info-circle"></i> Record food temperature every 2 hours. <strong>N</strong> = Newly cooked (write cooking temp). If below +63°C, discard after 2 hours.</div>';
+  html+='<div class="hold-grid"><table class="hold-table"><thead><tr><th>Item</th>';
+  HOLD_TIMES.forEach(t=>html+=`<th>${t}</th>`);
+  html+='</tr></thead><tbody>';
+  menuItems.forEach(m=>{
+    const rec=data.find(d=>d.item===m.name)||{};
+    html+=`<tr><td>${m.name}</td>`;
+    HOLD_TIMES.forEach(t=>{
+      const tKey='t'+t.replace(':','');
+      const nKey='n'+t.replace(':','');
+      const val=rec[tKey]||'';
+      const isN=rec[nKey]?true:false;
+      html+=`<td>
+        <input type="number" class="hold-input ${isN?'newly':''}" data-hold="${m.name}" data-time="${tKey}" value="${val}" onchange="markDirty()" placeholder="—" inputmode="decimal">
+        <div class="n-check"><input type="checkbox" ${isN?'checked':''} data-hold="${m.name}" data-ntime="${nKey}" onchange="toggleNewly(this);markDirty()"><label>N</label></div>
+      </td>`;
+    });
+    html+='</tr>';
+  });
+  html+='</tbody></table></div>';
+  return html;
+}
+function toggleNewly(cb){
+  const inp=cb.closest('td').querySelector('.hold-input');
+  if(inp){cb.checked?inp.classList.add('newly'):inp.classList.remove('newly');}
+}
+
+// ============================================================
+//  6. COOLING
+// ============================================================
+function renderCooling(){
+  const data=diaryEntry.coolingRecords||[{product:'',timeTaken:'',ok:false}];
+  let html='<div style="font-size:12px;color:var(--text-light);margin-bottom:10px"><i class="fas fa-info-circle"></i> Record cooling details for products cooled today.</div>';
+  html+='<table class="data-table"><thead><tr><th>Product</th><th>Time to cool (min)</th><th style="text-align:center">OK</th><th></th></tr></thead><tbody id="coolRows">';
+  data.forEach((d,i)=>{
+    html+=`<tr>
+      <td><input type="text" value="${d.product||''}" data-cool="${i}" data-field="product" onchange="markDirty()" placeholder="Product name"></td>
+      <td><input type="number" value="${d.timeTaken||''}" data-cool="${i}" data-field="timeTaken" onchange="markDirty()" placeholder="mins" inputmode="numeric"></td>
+      <td style="text-align:center"><label class="mini-toggle"><input type="checkbox" ${d.ok?'checked':''} data-cool="${i}" data-field="ok" onchange="markDirty()"><span class="slider"></span></label></td>
+      <td><button class="del-btn" onclick="removeCoolRow(${i})"><i class="fas fa-times"></i></button></td>
+    </tr>`;
+  });
+  html+='</tbody></table>';
+  html+=`<button class="add-row-btn" onclick="addCoolRow()"><i class="fas fa-plus"></i> Add Cooling Record</button>`;
+  return html;
+}
+function addCoolRow(){
+  collectFormData();
+  if(!diaryEntry.coolingRecords)diaryEntry.coolingRecords=[];
+  diaryEntry.coolingRecords.push({product:'',timeTaken:'',ok:false});
+  _dirty=true;renderSections();$('sec_6').classList.add('open');
+}
+function removeCoolRow(i){collectFormData();diaryEntry.coolingRecords.splice(i,1);_dirty=true;renderSections();$('sec_6').classList.add('open');}
+
+// ============================================================
+//  7. LEFTOVERS
+// ============================================================
+function renderLeftovers(){
+  const data=diaryEntry.leftovers||[{product:'',action:'discard'}];
+  let html='<table class="data-table"><thead><tr><th>Product(s)</th><th>Action</th><th></th></tr></thead><tbody>';
+  data.forEach((d,i)=>{
+    html+=`<tr>
+      <td><input type="text" value="${d.product||''}" data-left="${i}" data-field="product" onchange="markDirty()" placeholder="Product name"></td>
+      <td><select class="action-select" data-left="${i}" data-field="action" onchange="markDirty()">
+        <option value="discard" ${d.action==='discard'?'selected':''}>Discard</option>
+        <option value="store" ${d.action==='store'?'selected':''}>Store</option>
+      </select></td>
+      <td><button class="del-btn" onclick="removeLeftRow(${i})"><i class="fas fa-times"></i></button></td>
+    </tr>`;
+  });
+  html+='</tbody></table>';
+  html+=`<button class="add-row-btn" onclick="addLeftRow()"><i class="fas fa-plus"></i> Add Leftover</button>`;
+  return html;
+}
+function addLeftRow(){collectFormData();if(!diaryEntry.leftovers)diaryEntry.leftovers=[];diaryEntry.leftovers.push({product:'',action:'discard'});_dirty=true;renderSections();$('sec_7').classList.add('open');}
+function removeLeftRow(i){collectFormData();diaryEntry.leftovers.splice(i,1);_dirty=true;renderSections();$('sec_7').classList.add('open');}
+
+// ============================================================
+//  8. CLOSING CHECKS
+// ============================================================
+function renderClosingChecks(){
+  const data=diaryEntry.closingChecks||{};
+  let html='<div class="check-list">';
+  CLOSING_CHECKS.forEach(c=>{
+    const checked=data[c.key]?'checked':'';
+    html+=`<div class="check-item">
+      <div class="label">${c.label}</div>
+      <label class="toggle"><input type="checkbox" ${checked} onchange="markDirty()" data-section="close" data-key="${c.key}"><span class="slider"></span></label>
+    </div>`;
+  });
+  html+='</div>';
+  return html;
+}
+
+// ============================================================
+//  9. EXTRA + ISSUES + SIGN OFF
+// ============================================================
+function renderExtra(){
+  const ex=diaryEntry.extraChecks||{};
+  let html='<div style="font-weight:700;font-size:13px;margin-bottom:8px"><i class="fas fa-broom" style="margin-right:6px"></i>Extra Checks</div>';
+  html+='<div class="check-list" style="margin-bottom:16px">';
+  EXTRA_CHECKS.forEach(c=>{
+    html+=`<div class="check-item">
+      <div class="label">${c.label}</div>
+      <label class="toggle"><input type="checkbox" ${ex[c.key]?'checked':''} onchange="markDirty()" data-section="extra" data-key="${c.key}"><span class="slider"></span></label>
+    </div>`;
+  });
+  html+='</div>';
+  html+=`<div style="font-weight:700;font-size:13px;margin-bottom:8px"><i class="fas fa-exclamation-triangle" style="margin-right:6px;color:var(--warning)"></i>Issues & Remedial Action</div>
+  <div class="textarea-wrap" style="margin-bottom:16px"><textarea id="issuesText" onchange="markDirty()" placeholder="Describe any issues and what action was taken...">${diaryEntry.issues||''}</textarea></div>`;
+  html+=`<div style="font-weight:700;font-size:13px;margin-bottom:8px"><i class="fas fa-signature" style="margin-right:6px"></i>Sign Off</div>
+  <div class="signoff-row"><label>Name:</label><input type="text" id="signedByInput" value="${diaryEntry.signedBy||''}" onchange="markDirty()" placeholder="Your name"></div>`;
+  return html;
+}
+
+// ============================================================
+//  COLLECT FORM DATA
+// ============================================================
+function collectFormData(){
+  if(!diaryEntry)return;
+  // Opening checks
+  const openData={};
+  document.querySelectorAll('[data-section="open"]').forEach(el=>{openData[el.dataset.key]=el.checked;});
+  diaryEntry.openChecks=openData;
+  // Closing checks
+  const closeData={};
+  document.querySelectorAll('[data-section="close"]').forEach(el=>{closeData[el.dataset.key]=el.checked;});
+  diaryEntry.closingChecks=closeData;
+  // Extra checks
+  const extraData={};
+  document.querySelectorAll('[data-section="extra"]').forEach(el=>{extraData[el.dataset.key]=el.checked;});
+  diaryEntry.extraChecks=extraData;
+  // Fridge temps
+  const fridgeMap={};
+  document.querySelectorAll('[data-cs-name]').forEach(el=>{
+    const name=el.dataset.csName,period=el.dataset.csPeriod;
+    if(!fridgeMap[name])fridgeMap[name]={name};
+    fridgeMap[name][period]=el.value;
+  });
+  diaryEntry.fridgeTemps=Object.values(fridgeMap).filter(f=>f.am||f.pm);
+  // Deliveries
+  const delMap={};
+  document.querySelectorAll('[data-del]').forEach(el=>{
+    const i=el.dataset.del;
+    if(!delMap[i])delMap[i]={};
+    if(el.type==='checkbox')delMap[i][el.dataset.field]=el.checked;
+    else delMap[i][el.dataset.field]=el.value;
+  });
+  diaryEntry.deliveries=Object.values(delMap).filter(d=>d.product);
+  // Cooking temps
+  const cookArr=[];
+  document.querySelectorAll('[data-cook]').forEach(el=>{
+    if(el.value)cookArr.push({item:el.dataset.cook,temp:el.value});
+  });
+  diaryEntry.cookingTemps=cookArr;
+  // Hold temps
+  const holdMap={};
+  document.querySelectorAll('[data-hold]').forEach(el=>{
+    const item=el.dataset.hold;
+    if(!holdMap[item])holdMap[item]={item};
+    if(el.dataset.time)holdMap[item][el.dataset.time]=el.value;
+    if(el.dataset.ntime)holdMap[item][el.dataset.ntime]=el.checked;
+  });
+  diaryEntry.holdTemps=Object.values(holdMap).filter(h=>{
+    return HOLD_TIMES.some(t=>h['t'+t.replace(':','')]);
+  });
+  // Cooling
+  const coolMap={};
+  document.querySelectorAll('[data-cool]').forEach(el=>{
+    const i=el.dataset.cool;
+    if(!coolMap[i])coolMap[i]={};
+    if(el.type==='checkbox')coolMap[i][el.dataset.field]=el.checked;
+    else coolMap[i][el.dataset.field]=el.value;
+  });
+  diaryEntry.coolingRecords=Object.values(coolMap).filter(c=>c.product);
+  // Leftovers
+  const leftMap={};
+  document.querySelectorAll('[data-left]').forEach(el=>{
+    const i=el.dataset.left;
+    if(!leftMap[i])leftMap[i]={};
+    if(el.tagName==='SELECT')leftMap[i][el.dataset.field]=el.value;
+    else leftMap[i][el.dataset.field]=el.value;
+  });
+  diaryEntry.leftovers=Object.values(leftMap).filter(l=>l.product);
+  // Issues + SignOff
+  const issEl=$('issuesText');if(issEl)diaryEntry.issues=issEl.value;
+  const sigEl=$('signedByInput');if(sigEl)diaryEntry.signedBy=sigEl.value;
+}
+
+function markDirty(){_dirty=true;}
+
+// ============================================================
+//  SAVE
+// ============================================================
+async function saveDiary(){
+  collectFormData();
+  if(!diaryEntry.id){
+    diaryEntry.id='de_'+Date.now().toString(36)+Math.random().toString(36).substr(2,4);
+  }
+  diaryEntry.storeId=currentStore;
+  diaryEntry.date=fmtDate(currentDate);
+  diaryEntry.submittedAt=new Date().toISOString();
+
+  // Build row with JSON strings
+  const row={...diaryEntry};
+  ['openChecks','fridgeTemps','deliveries','cookingTemps','coolingRecords','leftovers','closingChecks','holdTemps','extraChecks'].forEach(f=>{
+    row[f]=row[f]?JSON.stringify(row[f]):'';
+  });
+
+  showToast('Saving...','success');
+  const res=await apiPost({action:'upsert',sheet:'DiaryEntry',row:row});
+  if(res&&!res.error){
+    showToast('Saved successfully!','success');
+    // Update local cache
+    const idx=allEntries.findIndex(e=>e.date===row.date);
+    if(idx>=0)allEntries[idx]=row; else allEntries.push(row);
+    _dirty=false;
+    renderSections();
+  }else{
+    showToast('Save failed: '+(res?.error||'Unknown'),'error');
+  }
+}
+
+// ============================================================
+//  INSPECTOR VIEW
+// ============================================================
+function showInspector(){
+  collectFormData();
+  const e=diaryEntry;
+  const clr=STORE_COLORS[currentStore];
+  let html=`<div style="text-align:center;margin-bottom:20px">
+    <h2 style="color:${clr}">${STORE_NAMES[currentStore]}</h2>
+    <div style="font-size:16px;font-weight:700;margin-top:4px">${niceDate(currentDate)}</div>
+    <div style="font-size:12px;color:var(--text-light);margin-top:2px">Daily Shop Diary</div>
+  </div>`;
+
+  // Opening Checks
+  html+=inspSection('Opening Checks',clr,()=>{
+    let t='<table class="insp-table"><tr><th>Check</th><th style="width:60px;text-align:center">Status</th></tr>';
+    OPENING_CHECKS.forEach(c=>{
+      const v=e.openChecks&&e.openChecks[c.key];
+      t+=`<tr><td>${c.label}</td><td style="text-align:center" class="${v?'yes':'no'}">${v?'YES':'NO'}</td></tr>`;
+    });
+    return t+'</table>';
+  });
+
+  // Cold Storage
+  html+=inspSection('Cold Storage',clr,()=>{
+    if(!e.fridgeTemps||e.fridgeTemps.length===0)return '<div style="color:var(--text-light)">No data recorded</div>';
+    let t='<table class="insp-table"><tr><th>Name</th><th style="text-align:center">AM °C</th><th style="text-align:center">PM °C</th></tr>';
+    (e.fridgeTemps||[]).forEach(f=>{t+=`<tr><td>${f.name}</td><td style="text-align:center">${f.am||'—'}</td><td style="text-align:center">${f.pm||'—'}</td></tr>`;});
+    return t+'</table>';
+  });
+
+  // Delivery
+  html+=inspSection('Delivery',clr,()=>{
+    if(!e.deliveries||e.deliveries.length===0)return '<div style="color:var(--text-light)">No deliveries</div>';
+    let t='<table class="insp-table"><tr><th>Product/Company</th><th>Visual</th><th>Temp</th><th>Accepted</th></tr>';
+    (e.deliveries||[]).forEach(d=>{
+      t+=`<tr><td>${d.product||'—'}</td><td class="${d.visualOk?'yes':'no'}">${d.visualOk?'Y':'N'}</td><td class="${d.tempOk?'yes':'no'}">${d.tempOk?'Y':'N'}</td><td class="${d.accepted?'yes':'no'}">${d.accepted?'Y':'N'}</td></tr>`;
+    });
+    return t+'</table>';
+  });
+
+  // Cooking Temp
+  html+=inspSection('Cooking Temperature',clr,()=>{
+    if(!e.cookingTemps||e.cookingTemps.length===0)return '<div style="color:var(--text-light)">No data</div>';
+    let t='<table class="insp-table"><tr><th>Item</th><th style="text-align:center">Temp °C</th></tr>';
+    (e.cookingTemps||[]).forEach(c=>{t+=`<tr><td>${c.item}</td><td style="text-align:center;font-weight:700">${c.temp||'—'}</td></tr>`;});
+    return t+'</table>';
+  });
+
+  // Hold Temp
+  html+=inspSection('Food Hold Temperature',clr,()=>{
+    if(!e.holdTemps||e.holdTemps.length===0)return '<div style="color:var(--text-light)">No data</div>';
+    let t='<table class="insp-table"><tr><th>Item</th>';
+    HOLD_TIMES.forEach(tm=>t+=`<th style="text-align:center">${tm}</th>`);
+    t+='</tr>';
+    (e.holdTemps||[]).forEach(h=>{
+      t+=`<tr><td>${h.item}</td>`;
+      HOLD_TIMES.forEach(tm=>{
+        const k='t'+tm.replace(':','');
+        const nk='n'+tm.replace(':','');
+        const v=h[k]||'—';
+        const isN=h[nk];
+        t+=`<td style="text-align:center;font-weight:700${isN?';color:var(--warning)':''}">${v}${isN?' (N)':''}</td>`;
+      });
+      t+='</tr>';
+    });
+    return t+'</table>';
+  });
+
+  // Cooling
+  html+=inspSection('Cooling',clr,()=>{
+    if(!e.coolingRecords||e.coolingRecords.length===0)return '<div style="color:var(--text-light)">No data</div>';
+    let t='<table class="insp-table"><tr><th>Product</th><th>Time (min)</th><th>OK</th></tr>';
+    (e.coolingRecords||[]).forEach(c=>{t+=`<tr><td>${c.product}</td><td>${c.timeTaken||'—'}</td><td class="${c.ok?'yes':'no'}">${c.ok?'Y':'N'}</td></tr>`;});
+    return t+'</table>';
+  });
+
+  // Leftovers
+  html+=inspSection('Leftovers',clr,()=>{
+    if(!e.leftovers||e.leftovers.length===0)return '<div style="color:var(--text-light)">No data</div>';
+    let t='<table class="insp-table"><tr><th>Product</th><th>Action</th></tr>';
+    (e.leftovers||[]).forEach(l=>{t+=`<tr><td>${l.product}</td><td>${l.action==='discard'?'Discarded':'Stored'}</td></tr>`;});
+    return t+'</table>';
+  });
+
+  // Closing Checks
+  html+=inspSection('Closing Checks',clr,()=>{
+    let t='<table class="insp-table"><tr><th>Check</th><th style="width:60px;text-align:center">Status</th></tr>';
+    CLOSING_CHECKS.forEach(c=>{
+      const v=e.closingChecks&&e.closingChecks[c.key];
+      t+=`<tr><td>${c.label}</td><td style="text-align:center" class="${v?'yes':'no'}">${v?'YES':'NO'}</td></tr>`;
+    });
+    return t+'</table>';
+  });
+
+  // Extra
+  html+=inspSection('Extra Checks',clr,()=>{
+    let t='<table class="insp-table"><tr><th>Check</th><th style="width:60px;text-align:center">Done</th></tr>';
+    EXTRA_CHECKS.forEach(c=>{
+      const v=e.extraChecks&&e.extraChecks[c.key];
+      t+=`<tr><td>${c.label}</td><td style="text-align:center" class="${v?'yes':'no'}">${v?'YES':'NO'}</td></tr>`;
+    });
+    return t+'</table>';
+  });
+
+  // Issues
+  html+=inspSection('Issues & Remedial Action',clr,()=>{
+    return `<div style="padding:8px;min-height:40px;white-space:pre-wrap">${e.issues||'None recorded'}</div>`;
+  });
+
+  // Sign Off
+  html+=`<div style="margin-top:20px;padding:14px;background:#f8f9fa;border-radius:10px;display:flex;align-items:center;gap:12px">
+    <i class="fas fa-signature" style="font-size:20px;color:${clr}"></i>
+    <div><strong>Signed by:</strong> ${e.signedBy||'—'}</div>
+    <div style="margin-left:auto;font-size:11px;color:var(--text-light)">${e.submittedAt?new Date(e.submittedAt).toLocaleString():''}</div>
+  </div>`;
+
+  $('inspectorContent').innerHTML=html;
+  $('inspectorOv').classList.add('show');
+}
+function inspSection(title,clr,contentFn){
+  return `<div class="insp-section"><h4 style="background:${clr}">${title}</h4>${contentFn()}</div>`;
+}
+function closeInspector(){$('inspectorOv').classList.remove('show');}
+
+// ============================================================
+//  TOAST
+// ============================================================
+function showToast(msg,type){
+  const t=$('toast');t.textContent=msg;t.className='toast '+type+' show';
+  clearTimeout(t._timer);t._timer=setTimeout(()=>t.classList.remove('show'),2500);
+}
+</script>
+</body>
+</html>

@@ -2,7 +2,7 @@
 //  TBMS - The Bap Management System v2.4
 //  Google Apps Script Backend (Code.gs)
 //  Deployed: 2026-02-17
-//  URL: https://script.google.com/macros/s/AKfycbwsTnzSbU67SH2xC6Hlh7eTgv8eYdYvCFPG-W7wwp5qOg7wipvfY1x9slBCLwR2WtE/exec
+//  URL: https://script.google.com/macros/s/AKfycbwoaLHWwFjWwn_hl1YUFvE8ff2dAVZqn_kssslhEtBk3ESCAH21w-SniAyjr2oiEzQ/exec
 // ============================================================
 //  SETUP:
 //  1. Google Drive > New > Google Sheets > Name "TBMS Database"
@@ -326,10 +326,19 @@ function saveSheet(name, rows) {
 //  gets corrected to "nickName" on every save.
 // ============================================================
 function upsertRow(name, row) {
-  if (!name || !SHEETS[name] || !row) return {error: 'Invalid parameters'};
+  if (!name) return {error: 'Missing sheet name'};
+  if (!SHEETS[name]) return {error: 'Unknown sheet: ' + name};
+  if (!row) return {error: 'Missing row data'};
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName(name);
-  if (!sheet) return {error: 'Sheet not found: ' + name};
+  if (!sheet) {
+    // Auto-create sheet with headers
+    sheet = ss.insertSheet(name);
+    var headers = SHEETS[name];
+    sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+    sheet.getRange(1, 1, 1, headers.length).setFontWeight('bold');
+    sheet.setFrozenRows(1);
+  }
   var headers = SHEETS[name];
   // Always ensure header row matches canonical names
   sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
@@ -370,10 +379,10 @@ function upsertRow(name, row) {
 }
 
 function deleteRow(name, id) {
-  if (!name || !SHEETS[name]) return {error: 'Invalid parameters'};
+  if (!name || !SHEETS[name]) return {error: 'Unknown sheet: ' + (name||'(empty)')};
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName(name);
-  if (!sheet) return {error: 'Sheet not found'};
+  if (!sheet) return {error: 'Sheet not found: ' + name};
   var data = sheet.getDataRange().getValues();
   for (var i = 1; i < data.length; i++) {
     if (String(data[i][0]) === String(id)) { sheet.deleteRow(i + 1); return {status:'ok', deleted: true}; }
@@ -385,10 +394,18 @@ function deleteRow(name, id) {
 //  appendNewRow — Fixes headers, then appends using SHEETS[name]
 // ============================================================
 function appendNewRow(name, row) {
-  if (!name || !SHEETS[name] || !row) return {error: 'Invalid parameters'};
+  if (!name) return {error: 'Missing sheet name'};
+  if (!SHEETS[name]) return {error: 'Unknown sheet: ' + name};
+  if (!row) return {error: 'Missing row data'};
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName(name);
-  if (!sheet) return {error: 'Sheet not found'};
+  if (!sheet) {
+    sheet = ss.insertSheet(name);
+    var h = SHEETS[name];
+    sheet.getRange(1, 1, 1, h.length).setValues([h]);
+    sheet.getRange(1, 1, 1, h.length).setFontWeight('bold');
+    sheet.setFrozenRows(1);
+  }
   var headers = SHEETS[name];
   // Always ensure header row matches canonical names
   sheet.getRange(1, 1, 1, headers.length).setValues([headers]);

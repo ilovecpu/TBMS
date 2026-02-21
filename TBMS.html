@@ -519,7 +519,7 @@ const LS = {
   set(k, v) { localStorage.setItem('tbms_'+k, JSON.stringify(v)); },
   getConfig() { return this.get('config') || {}; }
 };
-const CLOUD_URL = 'https://script.google.com/macros/s/AKfycbwsTnzSbU67SH2xC6Hlh7eTgv8eYdYvCFPG-W7wwp5qOg7wipvfY1x9slBCLwR2WtE/exec';
+const CLOUD_URL = 'https://script.google.com/macros/s/AKfycbwoaLHWwFjWwn_hl1YUFvE8ff2dAVZqn_kssslhEtBk3ESCAH21w-SniAyjr2oiEzQ/exec';
 const API = {
   url: CLOUD_URL, mode: 'cloud',
   async get(action, params={}) {

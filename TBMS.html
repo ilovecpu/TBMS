@@ -3416,14 +3416,21 @@ async function renderDiaryConfig(c){
   const storeFilter=currentUser.storeId||'';
   const stores=D.Stores.filter(s=>s.active!==false&&s.active!=='false');
   let selStore=storeFilter||stores[0]?.code||'';
+  const selStoreName=(stores.find(s=>s.code===selStore)||{}).name||selStore;
   c.innerHTML=`
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap">
-      <select id="dcStoreFilter" onchange="renderDiaryConfigBody()" style="padding:8px 12px;border:2px solid #ddd;border-radius:8px;font-size:14px;font-family:inherit">
+      <select id="dcStoreFilter" onchange="renderDiaryConfigBody();_dcUpdateStoreName()" style="padding:8px 12px;border:2px solid #ddd;border-radius:8px;font-size:14px;font-family:inherit">
         ${stores.map(s=>`<option value="${s.code}" ${s.code===selStore?'selected':''}>${s.name}</option>`).join('')}
       </select>
+      <span id="dcStoreName" style="font-size:20px;font-weight:800;color:var(--primary)">${escHtml(selStoreName)}</span>
     </div>
     <div id="dcBody"></div>`;
   renderDiaryConfigBody();
+}
+function _dcUpdateStoreName(){
+  const sel=$('dcStoreFilter');if(!sel)return;
+  const name=sel.options[sel.selectedIndex]?.text||'';
+  const el=$('dcStoreName');if(el)el.textContent=name;
 }
 function renderDiaryConfigBody(){
   const store=$('dcStoreFilter')?.value||'';
@@ -3528,22 +3535,31 @@ async function renderDiaryEntries(c){
   await loadDiaryData();
   const stores=D.Stores.filter(s=>s.active!==false&&s.active!=='false');
   const selStore=currentUser.storeId||stores[0]?.code||'';
+  const selStoreName=(stores.find(s=>s.code===selStore)||{}).name||selStore;
   c.innerHTML=`
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap">
-      <select id="deStoreFilter" onchange="_deRefresh()" style="padding:8px 12px;border:2px solid #ddd;border-radius:8px;font-size:14px;font-family:inherit">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px;flex-wrap:wrap">
+      <select id="deStoreFilter" onchange="_deRefresh();_deUpdateStoreName()" style="padding:8px 12px;border:2px solid #ddd;border-radius:8px;font-size:14px;font-family:inherit">
         ${stores.map(s=>`<option value="${s.code}" ${s.code===selStore?'selected':''}>${s.name}</option>`).join('')}
       </select>
+      <span id="deStoreName" style="font-size:20px;font-weight:800;color:var(--primary)">${escHtml(selStoreName)}</span>
+      <button class="btn btn-primary btn-sm" onclick="addDiaryEntry()" style="margin-left:auto"><i class="fas fa-plus"></i> Add Entry</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
       <div style="display:flex;gap:4px;background:#f0f0f0;border-radius:10px;padding:3px">
         <button id="deTabDaily" onclick="_deSwitchTab('daily')" style="padding:7px 16px;border-radius:8px;border:none;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;background:${_deViewTab==='daily'?'#fff':'transparent'};color:${_deViewTab==='daily'?'#333':'#999'}"><i class="fas fa-calendar-day"></i> Daily</button>
         <button id="deTabMonthly" onclick="_deSwitchTab('monthly')" style="padding:7px 16px;border-radius:8px;border:none;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;background:${_deViewTab==='monthly'?'#fff':'transparent'};color:${_deViewTab==='monthly'?'#333':'#999'}"><i class="fas fa-calendar-alt"></i> Monthly</button>
         <button id="deTabList" onclick="_deSwitchTab('list')" style="padding:7px 16px;border-radius:8px;border:none;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;background:${_deViewTab==='list'?'#fff':'transparent'};color:${_deViewTab==='list'?'#333':'#999'}"><i class="fas fa-list"></i> List</button>
       </div>
-      <button class="btn btn-primary btn-sm" onclick="addDiaryEntry()" style="margin-left:auto"><i class="fas fa-plus"></i> Add Entry</button>
     </div>
     <div id="deBody"></div>`;
   _deRefresh();
 }
 
+function _deUpdateStoreName(){
+  const sel=$('deStoreFilter');if(!sel)return;
+  const name=sel.options[sel.selectedIndex]?.text||'';
+  const el=$('deStoreName');if(el)el.textContent=name;
+}
 function _deSwitchTab(tab){
   _deViewTab=tab;
   ['daily','monthly','list'].forEach(t=>{

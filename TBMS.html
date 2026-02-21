@@ -3530,6 +3530,8 @@ function _getStoreConfigs(storeId){return (D.DiaryConfig||[]).filter(c=>c.storeI
 let _deViewTab='monthly';
 let _deViewDate=new Date();
 let _deViewMonth=new Date().toISOString().slice(0,7);
+let _deEditMode=false;
+let _deEditEntryId=null;
 
 async function renderDiaryEntries(c){
   await loadDiaryData();
@@ -3561,7 +3563,7 @@ function _deUpdateStoreName(){
   const el=$('deStoreName');if(el)el.textContent=name;
 }
 function _deSwitchTab(tab){
-  _deViewTab=tab;
+  _deViewTab=tab;_deEditMode=false;_deEditEntryId=null;
   ['daily','monthly','list'].forEach(t=>{
     const b=$('deTab'+t[0].toUpperCase()+t.slice(1));
     if(b){b.style.background=t===tab?'#fff':'transparent';b.style.color=t===tab?'#333':'#999';}
@@ -3578,12 +3580,21 @@ function _deRefresh(){
 function _deRenderDaily(){
   const store=$('deStoreFilter')?.value||'';
   const ds=_deViewDate.toISOString().slice(0,10);
-  const entry=(D.DiaryEntry||[]).find(e=>e.storeId===store&&e.date===ds);
-  const e=entry?_parseDiaryEntry(entry):null;
+  const rawEntry=(D.DiaryEntry||[]).find(e=>e.storeId===store&&e.date===ds);
+  const e=rawEntry?_parseDiaryEntry(rawEntry):null;
   const storeName=(D.Stores.find(s=>s.code===store)||{}).name||store;
   const dayNames=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   const monthNames=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   const niceD=dayNames[_deViewDate.getDay()]+', '+_deViewDate.getDate()+' '+monthNames[_deViewDate.getMonth()]+' '+_deViewDate.getFullYear();
+
+  // If in edit mode, render inline form
+  if(_deEditMode){
+    const editEntry=_deEditEntryId?(D.DiaryEntry||[]).find(x=>x.id===_deEditEntryId):null;
+    const parsedEdit=editEntry?_parseDiaryEntry(editEntry):{date:ds,openChecks:{},fridgeTemps:[],deliveries:[],cookingTemps:[],holdTemps:[],coolingRecords:[],leftovers:[],closingChecks:{},extraChecks:{},issues:'',signedBy:''};
+    const isNew=!editEntry;
+    $('deBody').innerHTML=_deRenderInlineForm(store,parsedEdit,isNew,storeName,niceD);
+    return;
+  }
 
   let html=`<div style="display:flex;align-items:center;gap:10px;justify-content:center;margin-bottom:16px">
     <button onclick="_deChangeDate(-1)" class="btn btn-outline btn-sm"><i class="fas fa-chevron-left"></i></button>
@@ -3598,20 +3609,114 @@ function _deRenderDaily(){
   }else{
     // Action buttons
     html+=`<div style="display:flex;gap:8px;justify-content:flex-end;margin-bottom:12px">
-      <button onclick="editDiaryEntry('${e.id}')" class="btn btn-outline btn-sm"><i class="fas fa-edit"></i> Edit</button>
+      <button onclick="_deStartEdit('${e.id}')" class="btn btn-outline btn-sm"><i class="fas fa-edit"></i> Edit</button>
       <button onclick="deleteDiaryEntry('${e.id}')" class="btn btn-sm" style="background:#fee;color:#c00;border:1px solid #fcc"><i class="fas fa-trash"></i> Delete</button>
     </div>`;
     html+=_deRenderEntryReadonly(e);
   }
   $('deBody').innerHTML=html;
 }
-function _deChangeDate(delta){_deViewDate.setDate(_deViewDate.getDate()+delta);_deRefresh();}
-function _deGoDate(val){const p=val.split('-');_deViewDate=new Date(+p[0],+p[1]-1,+p[2]);_deRefresh();}
+function _deStartEdit(id){_deEditMode=true;_deEditEntryId=id;_deRenderDaily();}
+function _deCancelEdit(){_deEditMode=false;_deEditEntryId=null;_deRenderDaily();}
+function _deGoToEdit(ds,id){const p=ds.split('-');_deViewDate=new Date(+p[0],+p[1]-1,+p[2]);_deEditMode=true;_deEditEntryId=id;_deViewTab='daily';['daily','monthly','list'].forEach(t=>{const b=$('deTab'+t[0].toUpperCase()+t.slice(1));if(b){b.style.background=t==='daily'?'#fff':'transparent';b.style.color=t==='daily'?'#333':'#999';}});_deRenderDaily();}
+function _deRenderInlineForm(storeId,e,isNew,storeName,niceD){
+  const configs=_getStoreConfigs(storeId);
+  const fridges=configs.filter(c=>c.configType==='fridge').sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0));
+  const freezers=configs.filter(c=>c.configType==='freezer').sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0));
+  const menuItems=configs.filter(c=>c.configType==='menuItem').sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0));
+  const allCold=[...fridges,...freezers];
+  const ftMap={};(e.fridgeTemps||[]).forEach(f=>{ftMap[f.name]=f;});
+  const ctMap={};(e.cookingTemps||[]).forEach(c=>{ctMap[c.item]=c;});
+  const htMap={};(e.holdTemps||[]).forEach(h=>{htMap[h.item]=h;});
+
+  let html=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding:14px;background:linear-gradient(135deg,#e3f2fd,#fff);border-radius:12px;border:2px solid #90caf9">
+    <div><h3 style="margin:0;color:#1565c0"><i class="fas fa-edit" style="margin-right:8px"></i>${isNew?'New Entry':'Editing'} — ${storeName}</h3><div style="font-size:13px;color:#666;margin-top:2px">${niceD}</div></div>
+    <div style="display:flex;gap:8px">
+      <button onclick="_deCancelEdit()" class="btn btn-outline btn-sm"><i class="fas fa-times"></i> Cancel</button>
+      <button onclick="_saveDiaryFormInline('${storeId}','${e.id||''}')" class="btn btn-sm" style="background:var(--accent);color:#fff;border:none;padding:8px 20px;font-weight:700"><i class="fas fa-save"></i> Save</button>
+    </div>
+  </div>`;
+
+  // Hidden date field
+  html+=`<input type="hidden" id="deFormDate" value="${e.date||''}">`;
+
+  // Opening Checks
+  html+=`<div class="card" style="margin-bottom:12px;padding:14px"><h4 style="color:#1b5e20;margin-bottom:8px"><i class="fas fa-door-open" style="margin-right:6px"></i>Opening Checks</h4><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">`;
+  DE_OPENING_CHECKS.forEach(c=>{const v=e.openChecks&&e.openChecks[c.key];html+=`<label style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:#f8f9fa;border-radius:8px;font-size:13px;cursor:pointer"><input type="checkbox" class="deOC" data-key="${c.key}" ${v?'checked':''} style="width:18px;height:18px;accent-color:#27ae60">${c.label}</label>`;});
+  html+=`</div></div>`;
+
+  // Cold Storage
+  if(allCold.length>0){
+    html+=`<div class="card" style="margin-bottom:12px;padding:14px"><h4 style="color:#1565c0;margin-bottom:8px"><i class="fas fa-thermometer-half" style="margin-right:6px"></i>Cold Storage</h4><table style="width:100%;border-collapse:collapse;font-size:13px"><tr style="background:#f5f5f5"><th style="padding:6px;text-align:left">Name</th><th style="padding:6px;text-align:center;width:80px">AM °C</th><th style="padding:6px;text-align:center;width:80px">PM °C</th></tr>`;
+    allCold.forEach(c=>{const f=ftMap[c.name]||{};html+=`<tr style="border-bottom:1px solid #eee"><td style="padding:6px">${c.name}</td><td style="padding:4px;text-align:center"><input type="number" step="0.1" class="deFT" data-name="${escHtml(c.name)}" data-period="am" value="${f.am||''}" style="width:60px;padding:4px;border:1px solid #ddd;border-radius:4px;text-align:center;font-size:13px"></td><td style="padding:4px;text-align:center"><input type="number" step="0.1" class="deFT" data-name="${escHtml(c.name)}" data-period="pm" value="${f.pm||''}" style="width:60px;padding:4px;border:1px solid #ddd;border-radius:4px;text-align:center;font-size:13px"></td></tr>`;});
+    html+=`</table></div>`;
+  }
+
+  // Deliveries
+  const dlArr=e.deliveries||[];
+  html+=`<div class="card" style="margin-bottom:12px;padding:14px"><h4 style="color:#6a1b9a;margin-bottom:8px"><i class="fas fa-truck" style="margin-right:6px"></i>Deliveries <button onclick="_deAddDeliveryRow()" style="margin-left:8px;padding:2px 10px;border:1px solid #ce93d8;border-radius:6px;background:#f3e5f5;color:#6a1b9a;cursor:pointer;font-size:11px;font-weight:600"><i class="fas fa-plus"></i> Add</button></h4><div id="deDeliveryRows">`;
+  dlArr.forEach((d,i)=>{html+=_deDeliveryRowHtml(i,d);});
+  html+=`</div></div>`;
+
+  // Cooking Temps
+  if(menuItems.length>0){
+    html+=`<div class="card" style="margin-bottom:12px;padding:14px"><h4 style="color:#e65100;margin-bottom:8px"><i class="fas fa-fire" style="margin-right:6px"></i>Cooking Temperature</h4><table style="width:100%;border-collapse:collapse;font-size:13px"><tr style="background:#f5f5f5"><th style="padding:6px;text-align:left">Item</th><th style="padding:6px;text-align:center;width:80px">Temp °C</th></tr>`;
+    menuItems.forEach(m=>{const c=ctMap[m.name]||{};html+=`<tr style="border-bottom:1px solid #eee"><td style="padding:6px">${m.name}</td><td style="padding:4px;text-align:center"><input type="number" step="0.1" class="deCT" data-item="${escHtml(m.name)}" value="${c.temp||''}" style="width:60px;padding:4px;border:1px solid #ddd;border-radius:4px;text-align:center;font-size:13px"></td></tr>`;});
+    html+=`</table></div>`;
+  }
+
+  // Hold Temps
+  if(menuItems.length>0){
+    html+=`<div class="card" style="margin-bottom:12px;padding:14px"><h4 style="color:#c62828;margin-bottom:8px"><i class="fas fa-clock" style="margin-right:6px"></i>Food Hold Temperature</h4><table style="width:100%;border-collapse:collapse;font-size:13px"><tr style="background:#f5f5f5"><th style="padding:6px;text-align:left">Item</th>`;
+    DE_HOLD_TIMES.forEach(t=>html+=`<th style="padding:6px;text-align:center;width:65px">${t}</th>`);
+    html+='</tr>';
+    menuItems.forEach(m=>{const h=htMap[m.name]||{};html+=`<tr style="border-bottom:1px solid #eee"><td style="padding:6px">${m.name}</td>`;DE_HOLD_TIMES.forEach(t=>{const k='t'+t.replace(':','');html+=`<td style="padding:4px;text-align:center"><input type="number" step="0.1" class="deHT" data-item="${escHtml(m.name)}" data-time="${k}" value="${h[k]||''}" style="width:50px;padding:3px;border:1px solid #ddd;border-radius:4px;text-align:center;font-size:12px"></td>`;});html+='</tr>';});
+    html+=`</table></div>`;
+  }
+
+  // Cooling
+  const clArr=e.coolingRecords||[];
+  html+=`<div class="card" style="margin-bottom:12px;padding:14px"><h4 style="color:#00695c;margin-bottom:8px"><i class="fas fa-snowflake" style="margin-right:6px"></i>Cooling <button onclick="_deAddCoolingRow()" style="margin-left:8px;padding:2px 10px;border:1px solid #80cbc4;border-radius:6px;background:#e0f2f1;color:#00695c;cursor:pointer;font-size:11px;font-weight:600"><i class="fas fa-plus"></i> Add</button></h4><div id="deCoolingRows">`;
+  clArr.forEach((c,i)=>{html+=_deCoolingRowHtml(i,c);});
+  html+=`</div></div>`;
+
+  // Leftovers
+  const loArr=e.leftovers||[];
+  html+=`<div class="card" style="margin-bottom:12px;padding:14px"><h4 style="color:#4e342e;margin-bottom:8px"><i class="fas fa-box-open" style="margin-right:6px"></i>Leftovers <button onclick="_deAddLeftoverRow()" style="margin-left:8px;padding:2px 10px;border:1px solid #bcaaa4;border-radius:6px;background:#efebe9;color:#4e342e;cursor:pointer;font-size:11px;font-weight:600"><i class="fas fa-plus"></i> Add</button></h4><div id="deLeftoverRows">`;
+  loArr.forEach((l,i)=>{html+=_deLeftoverRowHtml(i,l);});
+  html+=`</div></div>`;
+
+  // Closing Checks
+  html+=`<div class="card" style="margin-bottom:12px;padding:14px"><h4 style="color:#b71c1c;margin-bottom:8px"><i class="fas fa-door-closed" style="margin-right:6px"></i>Closing Checks</h4><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">`;
+  DE_CLOSING_CHECKS.forEach(c=>{const v=e.closingChecks&&e.closingChecks[c.key];html+=`<label style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:#f8f9fa;border-radius:8px;font-size:13px;cursor:pointer"><input type="checkbox" class="deCC" data-key="${c.key}" ${v?'checked':''} style="width:18px;height:18px;accent-color:#27ae60">${c.label}</label>`;});
+  html+=`</div></div>`;
+
+  // Extra Checks
+  html+=`<div class="card" style="margin-bottom:12px;padding:14px"><h4 style="color:#37474f;margin-bottom:8px"><i class="fas fa-clipboard-check" style="margin-right:6px"></i>Extra Checks</h4><div style="display:flex;gap:12px;flex-wrap:wrap">`;
+  DE_EXTRA_CHECKS.forEach(c=>{const v=e.extraChecks&&e.extraChecks[c.key];html+=`<label style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:#f8f9fa;border-radius:8px;font-size:13px;cursor:pointer"><input type="checkbox" class="deEC" data-key="${c.key}" ${v?'checked':''} style="width:18px;height:18px;accent-color:#27ae60">${c.label}</label>`;});
+  html+=`</div></div>`;
+
+  // Issues
+  html+=`<div class="card" style="margin-bottom:12px;padding:14px"><h4 style="margin-bottom:8px"><i class="fas fa-exclamation-triangle" style="margin-right:6px;color:#f39c12"></i>Issues & Remedial Action</h4><textarea id="deFormIssues" style="width:100%;padding:10px;border:2px solid #ddd;border-radius:8px;font-size:13px;font-family:inherit;min-height:60px;resize:vertical;box-sizing:border-box">${e.issues||''}</textarea></div>`;
+
+  // Sign Off
+  html+=`<div class="card" style="margin-bottom:12px;padding:14px"><div style="display:flex;align-items:center;gap:12px"><label style="font-weight:600;font-size:13px;min-width:70px"><i class="fas fa-signature"></i> Signed by</label><input type="text" id="deFormSigned" value="${e.signedBy||''}" style="flex:1;padding:8px;border:2px solid #ddd;border-radius:8px;font-size:14px;font-family:inherit"></div></div>`;
+
+  // Bottom Save/Cancel
+  html+=`<div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px;padding:14px;background:#f8f9fa;border-radius:12px;position:sticky;bottom:0">
+    <button onclick="_deCancelEdit()" style="padding:10px 24px;border:1px solid #ddd;border-radius:8px;background:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Cancel</button>
+    <button onclick="_saveDiaryFormInline('${storeId}','${e.id||''}')" style="padding:10px 24px;border:none;border-radius:8px;background:var(--accent);color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit"><i class="fas fa-save"></i> Save</button>
+  </div>`;
+  return html;
+}
+function _deChangeDate(delta){_deEditMode=false;_deEditEntryId=null;_deViewDate.setDate(_deViewDate.getDate()+delta);_deRefresh();}
+function _deGoDate(val){_deEditMode=false;_deEditEntryId=null;const p=val.split('-');_deViewDate=new Date(+p[0],+p[1]-1,+p[2]);_deRefresh();}
 function _deAddForDate(ds){
   const store=$('deStoreFilter')?.value||'';
   if(!store)return;
-  const entry={date:ds,openChecks:{},fridgeTemps:[],deliveries:[],cookingTemps:[],holdTemps:[],coolingRecords:[],leftovers:[],closingChecks:{},extraChecks:{},issues:'',signedBy:''};
-  _openDiaryForm(store,entry,true);
+  _deEditMode=true;_deEditEntryId=null;
+  const p=ds.split('-');_deViewDate=new Date(+p[0],+p[1]-1,+p[2]);
+  _deRenderDaily();
 }
 
 // ==================== MONTHLY VIEW ====================
@@ -3676,7 +3781,7 @@ function _deRenderMonthly(){
         <i class="fas fa-check-circle" style="color:#4caf50"></i>
         <div style="flex:1"><strong style="font-size:13px">${dayLabel}</strong></div>
         <div style="font-size:11px;color:#999">${entry.signedBy||'—'}</div>
-        <button onclick="event.stopPropagation();editDiaryEntry('${entry.id}')" style="padding:3px 8px;border:1px solid #bbdefb;border-radius:6px;background:#e3f2fd;color:#1565c0;cursor:pointer;font-size:11px"><i class="fas fa-edit"></i></button>
+        <button onclick="event.stopPropagation();_deGoToEdit('${ds}','${entry.id}')" style="padding:3px 8px;border:1px solid #bbdefb;border-radius:6px;background:#e3f2fd;color:#1565c0;cursor:pointer;font-size:11px"><i class="fas fa-edit"></i></button>
         <i class="fas fa-chevron-right" style="color:#ccc;font-size:12px"></i>
       </div>`;
     }else{
@@ -4024,6 +4129,47 @@ function _deLeftoverRowHtml(i,l){
 }
 function _deAddLeftoverRow(){$('deLeftoverRows').insertAdjacentHTML('beforeend',_deLeftoverRowHtml(0,{}));}
 
+async function _saveDiaryFormInline(storeId,existingId){
+  const date=$('deFormDate')?.value;
+  if(!date){toast('Please select a date','error');return;}
+  const openChecks={};document.querySelectorAll('.deOC').forEach(cb=>{openChecks[cb.dataset.key]=cb.checked;});
+  const ftRaw={};document.querySelectorAll('.deFT').forEach(inp=>{const n=inp.dataset.name,p=inp.dataset.period;if(!ftRaw[n])ftRaw[n]={name:n};ftRaw[n][p]=inp.value;});
+  const fridgeTemps=Object.values(ftRaw).filter(f=>f.am||f.pm);
+  const ctRaw={};document.querySelectorAll('.deCT').forEach(inp=>{ctRaw[inp.dataset.item]={item:inp.dataset.item,temp:inp.value};});
+  const cookingTemps=Object.values(ctRaw).filter(c=>c.temp);
+  const htRaw={};document.querySelectorAll('.deHT').forEach(inp=>{const item=inp.dataset.item,time=inp.dataset.time;if(!htRaw[item])htRaw[item]={item};htRaw[item][time]=inp.value;});
+  const holdTemps=Object.values(htRaw).filter(h=>DE_HOLD_TIMES.some(t=>h['t'+t.replace(':','')]));
+  const closingChecks={};document.querySelectorAll('.deCC').forEach(cb=>{closingChecks[cb.dataset.key]=cb.checked;});
+  const extraChecks={};document.querySelectorAll('.deEC').forEach(cb=>{extraChecks[cb.dataset.key]=cb.checked;});
+  const issues=$('deFormIssues')?.value||'';
+  const signedBy=$('deFormSigned')?.value||'';
+  const deliveries=[];
+  const dlRows=$('deDeliveryRows')?.children||[];
+  for(const row of dlRows){const product=row.querySelector('.deDlProduct')?.value||'';if(!product)continue;deliveries.push({product,visualOk:row.querySelector('.deDlVisual')?.checked||false,tempOk:row.querySelector('.deDlTemp')?.checked||false,accepted:row.querySelector('.deDlAccepted')?.checked||false});}
+  const coolingRecords=[];
+  const clRows=$('deCoolingRows')?.children||[];
+  for(const row of clRows){const product=row.querySelector('.deClProduct')?.value||'';if(!product)continue;coolingRecords.push({product,timeTaken:row.querySelector('.deClTime')?.value||'',ok:row.querySelector('.deClOk')?.checked||false});}
+  const leftovers=[];
+  const loRows=$('deLeftoverRows')?.children||[];
+  for(const row of loRows){const product=row.querySelector('.deLoProduct')?.value||'';if(!product)continue;leftovers.push({product,action:row.querySelector('.deLoAction')?.value||'store'});}
+  const row={
+    id:existingId||genId('de'),storeId:storeId,date:date,
+    openChecks:JSON.stringify(openChecks),fridgeTemps:JSON.stringify(fridgeTemps),
+    deliveries:JSON.stringify(deliveries),cookingTemps:JSON.stringify(cookingTemps),
+    holdTemps:JSON.stringify(holdTemps),coolingRecords:JSON.stringify(coolingRecords),
+    leftovers:JSON.stringify(leftovers),closingChecks:JSON.stringify(closingChecks),
+    extraChecks:JSON.stringify(extraChecks),issues:issues,signedBy:signedBy,
+    submittedBy:currentUser?.name||currentUser?.username||'',
+    submittedAt:new Date().toISOString()
+  };
+  const idx=(D.DiaryEntry||[]).findIndex(e=>e.id===row.id);
+  if(idx>=0)D.DiaryEntry[idx]=row; else D.DiaryEntry.push(row);
+  _deEditMode=false;_deEditEntryId=null;
+  _deRefresh();
+  const res=await API.post({action:'upsert',sheet:'DiaryEntry',row:row});
+  if(res&&!res.error){toast('Diary entry saved!','success');}
+  else{toast('Save error: '+(res?.error||'unknown'),'error');}
+}
 async function _saveDiaryForm(storeId,existingId){
   const date=$('deFormDate')?.value;
   if(!date){toast('Please select a date','error');return;}

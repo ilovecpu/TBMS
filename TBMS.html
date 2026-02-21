@@ -3503,6 +3503,23 @@ async function deleteDiaryConfigItem(id){
 }
 
 // ==================== DIARY ENTRIES ====================
+// Diary check constants (shared with Kiosk4)
+const DE_OPENING_CHECKS=[{key:'petFree',label:'Pest free'},{key:'equipOk',label:'Equipment OK'},{key:'hotWater',label:'Hot water/soap'},{key:'aprons',label:'Clean aprons'},{key:'premisesClean',label:'Premises clean'},{key:'sanitiser',label:'Sanitiser/cloths'},{key:'foodInDate',label:'Food in date'},{key:'structureOk',label:'Structure OK'}];
+const DE_CLOSING_CHECKS=[{key:'outOfDate',label:'Out-of-date discarded'},{key:'wasteBagged',label:'Waste bagged'},{key:'surfacesCleaned',label:'Surfaces cleaned'},{key:'foodStored',label:'Food stored'},{key:'premisesSecure',label:'Premises secured'}];
+const DE_EXTRA_CHECKS=[{key:'deepCleaning',label:'Deep Cleaning'},{key:'extractionCleaning',label:'Extraction Cleaning'},{key:'calibration',label:'Calibration'}];
+const DE_HOLD_TIMES=['13:00','15:00','17:00','19:00'];
+
+function _parseDiaryEntry(raw){
+  if(!raw)return null;
+  const e={...raw};
+  ['openChecks','fridgeTemps','deliveries','cookingTemps','coolingRecords','leftovers','closingChecks','holdTemps','extraChecks'].forEach(f=>{
+    if(typeof e[f]==='string'&&e[f]){try{e[f]=JSON.parse(e[f]);}catch(x){}}
+    if(!e[f])e[f]=null;
+  });
+  return e;
+}
+function _getStoreConfigs(storeId){return (D.DiaryConfig||[]).filter(c=>c.storeId===storeId&&(c.active===true||c.active==='true'||c.active==='TRUE'));}
+
 async function renderDiaryEntries(c){
   await loadDiaryData();
   const stores=D.Stores.filter(s=>s.active!==false&&s.active!=='false');
@@ -3513,6 +3530,7 @@ async function renderDiaryEntries(c){
         ${stores.map(s=>`<option value="${s.code}" ${s.code===selStore?'selected':''}>${s.name}</option>`).join('')}
       </select>
       <input type="month" id="deMonthFilter" value="${new Date().toISOString().slice(0,7)}" onchange="renderDiaryEntriesBody()" style="padding:8px 12px;border:2px solid #ddd;border-radius:8px;font-size:14px;font-family:inherit">
+      <button class="btn btn-primary btn-sm" onclick="addDiaryEntry()" style="margin-left:auto"><i class="fas fa-plus"></i> Add Entry</button>
     </div>
     <div id="deBody"></div>`;
   renderDiaryEntriesBody();
@@ -3521,14 +3539,30 @@ function renderDiaryEntriesBody(){
   const store=$('deStoreFilter')?.value||'';
   const month=$('deMonthFilter')?.value||'';
   const entries=(D.DiaryEntry||[]).filter(e=>e.storeId===store&&e.date&&e.date.startsWith(month)).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
-  if(entries.length===0){$('deBody').innerHTML='<div style="padding:20px;text-align:center;color:#999">No diary entries found for this period</div>';return;}
-  let html=`<table style="width:100%;border-collapse:collapse;font-size:13px">
-    <tr style="background:#f5f5f5"><th style="padding:8px;text-align:left">Date</th><th style="padding:8px">Sections Filled</th><th style="padding:8px">Signed By</th><th style="padding:8px">Submitted</th><th style="padding:8px;width:120px">Actions</th></tr>`;
+
+  // Monthly summary
+  const todayStr=new Date().toISOString().slice(0,10);
+  const [yr,mo]=month.split('-').map(Number);
+  const daysInMonth=new Date(yr,mo,0).getDate();
+  let totalDays=0;
+  for(let d=1;d<=daysInMonth;d++){const ds=month+'-'+String(d).padStart(2,'0');if(ds>todayStr)break;totalDays++;}
+  const filledDays=entries.length;
+  const missingDays=Math.max(0,totalDays-filledDays);
+  const pct=totalDays>0?Math.round(filledDays/totalDays*100):0;
+
+  let html=`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">
+    <div style="padding:14px;background:#e8f5e9;border-radius:12px;text-align:center"><div style="font-size:24px;font-weight:800;color:#1b5e20">${filledDays}</div><div style="font-size:11px;font-weight:600;color:#2e7d32">Completed</div></div>
+    <div style="padding:14px;background:#fff3e0;border-radius:12px;text-align:center"><div style="font-size:24px;font-weight:800;color:#e65100">${missingDays}</div><div style="font-size:11px;font-weight:600;color:#ef6c00">Missing</div></div>
+    <div style="padding:14px;background:#e3f2fd;border-radius:12px;text-align:center"><div style="font-size:24px;font-weight:800;color:#1565c0">${pct}%</div><div style="font-size:11px;font-weight:600;color:#1976d2">Compliance</div></div>
+  </div>`;
+
+  if(entries.length===0){html+='<div style="padding:20px;text-align:center;color:#999">No diary entries found for this period</div>';$('deBody').innerHTML=html;return;}
+  html+=`<table style="width:100%;border-collapse:collapse;font-size:13px">
+    <tr style="background:#f5f5f5"><th style="padding:8px;text-align:left">Date</th><th style="padding:8px">Sections</th><th style="padding:8px">Signed By</th><th style="padding:8px">Submitted</th><th style="padding:8px;width:160px">Actions</th></tr>`;
   entries.forEach(e=>{
     let filled=0;
     ['openChecks','fridgeTemps','deliveries','cookingTemps','holdTemps','closingChecks'].forEach(f=>{
-      let v=e[f];
-      if(typeof v==='string'&&v){try{v=JSON.parse(v);}catch(ex){}}
+      let v=e[f];if(typeof v==='string'&&v){try{v=JSON.parse(v);}catch(ex){}}
       if(v&&((Array.isArray(v)&&v.length>0)||(!Array.isArray(v)&&Object.keys(v).length>0)))filled++;
     });
     html+=`<tr style="border-bottom:1px solid #eee">
@@ -3537,7 +3571,8 @@ function renderDiaryEntriesBody(){
       <td style="padding:8px">${e.signedBy||'—'}</td>
       <td style="padding:8px;font-size:12px;color:#999">${e.submittedAt?new Date(e.submittedAt).toLocaleString():''}</td>
       <td style="padding:8px;text-align:center">
-        <button onclick="viewDiaryEntry('${e.id}')" style="padding:4px 10px;border:1px solid #ddd;border-radius:6px;background:#fff;cursor:pointer;font-size:12px;margin-right:4px" title="View"><i class="fas fa-eye"></i></button>
+        <button onclick="viewDiaryEntry('${e.id}')" style="padding:4px 10px;border:1px solid #ddd;border-radius:6px;background:#fff;cursor:pointer;font-size:12px" title="View"><i class="fas fa-eye"></i></button>
+        <button onclick="editDiaryEntry('${e.id}')" style="padding:4px 10px;border:1px solid #bbdefb;border-radius:6px;background:#e3f2fd;color:#1565c0;cursor:pointer;font-size:12px" title="Edit"><i class="fas fa-edit"></i></button>
         <button onclick="deleteDiaryEntry('${e.id}')" style="padding:4px 10px;border:1px solid #fcc;border-radius:6px;background:#fee;color:#c00;cursor:pointer;font-size:12px" title="Delete"><i class="fas fa-trash"></i></button>
       </td>
     </tr>`;
@@ -3545,49 +3580,241 @@ function renderDiaryEntriesBody(){
   html+='</table>';
   $('deBody').innerHTML=html;
 }
+
+// --- VIEW DIARY ENTRY (read-only modal) ---
 function viewDiaryEntry(id){
-  const e=(D.DiaryEntry||[]).find(x=>x.id===id);
-  if(!e)return;
-  // Parse JSON fields
-  const parsed={...e};
-  ['openChecks','fridgeTemps','deliveries','cookingTemps','coolingRecords','leftovers','closingChecks','holdTemps','extraChecks'].forEach(f=>{
-    if(typeof parsed[f]==='string'&&parsed[f]){try{parsed[f]=JSON.parse(parsed[f]);}catch(ex){}}
-  });
+  const raw=(D.DiaryEntry||[]).find(x=>x.id===id);
+  if(!raw)return;
+  const e=_parseDiaryEntry(raw);
   const storeName=(D.Stores.find(s=>s.code===e.storeId)||{}).name||e.storeId;
-  let html=`<h3>${storeName} — ${e.date}</h3><hr style="margin:10px 0">`;
+  const configs=_getStoreConfigs(e.storeId);
+  let html=`<h3 style="margin-bottom:4px">${storeName} — ${e.date}</h3><hr style="margin:10px 0">`;
+
   // Opening Checks
-  const oc=parsed.openChecks||{};
-  html+=`<h4 style="margin-top:12px">Opening Checks</h4><table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:12px">`;
-  [['petFree','Pest free'],['equipOk','Equipment OK'],['hotWater','Hot water/soap'],['aprons','Clean aprons'],['premisesClean','Premises clean'],['sanitiser','Sanitiser/cloths'],['foodInDate','Food in date'],['structureOk','Structure OK']].forEach(([k,l])=>{
-    html+=`<tr style="border-bottom:1px solid #eee"><td style="padding:4px 8px">${l}</td><td style="padding:4px 8px;font-weight:700;color:${oc[k]?'#27ae60':'#e74c3c'}">${oc[k]?'YES':'NO'}</td></tr>`;
-  });
+  html+=`<h4 style="margin-top:12px;color:#1b5e20">Opening Checks</h4><table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:12px">`;
+  DE_OPENING_CHECKS.forEach(c=>{const v=e.openChecks&&e.openChecks[c.key];html+=`<tr style="border-bottom:1px solid #eee"><td style="padding:4px 8px">${c.label}</td><td style="padding:4px 8px;font-weight:700;color:${v?'#27ae60':'#e74c3c'};width:50px;text-align:center">${v?'YES':'NO'}</td></tr>`;});
   html+=`</table>`;
-  // Fridge Temps
-  const ft=parsed.fridgeTemps||[];
+
+  // Cold Storage
+  const ft=e.fridgeTemps||[];
   if(ft.length>0){
-    html+=`<h4>Cold Storage</h4><table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:12px"><tr style="background:#f5f5f5"><th style="padding:4px 8px;text-align:left">Name</th><th style="padding:4px 8px">AM</th><th style="padding:4px 8px">PM</th></tr>`;
+    html+=`<h4 style="color:#1565c0">Cold Storage</h4><table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:12px"><tr style="background:#f5f5f5"><th style="padding:4px 8px;text-align:left">Name</th><th style="padding:4px 8px;text-align:center">AM °C</th><th style="padding:4px 8px;text-align:center">PM °C</th></tr>`;
     ft.forEach(f=>{html+=`<tr style="border-bottom:1px solid #eee"><td style="padding:4px 8px">${f.name}</td><td style="padding:4px 8px;text-align:center">${f.am||'—'}</td><td style="padding:4px 8px;text-align:center">${f.pm||'—'}</td></tr>`;});
     html+=`</table>`;
   }
+
+  // Deliveries
+  const dl=e.deliveries||[];
+  if(dl.length>0){
+    html+=`<h4 style="color:#6a1b9a">Deliveries</h4><table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:12px"><tr style="background:#f5f5f5"><th style="padding:4px 8px;text-align:left">Product</th><th style="padding:4px 8px;text-align:center">Visual</th><th style="padding:4px 8px;text-align:center">Temp</th><th style="padding:4px 8px;text-align:center">Accepted</th></tr>`;
+    dl.forEach(d=>{html+=`<tr style="border-bottom:1px solid #eee"><td style="padding:4px 8px">${d.product||'—'}</td><td style="padding:4px 8px;text-align:center;font-weight:700;color:${d.visualOk?'#27ae60':'#e74c3c'}">${d.visualOk?'Y':'N'}</td><td style="padding:4px 8px;text-align:center;font-weight:700;color:${d.tempOk?'#27ae60':'#e74c3c'}">${d.tempOk?'Y':'N'}</td><td style="padding:4px 8px;text-align:center;font-weight:700;color:${d.accepted?'#27ae60':'#e74c3c'}">${d.accepted?'Y':'N'}</td></tr>`;});
+    html+=`</table>`;
+  }
+
   // Cooking Temps
-  const ct=parsed.cookingTemps||[];
+  const ct=e.cookingTemps||[];
   if(ct.length>0){
-    html+=`<h4>Cooking Temps</h4><table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:12px"><tr style="background:#f5f5f5"><th style="padding:4px 8px;text-align:left">Item</th><th style="padding:4px 8px">Temp °C</th></tr>`;
+    html+=`<h4 style="color:#e65100">Cooking Temps</h4><table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:12px"><tr style="background:#f5f5f5"><th style="padding:4px 8px;text-align:left">Item</th><th style="padding:4px 8px;text-align:center">Temp °C</th></tr>`;
     ct.forEach(c=>{html+=`<tr style="border-bottom:1px solid #eee"><td style="padding:4px 8px">${c.item}</td><td style="padding:4px 8px;text-align:center;font-weight:700">${c.temp||'—'}</td></tr>`;});
     html+=`</table>`;
   }
+
+  // Hold Temps
+  const ht=e.holdTemps||[];
+  if(ht.length>0){
+    html+=`<h4 style="color:#c62828">Food Hold Temps</h4><table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:12px"><tr style="background:#f5f5f5"><th style="padding:4px 8px;text-align:left">Item</th>`;
+    DE_HOLD_TIMES.forEach(t=>html+=`<th style="padding:4px 8px;text-align:center">${t}</th>`);
+    html+='</tr>';
+    ht.forEach(h=>{html+=`<tr style="border-bottom:1px solid #eee"><td style="padding:4px 8px">${h.item}</td>`;DE_HOLD_TIMES.forEach(t=>{const k='t'+t.replace(':','');html+=`<td style="padding:4px 8px;text-align:center;font-weight:700">${h[k]||'—'}</td>`;});html+='</tr>';});
+    html+=`</table>`;
+  }
+
+  // Cooling
+  const cl=e.coolingRecords||[];
+  if(cl.length>0){
+    html+=`<h4 style="color:#00695c">Cooling</h4><table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:12px"><tr style="background:#f5f5f5"><th style="padding:4px 8px;text-align:left">Product</th><th style="padding:4px 8px;text-align:center">Time(min)</th><th style="padding:4px 8px;text-align:center">OK</th></tr>`;
+    cl.forEach(c=>{html+=`<tr style="border-bottom:1px solid #eee"><td style="padding:4px 8px">${c.product}</td><td style="padding:4px 8px;text-align:center">${c.timeTaken||'—'}</td><td style="padding:4px 8px;text-align:center;font-weight:700;color:${c.ok?'#27ae60':'#e74c3c'}">${c.ok?'Y':'N'}</td></tr>`;});
+    html+=`</table>`;
+  }
+
+  // Leftovers
+  const lo=e.leftovers||[];
+  if(lo.length>0){
+    html+=`<h4 style="color:#4e342e">Leftovers</h4><table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:12px"><tr style="background:#f5f5f5"><th style="padding:4px 8px;text-align:left">Product</th><th style="padding:4px 8px;text-align:center">Action</th></tr>`;
+    lo.forEach(l=>{html+=`<tr style="border-bottom:1px solid #eee"><td style="padding:4px 8px">${l.product}</td><td style="padding:4px 8px;text-align:center">${l.action==='discard'?'Discarded':'Stored'}</td></tr>`;});
+    html+=`</table>`;
+  }
+
+  // Closing Checks
+  html+=`<h4 style="color:#b71c1c">Closing Checks</h4><table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:12px">`;
+  DE_CLOSING_CHECKS.forEach(c=>{const v=e.closingChecks&&e.closingChecks[c.key];html+=`<tr style="border-bottom:1px solid #eee"><td style="padding:4px 8px">${c.label}</td><td style="padding:4px 8px;font-weight:700;color:${v?'#27ae60':'#e74c3c'};width:50px;text-align:center">${v?'YES':'NO'}</td></tr>`;});
+  html+=`</table>`;
+
+  // Extra Checks
+  html+=`<h4 style="color:#37474f">Extra Checks</h4><table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:12px">`;
+  DE_EXTRA_CHECKS.forEach(c=>{const v=e.extraChecks&&e.extraChecks[c.key];html+=`<tr style="border-bottom:1px solid #eee"><td style="padding:4px 8px">${c.label}</td><td style="padding:4px 8px;font-weight:700;color:${v?'#27ae60':'#e74c3c'};width:50px;text-align:center">${v?'YES':'NO'}</td></tr>`;});
+  html+=`</table>`;
+
   // Issues
-  html+=`<h4>Issues</h4><div style="padding:8px;background:#f8f9fa;border-radius:8px;margin-bottom:12px;white-space:pre-wrap">${parsed.issues||'None'}</div>`;
-  html+=`<div style="padding:8px;background:#f0f0f0;border-radius:8px"><strong>Signed by:</strong> ${parsed.signedBy||'—'} &nbsp;|&nbsp; <strong>Submitted:</strong> ${parsed.submittedAt?new Date(parsed.submittedAt).toLocaleString():''}</div>`;
-  // Show in modal
-  const ov=document.createElement('div');
-  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:2000;display:flex;align-items:start;justify-content:center;padding:40px 20px;overflow-y:auto';
-  ov.innerHTML=`<div style="background:#fff;border-radius:16px;padding:24px;max-width:700px;width:100%;max-height:90vh;overflow-y:auto">
-    ${html}
-    <div style="text-align:right;margin-top:16px"><button onclick="this.closest('div[style*=fixed]').remove()" style="padding:10px 24px;border:none;border-radius:8px;background:var(--primary);color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Close</button></div>
-  </div>`;
-  document.body.appendChild(ov);
+  html+=`<h4>Issues & Remedial Action</h4><div style="padding:8px;background:#f8f9fa;border-radius:8px;margin-bottom:12px;white-space:pre-wrap">${e.issues||'None'}</div>`;
+  html+=`<div style="padding:10px;background:#f0f0f0;border-radius:8px;display:flex;gap:16px;flex-wrap:wrap"><div><strong>Signed:</strong> ${e.signedBy||'—'}</div><div><strong>Submitted:</strong> ${e.submittedAt?new Date(e.submittedAt).toLocaleString():''}</div></div>`;
+
+  _showDiaryModal(html);
 }
+
+// --- ADD / EDIT DIARY ENTRY ---
+function addDiaryEntry(){
+  const store=$('deStoreFilter')?.value||'';
+  if(!store){toast('Select a store first','error');return;}
+  _openDiaryForm(store,null);
+}
+function editDiaryEntry(id){
+  const raw=(D.DiaryEntry||[]).find(x=>x.id===id);
+  if(!raw)return;
+  _openDiaryForm(raw.storeId,_parseDiaryEntry(raw));
+}
+
+function _openDiaryForm(storeId,entry){
+  const isNew=!entry;
+  const storeName=(D.Stores.find(s=>s.code===storeId)||{}).name||storeId;
+  const configs=_getStoreConfigs(storeId);
+  const fridges=configs.filter(c=>c.configType==='fridge').sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0));
+  const freezers=configs.filter(c=>c.configType==='freezer').sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0));
+  const menuItems=configs.filter(c=>c.configType==='menuItem').sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0));
+  const allCold=[...fridges,...freezers];
+  const e=entry||{date:'',openChecks:{},fridgeTemps:[],deliveries:[],cookingTemps:[],holdTemps:[],coolingRecords:[],leftovers:[],closingChecks:{},extraChecks:{},issues:'',signedBy:''};
+
+  // Build fridge temps lookup
+  const ftMap={};(e.fridgeTemps||[]).forEach(f=>{ftMap[f.name]=f;});
+  // Build cooking temps lookup
+  const ctMap={};(e.cookingTemps||[]).forEach(c=>{ctMap[c.item]=c;});
+  // Build hold temps lookup
+  const htMap={};(e.holdTemps||[]).forEach(h=>{htMap[h.item]=h;});
+
+  let html=`<h3 style="margin-bottom:4px">${isNew?'New Entry':'Edit Entry'} — ${storeName}</h3><hr style="margin:10px 0">`;
+
+  // Date
+  html+=`<div style="margin-bottom:14px"><label style="font-weight:600;font-size:13px">Date</label><br><input type="date" id="deFormDate" value="${e.date||''}" style="padding:8px;border:2px solid #ddd;border-radius:8px;font-size:14px;font-family:inherit;width:200px" ${isNew?'':'readonly'}></div>`;
+
+  // Opening Checks
+  html+=`<h4 style="color:#1b5e20;margin:14px 0 8px">Opening Checks</h4><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">`;
+  DE_OPENING_CHECKS.forEach(c=>{const v=e.openChecks&&e.openChecks[c.key];html+=`<label style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:#f8f9fa;border-radius:8px;font-size:13px;cursor:pointer"><input type="checkbox" class="deOC" data-key="${c.key}" ${v?'checked':''} style="width:18px;height:18px;accent-color:#27ae60">${c.label}</label>`;});
+  html+=`</div>`;
+
+  // Cold Storage
+  if(allCold.length>0){
+    html+=`<h4 style="color:#1565c0;margin:14px 0 8px">Cold Storage Temperatures</h4><table style="width:100%;border-collapse:collapse;font-size:13px"><tr style="background:#f5f5f5"><th style="padding:6px;text-align:left">Name</th><th style="padding:6px;text-align:center;width:80px">AM °C</th><th style="padding:6px;text-align:center;width:80px">PM °C</th></tr>`;
+    allCold.forEach(c=>{const f=ftMap[c.name]||{};html+=`<tr style="border-bottom:1px solid #eee"><td style="padding:6px">${c.name}</td><td style="padding:4px;text-align:center"><input type="number" step="0.1" class="deFT" data-name="${escHtml(c.name)}" data-period="am" value="${f.am||''}" style="width:60px;padding:4px;border:1px solid #ddd;border-radius:4px;text-align:center;font-size:13px"></td><td style="padding:4px;text-align:center"><input type="number" step="0.1" class="deFT" data-name="${escHtml(c.name)}" data-period="pm" value="${f.pm||''}" style="width:60px;padding:4px;border:1px solid #ddd;border-radius:4px;text-align:center;font-size:13px"></td></tr>`;});
+    html+=`</table>`;
+  }
+
+  // Cooking Temps
+  if(menuItems.length>0){
+    html+=`<h4 style="color:#e65100;margin:14px 0 8px">Cooking Temperature</h4><table style="width:100%;border-collapse:collapse;font-size:13px"><tr style="background:#f5f5f5"><th style="padding:6px;text-align:left">Item</th><th style="padding:6px;text-align:center;width:80px">Temp °C</th></tr>`;
+    menuItems.forEach(m=>{const c=ctMap[m.name]||{};html+=`<tr style="border-bottom:1px solid #eee"><td style="padding:6px">${m.name}</td><td style="padding:4px;text-align:center"><input type="number" step="0.1" class="deCT" data-item="${escHtml(m.name)}" value="${c.temp||''}" style="width:60px;padding:4px;border:1px solid #ddd;border-radius:4px;text-align:center;font-size:13px"></td></tr>`;});
+    html+=`</table>`;
+  }
+
+  // Hold Temps
+  if(menuItems.length>0){
+    html+=`<h4 style="color:#c62828;margin:14px 0 8px">Food Hold Temperature</h4><table style="width:100%;border-collapse:collapse;font-size:13px"><tr style="background:#f5f5f5"><th style="padding:6px;text-align:left">Item</th>`;
+    DE_HOLD_TIMES.forEach(t=>html+=`<th style="padding:6px;text-align:center;width:65px">${t}</th>`);
+    html+='</tr>';
+    menuItems.forEach(m=>{const h=htMap[m.name]||{};html+=`<tr style="border-bottom:1px solid #eee"><td style="padding:6px">${m.name}</td>`;DE_HOLD_TIMES.forEach(t=>{const k='t'+t.replace(':','');html+=`<td style="padding:4px;text-align:center"><input type="number" step="0.1" class="deHT" data-item="${escHtml(m.name)}" data-time="${k}" value="${h[k]||''}" style="width:50px;padding:3px;border:1px solid #ddd;border-radius:4px;text-align:center;font-size:12px"></td>`;});html+='</tr>';});
+    html+=`</table>`;
+  }
+
+  // Closing Checks
+  html+=`<h4 style="color:#b71c1c;margin:14px 0 8px">Closing Checks</h4><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">`;
+  DE_CLOSING_CHECKS.forEach(c=>{const v=e.closingChecks&&e.closingChecks[c.key];html+=`<label style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:#f8f9fa;border-radius:8px;font-size:13px;cursor:pointer"><input type="checkbox" class="deCC" data-key="${c.key}" ${v?'checked':''} style="width:18px;height:18px;accent-color:#27ae60">${c.label}</label>`;});
+  html+=`</div>`;
+
+  // Extra Checks
+  html+=`<h4 style="color:#37474f;margin:14px 0 8px">Extra Checks</h4><div style="display:flex;gap:12px;flex-wrap:wrap">`;
+  DE_EXTRA_CHECKS.forEach(c=>{const v=e.extraChecks&&e.extraChecks[c.key];html+=`<label style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:#f8f9fa;border-radius:8px;font-size:13px;cursor:pointer"><input type="checkbox" class="deEC" data-key="${c.key}" ${v?'checked':''} style="width:18px;height:18px;accent-color:#27ae60">${c.label}</label>`;});
+  html+=`</div>`;
+
+  // Issues
+  html+=`<h4 style="margin:14px 0 8px">Issues & Remedial Action</h4><textarea id="deFormIssues" style="width:100%;padding:10px;border:2px solid #ddd;border-radius:8px;font-size:13px;font-family:inherit;min-height:60px;resize:vertical">${e.issues||''}</textarea>`;
+
+  // Sign Off
+  html+=`<div style="display:flex;align-items:center;gap:12px;margin-top:12px"><label style="font-weight:600;font-size:13px;min-width:70px">Signed by</label><input type="text" id="deFormSigned" value="${e.signedBy||''}" style="flex:1;padding:8px;border:2px solid #ddd;border-radius:8px;font-size:14px;font-family:inherit"></div>`;
+
+  // Buttons
+  html+=`<div style="display:flex;gap:10px;margin-top:20px;justify-content:flex-end">
+    <button onclick="this.closest('div[style*=fixed]').remove()" style="padding:10px 24px;border:1px solid #ddd;border-radius:8px;background:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Cancel</button>
+    <button onclick="_saveDiaryForm('${storeId}','${entry?entry.id:''}')" style="padding:10px 24px;border:none;border-radius:8px;background:var(--accent);color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit"><i class="fas fa-save"></i> Save</button>
+  </div>`;
+
+  _showDiaryModal(html,'900px');
+}
+
+async function _saveDiaryForm(storeId,existingId){
+  const date=$('deFormDate')?.value;
+  if(!date){toast('Please select a date','error');return;}
+
+  // Collect opening checks
+  const openChecks={};document.querySelectorAll('.deOC').forEach(cb=>{openChecks[cb.dataset.key]=cb.checked;});
+
+  // Collect fridge temps
+  const ftRaw={};document.querySelectorAll('.deFT').forEach(inp=>{const n=inp.dataset.name,p=inp.dataset.period;if(!ftRaw[n])ftRaw[n]={name:n};ftRaw[n][p]=inp.value;});
+  const fridgeTemps=Object.values(ftRaw).filter(f=>f.am||f.pm);
+
+  // Collect cooking temps
+  const ctRaw={};document.querySelectorAll('.deCT').forEach(inp=>{ctRaw[inp.dataset.item]={item:inp.dataset.item,temp:inp.value};});
+  const cookingTemps=Object.values(ctRaw).filter(c=>c.temp);
+
+  // Collect hold temps
+  const htRaw={};document.querySelectorAll('.deHT').forEach(inp=>{const item=inp.dataset.item,time=inp.dataset.time;if(!htRaw[item])htRaw[item]={item};htRaw[item][time]=inp.value;});
+  const holdTemps=Object.values(htRaw).filter(h=>DE_HOLD_TIMES.some(t=>h['t'+t.replace(':','')]));
+
+  // Collect closing checks
+  const closingChecks={};document.querySelectorAll('.deCC').forEach(cb=>{closingChecks[cb.dataset.key]=cb.checked;});
+
+  // Collect extra checks
+  const extraChecks={};document.querySelectorAll('.deEC').forEach(cb=>{extraChecks[cb.dataset.key]=cb.checked;});
+
+  const issues=$('deFormIssues')?.value||'';
+  const signedBy=$('deFormSigned')?.value||'';
+
+  // Preserve existing deliveries/cooling/leftovers if editing (they don't have form fields yet for simplicity)
+  let deliveries=[],coolingRecords=[],leftovers=[];
+  if(existingId){
+    const orig=_parseDiaryEntry((D.DiaryEntry||[]).find(x=>x.id===existingId));
+    if(orig){deliveries=orig.deliveries||[];coolingRecords=orig.coolingRecords||[];leftovers=orig.leftovers||[];}
+  }
+
+  const row={
+    id:existingId||genId('de'),
+    storeId:storeId,date:date,
+    openChecks:JSON.stringify(openChecks),
+    fridgeTemps:JSON.stringify(fridgeTemps),
+    deliveries:JSON.stringify(deliveries),
+    cookingTemps:JSON.stringify(cookingTemps),
+    holdTemps:JSON.stringify(holdTemps),
+    coolingRecords:JSON.stringify(coolingRecords),
+    leftovers:JSON.stringify(leftovers),
+    closingChecks:JSON.stringify(closingChecks),
+    extraChecks:JSON.stringify(extraChecks),
+    issues:issues,signedBy:signedBy,
+    submittedBy:currentUser?.name||currentUser?.username||'',
+    submittedAt:new Date().toISOString()
+  };
+
+  // Update local data
+  const idx=(D.DiaryEntry||[]).findIndex(e=>e.id===row.id);
+  if(idx>=0)D.DiaryEntry[idx]=row; else D.DiaryEntry.push(row);
+
+  // Close modal
+  document.querySelector('div[style*="position:fixed"][style*="z-index:2000"]')?.remove();
+
+  renderDiaryEntriesBody();
+
+  const res=await API.post({action:'upsert',sheet:'DiaryEntry',row:row});
+  if(res&&!res.error){toast('Diary entry saved!','success');}
+  else{toast('Save error: '+(res?.error||'unknown'),'error');}
+}
+
 function deleteDiaryEntry(id){
   if(!confirm('Delete this diary entry? This cannot be undone.'))return;
   const idx=(D.DiaryEntry||[]).findIndex(e=>e.id===id);
@@ -3597,6 +3824,16 @@ function deleteDiaryEntry(id){
     toast('Diary entry deleted','success');
     renderDiaryEntriesBody();
   }
+}
+
+// --- Modal helper ---
+function _showDiaryModal(html,maxW){
+  const ov=document.createElement('div');
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:2000;display:flex;align-items:start;justify-content:center;padding:40px 20px;overflow-y:auto';
+  ov.innerHTML=`<div style="background:#fff;border-radius:16px;padding:24px;max-width:${maxW||'700px'};width:100%;max-height:90vh;overflow-y:auto">${html}
+    ${html.includes('_saveDiaryForm')?'':'<div style="text-align:right;margin-top:16px"><button onclick="this.closest(\'div[style*=fixed]\').remove()" style="padding:10px 24px;border:none;border-radius:8px;background:var(--primary);color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Close</button></div>'}
+  </div>`;
+  document.body.appendChild(ov);
 }
 
 init();

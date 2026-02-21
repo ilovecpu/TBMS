@@ -190,22 +190,9 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
   <div style="text-align:center">
     <div style="font-size:48px;margin-bottom:8px">📋</div>
     <h1>Daily Shop Diary</h1>
-    <p>Select your store to begin</p>
+    <p id="storeMsg">Loading stores...</p>
   </div>
-  <div class="store-grid">
-    <div class="store-card" style="background:linear-gradient(135deg,#1b5e20,#4caf50)" onclick="selectStore('PAB')">
-      <span class="icon">🟢</span>Pick A Bap<div class="sub">Farnborough</div>
-    </div>
-    <div class="store-card" style="background:linear-gradient(135deg,#1565c0,#42a5f5)" onclick="selectStore('TBS')">
-      <span class="icon">🔵</span>The Bap<div class="sub">Swindon</div>
-    </div>
-    <div class="store-card" style="background:linear-gradient(135deg,#6a1b9a,#ab47bc)" onclick="selectStore('TBR')">
-      <span class="icon">🟣</span>The Bap<div class="sub">Reading</div>
-    </div>
-    <div class="store-card" style="background:linear-gradient(135deg,#e65100,#ff9800)" onclick="selectStore('TBB')">
-      <span class="icon">🟠</span>The Bap<div class="sub">Bristol</div>
-    </div>
-  </div>
+  <div class="store-grid" id="storeGrid"></div>
 </div>
 
 <!-- ===== MAIN DIARY ===== -->
@@ -259,8 +246,13 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
 const DEFAULT_API='https://script.google.com/macros/s/AKfycbzt-1CFL4Rr-9MqF9maaMSnpbT9lvn6PWb0NFL8bK280uLZfK25KNApARgb8l-uPPy-/exec';
 const API_URL=DEFAULT_API;
 
-const STORE_COLORS={PAB:'#1b5e20',TBS:'#1565c0',TBR:'#6a1b9a',TBB:'#e65100'};
-const STORE_NAMES={PAB:'Pick A Bap — Farnborough',TBS:'The Bap — Swindon',TBR:'The Bap — Reading',TBB:'The Bap — Bristol'};
+// Default colors — used as fallback palette and for known stores
+const DEFAULT_COLORS=['#1b5e20','#1565c0','#6a1b9a','#e65100','#00838f','#c62828','#4527a0','#00695c','#bf360c','#283593'];
+const DEFAULT_LIGHT=['#4caf50','#42a5f5','#ab47bc','#ff9800','#26c6da','#ef5350','#7e57c2','#26a69a','#ff7043','#5c6bc0'];
+const DEFAULT_ICONS=['🟢','🔵','🟣','🟠','🔷','🔴','💜','🟩','🟧','💙'];
+let STORE_COLORS={};
+let STORE_NAMES={};
+let storeList=[];
 
 const OPENING_CHECKS=[
   {key:'petFree',label:'a) Premises are free from signs of pest activity'},
@@ -304,6 +296,56 @@ const $=id=>document.getElementById(id);
 async function apiGet(action){try{const r=await fetch(API_URL+'?action='+action,{redirect:'follow'});return await r.json();}catch(e){return null;}}
 async function apiPost(data){try{const r=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(data),redirect:'follow'});return await r.json();}catch(e){return null;}}
 function bgPost(data){fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(data),redirect:'follow'}).catch(()=>{});}
+
+// ============================================================
+//  LOAD STORES FROM SERVER
+// ============================================================
+async function loadStores(){
+  $('storeMsg').textContent='Loading stores...';
+  const res=await apiGet('getSheet&sheet=Stores');
+  if(res&&res.data){
+    storeList=res.data.filter(s=>s.active===true||s.active==='true'||s.active==='TRUE');
+  }
+  if(storeList.length===0){
+    // Fallback hardcoded
+    storeList=[
+      {code:'PAB',name:'Pick A Bap',address:'Farnborough'},
+      {code:'TBS',name:'The Bap',address:'Swindon'},
+      {code:'TBR',name:'The Bap',address:'Reading'},
+      {code:'TBB',name:'The Bap',address:'Bristol'},
+      {code:'TBO',name:'The Bap',address:'Oxford'}
+    ];
+  }
+  // Build color/name maps
+  storeList.forEach((s,i)=>{
+    const ci=i%DEFAULT_COLORS.length;
+    STORE_COLORS[s.code]=STORE_COLORS[s.code]||DEFAULT_COLORS[ci];
+    const addr=s.address||'';
+    const city=addr.split(',')[0].trim()||addr.split('\n')[0].trim()||'';
+    STORE_NAMES[s.code]=s.name+(city?' — '+city:'');
+  });
+  renderStoreGrid();
+}
+function renderStoreGrid(){
+  const grid=$('storeGrid');
+  let html='';
+  storeList.forEach((s,i)=>{
+    const ci=i%DEFAULT_COLORS.length;
+    const dark=STORE_COLORS[s.code]||DEFAULT_COLORS[ci];
+    const light=DEFAULT_LIGHT[ci]||dark;
+    const icon=DEFAULT_ICONS[ci]||'📍';
+    const addr=s.address||'';
+    const city=addr.split(',')[0].trim()||addr.split('\n')[0].trim()||'';
+    // If odd number of stores, last one spans full width
+    const isLast=(i===storeList.length-1 && storeList.length%2===1);
+    html+=`<div class="store-card" style="background:linear-gradient(135deg,${dark},${light})${isLast?';grid-column:1/3':''}" onclick="selectStore('${s.code}')">
+      <span class="icon">${icon}</span>${s.name}<div class="sub">${city}</div>
+    </div>`;
+  });
+  grid.innerHTML=html;
+  $('storeMsg').textContent='Select your store to begin';
+}
+loadStores();
 
 // ============================================================
 //  STORE SELECTION

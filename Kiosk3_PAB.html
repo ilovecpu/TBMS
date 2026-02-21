@@ -217,7 +217,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
 
 <script>
 const STORE_ID='PAB',STORE_NAME='Pick A Bap';
-const DEFAULT_API='https://script.google.com/macros/s/AKfycbwYNemQh1JWIBWUQhGPSCEJBf0zKzXrn9yF3BEBR5ENNQeSVCvn_7khdm9syG0l9gns/exec';
+const DEFAULT_API='https://script.google.com/macros/s/AKfycbwd58CFMe5PXqktrpfaH9W7xUb4DHCGD4SriwBDgk5jHAezvkF1oU47RaXiYQTo_P4Z/exec';
 const API_URL=(function(){try{const c=JSON.parse(localStorage.getItem('tbms_config'));return(c&&c.apiUrl)?c.apiUrl:DEFAULT_API;}catch(e){return DEFAULT_API;}})();
 const $=id=>document.getElementById(id);
 function toast(msg,type='info'){const t=document.createElement('div');t.className='toast '+type;t.innerHTML='<i class="fas fa-'+(type==='error'?'exclamation-circle':type==='success'?'check-circle':'info-circle')+'"></i> '+msg;$('toastBox').appendChild(t);setTimeout(()=>t.remove(),3000);}

@@ -282,6 +282,13 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
         </div>
       </div>
       <div class="menu-group open">
+        <div class="menu-item menu-parent" onclick="toggleMenuGroup(this)"><i class="fas fa-clipboard-list"></i>Diary<i class="fas fa-chevron-down menu-arrow"></i></div>
+        <div class="sub-menu">
+          <div class="menu-item sub" data-page="diary-config" onclick="navigate('diary-config')"><i class="fas fa-cogs"></i>Diary Config</div>
+          <div class="menu-item sub" data-page="diary-entries" onclick="navigate('diary-entries')"><i class="fas fa-book"></i>Diary Records</div>
+        </div>
+      </div>
+      <div class="menu-group open">
         <div class="menu-item menu-parent" onclick="toggleMenuGroup(this)"><i class="fas fa-cog"></i>Settings<i class="fas fa-chevron-down menu-arrow"></i></div>
         <div class="sub-menu">
           <div class="menu-item sub" data-page="users" onclick="navigate('users')"><i class="fas fa-users-cog"></i>Users</div>
@@ -473,7 +480,7 @@ DEFAULT_DATA.Stores.forEach(store => {
 });
 
 // ==================== DATA LAYER ====================
-const D = { Users:[], Stores:[], Staff:[], Attendance:[], Suppliers:[], StockTemplate:[], StoreStock:[], StockCount:[], WeeklySales:[], StaffMessages:[], EditLog:[], TimeChangeReq:[] };
+const D = { Users:[], Stores:[], Staff:[], Attendance:[], Suppliers:[], StockTemplate:[], StoreStock:[], StockCount:[], WeeklySales:[], StaffMessages:[], EditLog:[], TimeChangeReq:[], DiaryConfig:[], DiaryEntry:[] };
 
 // Canonical field names — must match Apps Script SHEETS definition exactly
 const FIELD_SCHEMA = {
@@ -488,7 +495,9 @@ const FIELD_SCHEMA = {
   WeeklySales:['id','storeId','week','weekStart','totalSales','notes','submittedBy','submittedAt'],
   StaffMessages:['id','storeId','staffId','type','message','active','createdBy','createdAt'],
   EditLog:['id','attendanceId','staffId','storeId','date','fieldChanged','oldValue','newValue','editTimestamp','kioskVersion'],
-  TimeChangeReq:['id','attendanceId','staffId','storeId','date','field','currentValue','requestedValue','reason','status','kioskVersion','createdAt','reviewedBy','reviewedAt','acknowledgedAt']
+  TimeChangeReq:['id','attendanceId','staffId','storeId','date','field','currentValue','requestedValue','reason','status','kioskVersion','createdAt','reviewedBy','reviewedAt','acknowledgedAt'],
+  DiaryConfig:['id','storeId','configType','name','sortOrder','active'],
+  DiaryEntry:['id','storeId','date','openChecks','fridgeTemps','deliveries','cookingTemps','coolingRecords','leftovers','closingChecks','holdTemps','extraChecks','issues','signedBy','submittedBy','submittedAt']
 };
 // Normalize row keys: "Nick Name" → "nickName", "Left Date" → "leftDate"
 function normalizeRow(sheetName, row) {
@@ -510,7 +519,7 @@ const LS = {
   set(k, v) { localStorage.setItem('tbms_'+k, JSON.stringify(v)); },
   getConfig() { return this.get('config') || {}; }
 };
-const CLOUD_URL = 'https://script.google.com/macros/s/AKfycbwYNemQh1JWIBWUQhGPSCEJBf0zKzXrn9yF3BEBR5ENNQeSVCvn_7khdm9syG0l9gns/exec';
+const CLOUD_URL = 'https://script.google.com/macros/s/AKfycbwd58CFMe5PXqktrpfaH9W7xUb4DHCGD4SriwBDgk5jHAezvkF1oU47RaXiYQTo_P4Z/exec';
 const API = {
   url: CLOUD_URL, mode: 'cloud',
   async get(action, params={}) {
@@ -672,7 +681,7 @@ $('loginUser').addEventListener('keydown',e=>{if(e.key==='Enter')$('loginPass').
 // ==================== NAVIGATION ====================
 function toggleSidebar() { $('sidebar').classList.toggle('open');$('sidebarOverlay').classList.toggle('show'); }
 function toggleMenuGroup(el){el.parentElement.classList.toggle('open');}
-const pageTitles={dashboard:'Dashboard',stores:'Store Management',users:'User Management',staff:'Staff List',attendance:'Attendance Records',payroll:'Payroll',messages:'Staff Messages',stock:'Stock Management','stock-count':'Weekly Stock Count','stock-history':'Count History',sales:'Weekly Sales',analytics:'Usage Analytics',orders:'Order List',suppliers:'Supplier Management',settings:'General Settings'};
+const pageTitles={dashboard:'Dashboard',stores:'Store Management',users:'User Management',staff:'Staff List',attendance:'Attendance Records',payroll:'Payroll',messages:'Staff Messages',stock:'Stock Management','stock-count':'Weekly Stock Count','stock-history':'Count History',sales:'Weekly Sales',analytics:'Usage Analytics',orders:'Order List',suppliers:'Supplier Management','diary-config':'Diary Configuration','diary-entries':'Diary Records',settings:'General Settings'};
 let currentPage='dashboard';
 function navigate(page) {
   // Permission check
@@ -713,6 +722,8 @@ function renderPage(page) {
     case 'editlogs': renderEditLogs(c); break;
     case 'changerequests': renderChangeRequests(c); break;
     case 'settings': renderSettings(c); break;
+    case 'diary-config': renderDiaryConfig(c); break;
+    case 'diary-entries': renderDiaryEntries(c); break;
     default: c.innerHTML='<p>Page not found</p>';
   }
 }
@@ -3380,6 +3391,188 @@ async function init() {
   $('headerDate').textContent = new Date().toLocaleDateString('en-GB', {weekday:'long', year:'numeric', month:'long', day:'numeric'});
   window.addEventListener('resize', () => { if (window.innerWidth > 1024) { $('sidebar').classList.remove('open'); $('sidebarOverlay').classList.remove('show'); } });
 }
+// ==================== DIARY CONFIG ====================
+function renderDiaryConfig(c){
+  const storeFilter=currentUser.storeId||'';
+  const stores=D.Stores.filter(s=>s.active!==false&&s.active!=='false');
+  const configs=(D.DiaryConfig||[]).filter(dc=>dc.active!==false&&dc.active!=='false');
+  let selStore=storeFilter||stores[0]?.code||'';
+  c.innerHTML=`
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+      <select id="dcStoreFilter" onchange="renderDiaryConfigBody()" style="padding:8px 12px;border:2px solid #ddd;border-radius:8px;font-size:14px;font-family:inherit">
+        ${stores.map(s=>`<option value="${s.code}" ${s.code===selStore?'selected':''}>${s.name}</option>`).join('')}
+      </select>
+      <button onclick="addDiaryConfigItem()" style="padding:8px 16px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit"><i class="fas fa-plus"></i> Add Item</button>
+    </div>
+    <div id="dcBody"></div>`;
+  renderDiaryConfigBody();
+}
+function renderDiaryConfigBody(){
+  const store=$('dcStoreFilter')?.value||'';
+  const items=(D.DiaryConfig||[]).filter(dc=>dc.storeId===store&&(dc.active!==false&&dc.active!=='false')).sort((a,b)=>{
+    const typeOrder={fridge:1,freezer:2,menuItem:3};
+    return (typeOrder[a.configType]||9)-(typeOrder[b.configType]||9)||(a.sortOrder||0)-(b.sortOrder||0);
+  });
+  const types=[{key:'fridge',label:'Fridges',icon:'fa-temperature-low',color:'#2196f3'},{key:'freezer',label:'Freezers',icon:'fa-icicles',color:'#607d8b'},{key:'menuItem',label:'Menu Items (Cooking & Hold Temp)',icon:'fa-utensils',color:'#e65100'}];
+  let html='';
+  types.forEach(tp=>{
+    const tItems=items.filter(i=>i.configType===tp.key);
+    html+=`<div style="margin-bottom:20px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <i class="fas ${tp.icon}" style="color:${tp.color}"></i>
+        <strong style="font-size:15px">${tp.label}</strong>
+        <span style="background:#eee;padding:2px 8px;border-radius:10px;font-size:12px;font-weight:600">${tItems.length}</span>
+      </div>`;
+    if(tItems.length===0){html+=`<div style="padding:12px;color:#999;font-size:13px">No items configured</div>`;
+    }else{
+      html+=`<table style="width:100%;border-collapse:collapse;font-size:13px"><tr style="background:#f5f5f5"><th style="padding:8px;text-align:left">Name</th><th style="padding:8px;width:80px;text-align:center">Order</th><th style="padding:8px;width:100px;text-align:center">Actions</th></tr>`;
+      tItems.forEach(item=>{
+        html+=`<tr style="border-bottom:1px solid #eee">
+          <td style="padding:8px">${item.name}</td>
+          <td style="padding:8px;text-align:center">${item.sortOrder||0}</td>
+          <td style="padding:8px;text-align:center">
+            <button onclick="editDiaryConfigItem('${item.id}')" style="padding:4px 10px;border:1px solid #ddd;border-radius:6px;background:#fff;cursor:pointer;font-size:12px;margin-right:4px"><i class="fas fa-edit"></i></button>
+            <button onclick="deleteDiaryConfigItem('${item.id}')" style="padding:4px 10px;border:1px solid #fcc;border-radius:6px;background:#fee;color:#c00;cursor:pointer;font-size:12px"><i class="fas fa-trash"></i></button>
+          </td>
+        </tr>`;
+      });
+      html+=`</table>`;
+    }
+    html+=`</div>`;
+  });
+  $('dcBody').innerHTML=html;
+}
+function addDiaryConfigItem(){
+  const store=$('dcStoreFilter')?.value||'';
+  const type=prompt('Type: fridge, freezer, or menuItem','fridge');
+  if(!type||!['fridge','freezer','menuItem'].includes(type))return;
+  const name=prompt('Name:');
+  if(!name)return;
+  const order=parseInt(prompt('Sort order (number):','1'))||1;
+  const item={id:genId('dc'),storeId:store,configType:type,name:name,sortOrder:order,active:true};
+  D.DiaryConfig.push(item);
+  _bgPost({action:'upsert',sheet:'DiaryConfig',row:item});
+  toast('Added '+name,'success');
+  renderDiaryConfigBody();
+}
+function editDiaryConfigItem(id){
+  const item=D.DiaryConfig.find(i=>i.id===id);
+  if(!item)return;
+  const name=prompt('Name:',item.name);
+  if(!name)return;
+  const order=parseInt(prompt('Sort order:',item.sortOrder))||1;
+  item.name=name;item.sortOrder=order;
+  _bgPost({action:'upsert',sheet:'DiaryConfig',row:item});
+  toast('Updated '+name,'success');
+  renderDiaryConfigBody();
+}
+function deleteDiaryConfigItem(id){
+  if(!confirm('Delete this item?'))return;
+  const idx=D.DiaryConfig.findIndex(i=>i.id===id);
+  if(idx>=0){
+    D.DiaryConfig[idx].active=false;
+    _bgPost({action:'upsert',sheet:'DiaryConfig',row:D.DiaryConfig[idx]});
+    toast('Deleted','success');
+    renderDiaryConfigBody();
+  }
+}
+
+// ==================== DIARY ENTRIES ====================
+function renderDiaryEntries(c){
+  const stores=D.Stores.filter(s=>s.active!==false&&s.active!=='false');
+  const selStore=currentUser.storeId||stores[0]?.code||'';
+  c.innerHTML=`
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+      <select id="deStoreFilter" onchange="renderDiaryEntriesBody()" style="padding:8px 12px;border:2px solid #ddd;border-radius:8px;font-size:14px;font-family:inherit">
+        ${stores.map(s=>`<option value="${s.code}" ${s.code===selStore?'selected':''}>${s.name}</option>`).join('')}
+      </select>
+      <input type="month" id="deMonthFilter" value="${new Date().toISOString().slice(0,7)}" onchange="renderDiaryEntriesBody()" style="padding:8px 12px;border:2px solid #ddd;border-radius:8px;font-size:14px;font-family:inherit">
+    </div>
+    <div id="deBody"></div>`;
+  renderDiaryEntriesBody();
+}
+function renderDiaryEntriesBody(){
+  const store=$('deStoreFilter')?.value||'';
+  const month=$('deMonthFilter')?.value||'';
+  const entries=(D.DiaryEntry||[]).filter(e=>e.storeId===store&&e.date&&e.date.startsWith(month)).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  if(entries.length===0){$('deBody').innerHTML='<div style="padding:20px;text-align:center;color:#999">No diary entries found for this period</div>';return;}
+  let html=`<table style="width:100%;border-collapse:collapse;font-size:13px">
+    <tr style="background:#f5f5f5"><th style="padding:8px;text-align:left">Date</th><th style="padding:8px">Sections Filled</th><th style="padding:8px">Signed By</th><th style="padding:8px">Submitted</th><th style="padding:8px;width:120px">Actions</th></tr>`;
+  entries.forEach(e=>{
+    let filled=0;
+    ['openChecks','fridgeTemps','deliveries','cookingTemps','holdTemps','closingChecks'].forEach(f=>{
+      let v=e[f];
+      if(typeof v==='string'&&v){try{v=JSON.parse(v);}catch(ex){}}
+      if(v&&((Array.isArray(v)&&v.length>0)||(!Array.isArray(v)&&Object.keys(v).length>0)))filled++;
+    });
+    html+=`<tr style="border-bottom:1px solid #eee">
+      <td style="padding:8px;font-weight:600">${e.date}</td>
+      <td style="padding:8px;text-align:center"><span style="background:#e8f5e9;padding:2px 8px;border-radius:10px;font-size:12px;font-weight:600">${filled}/6</span></td>
+      <td style="padding:8px">${e.signedBy||'—'}</td>
+      <td style="padding:8px;font-size:12px;color:#999">${e.submittedAt?new Date(e.submittedAt).toLocaleString():''}</td>
+      <td style="padding:8px;text-align:center">
+        <button onclick="viewDiaryEntry('${e.id}')" style="padding:4px 10px;border:1px solid #ddd;border-radius:6px;background:#fff;cursor:pointer;font-size:12px;margin-right:4px" title="View"><i class="fas fa-eye"></i></button>
+        <button onclick="deleteDiaryEntry('${e.id}')" style="padding:4px 10px;border:1px solid #fcc;border-radius:6px;background:#fee;color:#c00;cursor:pointer;font-size:12px" title="Delete"><i class="fas fa-trash"></i></button>
+      </td>
+    </tr>`;
+  });
+  html+='</table>';
+  $('deBody').innerHTML=html;
+}
+function viewDiaryEntry(id){
+  const e=(D.DiaryEntry||[]).find(x=>x.id===id);
+  if(!e)return;
+  // Parse JSON fields
+  const parsed={...e};
+  ['openChecks','fridgeTemps','deliveries','cookingTemps','coolingRecords','leftovers','closingChecks','holdTemps','extraChecks'].forEach(f=>{
+    if(typeof parsed[f]==='string'&&parsed[f]){try{parsed[f]=JSON.parse(parsed[f]);}catch(ex){}}
+  });
+  const storeName=(D.Stores.find(s=>s.code===e.storeId)||{}).name||e.storeId;
+  let html=`<h3>${storeName} — ${e.date}</h3><hr style="margin:10px 0">`;
+  // Opening Checks
+  const oc=parsed.openChecks||{};
+  html+=`<h4 style="margin-top:12px">Opening Checks</h4><table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:12px">`;
+  [['petFree','Pest free'],['equipOk','Equipment OK'],['hotWater','Hot water/soap'],['aprons','Clean aprons'],['premisesClean','Premises clean'],['sanitiser','Sanitiser/cloths'],['foodInDate','Food in date'],['structureOk','Structure OK']].forEach(([k,l])=>{
+    html+=`<tr style="border-bottom:1px solid #eee"><td style="padding:4px 8px">${l}</td><td style="padding:4px 8px;font-weight:700;color:${oc[k]?'#27ae60':'#e74c3c'}">${oc[k]?'YES':'NO'}</td></tr>`;
+  });
+  html+=`</table>`;
+  // Fridge Temps
+  const ft=parsed.fridgeTemps||[];
+  if(ft.length>0){
+    html+=`<h4>Cold Storage</h4><table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:12px"><tr style="background:#f5f5f5"><th style="padding:4px 8px;text-align:left">Name</th><th style="padding:4px 8px">AM</th><th style="padding:4px 8px">PM</th></tr>`;
+    ft.forEach(f=>{html+=`<tr style="border-bottom:1px solid #eee"><td style="padding:4px 8px">${f.name}</td><td style="padding:4px 8px;text-align:center">${f.am||'—'}</td><td style="padding:4px 8px;text-align:center">${f.pm||'—'}</td></tr>`;});
+    html+=`</table>`;
+  }
+  // Cooking Temps
+  const ct=parsed.cookingTemps||[];
+  if(ct.length>0){
+    html+=`<h4>Cooking Temps</h4><table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:12px"><tr style="background:#f5f5f5"><th style="padding:4px 8px;text-align:left">Item</th><th style="padding:4px 8px">Temp °C</th></tr>`;
+    ct.forEach(c=>{html+=`<tr style="border-bottom:1px solid #eee"><td style="padding:4px 8px">${c.item}</td><td style="padding:4px 8px;text-align:center;font-weight:700">${c.temp||'—'}</td></tr>`;});
+    html+=`</table>`;
+  }
+  // Issues
+  html+=`<h4>Issues</h4><div style="padding:8px;background:#f8f9fa;border-radius:8px;margin-bottom:12px;white-space:pre-wrap">${parsed.issues||'None'}</div>`;
+  html+=`<div style="padding:8px;background:#f0f0f0;border-radius:8px"><strong>Signed by:</strong> ${parsed.signedBy||'—'} &nbsp;|&nbsp; <strong>Submitted:</strong> ${parsed.submittedAt?new Date(parsed.submittedAt).toLocaleString():''}</div>`;
+  // Show in modal
+  const ov=document.createElement('div');
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:2000;display:flex;align-items:start;justify-content:center;padding:40px 20px;overflow-y:auto';
+  ov.innerHTML=`<div style="background:#fff;border-radius:16px;padding:24px;max-width:700px;width:100%;max-height:90vh;overflow-y:auto">
+    ${html}
+    <div style="text-align:right;margin-top:16px"><button onclick="this.closest('div[style*=fixed]').remove()" style="padding:10px 24px;border:none;border-radius:8px;background:var(--primary);color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Close</button></div>
+  </div>`;
+  document.body.appendChild(ov);
+}
+function deleteDiaryEntry(id){
+  if(!confirm('Delete this diary entry? This cannot be undone.'))return;
+  const idx=(D.DiaryEntry||[]).findIndex(e=>e.id===id);
+  if(idx>=0){
+    _bgPost({action:'deleteRow',sheet:'DiaryEntry',id:id});
+    D.DiaryEntry.splice(idx,1);
+    toast('Diary entry deleted','success');
+    renderDiaryEntriesBody();
+  }
+}
+
 init();
 </script>
 </body>

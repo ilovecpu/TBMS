@@ -2,7 +2,7 @@
 //  TBMS - The Bap Management System v2.4
 //  Google Apps Script Backend (Code.gs)
 //  Deployed: 2026-02-17
-//  URL: https://script.google.com/macros/s/AKfycbwYNemQh1JWIBWUQhGPSCEJBf0zKzXrn9yF3BEBR5ENNQeSVCvn_7khdm9syG0l9gns/exec
+//  URL: https://script.google.com/macros/s/AKfycbwd58CFMe5PXqktrpfaH9W7xUb4DHCGD4SriwBDgk5jHAezvkF1oU47RaXiYQTo_P4Z/exec
 // ============================================================
 //  SETUP:
 //  1. Google Drive > New > Google Sheets > Name "TBMS Database"
@@ -26,7 +26,9 @@ const SHEETS = {
   WeeklySales:   ['id','storeId','week','weekStart','totalSales','notes','submittedBy','submittedAt'],
   StaffMessages: ['id','storeId','staffId','type','message','active','createdBy','createdAt'],
   EditLog:        ['id','attendanceId','staffId','storeId','date','fieldChanged','oldValue','newValue','editTimestamp','kioskVersion'],
-  TimeChangeReq:  ['id','attendanceId','staffId','storeId','date','field','currentValue','requestedValue','reason','status','kioskVersion','createdAt','reviewedBy','reviewedAt','acknowledgedAt']
+  TimeChangeReq:  ['id','attendanceId','staffId','storeId','date','field','currentValue','requestedValue','reason','status','kioskVersion','createdAt','reviewedBy','reviewedAt','acknowledgedAt'],
+  DiaryConfig:    ['id','storeId','configType','name','sortOrder','active'],
+  DiaryEntry:     ['id','storeId','date','openChecks','fridgeTemps','deliveries','cookingTemps','coolingRecords','leftovers','closingChecks','holdTemps','extraChecks','issues','signedBy','submittedBy','submittedAt']
 };
 
 // Fields that should remain numeric

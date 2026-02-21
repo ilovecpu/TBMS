@@ -3520,44 +3520,178 @@ function _parseDiaryEntry(raw){
 }
 function _getStoreConfigs(storeId){return (D.DiaryConfig||[]).filter(c=>c.storeId===storeId&&(c.active===true||c.active==='true'||c.active==='TRUE'));}
 
+let _deViewTab='monthly';
+let _deViewDate=new Date();
+let _deViewMonth=new Date().toISOString().slice(0,7);
+
 async function renderDiaryEntries(c){
   await loadDiaryData();
   const stores=D.Stores.filter(s=>s.active!==false&&s.active!=='false');
   const selStore=currentUser.storeId||stores[0]?.code||'';
   c.innerHTML=`
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap">
-      <select id="deStoreFilter" onchange="renderDiaryEntriesBody()" style="padding:8px 12px;border:2px solid #ddd;border-radius:8px;font-size:14px;font-family:inherit">
+      <select id="deStoreFilter" onchange="_deRefresh()" style="padding:8px 12px;border:2px solid #ddd;border-radius:8px;font-size:14px;font-family:inherit">
         ${stores.map(s=>`<option value="${s.code}" ${s.code===selStore?'selected':''}>${s.name}</option>`).join('')}
       </select>
-      <input type="month" id="deMonthFilter" value="${new Date().toISOString().slice(0,7)}" onchange="renderDiaryEntriesBody()" style="padding:8px 12px;border:2px solid #ddd;border-radius:8px;font-size:14px;font-family:inherit">
+      <div style="display:flex;gap:4px;background:#f0f0f0;border-radius:10px;padding:3px">
+        <button id="deTabDaily" onclick="_deSwitchTab('daily')" style="padding:7px 16px;border-radius:8px;border:none;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;background:${_deViewTab==='daily'?'#fff':'transparent'};color:${_deViewTab==='daily'?'#333':'#999'}"><i class="fas fa-calendar-day"></i> Daily</button>
+        <button id="deTabMonthly" onclick="_deSwitchTab('monthly')" style="padding:7px 16px;border-radius:8px;border:none;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;background:${_deViewTab==='monthly'?'#fff':'transparent'};color:${_deViewTab==='monthly'?'#333':'#999'}"><i class="fas fa-calendar-alt"></i> Monthly</button>
+        <button id="deTabList" onclick="_deSwitchTab('list')" style="padding:7px 16px;border-radius:8px;border:none;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;background:${_deViewTab==='list'?'#fff':'transparent'};color:${_deViewTab==='list'?'#333':'#999'}"><i class="fas fa-list"></i> List</button>
+      </div>
       <button class="btn btn-primary btn-sm" onclick="addDiaryEntry()" style="margin-left:auto"><i class="fas fa-plus"></i> Add Entry</button>
     </div>
     <div id="deBody"></div>`;
-  renderDiaryEntriesBody();
+  _deRefresh();
 }
-function renderDiaryEntriesBody(){
-  const store=$('deStoreFilter')?.value||'';
-  const month=$('deMonthFilter')?.value||'';
-  const entries=(D.DiaryEntry||[]).filter(e=>e.storeId===store&&e.date&&e.date.startsWith(month)).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
 
-  // Monthly summary
-  const todayStr=new Date().toISOString().slice(0,10);
-  const [yr,mo]=month.split('-').map(Number);
+function _deSwitchTab(tab){
+  _deViewTab=tab;
+  ['daily','monthly','list'].forEach(t=>{
+    const b=$('deTab'+t[0].toUpperCase()+t.slice(1));
+    if(b){b.style.background=t===tab?'#fff':'transparent';b.style.color=t===tab?'#333':'#999';}
+  });
+  _deRefresh();
+}
+function _deRefresh(){
+  if(_deViewTab==='daily')_deRenderDaily();
+  else if(_deViewTab==='monthly')_deRenderMonthly();
+  else _deRenderList();
+}
+
+// ==================== DAILY VIEW ====================
+function _deRenderDaily(){
+  const store=$('deStoreFilter')?.value||'';
+  const ds=_deViewDate.toISOString().slice(0,10);
+  const entry=(D.DiaryEntry||[]).find(e=>e.storeId===store&&e.date===ds);
+  const e=entry?_parseDiaryEntry(entry):null;
+  const storeName=(D.Stores.find(s=>s.code===store)||{}).name||store;
+  const dayNames=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const monthNames=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const niceD=dayNames[_deViewDate.getDay()]+', '+_deViewDate.getDate()+' '+monthNames[_deViewDate.getMonth()]+' '+_deViewDate.getFullYear();
+
+  let html=`<div style="display:flex;align-items:center;gap:10px;justify-content:center;margin-bottom:16px">
+    <button onclick="_deChangeDate(-1)" class="btn btn-outline btn-sm"><i class="fas fa-chevron-left"></i></button>
+    <input type="date" value="${ds}" onchange="_deGoDate(this.value)" style="padding:8px 12px;border:2px solid #ddd;border-radius:10px;font-size:15px;font-weight:700;font-family:inherit;text-align:center">
+    <button onclick="_deChangeDate(1)" class="btn btn-outline btn-sm"><i class="fas fa-chevron-right"></i></button>
+  </div>
+  <div style="text-align:center;margin-bottom:16px"><h3 style="margin:0">${storeName}</h3><div style="font-size:14px;color:#999">${niceD}</div></div>`;
+
+  if(!e){
+    html+=`<div style="text-align:center;padding:40px 20px;color:#999"><i class="fas fa-inbox" style="font-size:48px;display:block;margin-bottom:12px;opacity:.4"></i><div style="font-size:16px;font-weight:600">No diary entry for this date</div>
+      <button class="btn btn-primary btn-sm" onclick="_deAddForDate('${ds}')" style="margin-top:12px"><i class="fas fa-plus"></i> Create Entry</button></div>`;
+  }else{
+    // Action buttons
+    html+=`<div style="display:flex;gap:8px;justify-content:flex-end;margin-bottom:12px">
+      <button onclick="editDiaryEntry('${e.id}')" class="btn btn-outline btn-sm"><i class="fas fa-edit"></i> Edit</button>
+      <button onclick="deleteDiaryEntry('${e.id}')" class="btn btn-sm" style="background:#fee;color:#c00;border:1px solid #fcc"><i class="fas fa-trash"></i> Delete</button>
+    </div>`;
+    html+=_deRenderEntryReadonly(e);
+  }
+  $('deBody').innerHTML=html;
+}
+function _deChangeDate(delta){_deViewDate.setDate(_deViewDate.getDate()+delta);_deRefresh();}
+function _deGoDate(val){const p=val.split('-');_deViewDate=new Date(+p[0],+p[1]-1,+p[2]);_deRefresh();}
+function _deAddForDate(ds){
+  const store=$('deStoreFilter')?.value||'';
+  if(!store)return;
+  const entry={date:ds,openChecks:{},fridgeTemps:[],deliveries:[],cookingTemps:[],holdTemps:[],coolingRecords:[],leftovers:[],closingChecks:{},extraChecks:{},issues:'',signedBy:''};
+  _openDiaryForm(store,entry,true);
+}
+
+// ==================== MONTHLY VIEW ====================
+function _deRenderMonthly(){
+  const store=$('deStoreFilter')?.value||'';
+  const [yr,mo]=_deViewMonth.split('-').map(Number);
+  const monthNames=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const dayNames=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
   const daysInMonth=new Date(yr,mo,0).getDate();
-  let totalDays=0;
-  for(let d=1;d<=daysInMonth;d++){const ds=month+'-'+String(d).padStart(2,'0');if(ds>todayStr)break;totalDays++;}
-  const filledDays=entries.length;
+  const todayStr=new Date().toISOString().slice(0,10);
+  const monthPrefix=_deViewMonth;
+  const monthEntries=(D.DiaryEntry||[]).filter(e=>e.storeId===store&&e.date&&e.date.startsWith(monthPrefix));
+  const entryDates=new Set(monthEntries.map(e=>e.date));
+  const entryMap={};monthEntries.forEach(e=>{entryMap[e.date]=e;});
+
+  let totalDays=0,filledDays=entryDates.size;
+  for(let d=1;d<=daysInMonth;d++){const ds=monthPrefix+'-'+String(d).padStart(2,'0');if(ds>todayStr)break;totalDays++;}
   const missingDays=Math.max(0,totalDays-filledDays);
   const pct=totalDays>0?Math.round(filledDays/totalDays*100):0;
 
-  let html=`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">
+  let html=`<div style="display:flex;align-items:center;gap:12px;justify-content:center;margin-bottom:16px">
+    <button onclick="_deChangeMonth(-1)" class="btn btn-outline btn-sm"><i class="fas fa-chevron-left"></i></button>
+    <div style="font-size:18px;font-weight:800;min-width:180px;text-align:center">${monthNames[mo-1]} ${yr}</div>
+    <button onclick="_deChangeMonth(1)" class="btn btn-outline btn-sm"><i class="fas fa-chevron-right"></i></button>
+  </div>`;
+
+  // Stats
+  html+=`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">
     <div style="padding:14px;background:#e8f5e9;border-radius:12px;text-align:center"><div style="font-size:24px;font-weight:800;color:#1b5e20">${filledDays}</div><div style="font-size:11px;font-weight:600;color:#2e7d32">Completed</div></div>
     <div style="padding:14px;background:#fff3e0;border-radius:12px;text-align:center"><div style="font-size:24px;font-weight:800;color:#e65100">${missingDays}</div><div style="font-size:11px;font-weight:600;color:#ef6c00">Missing</div></div>
     <div style="padding:14px;background:#e3f2fd;border-radius:12px;text-align:center"><div style="font-size:24px;font-weight:800;color:#1565c0">${pct}%</div><div style="font-size:11px;font-weight:600;color:#1976d2">Compliance</div></div>
   </div>`;
 
-  if(entries.length===0){html+='<div style="padding:20px;text-align:center;color:#999">No diary entries found for this period</div>';$('deBody').innerHTML=html;return;}
-  html+=`<table style="width:100%;border-collapse:collapse;font-size:13px">
+  // Calendar grid
+  html+=`<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:16px">`;
+  dayNames.forEach(d=>html+=`<div style="text-align:center;font-size:11px;font-weight:700;color:#999;padding:6px 0">${d}</div>`);
+  let firstDay=(new Date(yr,mo-1,1).getDay()+6)%7;
+  for(let i=0;i<firstDay;i++)html+=`<div></div>`;
+  for(let d=1;d<=daysInMonth;d++){
+    const ds=monthPrefix+'-'+String(d).padStart(2,'0');
+    const hasEntry=entryDates.has(ds);
+    const isFuture=ds>todayStr;
+    const isToday=ds===todayStr;
+    let bg='#fff',border='#eee',color='#333';
+    if(!isFuture){bg=hasEntry?'#e8f5e9':'#fff3e0';border=hasEntry?'#a5d6a7':'#ffcc80';}
+    if(isFuture){color='#ccc';border='#f5f5f5';}
+    html+=`<div style="aspect-ratio:1;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:14px;font-weight:600;cursor:${isFuture?'default':'pointer'};border:2px solid ${border};background:${bg};color:${color};min-height:44px;position:relative${isToday?';box-shadow:0 0 0 2px var(--accent)':''}" ${!isFuture?`onclick="_deClickDay('${ds}')"`:''}><span>${d}</span>${!isFuture?`<div style="width:6px;height:6px;border-radius:50%;margin-top:2px;background:${hasEntry?'#4caf50':'#ff9800'}"></div>`:''}</div>`;
+  }
+  html+=`</div>`;
+
+  // Daily records list
+  html+=`<h4 style="margin-bottom:10px;font-size:14px;color:#999">Daily Records</h4>`;
+  for(let d=1;d<=daysInMonth;d++){
+    const ds=monthPrefix+'-'+String(d).padStart(2,'0');
+    if(ds>todayStr)break;
+    const dayDate=new Date(yr,mo-1,d);
+    const dayNames2=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    const dayLabel=dayNames2[dayDate.getDay()]+', '+d+' '+monthNames[mo-1].slice(0,3);
+    const entry=entryMap[ds];
+    if(entry){
+      html+=`<div style="padding:12px;margin-bottom:6px;background:#f8f9fa;border-radius:10px;border-left:4px solid #4caf50;cursor:pointer;display:flex;align-items:center;gap:10px" onclick="_deClickDay('${ds}')">
+        <i class="fas fa-check-circle" style="color:#4caf50"></i>
+        <div style="flex:1"><strong style="font-size:13px">${dayLabel}</strong></div>
+        <div style="font-size:11px;color:#999">${entry.signedBy||'—'}</div>
+        <button onclick="event.stopPropagation();editDiaryEntry('${entry.id}')" style="padding:3px 8px;border:1px solid #bbdefb;border-radius:6px;background:#e3f2fd;color:#1565c0;cursor:pointer;font-size:11px"><i class="fas fa-edit"></i></button>
+        <i class="fas fa-chevron-right" style="color:#ccc;font-size:12px"></i>
+      </div>`;
+    }else{
+      html+=`<div style="padding:12px;margin-bottom:6px;background:#fff8e1;border-radius:10px;border-left:4px solid #ff9800;display:flex;align-items:center;gap:10px">
+        <i class="fas fa-exclamation-circle" style="color:#ff9800"></i>
+        <div style="flex:1"><strong style="font-size:13px">${dayLabel}</strong></div>
+        <button onclick="_deAddForDate('${ds}')" style="padding:3px 8px;border:1px solid #c8e6c9;border-radius:6px;background:#e8f5e9;color:#2e7d32;cursor:pointer;font-size:11px"><i class="fas fa-plus"></i> Add</button>
+        <span style="font-size:11px;color:#ff9800;font-weight:600">Missing</span>
+      </div>`;
+    }
+  }
+  $('deBody').innerHTML=html;
+}
+function _deChangeMonth(delta){
+  const [yr,mo]=_deViewMonth.split('-').map(Number);
+  const d=new Date(yr,mo-1+delta,1);
+  _deViewMonth=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+  _deRefresh();
+}
+function _deClickDay(ds){
+  const p=ds.split('-');
+  _deViewDate=new Date(+p[0],+p[1]-1,+p[2]);
+  _deSwitchTab('daily');
+}
+
+// ==================== LIST VIEW ====================
+function _deRenderList(){
+  const store=$('deStoreFilter')?.value||'';
+  const entries=(D.DiaryEntry||[]).filter(e=>e.storeId===store).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  if(entries.length===0){$('deBody').innerHTML='<div style="padding:20px;text-align:center;color:#999">No diary entries found</div>';return;}
+  let html=`<table style="width:100%;border-collapse:collapse;font-size:13px">
     <tr style="background:#f5f5f5"><th style="padding:8px;text-align:left">Date</th><th style="padding:8px">Sections</th><th style="padding:8px">Signed By</th><th style="padding:8px">Submitted</th><th style="padding:8px;width:160px">Actions</th></tr>`;
   entries.forEach(e=>{
     let filled=0;
@@ -3579,6 +3713,72 @@ function renderDiaryEntriesBody(){
   });
   html+='</table>';
   $('deBody').innerHTML=html;
+}
+
+// ==================== READ-ONLY ENTRY RENDER ====================
+function _deRenderEntryReadonly(e){
+  let html='';
+  // Opening Checks
+  html+=`<div class="card" style="margin-bottom:12px;padding:14px"><h4 style="color:#1b5e20;margin-bottom:8px"><i class="fas fa-door-open" style="margin-right:6px"></i>Opening Checks</h4><table style="width:100%;border-collapse:collapse;font-size:13px">`;
+  DE_OPENING_CHECKS.forEach(c=>{const v=e.openChecks&&e.openChecks[c.key];html+=`<tr style="border-bottom:1px solid #f0f0f0"><td style="padding:4px 8px">${c.label}</td><td style="padding:4px 8px;font-weight:700;color:${v?'#27ae60':'#e74c3c'};width:50px;text-align:center">${v?'YES':'NO'}</td></tr>`;});
+  html+=`</table></div>`;
+  // Cold Storage
+  const ft=e.fridgeTemps||[];
+  if(ft.length>0){
+    html+=`<div class="card" style="margin-bottom:12px;padding:14px"><h4 style="color:#1565c0;margin-bottom:8px"><i class="fas fa-thermometer-half" style="margin-right:6px"></i>Cold Storage</h4><table style="width:100%;border-collapse:collapse;font-size:13px"><tr style="background:#f5f5f5"><th style="padding:4px 8px;text-align:left">Name</th><th style="padding:4px 8px;text-align:center">AM °C</th><th style="padding:4px 8px;text-align:center">PM °C</th></tr>`;
+    ft.forEach(f=>{html+=`<tr style="border-bottom:1px solid #f0f0f0"><td style="padding:4px 8px">${f.name}</td><td style="padding:4px 8px;text-align:center;font-weight:700">${f.am||'—'}</td><td style="padding:4px 8px;text-align:center;font-weight:700">${f.pm||'—'}</td></tr>`;});
+    html+=`</table></div>`;
+  }
+  // Deliveries
+  const dl=e.deliveries||[];
+  if(dl.length>0){
+    html+=`<div class="card" style="margin-bottom:12px;padding:14px"><h4 style="color:#6a1b9a;margin-bottom:8px"><i class="fas fa-truck" style="margin-right:6px"></i>Deliveries</h4><table style="width:100%;border-collapse:collapse;font-size:13px"><tr style="background:#f5f5f5"><th style="padding:4px 8px;text-align:left">Product</th><th style="padding:4px 8px;text-align:center">Visual</th><th style="padding:4px 8px;text-align:center">Temp</th><th style="padding:4px 8px;text-align:center">Accepted</th></tr>`;
+    dl.forEach(d=>{html+=`<tr style="border-bottom:1px solid #f0f0f0"><td style="padding:4px 8px">${d.product||'—'}</td><td style="padding:4px 8px;text-align:center;font-weight:700;color:${d.visualOk?'#27ae60':'#e74c3c'}">${d.visualOk?'Y':'N'}</td><td style="padding:4px 8px;text-align:center;font-weight:700;color:${d.tempOk?'#27ae60':'#e74c3c'}">${d.tempOk?'Y':'N'}</td><td style="padding:4px 8px;text-align:center;font-weight:700;color:${d.accepted?'#27ae60':'#e74c3c'}">${d.accepted?'Y':'N'}</td></tr>`;});
+    html+=`</table></div>`;
+  }
+  // Cooking Temps
+  const ct=e.cookingTemps||[];
+  if(ct.length>0){
+    html+=`<div class="card" style="margin-bottom:12px;padding:14px"><h4 style="color:#e65100;margin-bottom:8px"><i class="fas fa-fire" style="margin-right:6px"></i>Cooking Temps</h4><table style="width:100%;border-collapse:collapse;font-size:13px"><tr style="background:#f5f5f5"><th style="padding:4px 8px;text-align:left">Item</th><th style="padding:4px 8px;text-align:center">Temp °C</th></tr>`;
+    ct.forEach(c=>{html+=`<tr style="border-bottom:1px solid #f0f0f0"><td style="padding:4px 8px">${c.item}</td><td style="padding:4px 8px;text-align:center;font-weight:700">${c.temp||'—'}</td></tr>`;});
+    html+=`</table></div>`;
+  }
+  // Hold Temps
+  const ht=e.holdTemps||[];
+  if(ht.length>0){
+    html+=`<div class="card" style="margin-bottom:12px;padding:14px"><h4 style="color:#c62828;margin-bottom:8px"><i class="fas fa-clock" style="margin-right:6px"></i>Food Hold Temps</h4><table style="width:100%;border-collapse:collapse;font-size:13px"><tr style="background:#f5f5f5"><th style="padding:4px 8px;text-align:left">Item</th>`;
+    DE_HOLD_TIMES.forEach(t=>html+=`<th style="padding:4px 8px;text-align:center">${t}</th>`);
+    html+='</tr>';
+    ht.forEach(h=>{html+=`<tr style="border-bottom:1px solid #f0f0f0"><td style="padding:4px 8px">${h.item}</td>`;DE_HOLD_TIMES.forEach(t=>{const k='t'+t.replace(':','');html+=`<td style="padding:4px 8px;text-align:center;font-weight:700">${h[k]||'—'}</td>`;});html+='</tr>';});
+    html+=`</table></div>`;
+  }
+  // Cooling
+  const cl=e.coolingRecords||[];
+  if(cl.length>0){
+    html+=`<div class="card" style="margin-bottom:12px;padding:14px"><h4 style="color:#00695c;margin-bottom:8px"><i class="fas fa-snowflake" style="margin-right:6px"></i>Cooling</h4><table style="width:100%;border-collapse:collapse;font-size:13px"><tr style="background:#f5f5f5"><th style="padding:4px 8px;text-align:left">Product</th><th style="padding:4px 8px;text-align:center">Time(min)</th><th style="padding:4px 8px;text-align:center">OK</th></tr>`;
+    cl.forEach(c=>{html+=`<tr style="border-bottom:1px solid #f0f0f0"><td style="padding:4px 8px">${c.product}</td><td style="padding:4px 8px;text-align:center">${c.timeTaken||'—'}</td><td style="padding:4px 8px;text-align:center;font-weight:700;color:${c.ok?'#27ae60':'#e74c3c'}">${c.ok?'Y':'N'}</td></tr>`;});
+    html+=`</table></div>`;
+  }
+  // Leftovers
+  const lo=e.leftovers||[];
+  if(lo.length>0){
+    html+=`<div class="card" style="margin-bottom:12px;padding:14px"><h4 style="color:#4e342e;margin-bottom:8px"><i class="fas fa-box-open" style="margin-right:6px"></i>Leftovers</h4><table style="width:100%;border-collapse:collapse;font-size:13px"><tr style="background:#f5f5f5"><th style="padding:4px 8px;text-align:left">Product</th><th style="padding:4px 8px;text-align:center">Action</th></tr>`;
+    lo.forEach(l=>{html+=`<tr style="border-bottom:1px solid #f0f0f0"><td style="padding:4px 8px">${l.product}</td><td style="padding:4px 8px;text-align:center">${l.action==='discard'?'Discarded':'Stored'}</td></tr>`;});
+    html+=`</table></div>`;
+  }
+  // Closing Checks
+  html+=`<div class="card" style="margin-bottom:12px;padding:14px"><h4 style="color:#b71c1c;margin-bottom:8px"><i class="fas fa-door-closed" style="margin-right:6px"></i>Closing Checks</h4><table style="width:100%;border-collapse:collapse;font-size:13px">`;
+  DE_CLOSING_CHECKS.forEach(c=>{const v=e.closingChecks&&e.closingChecks[c.key];html+=`<tr style="border-bottom:1px solid #f0f0f0"><td style="padding:4px 8px">${c.label}</td><td style="padding:4px 8px;font-weight:700;color:${v?'#27ae60':'#e74c3c'};width:50px;text-align:center">${v?'YES':'NO'}</td></tr>`;});
+  html+=`</table></div>`;
+  // Extra Checks
+  html+=`<div class="card" style="margin-bottom:12px;padding:14px"><h4 style="color:#37474f;margin-bottom:8px"><i class="fas fa-clipboard-check" style="margin-right:6px"></i>Extra Checks</h4><table style="width:100%;border-collapse:collapse;font-size:13px">`;
+  DE_EXTRA_CHECKS.forEach(c=>{const v=e.extraChecks&&e.extraChecks[c.key];html+=`<tr style="border-bottom:1px solid #f0f0f0"><td style="padding:4px 8px">${c.label}</td><td style="padding:4px 8px;font-weight:700;color:${v?'#27ae60':'#e74c3c'};width:50px;text-align:center">${v?'YES':'NO'}</td></tr>`;});
+  html+=`</table></div>`;
+  // Issues
+  html+=`<div class="card" style="margin-bottom:12px;padding:14px"><h4 style="margin-bottom:8px"><i class="fas fa-exclamation-triangle" style="margin-right:6px;color:#f39c12"></i>Issues & Remedial Action</h4><div style="padding:8px;background:#f8f9fa;border-radius:8px;white-space:pre-wrap;min-height:30px">${e.issues||'None'}</div></div>`;
+  // Sign Off
+  html+=`<div style="padding:12px;background:#f0f0f0;border-radius:10px;display:flex;gap:16px;flex-wrap:wrap"><div><i class="fas fa-signature" style="margin-right:6px"></i><strong>Signed:</strong> ${e.signedBy||'—'}</div><div><strong>Submitted:</strong> ${e.submittedAt?new Date(e.submittedAt).toLocaleString():''}</div></div>`;
+  return html;
 }
 
 // --- VIEW DIARY ENTRY (read-only modal) ---
@@ -3674,8 +3874,8 @@ function editDiaryEntry(id){
   _openDiaryForm(raw.storeId,_parseDiaryEntry(raw));
 }
 
-function _openDiaryForm(storeId,entry){
-  const isNew=!entry;
+function _openDiaryForm(storeId,entry,isNewWithDate){
+  const isNew=!entry||isNewWithDate;
   const storeName=(D.Stores.find(s=>s.code===storeId)||{}).name||storeId;
   const configs=_getStoreConfigs(storeId);
   const fridges=configs.filter(c=>c.configType==='fridge').sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0));
@@ -3684,70 +3884,129 @@ function _openDiaryForm(storeId,entry){
   const allCold=[...fridges,...freezers];
   const e=entry||{date:'',openChecks:{},fridgeTemps:[],deliveries:[],cookingTemps:[],holdTemps:[],coolingRecords:[],leftovers:[],closingChecks:{},extraChecks:{},issues:'',signedBy:''};
 
-  // Build fridge temps lookup
   const ftMap={};(e.fridgeTemps||[]).forEach(f=>{ftMap[f.name]=f;});
-  // Build cooking temps lookup
   const ctMap={};(e.cookingTemps||[]).forEach(c=>{ctMap[c.item]=c;});
-  // Build hold temps lookup
   const htMap={};(e.holdTemps||[]).forEach(h=>{htMap[h.item]=h;});
 
-  let html=`<h3 style="margin-bottom:4px">${isNew?'New Entry':'Edit Entry'} — ${storeName}</h3><hr style="margin:10px 0">`;
+  let html=`<h3 style="margin-bottom:4px">${isNewWithDate?'New Entry':'Edit Entry'} — ${storeName}</h3><hr style="margin:10px 0">`;
 
   // Date
-  html+=`<div style="margin-bottom:14px"><label style="font-weight:600;font-size:13px">Date</label><br><input type="date" id="deFormDate" value="${e.date||''}" style="padding:8px;border:2px solid #ddd;border-radius:8px;font-size:14px;font-family:inherit;width:200px" ${isNew?'':'readonly'}></div>`;
+  html+=`<div style="margin-bottom:14px"><label style="font-weight:600;font-size:13px">Date</label><br><input type="date" id="deFormDate" value="${e.date||''}" style="padding:8px;border:2px solid #ddd;border-radius:8px;font-size:14px;font-family:inherit;width:200px" ${!isNewWithDate&&e.id?'readonly':''}></div>`;
 
   // Opening Checks
-  html+=`<h4 style="color:#1b5e20;margin:14px 0 8px">Opening Checks</h4><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">`;
+  html+=`<h4 style="color:#1b5e20;margin:14px 0 8px"><i class="fas fa-door-open" style="margin-right:6px"></i>Opening Checks</h4><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">`;
   DE_OPENING_CHECKS.forEach(c=>{const v=e.openChecks&&e.openChecks[c.key];html+=`<label style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:#f8f9fa;border-radius:8px;font-size:13px;cursor:pointer"><input type="checkbox" class="deOC" data-key="${c.key}" ${v?'checked':''} style="width:18px;height:18px;accent-color:#27ae60">${c.label}</label>`;});
   html+=`</div>`;
 
   // Cold Storage
   if(allCold.length>0){
-    html+=`<h4 style="color:#1565c0;margin:14px 0 8px">Cold Storage Temperatures</h4><table style="width:100%;border-collapse:collapse;font-size:13px"><tr style="background:#f5f5f5"><th style="padding:6px;text-align:left">Name</th><th style="padding:6px;text-align:center;width:80px">AM °C</th><th style="padding:6px;text-align:center;width:80px">PM °C</th></tr>`;
+    html+=`<h4 style="color:#1565c0;margin:14px 0 8px"><i class="fas fa-thermometer-half" style="margin-right:6px"></i>Cold Storage</h4><table style="width:100%;border-collapse:collapse;font-size:13px"><tr style="background:#f5f5f5"><th style="padding:6px;text-align:left">Name</th><th style="padding:6px;text-align:center;width:80px">AM °C</th><th style="padding:6px;text-align:center;width:80px">PM °C</th></tr>`;
     allCold.forEach(c=>{const f=ftMap[c.name]||{};html+=`<tr style="border-bottom:1px solid #eee"><td style="padding:6px">${c.name}</td><td style="padding:4px;text-align:center"><input type="number" step="0.1" class="deFT" data-name="${escHtml(c.name)}" data-period="am" value="${f.am||''}" style="width:60px;padding:4px;border:1px solid #ddd;border-radius:4px;text-align:center;font-size:13px"></td><td style="padding:4px;text-align:center"><input type="number" step="0.1" class="deFT" data-name="${escHtml(c.name)}" data-period="pm" value="${f.pm||''}" style="width:60px;padding:4px;border:1px solid #ddd;border-radius:4px;text-align:center;font-size:13px"></td></tr>`;});
     html+=`</table>`;
   }
 
+  // Deliveries
+  const dlArr=e.deliveries||[];
+  html+=`<h4 style="color:#6a1b9a;margin:14px 0 8px"><i class="fas fa-truck" style="margin-right:6px"></i>Deliveries <button onclick="_deAddDeliveryRow()" style="margin-left:8px;padding:2px 10px;border:1px solid #ce93d8;border-radius:6px;background:#f3e5f5;color:#6a1b9a;cursor:pointer;font-size:11px;font-weight:600"><i class="fas fa-plus"></i> Add</button></h4>`;
+  html+=`<div id="deDeliveryRows">`;
+  dlArr.forEach((d,i)=>{html+=_deDeliveryRowHtml(i,d);});
+  html+=`</div>`;
+
   // Cooking Temps
   if(menuItems.length>0){
-    html+=`<h4 style="color:#e65100;margin:14px 0 8px">Cooking Temperature</h4><table style="width:100%;border-collapse:collapse;font-size:13px"><tr style="background:#f5f5f5"><th style="padding:6px;text-align:left">Item</th><th style="padding:6px;text-align:center;width:80px">Temp °C</th></tr>`;
+    html+=`<h4 style="color:#e65100;margin:14px 0 8px"><i class="fas fa-fire" style="margin-right:6px"></i>Cooking Temperature</h4><table style="width:100%;border-collapse:collapse;font-size:13px"><tr style="background:#f5f5f5"><th style="padding:6px;text-align:left">Item</th><th style="padding:6px;text-align:center;width:80px">Temp °C</th></tr>`;
     menuItems.forEach(m=>{const c=ctMap[m.name]||{};html+=`<tr style="border-bottom:1px solid #eee"><td style="padding:6px">${m.name}</td><td style="padding:4px;text-align:center"><input type="number" step="0.1" class="deCT" data-item="${escHtml(m.name)}" value="${c.temp||''}" style="width:60px;padding:4px;border:1px solid #ddd;border-radius:4px;text-align:center;font-size:13px"></td></tr>`;});
     html+=`</table>`;
   }
 
   // Hold Temps
   if(menuItems.length>0){
-    html+=`<h4 style="color:#c62828;margin:14px 0 8px">Food Hold Temperature</h4><table style="width:100%;border-collapse:collapse;font-size:13px"><tr style="background:#f5f5f5"><th style="padding:6px;text-align:left">Item</th>`;
+    html+=`<h4 style="color:#c62828;margin:14px 0 8px"><i class="fas fa-clock" style="margin-right:6px"></i>Food Hold Temperature</h4><table style="width:100%;border-collapse:collapse;font-size:13px"><tr style="background:#f5f5f5"><th style="padding:6px;text-align:left">Item</th>`;
     DE_HOLD_TIMES.forEach(t=>html+=`<th style="padding:6px;text-align:center;width:65px">${t}</th>`);
     html+='</tr>';
     menuItems.forEach(m=>{const h=htMap[m.name]||{};html+=`<tr style="border-bottom:1px solid #eee"><td style="padding:6px">${m.name}</td>`;DE_HOLD_TIMES.forEach(t=>{const k='t'+t.replace(':','');html+=`<td style="padding:4px;text-align:center"><input type="number" step="0.1" class="deHT" data-item="${escHtml(m.name)}" data-time="${k}" value="${h[k]||''}" style="width:50px;padding:3px;border:1px solid #ddd;border-radius:4px;text-align:center;font-size:12px"></td>`;});html+='</tr>';});
     html+=`</table>`;
   }
 
+  // Cooling
+  const clArr=e.coolingRecords||[];
+  html+=`<h4 style="color:#00695c;margin:14px 0 8px"><i class="fas fa-snowflake" style="margin-right:6px"></i>Cooling <button onclick="_deAddCoolingRow()" style="margin-left:8px;padding:2px 10px;border:1px solid #80cbc4;border-radius:6px;background:#e0f2f1;color:#00695c;cursor:pointer;font-size:11px;font-weight:600"><i class="fas fa-plus"></i> Add</button></h4>`;
+  html+=`<div id="deCoolingRows">`;
+  clArr.forEach((c,i)=>{html+=_deCoolingRowHtml(i,c);});
+  html+=`</div>`;
+
+  // Leftovers
+  const loArr=e.leftovers||[];
+  html+=`<h4 style="color:#4e342e;margin:14px 0 8px"><i class="fas fa-box-open" style="margin-right:6px"></i>Leftovers <button onclick="_deAddLeftoverRow()" style="margin-left:8px;padding:2px 10px;border:1px solid #bcaaa4;border-radius:6px;background:#efebe9;color:#4e342e;cursor:pointer;font-size:11px;font-weight:600"><i class="fas fa-plus"></i> Add</button></h4>`;
+  html+=`<div id="deLeftoverRows">`;
+  loArr.forEach((l,i)=>{html+=_deLeftoverRowHtml(i,l);});
+  html+=`</div>`;
+
   // Closing Checks
-  html+=`<h4 style="color:#b71c1c;margin:14px 0 8px">Closing Checks</h4><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">`;
+  html+=`<h4 style="color:#b71c1c;margin:14px 0 8px"><i class="fas fa-door-closed" style="margin-right:6px"></i>Closing Checks</h4><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">`;
   DE_CLOSING_CHECKS.forEach(c=>{const v=e.closingChecks&&e.closingChecks[c.key];html+=`<label style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:#f8f9fa;border-radius:8px;font-size:13px;cursor:pointer"><input type="checkbox" class="deCC" data-key="${c.key}" ${v?'checked':''} style="width:18px;height:18px;accent-color:#27ae60">${c.label}</label>`;});
   html+=`</div>`;
 
   // Extra Checks
-  html+=`<h4 style="color:#37474f;margin:14px 0 8px">Extra Checks</h4><div style="display:flex;gap:12px;flex-wrap:wrap">`;
+  html+=`<h4 style="color:#37474f;margin:14px 0 8px"><i class="fas fa-clipboard-check" style="margin-right:6px"></i>Extra Checks</h4><div style="display:flex;gap:12px;flex-wrap:wrap">`;
   DE_EXTRA_CHECKS.forEach(c=>{const v=e.extraChecks&&e.extraChecks[c.key];html+=`<label style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:#f8f9fa;border-radius:8px;font-size:13px;cursor:pointer"><input type="checkbox" class="deEC" data-key="${c.key}" ${v?'checked':''} style="width:18px;height:18px;accent-color:#27ae60">${c.label}</label>`;});
   html+=`</div>`;
 
   // Issues
-  html+=`<h4 style="margin:14px 0 8px">Issues & Remedial Action</h4><textarea id="deFormIssues" style="width:100%;padding:10px;border:2px solid #ddd;border-radius:8px;font-size:13px;font-family:inherit;min-height:60px;resize:vertical">${e.issues||''}</textarea>`;
+  html+=`<h4 style="margin:14px 0 8px"><i class="fas fa-exclamation-triangle" style="margin-right:6px;color:#f39c12"></i>Issues & Remedial Action</h4><textarea id="deFormIssues" style="width:100%;padding:10px;border:2px solid #ddd;border-radius:8px;font-size:13px;font-family:inherit;min-height:60px;resize:vertical">${e.issues||''}</textarea>`;
 
   // Sign Off
-  html+=`<div style="display:flex;align-items:center;gap:12px;margin-top:12px"><label style="font-weight:600;font-size:13px;min-width:70px">Signed by</label><input type="text" id="deFormSigned" value="${e.signedBy||''}" style="flex:1;padding:8px;border:2px solid #ddd;border-radius:8px;font-size:14px;font-family:inherit"></div>`;
+  html+=`<div style="display:flex;align-items:center;gap:12px;margin-top:12px"><label style="font-weight:600;font-size:13px;min-width:70px"><i class="fas fa-signature"></i> Signed by</label><input type="text" id="deFormSigned" value="${e.signedBy||''}" style="flex:1;padding:8px;border:2px solid #ddd;border-radius:8px;font-size:14px;font-family:inherit"></div>`;
 
   // Buttons
   html+=`<div style="display:flex;gap:10px;margin-top:20px;justify-content:flex-end">
     <button onclick="this.closest('div[style*=fixed]').remove()" style="padding:10px 24px;border:1px solid #ddd;border-radius:8px;background:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Cancel</button>
-    <button onclick="_saveDiaryForm('${storeId}','${entry?entry.id:''}')" style="padding:10px 24px;border:none;border-radius:8px;background:var(--accent);color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit"><i class="fas fa-save"></i> Save</button>
+    <button onclick="_saveDiaryForm('${storeId}','${entry&&entry.id?entry.id:''}')" style="padding:10px 24px;border:none;border-radius:8px;background:var(--accent);color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit"><i class="fas fa-save"></i> Save</button>
   </div>`;
 
   _showDiaryModal(html,'900px');
 }
+
+// Dynamic row helpers for Deliveries/Cooling/Leftovers
+let _deRowCounter=0;
+function _deDeliveryRowHtml(i,d){
+  const rid='deDel_'+(++_deRowCounter);
+  d=d||{};
+  return `<div id="${rid}" style="display:flex;gap:6px;align-items:center;margin-bottom:6px;padding:8px;background:#f8f9fa;border-radius:8px;flex-wrap:wrap">
+    <input type="text" class="deDlProduct" placeholder="Product/Company" value="${escHtml(d.product||'')}" style="flex:2;min-width:120px;padding:6px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit">
+    <label style="font-size:12px;display:flex;align-items:center;gap:4px"><input type="checkbox" class="deDlVisual" ${d.visualOk?'checked':''} style="width:16px;height:16px;accent-color:#27ae60">Visual OK</label>
+    <label style="font-size:12px;display:flex;align-items:center;gap:4px"><input type="checkbox" class="deDlTemp" ${d.tempOk?'checked':''} style="width:16px;height:16px;accent-color:#27ae60">Temp OK</label>
+    <label style="font-size:12px;display:flex;align-items:center;gap:4px"><input type="checkbox" class="deDlAccepted" ${d.accepted?'checked':''} style="width:16px;height:16px;accent-color:#27ae60">Accepted</label>
+    <button onclick="document.getElementById('${rid}').remove()" style="padding:4px 8px;border:1px solid #fcc;border-radius:6px;background:#fee;color:#c00;cursor:pointer;font-size:11px"><i class="fas fa-times"></i></button>
+  </div>`;
+}
+function _deAddDeliveryRow(){$('deDeliveryRows').insertAdjacentHTML('beforeend',_deDeliveryRowHtml(0,{}));}
+
+function _deCoolingRowHtml(i,c){
+  const rid='deClg_'+(++_deRowCounter);
+  c=c||{};
+  return `<div id="${rid}" style="display:flex;gap:6px;align-items:center;margin-bottom:6px;padding:8px;background:#f8f9fa;border-radius:8px;flex-wrap:wrap">
+    <input type="text" class="deClProduct" placeholder="Product" value="${escHtml(c.product||'')}" style="flex:2;min-width:120px;padding:6px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit">
+    <input type="number" class="deClTime" placeholder="min" value="${c.timeTaken||''}" style="width:70px;padding:6px;border:1px solid #ddd;border-radius:6px;font-size:13px;text-align:center">
+    <label style="font-size:12px;display:flex;align-items:center;gap:4px"><input type="checkbox" class="deClOk" ${c.ok?'checked':''} style="width:16px;height:16px;accent-color:#27ae60">OK</label>
+    <button onclick="document.getElementById('${rid}').remove()" style="padding:4px 8px;border:1px solid #fcc;border-radius:6px;background:#fee;color:#c00;cursor:pointer;font-size:11px"><i class="fas fa-times"></i></button>
+  </div>`;
+}
+function _deAddCoolingRow(){$('deCoolingRows').insertAdjacentHTML('beforeend',_deCoolingRowHtml(0,{}));}
+
+function _deLeftoverRowHtml(i,l){
+  const rid='deLo_'+(++_deRowCounter);
+  l=l||{};
+  return `<div id="${rid}" style="display:flex;gap:6px;align-items:center;margin-bottom:6px;padding:8px;background:#f8f9fa;border-radius:8px;flex-wrap:wrap">
+    <input type="text" class="deLoProduct" placeholder="Product" value="${escHtml(l.product||'')}" style="flex:2;min-width:120px;padding:6px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit">
+    <select class="deLoAction" style="padding:6px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit">
+      <option value="store" ${l.action!=='discard'?'selected':''}>Stored</option>
+      <option value="discard" ${l.action==='discard'?'selected':''}>Discarded</option>
+    </select>
+    <button onclick="document.getElementById('${rid}').remove()" style="padding:4px 8px;border:1px solid #fcc;border-radius:6px;background:#fee;color:#c00;cursor:pointer;font-size:11px"><i class="fas fa-times"></i></button>
+  </div>`;
+}
+function _deAddLeftoverRow(){$('deLeftoverRows').insertAdjacentHTML('beforeend',_deLeftoverRowHtml(0,{}));}
 
 async function _saveDiaryForm(storeId,existingId){
   const date=$('deFormDate')?.value;
@@ -3777,11 +4036,31 @@ async function _saveDiaryForm(storeId,existingId){
   const issues=$('deFormIssues')?.value||'';
   const signedBy=$('deFormSigned')?.value||'';
 
-  // Preserve existing deliveries/cooling/leftovers if editing (they don't have form fields yet for simplicity)
-  let deliveries=[],coolingRecords=[],leftovers=[];
-  if(existingId){
-    const orig=_parseDiaryEntry((D.DiaryEntry||[]).find(x=>x.id===existingId));
-    if(orig){deliveries=orig.deliveries||[];coolingRecords=orig.coolingRecords||[];leftovers=orig.leftovers||[];}
+  // Collect deliveries
+  const deliveries=[];
+  const dlRows=$('deDeliveryRows')?.children||[];
+  for(const row of dlRows){
+    const product=row.querySelector('.deDlProduct')?.value||'';
+    if(!product)continue;
+    deliveries.push({product,visualOk:row.querySelector('.deDlVisual')?.checked||false,tempOk:row.querySelector('.deDlTemp')?.checked||false,accepted:row.querySelector('.deDlAccepted')?.checked||false});
+  }
+
+  // Collect cooling
+  const coolingRecords=[];
+  const clRows=$('deCoolingRows')?.children||[];
+  for(const row of clRows){
+    const product=row.querySelector('.deClProduct')?.value||'';
+    if(!product)continue;
+    coolingRecords.push({product,timeTaken:row.querySelector('.deClTime')?.value||'',ok:row.querySelector('.deClOk')?.checked||false});
+  }
+
+  // Collect leftovers
+  const leftovers=[];
+  const loRows=$('deLeftoverRows')?.children||[];
+  for(const row of loRows){
+    const product=row.querySelector('.deLoProduct')?.value||'';
+    if(!product)continue;
+    leftovers.push({product,action:row.querySelector('.deLoAction')?.value||'store'});
   }
 
   const row={
@@ -3808,7 +4087,7 @@ async function _saveDiaryForm(storeId,existingId){
   // Close modal
   document.querySelector('div[style*="position:fixed"][style*="z-index:2000"]')?.remove();
 
-  renderDiaryEntriesBody();
+  _deRefresh();
 
   const res=await API.post({action:'upsert',sheet:'DiaryEntry',row:row});
   if(res&&!res.error){toast('Diary entry saved!','success');}
@@ -3822,7 +4101,7 @@ function deleteDiaryEntry(id){
     _bgPost({action:'deleteRow',sheet:'DiaryEntry',id:id});
     D.DiaryEntry.splice(idx,1);
     toast('Diary entry deleted','success');
-    renderDiaryEntriesBody();
+    _deRefresh();
   }
 }
 

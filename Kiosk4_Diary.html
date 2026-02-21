@@ -21,15 +21,15 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
 .store-card .icon{font-size:36px;margin-bottom:8px;display:block}
 .store-card .sub{font-size:11px;font-weight:500;opacity:.85;margin-top:4px}
 /* ===== Status Bar ===== */
-.status-bar{position:fixed;top:0;left:0;right:0;height:32px;display:flex;align-items:center;padding:0 12px;font-size:11px;font-weight:600;color:#fff;z-index:999;gap:8px}
-.status-bar .dot{width:8px;height:8px;border-radius:50%;background:#2ecc71}
-.status-bar .right{margin-left:auto;display:flex;gap:10px;align-items:center}
-.status-bar button{background:rgba(255,255,255,.2);border:none;color:#fff;padding:4px 10px;border-radius:8px;font-size:11px;cursor:pointer;font-family:inherit;font-weight:600}
-.status-bar button:active{background:rgba(255,255,255,.35)}
+.status-bar{position:fixed;top:0;left:0;right:0;height:54px;display:flex;align-items:center;padding:0 14px;font-size:11px;font-weight:600;color:#fff;z-index:999;gap:10px}
+.status-bar .store-label{font-size:20px;font-weight:800;letter-spacing:-.3px;text-shadow:0 1px 3px rgba(0,0,0,.3)}
+.status-bar .right{margin-left:auto;display:flex;gap:8px;align-items:center}
+.status-bar button{background:rgba(255,255,255,.2);border:none;color:#fff;padding:8px 16px;border-radius:10px;font-size:13px;cursor:pointer;font-family:inherit;font-weight:700;display:flex;align-items:center;gap:6px;backdrop-filter:blur(4px)}
+.status-bar button:active{background:rgba(255,255,255,.35);transform:scale(.96)}
 /* ===== Main Layout ===== */
-.main-wrap{display:none;padding-top:36px;padding-bottom:80px;max-width:700px;margin:0 auto;width:100%}
-.diary-header{padding:12px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-.diary-header h2{font-size:18px;font-weight:800;flex:1}
+.main-wrap{display:none;padding-top:58px;padding-bottom:80px;max-width:700px;margin:0 auto;width:100%}
+.diary-header{padding:14px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.diary-header h2{font-size:16px;font-weight:700;flex:1;color:var(--text-light)}
 .diary-header .date-nav{display:flex;align-items:center;gap:6px}
 .diary-header .date-nav button{width:36px;height:36px;border-radius:10px;border:2px solid var(--border);background:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center}
 .diary-header .date-nav button:active{background:#f0f0f0}
@@ -106,16 +106,16 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
 .signoff-row input:focus{border-color:var(--accent);outline:none}
 /* ===== Bottom Save Bar ===== */
 .save-bar{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--border);padding:10px 16px;display:flex;gap:10px;z-index:900;justify-content:center}
-.save-bar button{padding:14px 28px;border-radius:12px;border:none;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:8px}
+.save-bar button{padding:16px 28px;border-radius:12px;border:none;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:8px}
 .save-bar button:active{transform:scale(.97)}
-.btn-save{background:var(--accent);color:#fff;flex:1;max-width:300px;justify-content:center}
-.btn-inspector{background:#2d3436;color:#fff;padding:14px 20px !important}
+.btn-save{background:var(--accent);color:#fff;flex:1;max-width:320px;justify-content:center}
+.btn-records{background:#2d3436;color:#fff;padding:16px 22px !important}
 /* ===== Inspector View ===== */
 .inspector-overlay{display:none;position:fixed;inset:0;background:#fff;z-index:2000;overflow-y:auto}
 .inspector-overlay.show{display:block}
-.inspector-bar{position:sticky;top:0;background:#2d3436;color:#fff;padding:10px 16px;display:flex;align-items:center;gap:12px;z-index:10;flex-wrap:wrap}
-.inspector-bar h3{flex:1;font-size:15px;min-width:140px}
-.inspector-bar button{padding:8px 16px;border-radius:8px;border:none;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
+.inspector-bar{position:sticky;top:0;background:#2d3436;color:#fff;padding:12px 16px;display:flex;align-items:center;gap:12px;z-index:10;flex-wrap:wrap}
+.inspector-bar h3{flex:1;font-size:17px;min-width:140px}
+.inspector-bar button{padding:10px 18px;border-radius:10px;border:none;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit}
 .insp-tabs{display:flex;gap:4px;background:rgba(255,255,255,.15);border-radius:10px;padding:3px}
 .insp-tab{padding:7px 16px;border-radius:8px;border:none;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;background:transparent;color:rgba(255,255,255,.7);transition:all .2s}
 .insp-tab.active{background:#fff;color:#333}
@@ -157,7 +157,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
 .insp-month-summary .stat-card .num{font-size:28px;font-weight:800}
 .insp-month-summary .stat-card .lbl{font-size:11px;font-weight:600;margin-top:2px}
 /* ===== Toast ===== */
-.toast{position:fixed;top:44px;left:50%;transform:translateX(-50%);padding:12px 24px;border-radius:12px;font-size:14px;font-weight:600;color:#fff;z-index:3000;box-shadow:0 4px 20px rgba(0,0,0,.2);opacity:0;transition:opacity .3s;pointer-events:none}
+.toast{position:fixed;top:60px;left:50%;transform:translateX(-50%);padding:12px 24px;border-radius:12px;font-size:14px;font-weight:600;color:#fff;z-index:3000;box-shadow:0 4px 20px rgba(0,0,0,.2);opacity:0;transition:opacity .3s;pointer-events:none}
 .toast.show{opacity:1}
 .toast.success{background:var(--success)}
 .toast.error{background:var(--danger)}
@@ -201,12 +201,10 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
 
 <!-- ===== MAIN DIARY ===== -->
 <div id="statusBar" class="status-bar" style="display:none">
-  <span class="dot"></span>
-  <span id="storeName">—</span>
-  <span>· Daily Diary</span>
+  <span class="store-label" id="storeName">—</span>
   <div class="right">
-    <button onclick="showInspector()"><i class="fas fa-search"></i> Inspector</button>
-    <button onclick="backToStores()"><i class="fas fa-arrow-left"></i> Stores</button>
+    <button onclick="showInspector()"><i class="fas fa-folder-open"></i> Past Records</button>
+    <button onclick="backToStores()" style="background:rgba(255,255,255,.35)"><i class="fas fa-store"></i> Stores</button>
   </div>
 </div>
 
@@ -231,7 +229,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
 <!-- ===== INSPECTOR OVERLAY ===== -->
 <div id="inspectorOv" class="inspector-overlay">
   <div class="inspector-bar">
-    <h3><i class="fas fa-clipboard-check"></i> Inspector</h3>
+    <h3><i class="fas fa-folder-open"></i> Past Records</h3>
     <div class="insp-tabs">
       <button class="insp-tab active" id="tabDaily" onclick="switchInspTab('daily')"><i class="fas fa-calendar-day"></i> Daily</button>
       <button class="insp-tab" id="tabMonthly" onclick="switchInspTab('monthly')"><i class="fas fa-calendar-alt"></i> Monthly</button>
@@ -1082,7 +1080,6 @@ function renderInspEntry(e,clr){
   html+=`<div style="margin-top:20px;padding:14px;background:#f8f9fa;border-radius:10px;display:flex;align-items:center;gap:12px">
     <i class="fas fa-signature" style="font-size:20px;color:${clr}"></i>
     <div><strong>Signed by:</strong> ${e.signedBy||'—'}</div>
-    <div style="margin-left:auto;font-size:11px;color:var(--text-light)">${e.submittedAt?new Date(e.submittedAt).toLocaleString():''}</div>
   </div>`;
 
   return html;

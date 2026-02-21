@@ -3609,12 +3609,120 @@ function _deRenderDaily(){
   }else{
     // Action buttons
     html+=`<div style="display:flex;gap:8px;justify-content:flex-end;margin-bottom:12px">
+      <button onclick="_dePrintEntry('${e.id}')" class="btn btn-outline btn-sm"><i class="fas fa-print"></i> Print</button>
       <button onclick="_deStartEdit('${e.id}')" class="btn btn-outline btn-sm"><i class="fas fa-edit"></i> Edit</button>
       <button onclick="deleteDiaryEntry('${e.id}')" class="btn btn-sm" style="background:#fee;color:#c00;border:1px solid #fcc"><i class="fas fa-trash"></i> Delete</button>
     </div>`;
     html+=_deRenderEntryReadonly(e);
   }
   $('deBody').innerHTML=html;
+}
+function _dePrintEntry(id){
+  const raw=(D.DiaryEntry||[]).find(x=>x.id===id);if(!raw)return;
+  const e=_parseDiaryEntry(raw);
+  const storeName=(D.Stores.find(s=>s.code===e.storeId)||{}).name||e.storeId;
+  const storeColor=({'PAB':'#1b5e20','TBS':'#1565c0','TBR':'#6a1b9a','TBB':'#e65100'})[e.storeId]||'#333';
+  const w=window.open('','_blank');
+  let h=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Diary — ${storeName} — ${e.date}</title>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:Arial,Helvetica,sans-serif;font-size:9px;color:#222;padding:8mm 10mm}
+@page{size:A4 portrait;margin:8mm 10mm}
+@media print{button{display:none!important}.no-print{display:none!important}}
+h1{font-size:16px;margin:0}
+h3{font-size:11px;margin:4px 0 2px;padding:3px 6px;color:#fff;border-radius:3px;display:inline-block}
+table{width:100%;border-collapse:collapse;margin-bottom:4px}
+th,td{border:1px solid #ccc;padding:2px 4px;text-align:left;font-size:8.5px}
+th{background:#f0f0f0;font-weight:700;font-size:8px}
+.hdr{display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid ${storeColor};padding-bottom:4px;margin-bottom:6px}
+.hdr .store{font-size:18px;font-weight:800;color:${storeColor}}
+.hdr .date{font-size:12px;font-weight:700}
+.yes{color:#27ae60;font-weight:700}.no{color:#e74c3c;font-weight:700}
+.sec{margin-bottom:5px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:1px 12px;font-size:8.5px}
+.grid2 .row{display:flex;justify-content:space-between;padding:1px 0;border-bottom:1px solid #eee}
+.sig{margin-top:6px;padding:4px 8px;background:#f5f5f5;border-radius:3px;font-size:9px}
+</style></head><body>`;
+
+  // Header
+  h+=`<div class="hdr"><div><div class="store">${storeName}</div><div style="font-size:10px;color:#666">Daily Shop Diary</div></div><div class="date">${e.date}</div></div>`;
+
+  // Opening Checks
+  h+=`<div class="sec"><h3 style="background:#1b5e20">Opening Checks</h3><div class="grid2">`;
+  DE_OPENING_CHECKS.forEach(c=>{const v=e.openChecks&&e.openChecks[c.key];h+=`<div class="row"><span>${c.label}</span><span class="${v?'yes':'no'}">${v?'YES':'NO'}</span></div>`;});
+  h+=`</div></div>`;
+
+  // Cold Storage
+  const ft=e.fridgeTemps||[];
+  if(ft.length>0){
+    h+=`<div class="sec"><h3 style="background:#1565c0">Cold Storage</h3><table><tr><th>Name</th><th style="text-align:center;width:60px">AM °C</th><th style="text-align:center;width:60px">PM °C</th></tr>`;
+    ft.forEach(f=>{h+=`<tr><td>${f.name}</td><td style="text-align:center;font-weight:700">${f.am||'—'}</td><td style="text-align:center;font-weight:700">${f.pm||'—'}</td></tr>`;});
+    h+=`</table></div>`;
+  }
+
+  // Deliveries
+  const dl=e.deliveries||[];
+  if(dl.length>0){
+    h+=`<div class="sec"><h3 style="background:#6a1b9a">Deliveries</h3><table><tr><th>Product</th><th style="text-align:center;width:50px">Visual</th><th style="text-align:center;width:50px">Temp</th><th style="text-align:center;width:50px">Accepted</th></tr>`;
+    dl.forEach(d=>{h+=`<tr><td>${d.product||'—'}</td><td style="text-align:center" class="${d.visualOk?'yes':'no'}">${d.visualOk?'Y':'N'}</td><td style="text-align:center" class="${d.tempOk?'yes':'no'}">${d.tempOk?'Y':'N'}</td><td style="text-align:center" class="${d.accepted?'yes':'no'}">${d.accepted?'Y':'N'}</td></tr>`;});
+    h+=`</table></div>`;
+  }
+
+  // Cooking Temps
+  const ct=e.cookingTemps||[];
+  if(ct.length>0){
+    h+=`<div class="sec"><h3 style="background:#e65100">Cooking Temps</h3><table><tr><th>Item</th><th style="text-align:center;width:60px">Temp °C</th></tr>`;
+    ct.forEach(c=>{h+=`<tr><td>${c.item}</td><td style="text-align:center;font-weight:700">${c.temp||'—'}</td></tr>`;});
+    h+=`</table></div>`;
+  }
+
+  // Hold Temps
+  const ht=e.holdTemps||[];
+  if(ht.length>0){
+    h+=`<div class="sec"><h3 style="background:#c62828">Food Hold Temps</h3><table><tr><th>Item</th>`;
+    DE_HOLD_TIMES.forEach(t=>h+=`<th style="text-align:center;width:50px">${t}</th>`);
+    h+='</tr>';
+    ht.forEach(hi=>{h+=`<tr><td>${hi.item}</td>`;DE_HOLD_TIMES.forEach(t=>{const k='t'+t.replace(':','');const v=hi[k]||'—';h+=`<td style="text-align:center;font-weight:700;${(v==='N')?'color:#1565c0;font-style:italic':''}">${v}</td>`;});h+='</tr>';});
+    h+=`</table></div>`;
+  }
+
+  // Cooling
+  const cl=e.coolingRecords||[];
+  if(cl.length>0){
+    h+=`<div class="sec"><h3 style="background:#00695c">Cooling</h3><table><tr><th>Product</th><th style="text-align:center;width:60px">Time(min)</th><th style="text-align:center;width:50px">OK</th></tr>`;
+    cl.forEach(c=>{h+=`<tr><td>${c.product}</td><td style="text-align:center">${c.timeTaken||'—'}</td><td style="text-align:center" class="${c.ok?'yes':'no'}">${c.ok?'Y':'N'}</td></tr>`;});
+    h+=`</table></div>`;
+  }
+
+  // Leftovers
+  const lo=e.leftovers||[];
+  if(lo.length>0){
+    h+=`<div class="sec"><h3 style="background:#4e342e">Leftovers</h3><table><tr><th>Product</th><th style="text-align:center;width:80px">Action</th></tr>`;
+    lo.forEach(l=>{h+=`<tr><td>${l.product}</td><td style="text-align:center">${l.action==='discard'?'Discarded':'Stored'}</td></tr>`;});
+    h+=`</table></div>`;
+  }
+
+  // Closing Checks
+  h+=`<div class="sec"><h3 style="background:#b71c1c">Closing Checks</h3><div class="grid2">`;
+  DE_CLOSING_CHECKS.forEach(c=>{const v=e.closingChecks&&e.closingChecks[c.key];h+=`<div class="row"><span>${c.label}</span><span class="${v?'yes':'no'}">${v?'YES':'NO'}</span></div>`;});
+  h+=`</div></div>`;
+
+  // Extra Checks
+  h+=`<div class="sec"><h3 style="background:#37474f">Extra Checks</h3><div class="grid2">`;
+  DE_EXTRA_CHECKS.forEach(c=>{const v=e.extraChecks&&e.extraChecks[c.key];h+=`<div class="row"><span>${c.label}</span><span class="${v?'yes':'no'}">${v?'YES':'NO'}</span></div>`;});
+  h+=`</div></div>`;
+
+  // Issues
+  h+=`<div class="sec"><h3 style="background:#f39c12">Issues & Remedial Action</h3><div style="padding:3px 6px;background:#fafafa;border:1px solid #eee;border-radius:3px;min-height:20px;white-space:pre-wrap;font-size:8.5px">${e.issues||'None'}</div></div>`;
+
+  // Sign Off
+  h+=`<div class="sig"><strong>Signed by:</strong> ${e.signedBy||'—'}</div>`;
+
+  // Print button
+  h+=`<div class="no-print" style="text-align:center;margin-top:12px"><button onclick="window.print()" style="padding:10px 30px;font-size:14px;font-weight:700;background:#222;color:#fff;border:none;border-radius:8px;cursor:pointer">Print</button></div>`;
+  h+=`</body></html>`;
+  w.document.write(h);w.document.close();
 }
 function _deStartEdit(id){_deEditMode=true;_deEditEntryId=id;_deRenderDaily();}
 function _deCancelEdit(){_deEditMode=false;_deEditEntryId=null;_deRenderDaily();}

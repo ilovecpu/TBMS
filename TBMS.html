@@ -3402,7 +3402,6 @@ function renderDiaryConfig(c){
       <select id="dcStoreFilter" onchange="renderDiaryConfigBody()" style="padding:8px 12px;border:2px solid #ddd;border-radius:8px;font-size:14px;font-family:inherit">
         ${stores.map(s=>`<option value="${s.code}" ${s.code===selStore?'selected':''}>${s.name}</option>`).join('')}
       </select>
-      <button onclick="addDiaryConfigItem()" style="padding:8px 16px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit"><i class="fas fa-plus"></i> Add Item</button>
     </div>
     <div id="dcBody"></div>`;
   renderDiaryConfigBody();
@@ -3422,6 +3421,7 @@ function renderDiaryConfigBody(){
         <i class="fas ${tp.icon}" style="color:${tp.color}"></i>
         <strong style="font-size:15px">${tp.label}</strong>
         <span style="background:#eee;padding:2px 8px;border-radius:10px;font-size:12px;font-weight:600">${tItems.length}</span>
+        <button onclick="addDiaryConfigItem('${tp.key}')" style="margin-left:auto;padding:6px 14px;background:${tp.color};color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit"><i class="fas fa-plus"></i> Add</button>
       </div>`;
     if(tItems.length===0){html+=`<div style="padding:12px;color:#999;font-size:13px">No items configured</div>`;
     }else{
@@ -3442,13 +3442,14 @@ function renderDiaryConfigBody(){
   });
   $('dcBody').innerHTML=html;
 }
-function addDiaryConfigItem(){
+function addDiaryConfigItem(type){
   const store=$('dcStoreFilter')?.value||'';
-  const type=prompt('Type: fridge, freezer, or menuItem','fridge');
   if(!type||!['fridge','freezer','menuItem'].includes(type))return;
-  const name=prompt('Name:');
+  const typeLabel={fridge:'Fridge',freezer:'Freezer',menuItem:'Menu Item'}[type];
+  const name=prompt('New '+typeLabel+' name:');
   if(!name)return;
-  const order=parseInt(prompt('Sort order (number):','1'))||1;
+  const existing=(D.DiaryConfig||[]).filter(dc=>dc.storeId===store&&dc.configType===type&&(dc.active!==false&&dc.active!=='false'));
+  const order=existing.length+1;
   const item={id:genId('dc'),storeId:store,configType:type,name:name,sortOrder:order,active:true};
   D.DiaryConfig.push(item);
   _bgPost({action:'upsert',sheet:'DiaryConfig',row:item});

@@ -258,7 +258,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
     <div class="sidebar-menu">
       <div class="menu-item active" data-page="dashboard" onclick="navigate('dashboard')"><i class="fas fa-home"></i>Dashboard</div>
       <div class="menu-item" data-page="stores" onclick="navigate('stores')"><i class="fas fa-store"></i>Stores</div>
-      <div class="menu-group open">
+      <div class="menu-group">
         <div class="menu-item menu-parent" onclick="toggleMenuGroup(this)"><i class="fas fa-user-tie"></i>Staff<i class="fas fa-chevron-down menu-arrow"></i></div>
         <div class="sub-menu">
           <div class="menu-item sub" data-page="staff" onclick="navigate('staff')"><i class="fas fa-list-ul"></i>Staff List</div>
@@ -269,7 +269,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
           <div class="menu-item sub" data-page="changerequests" onclick="navigate('changerequests')"><i class="fas fa-exchange-alt"></i>Change Requests<span id="crMenuBadge" style="display:none;margin-left:6px;background:#e74c3c;color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px"></span></div>
         </div>
       </div>
-      <div class="menu-group open">
+      <div class="menu-group">
         <div class="menu-item menu-parent" onclick="toggleMenuGroup(this)"><i class="fas fa-boxes-stacked"></i>Stock<i class="fas fa-chevron-down menu-arrow"></i></div>
         <div class="sub-menu">
           <div class="menu-item sub" data-page="stock" onclick="navigate('stock')"><i class="fas fa-warehouse"></i>Stock List</div>
@@ -281,14 +281,14 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
           <div class="menu-item sub" data-page="suppliers" onclick="navigate('suppliers')"><i class="fas fa-truck-field"></i>Suppliers</div>
         </div>
       </div>
-      <div class="menu-group open">
+      <div class="menu-group">
         <div class="menu-item menu-parent" onclick="toggleMenuGroup(this)"><i class="fas fa-clipboard-list"></i>Diary<i class="fas fa-chevron-down menu-arrow"></i></div>
         <div class="sub-menu">
-          <div class="menu-item sub" data-page="diary-config" onclick="navigate('diary-config')"><i class="fas fa-cogs"></i>Diary Config</div>
           <div class="menu-item sub" data-page="diary-entries" onclick="navigate('diary-entries')"><i class="fas fa-book"></i>Diary Records</div>
+          <div class="menu-item sub" data-page="diary-config" onclick="navigate('diary-config')"><i class="fas fa-cogs"></i>Diary Config</div>
         </div>
       </div>
-      <div class="menu-group open">
+      <div class="menu-group">
         <div class="menu-item menu-parent" onclick="toggleMenuGroup(this)"><i class="fas fa-cog"></i>Settings<i class="fas fa-chevron-down menu-arrow"></i></div>
         <div class="sub-menu">
           <div class="menu-item sub" data-page="users" onclick="navigate('users')"><i class="fas fa-users-cog"></i>Users</div>

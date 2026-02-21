@@ -3670,7 +3670,7 @@ function _deRenderInlineForm(storeId,e,isNew,storeName,niceD){
     html+=`<div class="card" style="margin-bottom:12px;padding:14px"><h4 style="color:#c62828;margin-bottom:8px"><i class="fas fa-clock" style="margin-right:6px"></i>Food Hold Temperature</h4><table style="width:100%;border-collapse:collapse;font-size:13px"><tr style="background:#f5f5f5"><th style="padding:6px;text-align:left">Item</th>`;
     DE_HOLD_TIMES.forEach(t=>html+=`<th style="padding:6px;text-align:center;width:65px">${t}</th>`);
     html+='</tr>';
-    menuItems.forEach(m=>{const h=htMap[m.name]||{};html+=`<tr style="border-bottom:1px solid #eee"><td style="padding:6px">${m.name}</td>`;DE_HOLD_TIMES.forEach(t=>{const k='t'+t.replace(':','');html+=`<td style="padding:4px;text-align:center"><input type="number" step="0.1" class="deHT" data-item="${escHtml(m.name)}" data-time="${k}" value="${h[k]||''}" style="width:50px;padding:3px;border:1px solid #ddd;border-radius:4px;text-align:center;font-size:12px"></td>`;});html+='</tr>';});
+    menuItems.forEach(m=>{const h=htMap[m.name]||{};html+=`<tr style="border-bottom:1px solid #eee"><td style="padding:6px">${m.name}</td>`;DE_HOLD_TIMES.forEach(t=>{const k='t'+t.replace(':','');html+=`<td style="padding:4px;text-align:center"><input type="text" class="deHT" data-item="${escHtml(m.name)}" data-time="${k}" value="${h[k]||''}" placeholder="°C/N" style="width:50px;padding:3px;border:1px solid #ddd;border-radius:4px;text-align:center;font-size:12px"></td>`;});html+='</tr>';});
     html+=`</table></div>`;
   }
 
@@ -3813,7 +3813,7 @@ function _deRenderList(){
   const entries=(D.DiaryEntry||[]).filter(e=>e.storeId===store).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
   if(entries.length===0){$('deBody').innerHTML='<div style="padding:20px;text-align:center;color:#999">No diary entries found</div>';return;}
   let html=`<table style="width:100%;border-collapse:collapse;font-size:13px">
-    <tr style="background:#f5f5f5"><th style="padding:8px;text-align:left">Date</th><th style="padding:8px">Sections</th><th style="padding:8px">Signed By</th><th style="padding:8px">Submitted</th><th style="padding:8px;width:160px">Actions</th></tr>`;
+    <tr style="background:#f5f5f5"><th style="padding:8px;text-align:left">Date</th><th style="padding:8px">Sections</th><th style="padding:8px">Signed By</th><th style="padding:8px;width:160px">Actions</th></tr>`;
   entries.forEach(e=>{
     let filled=0;
     ['openChecks','fridgeTemps','deliveries','cookingTemps','holdTemps','closingChecks'].forEach(f=>{
@@ -3824,7 +3824,6 @@ function _deRenderList(){
       <td style="padding:8px;font-weight:600">${e.date}</td>
       <td style="padding:8px;text-align:center"><span style="background:#e8f5e9;padding:2px 8px;border-radius:10px;font-size:12px;font-weight:600">${filled}/6</span></td>
       <td style="padding:8px">${e.signedBy||'—'}</td>
-      <td style="padding:8px;font-size:12px;color:#999">${e.submittedAt?new Date(e.submittedAt).toLocaleString():''}</td>
       <td style="padding:8px;text-align:center">
         <button onclick="viewDiaryEntry('${e.id}')" style="padding:4px 10px;border:1px solid #ddd;border-radius:6px;background:#fff;cursor:pointer;font-size:12px" title="View"><i class="fas fa-eye"></i></button>
         <button onclick="editDiaryEntry('${e.id}')" style="padding:4px 10px;border:1px solid #bbdefb;border-radius:6px;background:#e3f2fd;color:#1565c0;cursor:pointer;font-size:12px" title="Edit"><i class="fas fa-edit"></i></button>
@@ -3870,7 +3869,7 @@ function _deRenderEntryReadonly(e){
     html+=`<div class="card" style="margin-bottom:12px;padding:14px"><h4 style="color:#c62828;margin-bottom:8px"><i class="fas fa-clock" style="margin-right:6px"></i>Food Hold Temps</h4><table style="width:100%;border-collapse:collapse;font-size:13px"><tr style="background:#f5f5f5"><th style="padding:4px 8px;text-align:left">Item</th>`;
     DE_HOLD_TIMES.forEach(t=>html+=`<th style="padding:4px 8px;text-align:center">${t}</th>`);
     html+='</tr>';
-    ht.forEach(h=>{html+=`<tr style="border-bottom:1px solid #f0f0f0"><td style="padding:4px 8px">${h.item}</td>`;DE_HOLD_TIMES.forEach(t=>{const k='t'+t.replace(':','');html+=`<td style="padding:4px 8px;text-align:center;font-weight:700">${h[k]||'—'}</td>`;});html+='</tr>';});
+    ht.forEach(h=>{html+=`<tr style="border-bottom:1px solid #f0f0f0"><td style="padding:4px 8px">${h.item}</td>`;DE_HOLD_TIMES.forEach(t=>{const k='t'+t.replace(':','');const v=h[k]||'—';const isN=(v==='N'||v==='n');html+=`<td style="padding:4px 8px;text-align:center;font-weight:700;${isN?'color:#1565c0;font-style:italic':''}">${isN?'N':v}</td>`;});html+='</tr>';});
     html+=`</table></div>`;
   }
   // Cooling
@@ -3898,7 +3897,7 @@ function _deRenderEntryReadonly(e){
   // Issues
   html+=`<div class="card" style="margin-bottom:12px;padding:14px"><h4 style="margin-bottom:8px"><i class="fas fa-exclamation-triangle" style="margin-right:6px;color:#f39c12"></i>Issues & Remedial Action</h4><div style="padding:8px;background:#f8f9fa;border-radius:8px;white-space:pre-wrap;min-height:30px">${e.issues||'None'}</div></div>`;
   // Sign Off
-  html+=`<div style="padding:12px;background:#f0f0f0;border-radius:10px;display:flex;gap:16px;flex-wrap:wrap"><div><i class="fas fa-signature" style="margin-right:6px"></i><strong>Signed:</strong> ${e.signedBy||'—'}</div><div><strong>Submitted:</strong> ${e.submittedAt?new Date(e.submittedAt).toLocaleString():''}</div></div>`;
+  html+=`<div style="padding:12px;background:#f0f0f0;border-radius:10px"><i class="fas fa-signature" style="margin-right:6px"></i><strong>Signed:</strong> ${e.signedBy||'—'}</div>`;
   return html;
 }
 
@@ -3946,7 +3945,7 @@ function viewDiaryEntry(id){
     html+=`<h4 style="color:#c62828">Food Hold Temps</h4><table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:12px"><tr style="background:#f5f5f5"><th style="padding:4px 8px;text-align:left">Item</th>`;
     DE_HOLD_TIMES.forEach(t=>html+=`<th style="padding:4px 8px;text-align:center">${t}</th>`);
     html+='</tr>';
-    ht.forEach(h=>{html+=`<tr style="border-bottom:1px solid #eee"><td style="padding:4px 8px">${h.item}</td>`;DE_HOLD_TIMES.forEach(t=>{const k='t'+t.replace(':','');html+=`<td style="padding:4px 8px;text-align:center;font-weight:700">${h[k]||'—'}</td>`;});html+='</tr>';});
+    ht.forEach(h=>{html+=`<tr style="border-bottom:1px solid #eee"><td style="padding:4px 8px">${h.item}</td>`;DE_HOLD_TIMES.forEach(t=>{const k='t'+t.replace(':','');const v=h[k]||'—';const isN=(v==='N'||v==='n');html+=`<td style="padding:4px 8px;text-align:center;font-weight:700;${isN?'color:#1565c0;font-style:italic':''}">${isN?'N':v}</td>`;});html+='</tr>';});
     html+=`</table>`;
   }
 
@@ -3978,7 +3977,7 @@ function viewDiaryEntry(id){
 
   // Issues
   html+=`<h4>Issues & Remedial Action</h4><div style="padding:8px;background:#f8f9fa;border-radius:8px;margin-bottom:12px;white-space:pre-wrap">${e.issues||'None'}</div>`;
-  html+=`<div style="padding:10px;background:#f0f0f0;border-radius:8px;display:flex;gap:16px;flex-wrap:wrap"><div><strong>Signed:</strong> ${e.signedBy||'—'}</div><div><strong>Submitted:</strong> ${e.submittedAt?new Date(e.submittedAt).toLocaleString():''}</div></div>`;
+  html+=`<div style="padding:10px;background:#f0f0f0;border-radius:8px"><strong>Signed:</strong> ${e.signedBy||'—'}</div>`;
 
   _showDiaryModal(html);
 }
@@ -4045,7 +4044,7 @@ function _openDiaryForm(storeId,entry,isNewWithDate){
     html+=`<h4 style="color:#c62828;margin:14px 0 8px"><i class="fas fa-clock" style="margin-right:6px"></i>Food Hold Temperature</h4><table style="width:100%;border-collapse:collapse;font-size:13px"><tr style="background:#f5f5f5"><th style="padding:6px;text-align:left">Item</th>`;
     DE_HOLD_TIMES.forEach(t=>html+=`<th style="padding:6px;text-align:center;width:65px">${t}</th>`);
     html+='</tr>';
-    menuItems.forEach(m=>{const h=htMap[m.name]||{};html+=`<tr style="border-bottom:1px solid #eee"><td style="padding:6px">${m.name}</td>`;DE_HOLD_TIMES.forEach(t=>{const k='t'+t.replace(':','');html+=`<td style="padding:4px;text-align:center"><input type="number" step="0.1" class="deHT" data-item="${escHtml(m.name)}" data-time="${k}" value="${h[k]||''}" style="width:50px;padding:3px;border:1px solid #ddd;border-radius:4px;text-align:center;font-size:12px"></td>`;});html+='</tr>';});
+    menuItems.forEach(m=>{const h=htMap[m.name]||{};html+=`<tr style="border-bottom:1px solid #eee"><td style="padding:6px">${m.name}</td>`;DE_HOLD_TIMES.forEach(t=>{const k='t'+t.replace(':','');html+=`<td style="padding:4px;text-align:center"><input type="text" class="deHT" data-item="${escHtml(m.name)}" data-time="${k}" value="${h[k]||''}" placeholder="°C/N" style="width:50px;padding:3px;border:1px solid #ddd;border-radius:4px;text-align:center;font-size:12px"></td>`;});html+='</tr>';});
     html+=`</table>`;
   }
 
@@ -4137,7 +4136,7 @@ async function _saveDiaryFormInline(storeId,existingId){
   const fridgeTemps=Object.values(ftRaw).filter(f=>f.am||f.pm);
   const ctRaw={};document.querySelectorAll('.deCT').forEach(inp=>{ctRaw[inp.dataset.item]={item:inp.dataset.item,temp:inp.value};});
   const cookingTemps=Object.values(ctRaw).filter(c=>c.temp);
-  const htRaw={};document.querySelectorAll('.deHT').forEach(inp=>{const item=inp.dataset.item,time=inp.dataset.time;if(!htRaw[item])htRaw[item]={item};htRaw[item][time]=inp.value;});
+  const htRaw={};document.querySelectorAll('.deHT').forEach(inp=>{const item=inp.dataset.item,time=inp.dataset.time;if(!htRaw[item])htRaw[item]={item};const v=inp.value.trim();htRaw[item][time]=(v.toUpperCase()==='N')?'N':v;});
   const holdTemps=Object.values(htRaw).filter(h=>DE_HOLD_TIMES.some(t=>h['t'+t.replace(':','')]));
   const closingChecks={};document.querySelectorAll('.deCC').forEach(cb=>{closingChecks[cb.dataset.key]=cb.checked;});
   const extraChecks={};document.querySelectorAll('.deEC').forEach(cb=>{extraChecks[cb.dataset.key]=cb.checked;});
@@ -4186,7 +4185,7 @@ async function _saveDiaryForm(storeId,existingId){
   const cookingTemps=Object.values(ctRaw).filter(c=>c.temp);
 
   // Collect hold temps
-  const htRaw={};document.querySelectorAll('.deHT').forEach(inp=>{const item=inp.dataset.item,time=inp.dataset.time;if(!htRaw[item])htRaw[item]={item};htRaw[item][time]=inp.value;});
+  const htRaw={};document.querySelectorAll('.deHT').forEach(inp=>{const item=inp.dataset.item,time=inp.dataset.time;if(!htRaw[item])htRaw[item]={item};const v=inp.value.trim();htRaw[item][time]=(v.toUpperCase()==='N')?'N':v;});
   const holdTemps=Object.values(htRaw).filter(h=>DE_HOLD_TIMES.some(t=>h['t'+t.replace(':','')]));
 
   // Collect closing checks

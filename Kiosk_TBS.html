@@ -123,7 +123,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:linear-gradient(135deg,#15
 <div class="status-bar"><span class="status-dot" id="statusDot"></span><span id="statusText">Connecting...</span></div>
 <script>
 const STORE_ID='TBS',STORE_NAME='The Bap Swindon';
-const DEFAULT_API='https://script.google.com/macros/s/AKfycbzt-1CFL4Rr-9MqF9maaMSnpbT9lvn6PWb0NFL8bK280uLZfK25KNApARgb8l-uPPy-/exec';
+const DEFAULT_API='https://script.google.com/macros/s/AKfycbye_iVuMzY_NOSHwm4w5uWIUxwfAFnyLS0MtQtuQE5NR2WDD13Vq7s-0NgqRW45-JIu/exec';
 const API_URL=DEFAULT_API;
 const $=id=>document.getElementById(id);
 function toast(msg,type='info'){const t=document.createElement('div');t.className='toast '+type;t.innerHTML='<i class="fas fa-'+(type==='error'?'exclamation-circle':type==='success'?'check-circle':'info-circle')+'"></i>'+msg;$('toastBox').appendChild(t);setTimeout(()=>t.remove(),3000);}
@@ -138,7 +138,7 @@ async function apiPost(data){try{const r=await fetch(API_URL,{method:'POST',head
 
 let staff=[],attendance=[],staffMessages=[],clockTimer=null,currentStaff=null,pinCode='';
 const MAX_PIN=10;
-const STAFF_FIELDS=['id','storeId','name','nickName','clothSize','kioskPwd','dob','address','niNo','eVisa','mobile','startDate','leftDate','rate','sortCode','accountNo','email','memo','active'];
+const STAFF_FIELDS=['id','storeId','name','nickName','clothSize','kioskPwd','dob','address','niNo','eVisa','mobile','startDate','leftDate','rate','sortCode','accountNo','email','memo','active','kioskLogin'];
 const ATT_FIELDS=['id','staffId','storeId','date','clockIn','clockOut','photoIn','photoOut','source'];
 const MSG_FIELDS=['id','storeId','staffId','type','message','active','createdBy','createdAt'];
 function nrmRow(fields,row){const m={};for(const k in row)m[k.replace(/[\s_\-]+/g,'').toLowerCase()]=row[k];const r={};for(const f of fields){const n=f.replace(/[\s_\-]+/g,'').toLowerCase();r[f]=m[n]!==undefined?m[n]:'';}return r;}
@@ -150,7 +150,7 @@ async function loadData(silent){
     ?await apiGet('getStoreData&store='+STORE_ID+'&sheets=Staff,Attendance,StaffMessages')
     :await apiGet('getAll');
   if(result&&result.data&&!result.error){
-    const newStaff=(result.data.Staff||[]).map(r=>nrmRow(STAFF_FIELDS,r)).filter(s=>String(s.storeId)===STORE_ID&&(s.active===true||s.active==='true'||s.active==='TRUE'));
+    const newStaff=(result.data.Staff||[]).map(r=>nrmRow(STAFF_FIELDS,r)).filter(s=>String(s.storeId)===STORE_ID&&(s.active===true||s.active==='true'||s.active==='TRUE')&&s.kioskLogin!==false&&s.kioskLogin!=='false');
     const newAtt=(result.data.Attendance||[]).map(r=>nrmRow(ATT_FIELDS,r));
     const rawMsgs=result.data.StaffMessages||[];
     const newMsgs=rawMsgs.map(r=>nrmRow(MSG_FIELDS,r)).filter(m=>(String(m.storeId)===STORE_ID||String(m.storeId)==='ALL')&&(m.active===true||m.active==='true'||m.active==='TRUE'));

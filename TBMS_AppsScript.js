@@ -2,7 +2,7 @@
 //  TBMS - The Bap Management System v2.4
 //  Google Apps Script Backend (Code.gs)
 //  Deployed: 2026-02-17
-//  URL: https://script.google.com/macros/s/AKfycbwoaLHWwFjWwn_hl1YUFvE8ff2dAVZqn_kssslhEtBk3ESCAH21w-SniAyjr2oiEzQ/exec
+//  URL: https://script.google.com/macros/s/AKfycbye_iVuMzY_NOSHwm4w5uWIUxwfAFnyLS0MtQtuQE5NR2WDD13Vq7s-0NgqRW45-JIu/exec
 // ============================================================
 //  SETUP:
 //  1. Google Drive > New > Google Sheets > Name "TBMS Database"
@@ -17,7 +17,7 @@
 const SHEETS = {
   Users:         ['id','username','password','name','role','email','storeId','permissions'],
   Stores:        ['id','code','name','company','companyNo','vatNo','vatQuarter','address','phone','email','manager','memo','active'],
-  Staff:         ['id','storeId','name','nickName','clothSize','kioskPwd','dob','address','niNo','eVisa','mobile','startDate','leftDate','rate','sortCode','accountNo','email','memo','active'],
+  Staff:         ['id','storeId','name','nickName','clothSize','kioskPwd','dob','address','niNo','eVisa','mobile','startDate','leftDate','rate','sortCode','accountNo','email','memo','active','kioskLogin'],
   Attendance:    ['id','staffId','storeId','date','clockIn','clockOut','photoIn','photoOut','source'],
   Suppliers:     ['id','name','email','phone','address','website','memo','active'],
   StockTemplate: ['id','category','name','unit','min','sortOrder','supplier1','supplier2','supplier3','memo'],
@@ -56,7 +56,8 @@ function doGet(e) {
       case 'getStoreData': result = getStoreData(e.parameter.store, e.parameter.sheets); break;
       case 'getSetting': result = getSetting(e.parameter.key); break;
       case 'init':     result = initSheets(); break;
-      case 'ping':     result = {status:'ok', time: new Date().toISOString(), version:'TBMS 2.1'}; break;
+      case 'ping':     result = {status:'ok', time: new Date().toISOString(), version:'TBMS 2.4'}; break;
+      case 'diagSheets': result = {status:'ok', sheets: Object.keys(SHEETS)}; break;
       default:         result = {error:'Unknown action: '+action};
     }
     return ContentService.createTextOutput(JSON.stringify(result)).setMimeType(ContentService.MimeType.JSON);

@@ -519,7 +519,7 @@ const LS = {
   set(k, v) { localStorage.setItem('tbms_'+k, JSON.stringify(v)); },
   getConfig() { return this.get('config') || {}; }
 };
-const CLOUD_URL = 'https://script.google.com/macros/s/AKfycbzt-1CFL4Rr-9MqF9maaMSnpbT9lvn6PWb0NFL8bK280uLZfK25KNApARgb8l-uPPy-/exec';
+const CLOUD_URL = 'https://script.google.com/macros/s/AKfycbye_iVuMzY_NOSHwm4w5uWIUxwfAFnyLS0MtQtuQE5NR2WDD13Vq7s-0NgqRW45-JIu/exec';
 const API = {
   url: CLOUD_URL, mode: 'cloud',
   async get(action, params={}) {
@@ -992,8 +992,9 @@ function renderStaff(c) {
     <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;white-space:nowrap"><input type="checkbox" ${sF.showLeft?'checked':''} onchange="sF.showLeft=this.checked;renderStaff($('pageContent'))" style="accent-color:var(--accent)"> Show Left (${D.Staff.filter(s=>s.active===false&&hasStoreAccess(s.storeId)).length})</label>
     <button class="btn btn-primary btn-sm" onclick="editStaff()"><i class="fas fa-plus"></i> Add Staff</button>
     <button class="btn btn-outline btn-sm" onclick="printStaffList()"><i class="fas fa-print"></i> Print</button></div>
-  <div class="card"><div class="table-wrap"><table><thead><tr><th>Name</th><th>Nick Name</th><th>Store</th><th>Status</th><th>Rate</th><th>Start</th><th>Actions</th></tr></thead><tbody>
+  <div class="card"><div class="table-wrap"><table><thead><tr><th>Name</th><th>Nick Name</th><th>Store</th><th>Kiosk</th><th>Status</th><th>Rate</th><th>Start</th><th>Actions</th></tr></thead><tbody>
   ${staff.map(s=>{const store=D.Stores.find(x=>String(x.id)===String(s.storeId));const isLeft=s.active===false;return`<tr style="${isLeft?'opacity:.5':''}"><td><strong style="cursor:pointer;color:var(--accent);text-decoration:underline" onclick="openTimeRecord('${s.id}')">${escHtml(s.name)}</strong></td><td>${escHtml(s.nickName||'-')}</td><td>${store?escHtml(store.name):s.storeId}</td>
+  <td><span class="badge ${(s.kioskLogin===false||s.kioskLogin==='false')?'badge-danger':'badge-success'}" style="font-size:10px">${(s.kioskLogin===false||s.kioskLogin==='false')?'NO':'YES'}</span></td>
   <td>${isLeft?`<span class="badge badge-danger">Left${s.leftDate?' '+fmtDate(s.leftDate):''}</span>`:`<span class="badge badge-success">Active</span>`}</td>
   <td>£${Number(s.rate).toFixed(2)}</td><td>${fmtDate(s.startDate)}</td>
   <td><button class="btn btn-sm btn-outline" onclick="viewStaff('${s.id}')"><i class="fas fa-eye"></i></button> <button class="btn btn-sm btn-outline" onclick="editStaff('${s.id}')"><i class="fas fa-edit"></i></button> <button class="btn btn-sm btn-accent" onclick="delStaff('${s.id}')"><i class="fas fa-trash"></i></button></td></tr>`;}).join('')}
@@ -1012,6 +1013,7 @@ function viewStaff(id) {
     <div class="info-item"><i class="fas fa-store"></i><div><div class="label">Store</div><div class="value">${store?escHtml(store.name):s.storeId}</div></div></div>
     <div class="info-item"><i class="fas fa-tshirt"></i><div><div class="label">Cloth Size</div><div class="value">${escHtml(s.clothSize||'-')}</div></div></div>
     <div class="info-item"><i class="fas fa-key"></i><div><div class="label">Kiosk Pwd</div><div class="value">${escHtml(s.kioskPwd||'-')}</div></div></div>
+    <div class="info-item"><i class="fas fa-tablet-alt"></i><div><div class="label">Kiosk Login</div><div class="value"><span class="badge ${(s.kioskLogin===false||s.kioskLogin==='false')?'badge-danger':'badge-success'}">${(s.kioskLogin===false||s.kioskLogin==='false')?'NO':'YES'}</span></div></div></div>
     <div class="info-item"><i class="fas fa-birthday-cake"></i><div><div class="label">DOB</div><div class="value">${fmtDate(s.dob)}</div></div></div>
     <div class="info-item"><i class="fas fa-map-marker-alt"></i><div><div class="label">Address</div><div class="value">${escHtml(s.address||'-')}</div></div></div>
     <div class="info-item"><i class="fas fa-id-card"></i><div><div class="label">NI No</div><div class="value">${escHtml(s.niNo||'-')}</div></div></div>
@@ -1026,12 +1028,13 @@ function viewStaff(id) {
   </div>`,`<button class="btn btn-outline" onclick="closeModal()">Close</button>`);
 }
 function editStaff(id) {
-  const s=id?D.Staff.find(x=>x.id===id):{id:'',storeId:sF.storeId||'',name:'',nickName:'',clothSize:'',kioskPwd:'',dob:'',address:'',niNo:'',eVisa:'',mobile:'',startDate:'',leftDate:'',rate:12,sortCode:'',accountNo:'',email:'',memo:'',active:true};
+  const s=id?D.Staff.find(x=>x.id===id):{id:'',storeId:sF.storeId||'',name:'',nickName:'',clothSize:'',kioskPwd:'',dob:'',address:'',niNo:'',eVisa:'',mobile:'',startDate:'',leftDate:'',rate:12,sortCode:'',accountNo:'',email:'',memo:'',active:true,kioskLogin:true};
   const isLeft=s.active===false;
   openModal(id?'Edit Staff':'Add Staff',`
     <div class="form-row"><div class="form-group"><label>Name</label><input id="mFN" value="${escHtml(s.name)}"></div><div class="form-group"><label>Nick Name</label><input id="mFNN" value="${escHtml(s.nickName||'')}" placeholder="Kiosk display name"></div></div>
     <div class="form-row"><div class="form-group"><label>Store</label><select id="mFS">${getAccessibleStores().map(st=>`<option value="${st.id}" ${String(s.storeId)===String(st.id)?'selected':''}>${st.name}</option>`).join('')}</select></div><div class="form-group"><label>Rate (£/hr)</label><input id="mFR" type="number" step="0.5" value="${s.rate}"></div></div>
     <div class="form-row"><div class="form-group"><label>Kiosk Pwd</label><input id="mFP" value="${escHtml(s.kioskPwd||'')}"></div><div class="form-group"><label>Cloth Size</label><select id="mFC"><option value="">-</option>${['XS','S','M','L','XL','XXL'].map(sz=>`<option ${s.clothSize===sz?'selected':''}>${sz}</option>`).join('')}</select></div></div>
+    <div style="padding:10px 14px;background:#f5f5f5;border-radius:10px;display:flex;align-items:center;gap:12px;margin-bottom:8px"><i class="fas fa-tablet-alt" style="color:var(--accent);font-size:16px"></i><label style="font-size:13px;cursor:pointer;display:flex;align-items:center;gap:8px;margin:0"><input type="checkbox" id="mFKL" ${(s.kioskLogin===false||s.kioskLogin==='false')?'':'checked'} style="accent-color:var(--accent);width:18px;height:18px"> <strong>Kiosk Login</strong> <span style="color:var(--text-light);font-size:12px">— Allow this staff to log in on Kiosk</span></label></div>
     <div class="form-row"><div class="form-group"><label>DOB</label><input id="mFD" type="date" value="${s.dob?String(s.dob).split('T')[0]:''}"></div><div class="form-group"><label>Start Date</label><input id="mFSD" type="date" value="${s.startDate?String(s.startDate).split('T')[0]:''}"></div></div>
     <div class="form-group"><label>Address</label><input id="mFA" value="${escHtml(s.address)}"></div>
     <div class="form-row"><div class="form-group"><label>NI No</label><input id="mFNI" value="${escHtml(s.niNo)}"></div><div class="form-group"><label>eVisa</label><input id="mFEV" value="${escHtml(s.eVisa)}"></div></div>
@@ -1068,7 +1071,8 @@ function toggleStaffStatus(){
 async function saveStaff(id) {
   const active=$('mFActive').value==='true';
   const leftDate=active?'':($('mFLD')?.value||$('mFLD2')?.value||'');
-  const s={id:id||genId('s'),storeId:$('mFS').value,name:$('mFN').value.trim(),nickName:$('mFNN').value.trim(),clothSize:$('mFC').value,kioskPwd:$('mFP').value,dob:$('mFD').value,address:$('mFA').value.trim(),niNo:$('mFNI').value.trim(),eVisa:$('mFEV').value.trim(),mobile:$('mFM').value.trim(),startDate:$('mFSD').value,leftDate,rate:parseFloat($('mFR').value)||12,sortCode:$('mFSC').value.trim(),accountNo:$('mFAN').value.trim(),email:$('mFEM').value.trim(),memo:$('mFME').value.trim(),active};
+  const kioskLogin=$('mFKL').checked;
+  const s={id:id||genId('s'),storeId:$('mFS').value,name:$('mFN').value.trim(),nickName:$('mFNN').value.trim(),clothSize:$('mFC').value,kioskPwd:$('mFP').value,dob:$('mFD').value,address:$('mFA').value.trim(),niNo:$('mFNI').value.trim(),eVisa:$('mFEV').value.trim(),mobile:$('mFM').value.trim(),startDate:$('mFSD').value,leftDate,rate:parseFloat($('mFR').value)||12,sortCode:$('mFSC').value.trim(),accountNo:$('mFAN').value.trim(),email:$('mFEM').value.trim(),memo:$('mFME').value.trim(),active,kioskLogin};
   if(!s.name){toast('Name required','error');return;}
   await saveRow('Staff',s); closeModal(); renderStaff($('pageContent')); toast('Staff saved','success');
 }
@@ -2958,7 +2962,7 @@ function renderSalesInput(c){
   const today=new Date();const weekNo=getISOWeek(today);
   const monday=new Date(today);monday.setDate(today.getDate()-(today.getDay()||7)+1);
   const weekStart=monday.toISOString().split('T')[0];
-  const storeColors={PAB:'#1b5e20',TBS:'#1565c0',TBR:'#6a1b9a',TBB:'#e65100'};
+  const storeColors={PAB:'#1b5e20',TBS:'#1565c0',TBR:'#6a1b9a',TBB:'#e65100',TBO:'#00838f'};
   c.innerHTML=`<div class="card" style="margin-bottom:16px">
     <h3 style="margin-bottom:16px"><i class="fas fa-chart-bar" style="color:var(--accent);margin-right:8px"></i>Weekly Sales Input — Week ${String(weekNo).slice(-2)}</h3>
     <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:16px">
@@ -3031,7 +3035,7 @@ function renderSalesCalendar(){
   const el=$('wsHistContent');if(!el)return;
   const storeId=$('wsHistStore')?.value||'';
   const stores=getAccessibleStores().filter(s=>!storeId||String(s.id)===storeId);
-  const storeColors={PAB:'#1b5e20',TBS:'#1565c0',TBR:'#6a1b9a',TBB:'#e65100'};
+  const storeColors={PAB:'#1b5e20',TBS:'#1565c0',TBR:'#6a1b9a',TBB:'#e65100',TBO:'#00838f'};
   let recs=D.WeeklySales.filter(ws=>hasStoreAccess(ws.storeId));
   if(storeId)recs=recs.filter(ws=>String(ws.storeId)===storeId);
   // Filter by selected year
@@ -3171,7 +3175,7 @@ function openStoreSalesModal(storeId,year){
   salesCalYear=year||new Date().getFullYear();
   const store=D.Stores.find(s=>String(s.id)===storeId);
   const storeName=store?store.name:storeId;
-  const storeColors={PAB:'#1b5e20',TBS:'#1565c0',TBR:'#6a1b9a',TBB:'#e65100'};
+  const storeColors={PAB:'#1b5e20',TBS:'#1565c0',TBR:'#6a1b9a',TBB:'#e65100',TBO:'#00838f'};
   const clr=storeColors[store?.code]||'var(--primary)';
   const recs=D.WeeklySales.filter(ws=>String(ws.storeId)===storeId);
   const yearRecs=recs.filter(ws=>(ws.weekStart||'').startsWith(String(salesCalYear)));
@@ -3621,7 +3625,7 @@ function _dePrintEntry(id){
   const raw=(D.DiaryEntry||[]).find(x=>x.id===id);if(!raw)return;
   const e=_parseDiaryEntry(raw);
   const storeName=(D.Stores.find(s=>s.code===e.storeId)||{}).name||e.storeId;
-  const storeColor=({'PAB':'#1b5e20','TBS':'#1565c0','TBR':'#6a1b9a','TBB':'#e65100'})[e.storeId]||'#333';
+  const storeColor=({'PAB':'#1b5e20','TBS':'#1565c0','TBR':'#6a1b9a','TBB':'#e65100','TBO':'#00838f'})[e.storeId]||'#333';
   const w=window.open('','_blank');
   let h=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Diary — ${storeName} — ${e.date}</title>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">

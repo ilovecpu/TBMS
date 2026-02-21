@@ -217,7 +217,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
 
 <script>
 const STORE_ID='PAB',STORE_NAME='Pick A Bap';
-const DEFAULT_API='https://script.google.com/macros/s/AKfycbzt-1CFL4Rr-9MqF9maaMSnpbT9lvn6PWb0NFL8bK280uLZfK25KNApARgb8l-uPPy-/exec';
+const DEFAULT_API='https://script.google.com/macros/s/AKfycbye_iVuMzY_NOSHwm4w5uWIUxwfAFnyLS0MtQtuQE5NR2WDD13Vq7s-0NgqRW45-JIu/exec';
 const API_URL=DEFAULT_API;
 const $=id=>document.getElementById(id);
 function toast(msg,type='info'){const t=document.createElement('div');t.className='toast '+type;t.innerHTML='<i class="fas fa-'+(type==='error'?'exclamation-circle':type==='success'?'check-circle':'info-circle')+'"></i> '+msg;$('toastBox').appendChild(t);setTimeout(()=>t.remove(),3000);}
@@ -230,7 +230,7 @@ async function apiPost(data){try{const r=await fetch(API_URL,{method:'POST',head
 let staff=[],attendance=[],timeChangeReqs=[],currentStaff=null;
 let viewYear=new Date().getFullYear(), viewMonth=new Date().getMonth();
 if(new Date().getDate()>=26){viewMonth++;if(viewMonth>11){viewMonth=0;viewYear++;}}
-const STAFF_FIELDS=['id','storeId','name','nickName','clothSize','kioskPwd','dob','address','niNo','eVisa','mobile','startDate','leftDate','rate','sortCode','accountNo','email','memo','active'];
+const STAFF_FIELDS=['id','storeId','name','nickName','clothSize','kioskPwd','dob','address','niNo','eVisa','mobile','startDate','leftDate','rate','sortCode','accountNo','email','memo','active','kioskLogin'];
 const ATT_FIELDS=['id','staffId','storeId','date','clockIn','clockOut','photoIn','photoOut','source'];
 const TCR_FIELDS=['id','attendanceId','staffId','storeId','date','field','currentValue','requestedValue','reason','status','kioskVersion','createdAt','reviewedBy','reviewedAt','acknowledgedAt'];
 function nrmRow(fields,row){const m={};for(const k in row)m[k.replace(/[\s_\-]+/g,'').toLowerCase()]=row[k];const r={};for(const f of fields){const n=f.replace(/[\s_\-]+/g,'').toLowerCase();r[f]=m[n]!==undefined?m[n]:'';}return r;}
@@ -244,7 +244,7 @@ async function loadData(silent){
     ?await apiGet('getStoreData&store='+STORE_ID+'&sheets=Staff,Attendance,TimeChangeReq')
     :await apiGet('getAll');
   if(result&&result.data&&!result.error){
-    const newStaff=(result.data.Staff||[]).map(r=>nrmRow(STAFF_FIELDS,r)).filter(s=>String(s.storeId)===STORE_ID&&(s.active===true||s.active==='true'||s.active==='TRUE'));
+    const newStaff=(result.data.Staff||[]).map(r=>nrmRow(STAFF_FIELDS,r)).filter(s=>String(s.storeId)===STORE_ID&&(s.active===true||s.active==='true'||s.active==='TRUE')&&s.kioskLogin!==false&&s.kioskLogin!=='false');
     const newAtt=(result.data.Attendance||[]).map(r=>nrmRow(ATT_FIELDS,r));
     const newTcr=(result.data.TimeChangeReq||[]).map(r=>nrmRow(TCR_FIELDS,r));
     const hash=JSON.stringify({s:newStaff.map(s=>s.id),a:newAtt.map(a=>a.id+a.clockIn+a.clockOut),t:newTcr.map(t=>t.id+t.status)});

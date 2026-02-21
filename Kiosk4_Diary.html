@@ -319,8 +319,10 @@ function bgPost(data){fetch(API_URL,{method:'POST',headers:{'Content-Type':'text
 async function loadStores(){
   $('storeMsg').textContent='Loading stores...';
   const res=await apiGet('getSheet&sheet=Stores');
+  console.log('[loadStores] raw response:', JSON.stringify(res));
   if(res&&res.data){
     storeList=res.data.filter(s=>s.active===true||s.active==='true'||s.active==='TRUE');
+    console.log('[loadStores] filtered stores:', storeList.length, storeList.map(s=>s.code));
   }
   if(storeList.length===0){
     // Fallback hardcoded
@@ -379,11 +381,14 @@ async function selectStore(code){
   // Load config + entries
   showToast('Loading data...','success');
   const res=await apiGet('getStoreData&store='+code+'&sheets=DiaryConfig,DiaryEntry');
+  console.log('[selectStore] response:', JSON.stringify(res));
   if(res&&res.data){
     diaryConfig=(res.data.DiaryConfig||[]).filter(c=>c.active===true||c.active==='true'||c.active==='TRUE');
     allEntries=res.data.DiaryEntry||[];
+    console.log('[selectStore] diaryConfig:', diaryConfig.length, 'allEntries:', allEntries.length);
   }else{
     diaryConfig=[];allEntries=[];
+    console.log('[selectStore] NO DATA - res:', res);
   }
   setDate(new Date());
 }
@@ -428,6 +433,7 @@ function mainClickDay(ds){
   setDate(currentDate);
 }
 function renderMainMonthly(){
+  console.log('[Monthly] allEntries count:', allEntries.length, 'currentStore:', currentStore, 'mainMonth:', mainMonth);
   const clr=STORE_COLORS[currentStore]||'#333';
   const year=mainMonth.getFullYear(),month=mainMonth.getMonth();
   const monthNames=['January','February','March','April','May','June','July','August','September','October','November','December'];

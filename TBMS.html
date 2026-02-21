@@ -3377,11 +3377,10 @@ async function changePwd(){
 
 // ==================== INITIALIZATION ====================
 async function init() {
-  // Use saved URL from localStorage if available, otherwise use hardcoded CLOUD_URL
-  const savedCfg = LS.getConfig();
+  // Always use the hardcoded CLOUD_URL (latest deployment)
   API.mode = 'cloud';
-  API.url = (savedCfg && savedCfg.apiUrl) ? savedCfg.apiUrl : CLOUD_URL;
-  LS.set('config', {apiUrl: API.url, mode: 'cloud'});
+  API.url = CLOUD_URL;
+  LS.set('config', {apiUrl: CLOUD_URL, mode: 'cloud'});
   // Load data from cloud
   await loadAllData();
   // If no users loaded, initialize defaults

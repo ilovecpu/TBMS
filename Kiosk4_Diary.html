@@ -113,9 +113,12 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
 /* ===== Inspector View ===== */
 .inspector-overlay{display:none;position:fixed;inset:0;background:#fff;z-index:2000;overflow-y:auto}
 .inspector-overlay.show{display:block}
-.inspector-bar{position:sticky;top:0;background:#2d3436;color:#fff;padding:10px 16px;display:flex;align-items:center;gap:12px;z-index:10}
-.inspector-bar h3{flex:1;font-size:15px}
+.inspector-bar{position:sticky;top:0;background:#2d3436;color:#fff;padding:10px 16px;display:flex;align-items:center;gap:12px;z-index:10;flex-wrap:wrap}
+.inspector-bar h3{flex:1;font-size:15px;min-width:140px}
 .inspector-bar button{padding:8px 16px;border-radius:8px;border:none;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
+.insp-tabs{display:flex;gap:4px;background:rgba(255,255,255,.15);border-radius:10px;padding:3px}
+.insp-tab{padding:7px 16px;border-radius:8px;border:none;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;background:transparent;color:rgba(255,255,255,.7);transition:all .2s}
+.insp-tab.active{background:#fff;color:#333}
 .inspector-content{padding:20px;max-width:800px;margin:0 auto}
 .insp-section{margin-bottom:20px}
 .insp-section h4{font-size:14px;font-weight:700;padding:8px 14px;border-radius:8px;color:#fff;margin-bottom:8px}
@@ -124,6 +127,35 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
 .insp-table th{background:#f5f5f5;font-weight:700;font-size:11px}
 .insp-table .yes{color:var(--success);font-weight:700}
 .insp-table .no{color:var(--danger);font-weight:700}
+/* Inspector Daily nav */
+.insp-date-nav{display:flex;align-items:center;gap:8px;justify-content:center;margin-bottom:16px}
+.insp-date-nav button{width:38px;height:38px;border-radius:10px;border:2px solid #ddd;background:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.insp-date-nav button:active{background:#f0f0f0}
+.insp-date-nav input[type=date]{padding:8px 12px;border:2px solid #ddd;border-radius:10px;font-size:15px;font-weight:700;font-family:inherit;text-align:center}
+/* Inspector Monthly calendar */
+.insp-month-nav{display:flex;align-items:center;gap:12px;justify-content:center;margin-bottom:16px}
+.insp-month-nav button{width:38px;height:38px;border-radius:10px;border:2px solid #ddd;background:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.insp-month-nav button:active{background:#f0f0f0}
+.insp-month-nav .month-label{font-size:18px;font-weight:800;min-width:160px;text-align:center}
+.insp-cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:16px}
+.insp-cal .day-header{text-align:center;font-size:11px;font-weight:700;color:var(--text-light);padding:6px 0}
+.insp-cal .day-cell{aspect-ratio:1;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:14px;font-weight:600;cursor:pointer;border:2px solid transparent;transition:all .15s;position:relative;min-height:44px}
+.insp-cal .day-cell:hover{border-color:#ddd}
+.insp-cal .day-cell.empty{cursor:default}
+.insp-cal .day-cell.empty:hover{border-color:transparent}
+.insp-cal .day-cell.has-entry{background:#e8f5e9;border-color:#c8e6c9}
+.insp-cal .day-cell.has-entry:hover{border-color:var(--success)}
+.insp-cal .day-cell.no-entry{background:#fff3e0;border-color:#ffe0b2}
+.insp-cal .day-cell.today{box-shadow:0 0 0 2px var(--accent)}
+.insp-cal .day-cell .dot-indicator{width:6px;height:6px;border-radius:50%;margin-top:2px}
+.insp-cal .day-cell.has-entry .dot-indicator{background:var(--success)}
+.insp-cal .day-cell.no-entry .dot-indicator{background:var(--warning)}
+/* Monthly summary table */
+.insp-month-summary{margin-bottom:20px}
+.insp-month-summary .stat-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+.insp-month-summary .stat-card{padding:14px;border-radius:12px;text-align:center}
+.insp-month-summary .stat-card .num{font-size:28px;font-weight:800}
+.insp-month-summary .stat-card .lbl{font-size:11px;font-weight:600;margin-top:2px}
 /* ===== Toast ===== */
 .toast{position:fixed;top:44px;left:50%;transform:translateX(-50%);padding:12px 24px;border-radius:12px;font-size:14px;font-weight:600;color:#fff;z-index:3000;box-shadow:0 4px 20px rgba(0,0,0,.2);opacity:0;transition:opacity .3s;pointer-events:none}
 .toast.show{opacity:1}
@@ -131,7 +163,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
 .toast.error{background:var(--danger)}
 /* ===== Print ===== */
 @media print{
-  .status-bar,.save-bar,.inspector-bar,.date-nav button{display:none !important}
+  .status-bar,.save-bar,.inspector-bar,.date-nav button,.insp-date-nav button,.insp-month-nav button,.insp-tabs{display:none !important}
   .inspector-overlay{position:static !important}
   .inspector-content{padding:10px}
   body{background:#fff}
@@ -199,7 +231,11 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
 <!-- ===== INSPECTOR OVERLAY ===== -->
 <div id="inspectorOv" class="inspector-overlay">
   <div class="inspector-bar">
-    <h3><i class="fas fa-clipboard-check"></i> Diary Inspector</h3>
+    <h3><i class="fas fa-clipboard-check"></i> Inspector</h3>
+    <div class="insp-tabs">
+      <button class="insp-tab active" id="tabDaily" onclick="switchInspTab('daily')"><i class="fas fa-calendar-day"></i> Daily</button>
+      <button class="insp-tab" id="tabMonthly" onclick="switchInspTab('monthly')"><i class="fas fa-calendar-alt"></i> Monthly</button>
+    </div>
     <button style="background:#fff;color:#333" onclick="window.print()"><i class="fas fa-print"></i> Print</button>
     <button style="background:var(--accent);color:#fff" onclick="closeInspector()"><i class="fas fa-times"></i> Close</button>
   </div>
@@ -748,15 +784,202 @@ async function saveDiary(){
 // ============================================================
 //  INSPECTOR VIEW
 // ============================================================
+let inspDate=new Date();
+let inspMonth=new Date();
+let inspTab='daily';
+
 function showInspector(){
   collectFormData();
-  const e=diaryEntry;
+  inspDate=new Date(currentDate);
+  inspMonth=new Date(currentDate.getFullYear(),currentDate.getMonth(),1);
+  inspTab='daily';
+  $('tabDaily').classList.add('active');
+  $('tabMonthly').classList.remove('active');
+  renderInspDaily();
+  $('inspectorOv').classList.add('show');
+}
+
+function switchInspTab(tab){
+  inspTab=tab;
+  $('tabDaily').classList.toggle('active',tab==='daily');
+  $('tabMonthly').classList.toggle('active',tab==='monthly');
+  if(tab==='daily')renderInspDaily();
+  else renderInspMonthly();
+}
+
+function closeInspector(){$('inspectorOv').classList.remove('show');}
+
+// --- Parse an entry's JSON fields ---
+function parseEntry(raw){
+  if(!raw)return null;
+  const e={...raw};
+  ['openChecks','fridgeTemps','deliveries','cookingTemps','coolingRecords','leftovers','closingChecks','holdTemps','extraChecks'].forEach(f=>{
+    if(typeof e[f]==='string'&&e[f]){try{e[f]=JSON.parse(e[f]);}catch(x){}}
+    if(!e[f])e[f]=null;
+  });
+  return e;
+}
+
+function getEntryForDate(dateStr){
+  const raw=allEntries.find(e=>e.date===dateStr);
+  return raw?parseEntry(raw):null;
+}
+
+// ============================================================
+//  DAILY VIEW
+// ============================================================
+function renderInspDaily(){
   const clr=STORE_COLORS[currentStore];
-  let html=`<div style="text-align:center;margin-bottom:20px">
+  const ds=fmtDate(inspDate);
+  // For today's date use current form data, otherwise load from allEntries
+  let e;
+  if(ds===fmtDate(currentDate)){
+    collectFormData();
+    e=diaryEntry;
+  }else{
+    e=getEntryForDate(ds);
+    if(!e)e={openChecks:null,fridgeTemps:null,deliveries:null,cookingTemps:null,coolingRecords:null,leftovers:null,closingChecks:null,holdTemps:null,extraChecks:null,issues:'',signedBy:'',submittedAt:''};
+  }
+
+  let html=`<div class="insp-date-nav">
+    <button onclick="inspChangeDate(-1)"><i class="fas fa-chevron-left"></i></button>
+    <input type="date" value="${ds}" onchange="inspGoDate(this.value)" style="padding:8px 12px;border:2px solid #ddd;border-radius:10px;font-size:15px;font-weight:700;font-family:inherit">
+    <button onclick="inspChangeDate(1)"><i class="fas fa-chevron-right"></i></button>
+  </div>`;
+  html+=`<div style="text-align:center;margin-bottom:20px">
     <h2 style="color:${clr}">${STORE_NAMES[currentStore]}</h2>
-    <div style="font-size:16px;font-weight:700;margin-top:4px">${niceDate(currentDate)}</div>
+    <div style="font-size:16px;font-weight:700;margin-top:4px">${niceDate(inspDate)}</div>
     <div style="font-size:12px;color:var(--text-light);margin-top:2px">Daily Shop Diary</div>
   </div>`;
+
+  if(!e.signedBy && !e.submittedAt && !e.openChecks && !e.fridgeTemps){
+    html+=`<div style="text-align:center;padding:40px 20px;color:var(--text-light)">
+      <i class="fas fa-inbox" style="font-size:48px;margin-bottom:12px;display:block;opacity:.4"></i>
+      <div style="font-size:16px;font-weight:600">No diary entry for this date</div>
+    </div>`;
+  }else{
+    html+=renderInspEntry(e,clr);
+  }
+
+  $('inspectorContent').innerHTML=html;
+}
+
+function inspChangeDate(delta){
+  inspDate.setDate(inspDate.getDate()+delta);
+  renderInspDaily();
+}
+function inspGoDate(val){
+  const parts=val.split('-');
+  inspDate=new Date(+parts[0],+parts[1]-1,+parts[2]);
+  renderInspDaily();
+}
+
+// ============================================================
+//  MONTHLY VIEW
+// ============================================================
+function renderInspMonthly(){
+  const clr=STORE_COLORS[currentStore];
+  const year=inspMonth.getFullYear(),month=inspMonth.getMonth();
+  const monthNames=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const dayNames=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const daysInMonth=new Date(year,month+1,0).getDate();
+  const todayStr=fmtDate(new Date());
+
+  // Count entries this month
+  const monthPrefix=year+'-'+String(month+1).padStart(2,'0');
+  const monthEntries=allEntries.filter(e=>e.date&&e.date.startsWith(monthPrefix));
+  const entryDates=new Set(monthEntries.map(e=>e.date));
+
+  // Count working days (exclude future)
+  let totalDays=0,filledDays=entryDates.size,missingDays=0;
+  for(let d=1;d<=daysInMonth;d++){
+    const ds=monthPrefix+'-'+String(d).padStart(2,'0');
+    if(ds>todayStr)break;
+    totalDays++;
+    if(!entryDates.has(ds))missingDays++;
+  }
+
+  let html=`<div class="insp-month-nav">
+    <button onclick="inspChangeMonth(-1)"><i class="fas fa-chevron-left"></i></button>
+    <div class="month-label">${monthNames[month]} ${year}</div>
+    <button onclick="inspChangeMonth(1)"><i class="fas fa-chevron-right"></i></button>
+  </div>`;
+
+  // Summary cards
+  html+=`<div class="insp-month-summary"><div class="stat-cards">
+    <div class="stat-card" style="background:#e8f5e9;color:#1b5e20"><div class="num">${filledDays}</div><div class="lbl">Completed</div></div>
+    <div class="stat-card" style="background:#fff3e0;color:#e65100"><div class="num">${missingDays}</div><div class="lbl">Missing</div></div>
+    <div class="stat-card" style="background:#e3f2fd;color:#1565c0"><div class="num">${totalDays>0?Math.round(filledDays/totalDays*100):0}%</div><div class="lbl">Compliance</div></div>
+  </div></div>`;
+
+  // Calendar grid
+  html+=`<div style="text-align:center;margin-bottom:12px"><h3 style="color:${clr}">${STORE_NAMES[currentStore]}</h3></div>`;
+  html+='<div class="insp-cal">';
+  dayNames.forEach(d=>html+=`<div class="day-header">${d}</div>`);
+
+  // First day of month (Monday=0)
+  let firstDay=(new Date(year,month,1).getDay()+6)%7;
+  for(let i=0;i<firstDay;i++)html+='<div class="day-cell empty"></div>';
+
+  for(let d=1;d<=daysInMonth;d++){
+    const ds=monthPrefix+'-'+String(d).padStart(2,'0');
+    const hasEntry=entryDates.has(ds);
+    const isFuture=ds>todayStr;
+    const isToday=ds===todayStr;
+    let cls='day-cell';
+    if(isToday)cls+=' today';
+    if(!isFuture){
+      cls+=hasEntry?' has-entry':' no-entry';
+    }
+    if(isFuture)cls+=' empty';
+    html+=`<div class="${cls}" ${!isFuture?`onclick="inspViewDay('${ds}')"`:''}><span>${d}</span>${!isFuture?'<div class="dot-indicator"></div>':''}</div>`;
+  }
+  html+='</div>';
+
+  // Monthly detail list
+  html+=`<div style="margin-top:16px"><h4 style="margin-bottom:10px;font-size:14px;color:var(--text-light)">Daily Records</h4>`;
+  for(let d=1;d<=daysInMonth;d++){
+    const ds=monthPrefix+'-'+String(d).padStart(2,'0');
+    if(ds>todayStr)break;
+    const entry=getEntryForDate(ds);
+    const dayDate=new Date(year,month,d);
+    const dayLabel=niceDate(dayDate);
+    if(entry){
+      html+=`<div style="padding:12px;margin-bottom:6px;background:#f8f9fa;border-radius:10px;border-left:4px solid var(--success);cursor:pointer;display:flex;align-items:center;gap:10px" onclick="inspViewDay('${ds}')">
+        <i class="fas fa-check-circle" style="color:var(--success)"></i>
+        <div style="flex:1"><strong style="font-size:13px">${dayLabel}</strong></div>
+        <div style="font-size:11px;color:var(--text-light)">${entry.signedBy||'—'}</div>
+        <i class="fas fa-chevron-right" style="color:#ccc;font-size:12px"></i>
+      </div>`;
+    }else{
+      html+=`<div style="padding:12px;margin-bottom:6px;background:#fff8e1;border-radius:10px;border-left:4px solid var(--warning);display:flex;align-items:center;gap:10px">
+        <i class="fas fa-exclamation-circle" style="color:var(--warning)"></i>
+        <div style="flex:1"><strong style="font-size:13px">${dayLabel}</strong></div>
+        <div style="font-size:11px;color:var(--warning);font-weight:600">Missing</div>
+      </div>`;
+    }
+  }
+  html+='</div>';
+
+  $('inspectorContent').innerHTML=html;
+}
+
+function inspChangeMonth(delta){
+  inspMonth.setMonth(inspMonth.getMonth()+delta);
+  renderInspMonthly();
+}
+
+function inspViewDay(ds){
+  const parts=ds.split('-');
+  inspDate=new Date(+parts[0],+parts[1]-1,+parts[2]);
+  switchInspTab('daily');
+}
+
+// ============================================================
+//  RENDER SINGLE ENTRY (shared by daily view)
+// ============================================================
+function renderInspEntry(e,clr){
+  let html='';
 
   // Opening Checks
   html+=inspSection('Opening Checks',clr,()=>{
@@ -862,13 +1085,12 @@ function showInspector(){
     <div style="margin-left:auto;font-size:11px;color:var(--text-light)">${e.submittedAt?new Date(e.submittedAt).toLocaleString():''}</div>
   </div>`;
 
-  $('inspectorContent').innerHTML=html;
-  $('inspectorOv').classList.add('show');
+  return html;
 }
+
 function inspSection(title,clr,contentFn){
   return `<div class="insp-section"><h4 style="background:${clr}">${title}</h4>${contentFn()}</div>`;
 }
-function closeInspector(){$('inspectorOv').classList.remove('show');}
 
 // ============================================================
 //  TOAST

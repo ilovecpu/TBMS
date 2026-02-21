@@ -519,7 +519,7 @@ const LS = {
   set(k, v) { localStorage.setItem('tbms_'+k, JSON.stringify(v)); },
   getConfig() { return this.get('config') || {}; }
 };
-const CLOUD_URL = 'https://script.google.com/macros/s/AKfycbwd58CFMe5PXqktrpfaH9W7xUb4DHCGD4SriwBDgk5jHAezvkF1oU47RaXiYQTo_P4Z/exec';
+const CLOUD_URL = 'https://script.google.com/macros/s/AKfycbwsTnzSbU67SH2xC6Hlh7eTgv8eYdYvCFPG-W7wwp5qOg7wipvfY1x9slBCLwR2WtE/exec';
 const API = {
   url: CLOUD_URL, mode: 'cloud',
   async get(action, params={}) {
@@ -3391,11 +3391,23 @@ async function init() {
   $('headerDate').textContent = new Date().toLocaleDateString('en-GB', {weekday:'long', year:'numeric', month:'long', day:'numeric'});
   window.addEventListener('resize', () => { if (window.innerWidth > 1024) { $('sidebar').classList.remove('open'); $('sidebarOverlay').classList.remove('show'); } });
 }
+// ==================== DIARY DATA (ON-DEMAND LOAD) ====================
+let _diaryLoaded=false;
+async function loadDiaryData(){
+  if(_diaryLoaded)return;
+  showLoading('Loading diary data...');
+  const r=await API.get('getSheet&sheet=DiaryConfig');
+  if(r&&r.data)D.DiaryConfig=r.data.map(row=>normalizeRow('DiaryConfig',row));
+  const r2=await API.get('getSheet&sheet=DiaryEntry');
+  if(r2&&r2.data)D.DiaryEntry=r2.data.map(row=>normalizeRow('DiaryEntry',row));
+  _diaryLoaded=true;
+  hideLoading();
+}
 // ==================== DIARY CONFIG ====================
-function renderDiaryConfig(c){
+async function renderDiaryConfig(c){
+  await loadDiaryData();
   const storeFilter=currentUser.storeId||'';
   const stores=D.Stores.filter(s=>s.active!==false&&s.active!=='false');
-  const configs=(D.DiaryConfig||[]).filter(dc=>dc.active!==false&&dc.active!=='false');
   let selStore=storeFilter||stores[0]?.code||'';
   c.innerHTML=`
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap">
@@ -3442,7 +3454,7 @@ function renderDiaryConfigBody(){
   });
   $('dcBody').innerHTML=html;
 }
-function addDiaryConfigItem(type){
+async function addDiaryConfigItem(type){
   const store=$('dcStoreFilter')?.value||'';
   if(!type||!['fridge','freezer','menuItem'].includes(type))return;
   const typeLabel={fridge:'Fridge',freezer:'Freezer',menuItem:'Menu Item'}[type];
@@ -3450,36 +3462,38 @@ function addDiaryConfigItem(type){
   if(!name)return;
   const existing=(D.DiaryConfig||[]).filter(dc=>dc.storeId===store&&dc.configType===type&&(dc.active!==false&&dc.active!=='false'));
   const order=existing.length+1;
-  const item={id:genId('dc'),storeId:store,configType:type,name:name,sortOrder:order,active:true};
+  const item={id:genId('dc'),storeId:store,configType:type,name:name.trim(),sortOrder:order,active:'true'};
   D.DiaryConfig.push(item);
-  _bgPost({action:'upsert',sheet:'DiaryConfig',row:item});
-  toast('Added '+name,'success');
   renderDiaryConfigBody();
+  const res=await API.post({action:'upsert',sheet:'DiaryConfig',row:item});
+  if(res&&!res.error){toast('Added '+name,'success');}
+  else{toast('Save error: '+(res?.error||'unknown'),'error');}
 }
-function editDiaryConfigItem(id){
+async function editDiaryConfigItem(id){
   const item=D.DiaryConfig.find(i=>i.id===id);
   if(!item)return;
   const name=prompt('Name:',item.name);
   if(!name)return;
   const order=parseInt(prompt('Sort order:',item.sortOrder))||1;
-  item.name=name;item.sortOrder=order;
-  _bgPost({action:'upsert',sheet:'DiaryConfig',row:item});
-  toast('Updated '+name,'success');
+  item.name=name.trim();item.sortOrder=order;
   renderDiaryConfigBody();
+  await API.post({action:'upsert',sheet:'DiaryConfig',row:item});
+  toast('Updated '+name,'success');
 }
-function deleteDiaryConfigItem(id){
+async function deleteDiaryConfigItem(id){
   if(!confirm('Delete this item?'))return;
   const idx=D.DiaryConfig.findIndex(i=>i.id===id);
   if(idx>=0){
-    D.DiaryConfig[idx].active=false;
-    _bgPost({action:'upsert',sheet:'DiaryConfig',row:D.DiaryConfig[idx]});
-    toast('Deleted','success');
+    D.DiaryConfig[idx].active='false';
     renderDiaryConfigBody();
+    await API.post({action:'upsert',sheet:'DiaryConfig',row:D.DiaryConfig[idx]});
+    toast('Deleted','success');
   }
 }
 
 // ==================== DIARY ENTRIES ====================
-function renderDiaryEntries(c){
+async function renderDiaryEntries(c){
+  await loadDiaryData();
   const stores=D.Stores.filter(s=>s.active!==false&&s.active!=='false');
   const selStore=currentUser.storeId||stores[0]?.code||'';
   c.innerHTML=`

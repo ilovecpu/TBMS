@@ -2,7 +2,7 @@
 //  TBMS - The Bap Management System v2.4
 //  Google Apps Script Backend (Code.gs)
 //  Deployed: 2026-02-17
-//  URL: https://script.google.com/macros/s/AKfycbwd58CFMe5PXqktrpfaH9W7xUb4DHCGD4SriwBDgk5jHAezvkF1oU47RaXiYQTo_P4Z/exec
+//  URL: https://script.google.com/macros/s/AKfycbwsTnzSbU67SH2xC6Hlh7eTgv8eYdYvCFPG-W7wwp5qOg7wipvfY1x9slBCLwR2WtE/exec
 // ============================================================
 //  SETUP:
 //  1. Google Drive > New > Google Sheets > Name "TBMS Database"
@@ -202,7 +202,8 @@ function initSheets() {
 
 function getAllData() {
   var result = {};
-  for (var name in SHEETS) { result[name] = readSheet(name); }
+  var skip = {DiaryConfig:1, DiaryEntry:1};
+  for (var name in SHEETS) { if (!skip[name]) result[name] = readSheet(name); }
   return {status:'ok', data: result};
 }
 

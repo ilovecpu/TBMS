@@ -30,6 +30,14 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
 .main-wrap{display:none;padding-top:58px;padding-bottom:80px;max-width:700px;margin:0 auto;width:100%}
 .diary-header{padding:14px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .diary-header h2{font-size:16px;font-weight:700;flex:1;color:var(--text-light)}
+.main-tabs{display:flex;gap:4px;background:#f0f0f0;border-radius:10px;padding:3px}
+.main-tab{padding:8px 16px;border-radius:8px;border:none;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;background:transparent;color:#999;transition:all .2s}
+.main-tab.active{background:#fff;color:#333;box-shadow:0 1px 4px rgba(0,0,0,.1)}
+/* Monthly main view */
+.main-month-nav{display:flex;align-items:center;gap:12px;justify-content:center;margin-bottom:14px}
+.main-month-nav button{width:38px;height:38px;border-radius:10px;border:2px solid var(--border);background:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.main-month-nav button:active{background:#f0f0f0}
+.main-month-nav .month-label{font-size:18px;font-weight:800;min-width:160px;text-align:center}
 .diary-header .date-nav{display:flex;align-items:center;gap:6px}
 .diary-header .date-nav button{width:36px;height:36px;border-radius:10px;border:2px solid var(--border);background:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center}
 .diary-header .date-nav button:active{background:#f0f0f0}
@@ -168,7 +176,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
   body{background:#fff !important;font-size:8.5px !important;padding:0 !important;margin:0 !important}
   .status-bar,.save-bar,.inspector-bar,.date-nav button,.store-screen,.main-wrap,
   .insp-date-nav button,.insp-month-nav button,.insp-tabs,.insp-date-nav,.insp-month-nav,
-  .insp-cal,.insp-month-summary,.stat-cards,.no-print,
+  .insp-cal,.insp-month-summary,.stat-cards,.no-print,.main-tabs,#monthlyArea,
   button{display:none !important}
   .inspector-overlay{position:static !important;display:block !important}
   .inspector-content{padding:4mm 0 !important;max-width:100% !important}
@@ -206,8 +214,13 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
 
 <div id="mainWrap" class="main-wrap">
   <div class="diary-header">
-    <h2 id="diaryTitle">Shop Diary</h2>
-    <div class="date-nav">
+    <div style="display:flex;align-items:center;gap:8px;flex:1">
+      <div class="main-tabs" id="mainTabs">
+        <button class="main-tab active" id="mainTabDaily" onclick="switchMainTab('daily')"><i class="fas fa-calendar-day"></i> Daily</button>
+        <button class="main-tab" id="mainTabMonthly" onclick="switchMainTab('monthly')"><i class="fas fa-calendar-alt"></i> Monthly</button>
+      </div>
+    </div>
+    <div class="date-nav" id="dailyDateNav">
       <button onclick="changeDate(-1)"><i class="fas fa-chevron-left"></i></button>
       <div class="date-display" id="dateDisplay">—</div>
       <button onclick="changeDate(1)"><i class="fas fa-chevron-right"></i></button>
@@ -215,6 +228,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
   </div>
 
   <div id="sectionsArea"></div>
+  <div id="monthlyArea" style="display:none"></div>
 </div>
 
 <!-- ===== SAVE BAR ===== -->
@@ -287,6 +301,8 @@ let diaryConfig=[];   // DiaryConfig rows
 let diaryEntry=null;  // Current day entry
 let allEntries=[];    // All DiaryEntry rows for current store
 let _dirty=false;
+let mainTab='daily';
+let mainMonth=new Date();
 
 const $=id=>document.getElementById(id);
 
@@ -378,6 +394,116 @@ function backToStores(){
   $('mainWrap').style.display='none';
   $('saveBar').style.display='none';
   currentStore='';diaryEntry=null;allEntries=[];
+  mainTab='daily';
+}
+
+// ============================================================
+//  MAIN TAB: DAILY / MONTHLY
+// ============================================================
+function switchMainTab(tab){
+  mainTab=tab;
+  $('mainTabDaily').className='main-tab'+(tab==='daily'?' active':'');
+  $('mainTabMonthly').className='main-tab'+(tab==='monthly'?' active':'');
+  if(tab==='daily'){
+    $('dailyDateNav').style.display='flex';
+    $('sectionsArea').style.display='block';
+    $('monthlyArea').style.display='none';
+    $('saveBar').style.display='flex';
+  }else{
+    $('dailyDateNav').style.display='none';
+    $('sectionsArea').style.display='none';
+    $('monthlyArea').style.display='block';
+    $('saveBar').style.display='none';
+    renderMainMonthly();
+  }
+}
+function mainChangeMonth(delta){
+  mainMonth=new Date(mainMonth.getFullYear(),mainMonth.getMonth()+delta,1);
+  renderMainMonthly();
+}
+function mainClickDay(ds){
+  const p=ds.split('-');
+  currentDate=new Date(+p[0],+p[1]-1,+p[2]);
+  switchMainTab('daily');
+  setDate(currentDate);
+}
+function renderMainMonthly(){
+  const clr=STORE_COLORS[currentStore]||'#333';
+  const year=mainMonth.getFullYear(),month=mainMonth.getMonth();
+  const monthNames=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const dayNames=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const daysInMonth=new Date(year,month+1,0).getDate();
+  const todayStr=fmtDate(new Date());
+  const monthPrefix=year+'-'+String(month+1).padStart(2,'0');
+  const monthEntries=allEntries.filter(e=>e.date&&e.date.startsWith(monthPrefix));
+  const entryDates=new Set(monthEntries.map(e=>e.date));
+
+  let totalDays=0,filledDays=entryDates.size,missingDays=0;
+  for(let d=1;d<=daysInMonth;d++){
+    const ds=monthPrefix+'-'+String(d).padStart(2,'0');
+    if(ds>todayStr)break;
+    totalDays++;
+    if(!entryDates.has(ds))missingDays++;
+  }
+  const pct=totalDays>0?Math.round(filledDays/totalDays*100):0;
+
+  let html=`<div class="main-month-nav">
+    <button onclick="mainChangeMonth(-1)"><i class="fas fa-chevron-left"></i></button>
+    <div class="month-label">${monthNames[month]} ${year}</div>
+    <button onclick="mainChangeMonth(1)"><i class="fas fa-chevron-right"></i></button>
+  </div>`;
+
+  // Summary cards
+  html+=`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:0 12px 14px;padding:0">
+    <div style="padding:14px;background:#e8f5e9;border-radius:12px;text-align:center"><div style="font-size:26px;font-weight:800;color:#1b5e20">${filledDays}</div><div style="font-size:11px;font-weight:600;color:#2e7d32">Completed</div></div>
+    <div style="padding:14px;background:#fff3e0;border-radius:12px;text-align:center"><div style="font-size:26px;font-weight:800;color:#e65100">${missingDays}</div><div style="font-size:11px;font-weight:600;color:#ef6c00">Missing</div></div>
+    <div style="padding:14px;background:#e3f2fd;border-radius:12px;text-align:center"><div style="font-size:26px;font-weight:800;color:#1565c0">${pct}%</div><div style="font-size:11px;font-weight:600;color:#1976d2">Compliance</div></div>
+  </div>`;
+
+  // Calendar grid
+  html+=`<div style="margin:0 12px"><div class="insp-cal">`;
+  dayNames.forEach(d=>html+=`<div class="day-header">${d}</div>`);
+  let firstDay=(new Date(year,month,1).getDay()+6)%7;
+  for(let i=0;i<firstDay;i++)html+='<div class="day-cell empty"></div>';
+  for(let d=1;d<=daysInMonth;d++){
+    const ds=monthPrefix+'-'+String(d).padStart(2,'0');
+    const hasEntry=entryDates.has(ds);
+    const isFuture=ds>todayStr;
+    const isToday=ds===todayStr;
+    let cls='day-cell';
+    if(isToday)cls+=' today';
+    if(!isFuture){cls+=hasEntry?' has-entry':' no-entry';}
+    if(isFuture)cls+=' empty';
+    html+=`<div class="${cls}" ${!isFuture?`onclick="mainClickDay('${ds}')"`:''}><span>${d}</span>${!isFuture?'<div class="dot-indicator"></div>':''}</div>`;
+  }
+  html+=`</div></div>`;
+
+  // Daily records list
+  html+=`<div style="margin:16px 12px 0"><h4 style="margin-bottom:10px;font-size:14px;color:var(--text-light)">Daily Records</h4>`;
+  for(let d=1;d<=daysInMonth;d++){
+    const ds=monthPrefix+'-'+String(d).padStart(2,'0');
+    if(ds>todayStr)break;
+    const entry=getEntryForDate(ds);
+    const dayDate=new Date(year,month,d);
+    const dayLabel=niceDate(dayDate);
+    if(entry){
+      html+=`<div style="padding:12px;margin-bottom:6px;background:#f8f9fa;border-radius:10px;border-left:4px solid var(--success);cursor:pointer;display:flex;align-items:center;gap:10px" onclick="mainClickDay('${ds}')">
+        <i class="fas fa-check-circle" style="color:var(--success)"></i>
+        <div style="flex:1"><strong style="font-size:13px">${dayLabel}</strong></div>
+        <div style="font-size:11px;color:var(--text-light)">${entry.signedBy||'—'}</div>
+        <i class="fas fa-chevron-right" style="color:#ccc;font-size:12px"></i>
+      </div>`;
+    }else{
+      html+=`<div style="padding:12px;margin-bottom:6px;background:#fff8e1;border-radius:10px;border-left:4px solid var(--warning);display:flex;align-items:center;gap:10px;cursor:pointer" onclick="mainClickDay('${ds}')">
+        <i class="fas fa-exclamation-circle" style="color:var(--warning)"></i>
+        <div style="flex:1"><strong style="font-size:13px">${dayLabel}</strong></div>
+        <div style="font-size:11px;color:var(--warning);font-weight:600">Missing</div>
+        <i class="fas fa-chevron-right" style="color:#ccc;font-size:12px"></i>
+      </div>`;
+    }
+  }
+  html+=`</div>`;
+  $('monthlyArea').innerHTML=html;
 }
 
 // ============================================================

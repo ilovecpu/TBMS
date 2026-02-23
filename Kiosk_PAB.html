@@ -15,7 +15,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-:root{--primary:#1a237e;--success:#43a047;--danger:#e53935;--bg:#1b5e20;--card:#fff;--text:#333;--text-light:#666;--border:#ddd}
+:root{--primary:#1a237e;--success:#43a047;--danger:#e53935;--bg:#1b5e20;--card:#fff;--text:#333;--text-light:#666;--border:#ddd;--warning:#f39c12}
 body{font-family:'Noto Sans KR',sans-serif;background:linear-gradient(135deg,#1b5e20 0%,#2e7d32 100%);min-height:100vh;display:flex;flex-direction:column;align-items:center;color:var(--text);overflow-x:hidden;-webkit-user-select:none;user-select:none}
 .toast-box{position:fixed;top:16px;right:16px;z-index:1000}
 .toast{padding:14px 24px;border-radius:12px;color:#fff;font-size:15px;font-weight:500;display:flex;align-items:center;gap:10px;animation:slideIn .3s;box-shadow:0 4px 20px rgba(0,0,0,.3);margin-bottom:8px}
@@ -62,6 +62,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:linear-gradient(135deg,#1b
 .action-btn:active{transform:scale(.97)}
 .action-btn.in{background:linear-gradient(135deg,#43a047,#2e7d32)}
 .action-btn.out{background:linear-gradient(135deg,#e53935,#c62828)}
+.action-btn.records{background:linear-gradient(135deg,#5c6bc0,#3949ab);font-size:16px;padding:16px}
 .result{text-align:center;width:100%}
 .result .icon{font-size:72px;margin-bottom:16px}
 .result .msg{font-size:22px;font-weight:700;margin-bottom:8px}
@@ -101,6 +102,48 @@ body{font-family:'Noto Sans KR',sans-serif;background:linear-gradient(135deg,#1b
 .msg-box .msg-ok{padding:14px 40px;background:var(--primary);color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer}
 .msg-box .msg-ok:active{transform:scale(.95)}
 @keyframes msgPop{from{transform:scale(.8);opacity:0}to{transform:scale(1);opacity:1}}
+/* ===== Records (Calendar/ChangeRequests) Styles ===== */
+.records-wrap{width:100%;text-align:left}
+.records-wrap .card{background:#f8f9fa;border-radius:12px;padding:10px;width:100%;box-shadow:none;margin-bottom:10px}
+.records-wrap .card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:6px}
+.records-wrap .card-header h2{font-size:14px;font-weight:700;color:var(--primary)}
+.month-nav{display:flex;align-items:center;gap:6px}
+.month-nav button{width:32px;height:32px;border:2px solid var(--border);border-radius:8px;background:#fff;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center}
+.month-nav button:active{background:#f0f0f0}
+.month-nav span{font-size:11px;font-weight:700;min-width:100px;text-align:center}
+.time-table{width:100%;border-collapse:collapse;font-size:11px}
+.time-table th{background:var(--primary);color:#fff;padding:5px 2px;font-size:10px;font-weight:600;text-align:center}
+.time-table td{padding:3px 1px;border-bottom:1px solid #f0f0f0;text-align:center;vertical-align:middle}
+.time-table tr.sat{background:#e3f2fd}
+.time-table tr.sun{background:#fce4ec}
+.time-table tr.today{background:#e8f5e9}
+.time-table .date-cell{font-weight:700;font-size:12px;width:26px;white-space:nowrap}
+.time-table .day-cell{font-size:11px;font-weight:700;width:26px}
+.time-table .day-sat{color:#1565c0;font-weight:700}
+.time-table .day-sun{color:#c0392b;font-weight:700}
+.time-sel{padding:3px 0;border:1.5px solid var(--border);border-radius:6px;font-size:13px;font-weight:600;font-family:inherit;text-align:center;background:#fff;appearance:none;-webkit-appearance:none;width:36px}
+.time-sel:focus{border-color:var(--primary);outline:none}
+.time-sel.filled{border-color:var(--success);background:#f0fff0}
+.time-wrap{display:inline-flex;align-items:center;gap:1px}
+.time-wrap .colon{font-weight:700;font-size:13px}
+.hour-cell{font-weight:700;font-size:12px;color:var(--primary);min-width:34px}
+.hour-cell.zero{color:#ccc}
+.summary-bar{display:flex;justify-content:space-between;align-items:center;background:linear-gradient(135deg,#1a237e,#283593);color:#fff;padding:10px 12px;border-radius:10px;margin-top:8px}
+.summary-bar .total{font-size:16px;font-weight:800}
+.summary-bar .label{font-size:10px;opacity:.8}
+.cr-card{background:#fff;border-radius:12px;padding:12px;width:100%;box-shadow:0 2px 10px rgba(0,0,0,.06);margin-bottom:10px;border-left:4px solid var(--warning)}
+.cr-card h3{font-size:13px;font-weight:700;color:var(--text);margin-bottom:8px}
+.cr-item{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #f5f5f5;font-size:11px;flex-wrap:wrap;gap:4px}
+.cr-item:last-child{border-bottom:none}
+.cr-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700}
+.cr-badge.pending{background:#fff3cd;color:#856404;border:1px solid #ffc107}
+.cr-badge.approved{background:#d4edda;color:#155724;border:1px solid #28a745}
+.cr-badge.rejected{background:#f8d7da;color:#721c24;border:1px solid #dc3545}
+.cr-ack-btn{padding:4px 10px;border:none;border-radius:8px;background:#28a745;color:#fff;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap}
+.cr-ack-btn:active{transform:scale(.95)}
+.cr-ack-btn.rej{background:#6c757d}
+.btn-save-rec{padding:10px 20px;border:none;border-radius:10px;font-size:14px;font-weight:700;background:var(--success);color:#fff;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.btn-save-rec:active{filter:brightness(.9)}
 @media(max-width:400px){
   .clock{font-size:42px}
   .staff-grid{grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:10px}
@@ -109,6 +152,11 @@ body{font-family:'Noto Sans KR',sans-serif;background:linear-gradient(135deg,#1b
   .staff-btn .name{font-size:12px}
   .main-card{padding:16px}
   .key-btn{height:58px;font-size:26px}
+  .time-sel{width:32px;font-size:12px}
+  .time-wrap .colon{font-size:12px}
+  .hour-cell{font-size:11px;min-width:30px}
+  .date-cell{font-size:11px!important}
+  .day-cell{font-size:10px!important}
 }
 </style>
 </head>
@@ -137,16 +185,20 @@ async function apiGet(action){try{const r=await fetch(API_URL+'?action='+action,
 async function apiPost(data){try{const r=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(data),redirect:'follow'});return await r.json();}catch(e){console.error(e);return null;}}
 
 let staff=[],attendance=[],staffMessages=[],clockTimer=null,currentStaff=null,pinCode='';
+let timeChangeReqs=[],recordsLoaded=false;
+let viewYear=new Date().getFullYear(),viewMonth=new Date().getMonth();
+if(new Date().getDate()>=26){viewMonth++;if(viewMonth>11){viewMonth=0;viewYear++;}}
+let _origValues={};
 const MAX_PIN=10;
 const STAFF_FIELDS=['id','storeId','name','nickName','clothSize','kioskPwd','dob','address','niNo','eVisa','mobile','startDate','leftDate','rate','sortCode','accountNo','email','memo','active','kioskLogin'];
 const ATT_FIELDS=['id','staffId','storeId','date','clockIn','clockOut','photoIn','photoOut','source'];
 const MSG_FIELDS=['id','storeId','staffId','type','message','active','createdBy','createdAt'];
+const TCR_FIELDS=['id','attendanceId','staffId','storeId','date','field','currentValue','requestedValue','reason','status','kioskVersion','createdAt','reviewedBy','reviewedAt','acknowledgedAt'];
 function nrmRow(fields,row){const m={};for(const k in row)m[k.replace(/[\s_\-]+/g,'').toLowerCase()]=row[k];const r={};for(const f of fields){const n=f.replace(/[\s_\-]+/g,'').toLowerCase();r[f]=m[n]!==undefined?m[n]:'';}return r;}
 
 let _lastDataHash='';
 async function loadData(silent){
   if(!silent)showLoad('Loading staff data...');
-  // Use lightweight store-specific endpoint for silent refresh
   const result=silent
     ?await apiGet('getStoreData&store='+STORE_ID+'&sheets=Staff,Attendance,StaffMessages')
     :await apiGet('getAll');
@@ -155,7 +207,6 @@ async function loadData(silent){
     const newAtt=(result.data.Attendance||[]).map(r=>nrmRow(ATT_FIELDS,r));
     const rawMsgs=result.data.StaffMessages||[];
     const newMsgs=rawMsgs.map(r=>nrmRow(MSG_FIELDS,r)).filter(m=>(String(m.storeId)===STORE_ID||String(m.storeId)==='ALL')&&(m.active===true||m.active==='true'||m.active==='TRUE'));
-    // Check if data actually changed (skip re-render if same)
     const hash=JSON.stringify({s:newStaff.map(s=>s.id),a:newAtt.map(a=>a.id+a.clockIn+a.clockOut)});
     const changed=hash!==_lastDataHash;
     _lastDataHash=hash;
@@ -166,6 +217,21 @@ async function loadData(silent){
   }
   $('statusDot').className='status-dot off';$('statusText').textContent='Offline';
   if(!silent){hideLoad();toast('Cannot connect to server','error');}
+  return false;
+}
+
+// ===== Lazy load TimeChangeReq for Records =====
+async function loadRecordsData(){
+  if(recordsLoaded)return true;
+  showLoad('Loading records...');
+  const r=await apiGet('getStoreData&store='+STORE_ID+'&sheets=TimeChangeReq');
+  hideLoad();
+  if(r&&r.data&&!r.error){
+    timeChangeReqs=(r.data.TimeChangeReq||[]).map(r2=>nrmRow(TCR_FIELDS,r2));
+    recordsLoaded=true;
+    return true;
+  }
+  toast('Failed to load records','error');
   return false;
 }
 
@@ -229,7 +295,7 @@ function isClockedIn(staffId){
   return attendance.some(a=>String(a.staffId)===String(staffId)&&a.date===today&&a.clockIn&&!a.clockOut);
 }
 function showStaffList(){
-  currentStaff=null;pinCode='';
+  currentStaff=null;pinCode='';recordsLoaded=false;timeChangeReqs=[];
   const now=new Date();
   $('mainCard').innerHTML=`
     <div class="clock" id="clock">${now.toLocaleTimeString('en-GB')}</div>
@@ -284,7 +350,6 @@ function showAction(){
   const now=new Date();const today=now.toISOString().split('T')[0];
   const todayAtt=attendance.filter(a=>String(a.staffId)===String(currentStaff.id)&&a.date===today);
   const openAtt=todayAtt.find(a=>a.clockIn&&!a.clockOut);
-  // Detect missed checkout from previous days
   const missedAtt=attendance.find(a=>String(a.staffId)===String(currentStaff.id)&&a.date!==today&&a.clockIn&&!a.clockOut);
   const dn=esc(currentStaff.nickName||currentStaff.name);
   const initial=(currentStaff.nickName||currentStaff.name).charAt(0).toUpperCase();
@@ -312,6 +377,7 @@ function showAction(){
       <div class="action-btns">
         ${openAtt?`<button class="action-btn out" onclick="checkMsgThenClock('out','${openAtt.id}')"><i class="fas fa-sign-out-alt"></i> Clock Out</button>`
         :`<button class="action-btn in" onclick="checkMsgThenClock('in','')"><i class="fas fa-sign-in-alt"></i> Clock In</button>`}
+        <button class="action-btn records" onclick="openRecords()"><i class="fas fa-clipboard-list"></i> My Records</button>
       </div>
       ${todayAtt.length?`<div class="today-records"><h4>Today's Records</h4>${todayAtt.map(a=>`<div class="rec"><span>${a.clockIn||'-'} → ${a.clockOut||'...'}</span></div>`).join('')}</div>`:''}
       <div style="margin-top:14px"><button class="btn-outline" onclick="showStaffList()"><i class="fas fa-arrow-left"></i> Back</button></div>
@@ -397,23 +463,28 @@ function doClockDirect(type,attId){
   if(type==='in')doClockIn('');else doClockOut(attId,'');
 }
 
-async function doClockIn(photo){
+// ===== Optimistic Clock In/Out =====
+function doClockIn(photo){
   const now=new Date();
   const att={id:genId(),staffId:currentStaff.id,storeId:STORE_ID,date:now.toISOString().split('T')[0],clockIn:fmtTime(now),clockOut:'',photoIn:'',photoOut:'',source:'kiosk'};
-  showLoad('Recording...');
-  const r=await apiPost({action:'clockInPhoto',row:att,photo:photo||''});
-  hideLoad();
-  if(r&&!r.error){if(r.row&&r.row.photoIn)att.photoIn=r.row.photoIn;attendance.push(att);showResult('in',att.clockIn);}
-  else{toast('Failed to save. Try again.','error');}
+  // Optimistic: update local data + show result immediately
+  attendance.push(att);
+  showResult('in',att.clockIn);
+  // Fire-and-forget server save
+  apiPost({action:'clockInPhoto',row:att,photo:photo||''}).then(r=>{
+    if(r&&!r.error){if(r.row&&r.row.photoIn)att.photoIn=r.row.photoIn;}
+    else{toast('Server save failed — manager will be notified','error');}
+  }).catch(()=>{toast('Network error saving clock in','error');});
 }
-async function doClockOut(attId,photo){
+function doClockOut(attId,photo){
   const att=attendance.find(a=>String(a.id)===String(attId));if(!att)return;
   att.clockOut=fmtTime(new Date());
-  showLoad('Recording...');
-  const r=await apiPost({action:'clockOutPhoto',row:att,photo:photo||''});
-  hideLoad();
-  if(r&&!r.error){showResult('out',att.clockOut);}
-  else{toast('Failed to save. Try again.','error');}
+  // Optimistic: show result immediately
+  showResult('out',att.clockOut);
+  // Fire-and-forget server save
+  apiPost({action:'clockOutPhoto',row:att,photo:photo||''}).then(r=>{
+    if(!r||r.error){toast('Server save failed — manager will be notified','error');}
+  }).catch(()=>{toast('Network error saving clock out','error');});
 }
 
 function showResult(type,time){
@@ -428,11 +499,411 @@ function showResult(type,time){
   setTimeout(()=>showStaffList(),3000);
 }
 
+// ===== My Records (ported from Kiosk3) =====
+async function openRecords(){
+  const ok=await loadRecordsData();
+  if(!ok)return;
+  showRecords();
+}
+
+function showRecords(){
+  if(!currentStaff)return;
+  const dn=esc(currentStaff.nickName||currentStaff.name);
+  const initial=(currentStaff.nickName||currentStaff.name).charAt(0).toUpperCase();
+  // Build change requests HTML
+  const crHtml=buildChangeRequestsHtml();
+  // Build calendar HTML
+  const calHtml=buildCalendarHtml();
+
+  $('mainCard').style.maxWidth='700px';
+  $('mainCard').innerHTML=`
+    <div class="records-wrap">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:36px;height:36px;background:var(--primary);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px">${initial}</div>
+          <span style="font-weight:700;font-size:15px">${dn}</span>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button onclick="doRecRefresh()" class="btn-outline" style="padding:8px 14px;font-size:12px" id="recRefBtn"><i class="fas fa-sync-alt"></i></button>
+          <button onclick="backToAction()" class="btn-outline" style="padding:8px 14px;font-size:12px"><i class="fas fa-arrow-left"></i> Back</button>
+        </div>
+      </div>
+      ${crHtml}
+      ${calHtml}
+    </div>`;
+}
+
+function backToAction(){
+  $('mainCard').style.maxWidth='480px';
+  showAction();
+}
+
+async function doRecRefresh(){
+  const btn=$('recRefBtn');if(btn){btn.disabled=true;btn.innerHTML='<i class="fas fa-sync-alt fa-spin"></i>';}
+  recordsLoaded=false;
+  await loadData(true);
+  await loadRecordsData();
+  showRecords();
+  toast('Records refreshed','success');
+}
+
+// ===== Change Requests =====
+function ackCr(id){
+  const req=timeChangeReqs.find(r=>r.id===id);
+  if(req)req.acknowledgedAt=new Date().toISOString();
+  apiPost({action:'ackTimeReq',id:id});
+  showRecords();
+}
+
+function buildChangeRequestsHtml(){
+  if(!currentStaff)return'';
+  const myReqs=timeChangeReqs.filter(r=>String(r.staffId)===String(currentStaff.id)&&String(r.storeId)===STORE_ID)
+    .filter(r=>r.status==='pending'||!r.acknowledgedAt)
+    .sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''));
+  if(myReqs.length===0)return'';
+  const pendCount=myReqs.filter(r=>r.status==='pending').length;
+  let html=`<div class="cr-card"><h3><i class="fas fa-exchange-alt" style="color:var(--warning);margin-right:6px"></i>Change Requests ${pendCount>0?`<span style="background:#fff3cd;color:#856404;padding:2px 8px;border-radius:10px;font-size:10px;margin-left:4px">${pendCount} pending</span>`:''}</h3>`;
+  myReqs.slice(0,10).forEach(r=>{
+    let badge='',ackBtn='';
+    if(r.status==='pending')badge='<span class="cr-badge pending">Pending</span>';
+    else if(r.status==='approved'){badge='<span class="cr-badge approved">Approved</span>';ackBtn=`<button class="cr-ack-btn" onclick="event.stopPropagation();ackCr('${r.id}')"><i class="fas fa-check"></i> OK</button>`;}
+    else if(r.status==='rejected'){badge='<span class="cr-badge rejected">Rejected</span>';ackBtn=`<button class="cr-ack-btn rej" onclick="event.stopPropagation();ackCr('${r.id}')"><i class="fas fa-check"></i> OK</button>`;}
+    html+=`<div class="cr-item">
+      <div style="flex:1"><strong>${r.date||'—'}</strong> · ${r.field||''}: ${r.currentValue||'—'} → <span style="color:var(--primary);font-weight:700">${r.requestedValue||'—'}</span></div>
+      <div style="display:flex;align-items:center;gap:6px">${badge}${ackBtn}</div>
+    </div>`;
+  });
+  if(myReqs.length>10)html+=`<div style="text-align:center;font-size:10px;color:var(--text-light);padding:6px">+${myReqs.length-10} more</div>`;
+  html+='</div>';
+  return html;
+}
+
+// ===== Calendar =====
+function getPeriodDates(){
+  const prevM=viewMonth===0?11:viewMonth-1;
+  const prevY=viewMonth===0?viewYear-1:viewYear;
+  const startDate=new Date(prevY,prevM,26);
+  const endDate=new Date(viewYear,viewMonth,25);
+  const dates=[];
+  for(let d=new Date(startDate);d<=endDate;d.setDate(d.getDate()+1)){dates.push(new Date(d));}
+  return dates;
+}
+function fmtDate(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function periodLabel(){
+  const mShort=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const prevM=viewMonth===0?11:viewMonth-1;
+  return '26 '+mShort[prevM]+' — 25 '+mShort[viewMonth]+' '+viewYear;
+}
+
+function buildCalendarHtml(){
+  if(!currentStaff)return'';
+  const s=currentStaff;
+  const dayNames=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const dates=getPeriodDates();
+  const today=new Date();const todayStr=fmtDate(today);
+  const dateSet=new Set(dates.map(d=>fmtDate(d)));
+  const myAtt=attendance.filter(a=>String(a.staffId)===String(s.id)&&dateSet.has(a.date));
+  _origValues={};
+  let rows='',totalHours=0,totalDays=0,lastMonth=-1;
+  const mNames=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  dates.forEach(dateObj=>{
+    const dow=dateObj.getDay();
+    const dateStr=fmtDate(dateObj);
+    const dayLabel=dayNames[dow===0?6:dow-1];
+    const isToday=dateStr===todayStr;
+    const dm=dateObj.getMonth();
+    const rec=myAtt.find(a=>a.date===dateStr);
+    _origValues[dateStr]={clockIn:rec?rec.clockIn:'',clockOut:rec?rec.clockOut:''};
+    if(dm!==lastMonth){
+      lastMonth=dm;
+      rows+=`<tr><td colspan="5" style="background:var(--primary);color:#fff;font-weight:700;font-size:10px;padding:4px 8px;border:none;text-align:left">
+        <i class="fas fa-calendar" style="margin-right:4px"></i>${mNames[dm]} ${dateObj.getFullYear()}</td></tr>`;
+    }
+    const clockIn=rec?rec.clockIn:'';
+    const clockOut=rec?rec.clockOut:'';
+    const hours=calcHours(clockIn,clockOut);
+    if(hours>0){totalHours+=hours;totalDays++;}
+    const rowClass=isToday?'today':dow===6?'sat':dow===0?'sun':'';
+    const dayClass=dow===0?'day-cell day-sun':dow===6?'day-cell day-sat':'day-cell';
+    rows+=`<tr class="${rowClass}">
+      <td class="date-cell">${dateObj.getDate()}</td>
+      <td class="${dayClass}">${dayLabel}</td>
+      <td>${timeSelHtml('in',dateStr,clockIn)}</td>
+      <td>${timeSelHtml('out',dateStr,clockOut)}</td>
+      <td class="hour-cell ${hours===0?'zero':''}" id="hr_${dateStr}">${hours>0?hours.toFixed(1):'—'}</td>
+    </tr>`;
+  });
+  return `<div class="card">
+      <div class="card-header">
+        <h2>${periodLabel()}</h2>
+        <div class="month-nav">
+          <button onclick="changeMonth(-1)"><i class="fas fa-chevron-left"></i></button>
+          <button onclick="changeMonth(1)"><i class="fas fa-chevron-right"></i></button>
+        </div>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="time-table">
+          <thead><tr><th>Date</th><th>Day</th><th>IN</th><th>OUT</th><th>Hours</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+      <div class="summary-bar">
+        <div><div class="label">Total Hours</div><div class="total" id="totalHours">${totalHours.toFixed(1)} hrs</div></div>
+        <div style="text-align:right"><div class="label">Days Worked</div><div class="total" id="totalDays">${totalDays}</div></div>
+      </div>
+      <div style="display:flex;justify-content:center;margin-top:12px">
+        <button class="btn-save-rec" onclick="saveAll()"><i class="fas fa-cloud-upload-alt"></i> Save All</button>
+      </div>
+    </div>`;
+}
+
+// ===== Time Select Helpers =====
+function timeSelHtml(prefix,ds,val){
+  const [vh,vm]=val?val.split(':'):['','00'];
+  const rvm=vm?String(Math.round(parseInt(vm)/10)*10).padStart(2,'0'):'00';
+  let hOpts='<option value="">--</option>';
+  for(let i=0;i<24;i++){const hh=String(i).padStart(2,'0');hOpts+=`<option value="${hh}"${hh===vh?' selected':''}>${hh}</option>`;}
+  const mins=['00','10','20','30','40','50'];
+  let mOpts='';mins.forEach(mm=>{mOpts+=`<option value="${mm}"${mm===rvm?' selected':''}>${mm}</option>`;});
+  const fc=vh?'filled':'';
+  return `<span class="time-wrap"><select id="${prefix}H_${ds}" onchange="onTimeChange('${prefix}','${ds}')" class="time-sel ${fc}">${hOpts}</select><span class="colon">:</span><select id="${prefix}M_${ds}" onchange="onTimeChange('${prefix}','${ds}')" class="time-sel ${fc}">${mOpts}</select></span>`;
+}
+function getTimeVal(prefix,ds){
+  const h=$(prefix+'H_'+ds),m=$(prefix+'M_'+ds);
+  if(!h||!m||h.value==='')return '';
+  return h.value+':'+m.value;
+}
+function calcHours(inTime,outTime){
+  if(!inTime||!outTime)return 0;
+  const [ih,im]=inTime.split(':').map(Number);
+  const [oh,om]=outTime.split(':').map(Number);
+  let mins=(oh*60+om)-(ih*60+im);
+  if(mins<0)mins+=24*60;
+  return Math.round(mins/6)/10;
+}
+function revertTime(prefix,dateStr){
+  const hEl=$(prefix+'H_'+dateStr),mEl=$(prefix+'M_'+dateStr);
+  if(hEl){hEl.value='';hEl.className='time-sel';}
+  if(mEl){mEl.value='00';mEl.className='time-sel';}
+}
+function revertToOrig(prefix,dateStr){
+  const orig=_origValues[dateStr]||{};
+  const field=prefix==='in'?'clockIn':'clockOut';
+  const origVal=orig[field]||'';
+  const hEl=$(prefix+'H_'+dateStr),mEl=$(prefix+'M_'+dateStr);
+  if(origVal){
+    const [h,m]=origVal.split(':');
+    if(hEl){hEl.value=h;hEl.className='time-sel filled';}
+    if(mEl){mEl.value=String(Math.round(parseInt(m)/10)*10).padStart(2,'0');mEl.className='time-sel filled';}
+  }else{
+    if(hEl){hEl.value='';hEl.className='time-sel';}
+    if(mEl){mEl.value='00';mEl.className='time-sel';}
+  }
+}
+function showFutureAlert(msg){
+  const old=document.getElementById('futureAlertOv');if(old)old.remove();
+  const ov=document.createElement('div');
+  ov.id='futureAlertOv';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1500;display:flex;align-items:center;justify-content:center;padding:20px';
+  ov.innerHTML=`<div style="background:#fff;border-radius:20px;padding:28px;max-width:380px;width:100%;text-align:center">
+    <div style="font-size:40px;margin-bottom:8px">⚠️</div>
+    <div style="font-size:16px;font-weight:700;color:var(--danger);margin-bottom:10px">Cannot Set Future Time</div>
+    <div style="font-size:14px;color:#555;margin-bottom:20px;line-height:1.5">${msg}</div>
+    <button onclick="document.getElementById('futureAlertOv').remove()" style="padding:12px 32px;border:none;border-radius:10px;font-size:15px;font-weight:600;background:var(--primary);color:#fff;cursor:pointer">OK</button>
+  </div>`;
+  document.body.appendChild(ov);
+}
+function updateRowDisplay(dateStr){
+  const inVal=getTimeVal('in',dateStr);
+  const outVal=getTimeVal('out',dateStr);
+  const hrs=calcHours(inVal,outVal);
+  const hrEl=$('hr_'+dateStr);
+  const todayStr=fmtDate(new Date());
+  const orig=_origValues[dateStr]||{};
+  const hasChanges=dateStr<todayStr&&(inVal!==(orig.clockIn||'')||outVal!==(orig.clockOut||''));
+  if(hrEl){
+    if(hasChanges){
+      hrEl.innerHTML=`<div style="display:flex;flex-direction:row;align-items:center;gap:4px;justify-content:center">
+        <button onclick="submitDateChange('${dateStr}')" style="padding:5px 8px;border:none;border-radius:8px;background:#e65100;color:#fff;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap"><i class="fas fa-paper-plane"></i> Submit</button>
+        <button onclick="cancelDateChange('${dateStr}')" style="padding:4px 8px;border:1px solid #ccc;border-radius:8px;background:#fff;color:#666;font-size:10px;font-weight:600;cursor:pointer;white-space:nowrap">Cancel</button>
+      </div>`;
+    }else{
+      hrEl.textContent=hrs>0?hrs.toFixed(1):'—';
+      hrEl.className='hour-cell'+(hrs===0?' zero':'');
+    }
+  }
+  ['in','out'].forEach(p=>{
+    const v=p==='in'?inVal:outVal;
+    const hEl=$(p+'H_'+dateStr),mEl=$(p+'M_'+dateStr);
+    if(hEl)hEl.className='time-sel'+(v?' filled':'');
+    if(mEl)mEl.className='time-sel'+(v?' filled':'');
+  });
+  recalcTotals();
+}
+function askChangeReason(dateStr,changesHtml){
+  return new Promise(resolve=>{
+    const old=document.getElementById('crReasonOv');if(old)old.remove();
+    const ov=document.createElement('div');
+    ov.id='crReasonOv';
+    ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1500;display:flex;align-items:center;justify-content:center;padding:20px';
+    ov.innerHTML=`<div style="background:#fff;border-radius:20px;padding:28px;max-width:400px;width:100%;text-align:center">
+      <div style="font-size:36px;margin-bottom:8px">📝</div>
+      <div style="font-size:16px;font-weight:700;color:#e65100;margin-bottom:6px"><i class="fas fa-exclamation-triangle"></i> Time Change Request</div>
+      <div style="font-size:14px;color:#555;margin-bottom:8px;line-height:1.5">
+        <strong>${dateStr}</strong><br>${changesHtml}
+      </div>
+      <div style="font-size:13px;color:#888;margin-bottom:12px">This change requires manager approval.</div>
+      <textarea id="crReasonInput" rows="3" placeholder="Enter reason for the change..." style="width:100%;padding:12px;border:2px solid #ddd;border-radius:10px;font-size:15px;font-family:inherit;resize:none;margin-bottom:16px"></textarea>
+      <div style="display:flex;gap:10px">
+        <button id="crReasonCancel" style="flex:1;padding:14px;border:2px solid #ddd;border-radius:10px;font-size:15px;font-weight:600;background:#fff;cursor:pointer">Cancel</button>
+        <button id="crReasonSubmit" style="flex:1;padding:14px;border:none;border-radius:10px;font-size:15px;font-weight:600;background:#e65100;color:#fff;cursor:pointer">Submit</button>
+      </div>
+    </div>`;
+    document.body.appendChild(ov);
+    ov.querySelector('#crReasonCancel').onclick=()=>{ov.remove();resolve(null);};
+    ov.querySelector('#crReasonSubmit').onclick=()=>{const v=ov.querySelector('#crReasonInput').value.trim();if(!v){ov.querySelector('#crReasonInput').style.borderColor='#e53935';return;}ov.remove();resolve(v);};
+    setTimeout(()=>ov.querySelector('#crReasonInput').focus(),100);
+  });
+}
+function cancelDateChange(dateStr){
+  revertToOrig('in',dateStr);
+  revertToOrig('out',dateStr);
+  updateRowDisplay(dateStr);
+}
+async function submitDateChange(dateStr){
+  const orig=_origValues[dateStr]||{};
+  const inVal=getTimeVal('in',dateStr);
+  const outVal=getTimeVal('out',dateStr);
+  const changes=[];
+  if(inVal!==(orig.clockIn||''))changes.push({field:'clockIn',oldVal:orig.clockIn||'',newVal:inVal});
+  if(outVal!==(orig.clockOut||''))changes.push({field:'clockOut',oldVal:orig.clockOut||'',newVal:outVal});
+  if(changes.length===0)return;
+  const changesHtml=changes.map(c=>{
+    const label=c.field==='clockIn'?'Clock In':'Clock Out';
+    return `${label}: ${c.oldVal||'(empty)'} → <span style="color:var(--primary);font-weight:700">${c.newVal||'(empty)'}</span>`;
+  }).join('<br>');
+  const reason=await askChangeReason(dateStr,changesHtml);
+  if(reason){
+    const existing=attendance.find(a=>String(a.staffId)===String(currentStaff.id)&&a.date===dateStr);
+    let allOk=true;
+    toast('Submitting '+changes.length+' change request(s)...','info');
+    for(const c of changes){
+      const cr={attendanceId:existing?existing.id:'new_'+dateStr,staffId:currentStaff.id,storeId:STORE_ID,date:dateStr,field:c.field,currentValue:c.oldVal,requestedValue:c.newVal,reason:reason,kioskVersion:'kiosk1'};
+      const res=await apiPost({action:'timeChangeReq',...cr});
+      if(res&&!res.error){
+        timeChangeReqs.push({...cr,id:res.id||genId(),status:'pending',createdAt:new Date().toISOString(),reviewedBy:'',reviewedAt:'',acknowledgedAt:''});
+      }else{allOk=false;}
+    }
+    if(allOk){
+      if(!_origValues[dateStr])_origValues[dateStr]={clockIn:'',clockOut:''};
+      changes.forEach(c=>{_origValues[dateStr][c.field]=c.newVal;});
+      toast(changes.length+' change request(s) submitted','success');
+    }else{
+      toast('Some change requests failed','error');
+      revertToOrig('in',dateStr);revertToOrig('out',dateStr);
+    }
+    updateRowDisplay(dateStr);
+    // Refresh CR display at top
+    showRecords();
+  }else{
+    revertToOrig('in',dateStr);revertToOrig('out',dateStr);
+    updateRowDisplay(dateStr);
+  }
+}
+function onTimeChange(prefix,dateStr){
+  const now=new Date();
+  const todayStr=fmtDate(now);
+  if(dateStr>todayStr){
+    const hEl=$(prefix+'H_'+dateStr),mEl=$(prefix+'M_'+dateStr);
+    if((hEl&&hEl.value!=='')||(mEl&&mEl.value!=='00')){
+      showFutureAlert('You cannot enter time for a future date ('+dateStr+').');
+      revertTime(prefix,dateStr);
+    }
+    updateRowDisplay(dateStr);
+    return;
+  }
+  if(dateStr===todayStr){
+    const nowH=now.getHours(),nowM=now.getMinutes();
+    const hEl=$(prefix+'H_'+dateStr),mEl=$(prefix+'M_'+dateStr);
+    const hv=hEl?hEl.value:'',mv=mEl?mEl.value:'00';
+    if(hv!==''){
+      const h=parseInt(hv),m=parseInt(mv);
+      if(h>nowH||(h===nowH&&m>nowM)){
+        const label=prefix==='in'?'Clock In':'Clock Out';
+        showFutureAlert(label+' time ('+hv+':'+mv+') is later than now. You cannot enter a future time.');
+        revertTime(prefix,dateStr);
+      }
+    }
+    updateRowDisplay(dateStr);
+    return;
+  }
+  updateRowDisplay(dateStr);
+}
+function recalcTotals(){
+  const dates=getPeriodDates();
+  let totalHrs=0,totalDays=0;
+  dates.forEach(d=>{
+    const dateStr=fmtDate(d);
+    const inVal=getTimeVal('in',dateStr);
+    const outVal=getTimeVal('out',dateStr);
+    const hrs=calcHours(inVal,outVal);
+    if(hrs>0){totalHrs+=hrs;totalDays++;}
+  });
+  const thEl=$('totalHours');if(thEl)thEl.textContent=totalHrs.toFixed(1)+' hrs';
+  const tdEl=$('totalDays');if(tdEl)tdEl.textContent=totalDays;
+}
+function changeMonth(dir){
+  viewMonth+=dir;
+  if(viewMonth>11){viewMonth=0;viewYear++;}
+  if(viewMonth<0){viewMonth=11;viewYear--;}
+  showRecords();
+}
+
+// ===== Save (today/future only) =====
+function setSaveBtnsDisabled(disabled){
+  document.querySelectorAll('.btn-save-rec').forEach(b=>{b.disabled=disabled;b.style.opacity=disabled?'0.5':'1';b.style.pointerEvents=disabled?'none':'auto';});
+}
+async function saveAll(){
+  if(!currentStaff)return;
+  const todayStr=fmtDate(new Date());
+  const dates=getPeriodDates();
+  setSaveBtnsDisabled(true);
+  try{
+  const rows=[],editLogs=[];
+  dates.forEach(d=>{
+    const dateStr=fmtDate(d);
+    if(dateStr<todayStr)return;
+    const inVal=getTimeVal('in',dateStr);
+    const outVal=getTimeVal('out',dateStr);
+    if(!inVal&&!outVal)return;
+    const existing=attendance.find(a=>String(a.staffId)===String(currentStaff.id)&&a.date===dateStr);
+    const row={id:existing?existing.id:genId(),staffId:currentStaff.id,storeId:STORE_ID,date:dateStr,clockIn:inVal,clockOut:outVal,photoIn:'',photoOut:'',source:'kiosk1'};
+    rows.push(row);
+    if(existing){
+      if(existing.clockIn!==inVal)editLogs.push({attendanceId:row.id,staffId:currentStaff.id,storeId:STORE_ID,date:dateStr,fieldChanged:'clockIn',oldValue:existing.clockIn||'',newValue:inVal,kioskVersion:'kiosk1'});
+      if(existing.clockOut!==outVal)editLogs.push({attendanceId:row.id,staffId:currentStaff.id,storeId:STORE_ID,date:dateStr,fieldChanged:'clockOut',oldValue:existing.clockOut||'',newValue:outVal,kioskVersion:'kiosk1'});
+      existing.clockIn=inVal;existing.clockOut=outVal;existing.source='kiosk1';
+    }else{
+      if(inVal)editLogs.push({attendanceId:row.id,staffId:currentStaff.id,storeId:STORE_ID,date:dateStr,fieldChanged:'clockIn',oldValue:'',newValue:inVal,kioskVersion:'kiosk1'});
+      if(outVal)editLogs.push({attendanceId:row.id,staffId:currentStaff.id,storeId:STORE_ID,date:dateStr,fieldChanged:'clockOut',oldValue:'',newValue:outVal,kioskVersion:'kiosk1'});
+      attendance.push(row);
+    }
+  });
+  if(rows.length===0){toast('No hours to save','info');return;}
+  toast('Saving '+rows.length+' records...','info');
+  let ok=true;
+  const attResults=await Promise.all(rows.map(r=>apiPost({action:'upsert',sheet:'Attendance',row:r})));
+  attResults.forEach(r=>{if(!r||r.error)ok=false;});
+  if(editLogs.length>0){editLogs.forEach(log=>apiPost({action:'editLog',...log}));}
+  if(ok)toast('Saved successfully!','success');
+  else toast('Some records failed to save','error');
+  }finally{setSaveBtnsDisabled(false);}
+}
+
 async function init(){
   const ok=await loadData();
   if(ok)showStaffList();
   else $('mainCard').innerHTML='<div style="text-align:center"><p style="color:var(--danger);font-size:18px;margin-bottom:16px"><i class="fas fa-exclamation-triangle"></i> Connection Failed</p><button class="btn btn-primary" onclick="init()"><i class="fas fa-redo"></i> Retry</button></div>';
-  // Auto-refresh every 2 minutes (lightweight store-specific fetch)
   setInterval(async()=>{
     const r=await loadData(true);
     if(r&&r!=='nochange'&&!currentStaff)showStaffList();
@@ -449,7 +920,6 @@ function goFullscreen(){
 }
 function exitFsHandler(){
   if(!document.fullscreenElement&&!document.webkitFullscreenElement){
-    // Show overlay again if user exits fullscreen
     if(!document.getElementById('fsOverlay'))showFsOverlay();
   }
 }
@@ -461,7 +931,6 @@ function showFsOverlay(){
 }
 document.addEventListener('fullscreenchange',exitFsHandler);
 document.addEventListener('webkitfullscreenchange',exitFsHandler);
-// Don't show overlay if already in standalone PWA mode
 if(!window.matchMedia('(display-mode: standalone)').matches&&!window.matchMedia('(display-mode: fullscreen)').matches){
   showFsOverlay();
 }

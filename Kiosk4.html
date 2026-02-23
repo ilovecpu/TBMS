@@ -696,7 +696,7 @@ function renderStockItems(){
     const isLow=qty<storeMin&&storeMin>0;
     const photoUrl=t._localPhoto?t._localPhoto:(t.photo?'https://drive.google.com/thumbnail?id='+t.photo+'&sz=w100':'');
     html+=`<div class="stock-item">
-      <div class="item-photo" onclick="triggerPhotoUpload('${t.id}')">${photoUrl?'<img src="'+photoUrl+'" alt="">':'📦'}<div class="photo-badge"><i class="fas fa-camera"></i></div></div>
+      <div class="item-photo" onclick="${photoUrl?`showStockPhotoView('${t.id}')`:`triggerPhotoUpload('${t.id}')`}">${photoUrl?'<img src="'+photoUrl+'" alt="">':'📦'}<div class="photo-badge"><i class="fas ${photoUrl?'fa-search-plus':'fa-camera'}"></i></div></div>
       <div class="item-info">
         <div class="item-name">${t.name}</div>
         <div class="item-detail">${t.unit}${t.supplier1?' · '+t.supplier1:''}</div>
@@ -730,6 +730,25 @@ function setQty(id,val){
 }
 
 // ===== Photo Upload =====
+// ===== Photo Lightbox View =====
+function showStockPhotoView(itemId){
+  const t=stockTemplates.find(x=>String(x.id)===String(itemId));
+  if(!t)return;
+  const url=t._localPhoto?t._localPhoto:(t.photo?'https://drive.google.com/thumbnail?id='+t.photo+'&sz=w800':'');
+  if(!url){triggerPhotoUpload(itemId);return;}
+  let lb=document.getElementById('photoLightbox');
+  if(lb)lb.remove();
+  lb=document.createElement('div');lb.id='photoLightbox';
+  Object.assign(lb.style,{position:'fixed',inset:'0',background:'rgba(0,0,0,.9)',zIndex:'3000',display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:'16px'});
+  lb.innerHTML=`<img src="${url}" style="max-width:90vw;max-height:65vh;border-radius:12px;box-shadow:0 8px 40px rgba(0,0,0,.5)">
+    <div style="color:#fff;font-size:16px;font-weight:600">${t.name}</div>
+    <div style="display:flex;gap:12px;margin-top:8px">
+      <button onclick="document.getElementById('photoLightbox').remove();triggerPhotoUpload('${itemId}')" style="padding:12px 24px;border:none;border-radius:10px;background:var(--accent);color:#fff;font-size:14px;font-weight:600;cursor:pointer"><i class="fas fa-camera"></i> Change Photo</button>
+      <button onclick="document.getElementById('photoLightbox').remove()" style="padding:12px 24px;border:none;border-radius:10px;background:rgba(255,255,255,.2);color:#fff;font-size:14px;font-weight:600;cursor:pointer"><i class="fas fa-times"></i> Close</button>
+    </div>`;
+  document.body.appendChild(lb);
+}
+
 let _photoUploading=false;
 function triggerPhotoUpload(itemId){
   if(_photoUploading)return;

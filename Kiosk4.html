@@ -730,7 +730,9 @@ function setQty(id,val){
 }
 
 // ===== Photo Upload =====
+let _photoUploading=false;
 function triggerPhotoUpload(itemId){
+  if(_photoUploading)return;
   let inp=document.getElementById('stockPhotoInput');
   if(!inp){
     inp=document.createElement('input');
@@ -740,36 +742,66 @@ function triggerPhotoUpload(itemId){
   }
   inp.dataset.itemId=itemId;
   inp.value='';
+  // Suppress fullscreen overlay while picking file
+  _skipFsOverlay=true;
   inp.onchange=function(){
+    _skipFsOverlay=false;
     if(!this.files||!this.files[0])return;
     const file=this.files[0];
-    const itemId=this.dataset.itemId;
-    // Show preview immediately
-    const reader=new FileReader();
-    reader.onload=function(e){
-      const tpl=stockTemplates.find(t=>String(t.id)===String(itemId));
-      if(tpl)tpl._localPhoto=e.target.result;
-      renderStockItems();
-      // Upload to server
-      uploadStockPhoto(itemId,e.target.result);
-    };
-    reader.readAsDataURL(file);
+    const iid=this.dataset.itemId;
+    // Re-enter fullscreen after file pick
+    setTimeout(()=>{if(!document.fullscreenElement&&!document.webkitFullscreenElement)goFullscreen();},300);
+    // Compress then upload
+    compressAndUpload(iid,file);
   };
   inp.click();
+  // If user cancels file picker
+  setTimeout(()=>{_skipFsOverlay=false;},1000);
+}
+
+function compressAndUpload(itemId,file){
+  const img=new Image();
+  const url=URL.createObjectURL(file);
+  img.onload=function(){
+    URL.revokeObjectURL(url);
+    const MAX=300; // max dimension 300px for small file
+    let w=img.width,h=img.height;
+    if(w>h){if(w>MAX){h=Math.round(h*MAX/w);w=MAX;}}
+    else{if(h>MAX){w=Math.round(w*MAX/h);h=MAX;}}
+    const canvas=document.createElement('canvas');
+    canvas.width=w;canvas.height=h;
+    const ctx=canvas.getContext('2d');
+    ctx.drawImage(img,0,0,w,h);
+    const dataUrl=canvas.toDataURL('image/jpeg',0.6); // JPEG quality 60%
+    // Show local preview
+    const tpl=stockTemplates.find(t=>String(t.id)===String(itemId));
+    if(tpl)tpl._localPhoto=dataUrl;
+    renderStockItems();
+    // Upload compressed
+    uploadStockPhoto(itemId,dataUrl);
+  };
+  img.onerror=function(){URL.revokeObjectURL(url);showToast('Failed to read image','error');};
+  img.src=url;
 }
 
 async function uploadStockPhoto(itemId,dataUrl){
+  _photoUploading=true;
   showToast('Uploading photo...','info');
   const base64=dataUrl.split(',')[1];
-  const r=await apiPost({action:'saveItemPhoto',itemId:itemId,photo:base64});
-  if(r&&r.fileId){
-    const tpl=stockTemplates.find(t=>String(t.id)===String(itemId));
-    if(tpl){tpl.photo=r.fileId;delete tpl._localPhoto;}
-    renderStockItems();
-    showToast('Photo saved!','success');
-  }else{
-    showToast('Photo upload failed','error');
+  try{
+    const r=await apiPost({action:'saveItemPhoto',itemId:itemId,photo:base64});
+    if(r&&r.fileId){
+      const tpl=stockTemplates.find(t=>String(t.id)===String(itemId));
+      if(tpl){tpl.photo=r.fileId;delete tpl._localPhoto;}
+      renderStockItems();
+      showToast('Photo saved!','success');
+    }else{
+      showToast('Photo upload failed: '+(r?.error||''),'error');
+    }
+  }catch(e){
+    showToast('Upload error','error');
   }
+  _photoUploading=false;
 }
 
 async function saveStockCheck(){
@@ -1282,7 +1314,9 @@ function goFullscreen(){
   else if(el.msRequestFullscreen)el.msRequestFullscreen();
   const ov=document.getElementById('fsOverlay');if(ov)ov.remove();
 }
+let _skipFsOverlay=false;
 function exitFsHandler(){
+  if(_skipFsOverlay)return;
   if(!document.fullscreenElement&&!document.webkitFullscreenElement){
     if(!document.getElementById('fsOverlay'))showFsOverlay();
   }

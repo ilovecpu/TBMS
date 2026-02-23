@@ -2296,6 +2296,11 @@ async function saveStockItem(editId){
     D.Stores.forEach(store=>{
       D.StoreStock.push({storeId:store.id,itemId:newId,category,name,unit,min,qty:0});
     });
+    // Photo upload for new item
+    const photoFileNew=$('siPhotoFile');
+    if(photoFileNew&&photoFileNew.files&&photoFileNew.files[0]){
+      uploadStockPhoto(newId,photoFileNew.files[0]);
+    }
     // Optimistic UI — close immediately, sync in background
     closeModal();renderStockTable();
     toast(`"${name}" added to all stores`,'success');
@@ -2313,18 +2318,31 @@ function previewStockPhoto(input){
   reader.readAsDataURL(input.files[0]);
 }
 function uploadStockPhoto(itemId,file){
-  const reader=new FileReader();
-  reader.onload=e=>{
-    const base64=e.target.result.split(',')[1];
+  const url=URL.createObjectURL(file);
+  const img=new Image();
+  img.onload=function(){
+    URL.revokeObjectURL(url);
+    const MAX=300;
+    let w=img.width,h=img.height;
+    if(w>h){if(w>MAX){h=Math.round(h*MAX/w);w=MAX;}}
+    else{if(h>MAX){w=Math.round(w*MAX/h);h=MAX;}}
+    const canvas=document.createElement('canvas');
+    canvas.width=w;canvas.height=h;
+    canvas.getContext('2d').drawImage(img,0,0,w,h);
+    const base64=canvas.toDataURL('image/jpeg',0.6).split(',')[1];
+    toast('Uploading photo...','info');
     API.post({action:'saveItemPhoto',itemId:itemId,photo:base64}).then(r=>{
       if(r&&r.fileId){
         const tpl=D.StockTemplate.find(t=>t.id===itemId);
         if(tpl)tpl.photo=r.fileId;
+        renderStockTable();
         toast('Photo saved','success');
+      }else{
+        toast('Photo upload failed','error');
       }
-    }).catch(()=>{});
+    }).catch(()=>{toast('Photo upload error','error');});
   };
-  reader.readAsDataURL(file);
+  img.src=url;
 }
 function deleteStockItem(id){
   const tpl=D.StockTemplate.find(t=>t.id===id);

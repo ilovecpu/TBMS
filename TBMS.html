@@ -259,17 +259,6 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
       <div class="menu-item active" data-page="dashboard" onclick="navigate('dashboard')"><i class="fas fa-home"></i>Dashboard</div>
       <div class="menu-item" data-page="stores" onclick="navigate('stores')"><i class="fas fa-store"></i>Stores</div>
       <div class="menu-group">
-        <div class="menu-item menu-parent" onclick="toggleMenuGroup(this)"><i class="fas fa-user-tie"></i>Staff<i class="fas fa-chevron-down menu-arrow"></i></div>
-        <div class="sub-menu">
-          <div class="menu-item sub" data-page="staff" onclick="navigate('staff')"><i class="fas fa-list-ul"></i>Staff List</div>
-          <div class="menu-item sub" data-page="attendance" onclick="navigate('attendance')"><i class="fas fa-clipboard-check"></i>Attendance</div>
-          <div class="menu-item sub" data-page="payroll" onclick="navigate('payroll')"><i class="fas fa-calculator"></i>Payroll</div>
-          <div class="menu-item sub" data-page="messages" onclick="navigate('messages')"><i class="fas fa-envelope"></i>Messages</div>
-          <div class="menu-item sub" data-page="editlogs" onclick="navigate('editlogs')"><i class="fas fa-history"></i>Edit Logs</div>
-          <div class="menu-item sub" data-page="changerequests" onclick="navigate('changerequests')"><i class="fas fa-exchange-alt"></i>Change Requests<span id="crMenuBadge" style="display:none;margin-left:6px;background:#e74c3c;color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px"></span></div>
-        </div>
-      </div>
-      <div class="menu-group">
         <div class="menu-item menu-parent" onclick="toggleMenuGroup(this)"><i class="fas fa-boxes-stacked"></i>Stock<i class="fas fa-chevron-down menu-arrow"></i></div>
         <div class="sub-menu">
           <div class="menu-item sub" data-page="stock" onclick="navigate('stock')"><i class="fas fa-warehouse"></i>Stock List</div>
@@ -279,6 +268,17 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
           <div class="menu-item sub" data-page="analytics" onclick="navigate('analytics')"><i class="fas fa-chart-line"></i>Usage Analytics</div>
           <div class="menu-item sub" data-page="orders" onclick="navigate('orders')"><i class="fas fa-clipboard-list"></i>Order List</div>
           <div class="menu-item sub" data-page="suppliers" onclick="navigate('suppliers')"><i class="fas fa-truck-field"></i>Suppliers</div>
+        </div>
+      </div>
+      <div class="menu-group">
+        <div class="menu-item menu-parent" onclick="toggleMenuGroup(this)"><i class="fas fa-user-tie"></i>Staff<i class="fas fa-chevron-down menu-arrow"></i></div>
+        <div class="sub-menu">
+          <div class="menu-item sub" data-page="staff" onclick="navigate('staff')"><i class="fas fa-list-ul"></i>Staff List</div>
+          <div class="menu-item sub" data-page="attendance" onclick="navigate('attendance')"><i class="fas fa-clipboard-check"></i>Attendance</div>
+          <div class="menu-item sub" data-page="payroll" onclick="navigate('payroll')"><i class="fas fa-calculator"></i>Payroll</div>
+          <div class="menu-item sub" data-page="messages" onclick="navigate('messages')"><i class="fas fa-envelope"></i>Messages</div>
+          <div class="menu-item sub" data-page="editlogs" onclick="navigate('editlogs')"><i class="fas fa-history"></i>Edit Logs</div>
+          <div class="menu-item sub" data-page="changerequests" onclick="navigate('changerequests')"><i class="fas fa-exchange-alt"></i>Change Requests<span id="crMenuBadge" style="display:none;margin-left:6px;background:#e74c3c;color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px"></span></div>
         </div>
       </div>
       <div class="menu-group">

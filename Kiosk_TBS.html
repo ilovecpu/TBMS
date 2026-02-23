@@ -375,9 +375,9 @@ function showAction(){
       <h3>${dn}</h3>
       ${missedHtml}
       <div class="action-btns">
+        <button class="action-btn records" onclick="openRecords()"><i class="fas fa-clipboard-list"></i> My Records</button>
         ${openAtt?`<button class="action-btn out" onclick="checkMsgThenClock('out','${openAtt.id}')"><i class="fas fa-sign-out-alt"></i> Clock Out</button>`
         :`<button class="action-btn in" onclick="checkMsgThenClock('in','')"><i class="fas fa-sign-in-alt"></i> Clock In</button>`}
-        <button class="action-btn records" onclick="openRecords()"><i class="fas fa-clipboard-list"></i> My Records</button>
       </div>
       ${todayAtt.length?`<div class="today-records"><h4>Today's Records</h4>${todayAtt.map(a=>`<div class="rec"><span>${a.clockIn||'-'} → ${a.clockOut||'...'}</span></div>`).join('')}</div>`:''}
       <div style="margin-top:14px"><button class="btn-outline" onclick="showStaffList()"><i class="fas fa-arrow-left"></i> Back</button></div>

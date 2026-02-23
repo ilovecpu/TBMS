@@ -202,8 +202,9 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
 .cat-tab.active{color:#fff;border-color:transparent}
 .stock-items{padding:8px 12px 100px}
 .stock-item{display:flex;align-items:center;gap:12px;padding:14px 16px;margin-bottom:8px;background:#fff;border-radius:var(--radius);box-shadow:var(--shadow)}
-.stock-item .item-photo{width:50px;height:50px;border-radius:10px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:24px;overflow:hidden;flex-shrink:0}
+.stock-item .item-photo{width:50px;height:50px;border-radius:10px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:24px;overflow:hidden;flex-shrink:0;position:relative;cursor:pointer}
 .stock-item .item-photo img{width:100%;height:100%;object-fit:cover}
+.stock-item .item-photo .photo-badge{position:absolute;bottom:-2px;right:-2px;width:20px;height:20px;border-radius:50%;background:var(--accent);color:#fff;font-size:10px;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.3)}
 .stock-item .item-info{flex:1;min-width:0}
 .stock-item .item-name{font-size:15px;font-weight:700}
 .stock-item .item-detail{font-size:12px;color:var(--text-light);margin-top:2px}
@@ -693,9 +694,9 @@ function renderStockItems(){
     const storeMin=ss?Number(ss.min)||0:Number(t.min)||0;
     const qty=stockQty[t.id]||0;
     const isLow=qty<storeMin&&storeMin>0;
-    const photoUrl=t.photo?'https://drive.google.com/thumbnail?id='+t.photo+'&sz=w100':'';
+    const photoUrl=t._localPhoto?t._localPhoto:(t.photo?'https://drive.google.com/thumbnail?id='+t.photo+'&sz=w100':'');
     html+=`<div class="stock-item">
-      <div class="item-photo">${photoUrl?'<img src="'+photoUrl+'" alt="">':'📦'}</div>
+      <div class="item-photo" onclick="triggerPhotoUpload('${t.id}')">${photoUrl?'<img src="'+photoUrl+'" alt="">':'📦'}<div class="photo-badge"><i class="fas fa-camera"></i></div></div>
       <div class="item-info">
         <div class="item-name">${t.name}</div>
         <div class="item-detail">${t.unit}${t.supplier1?' · '+t.supplier1:''}</div>
@@ -726,6 +727,49 @@ function adjQty(id,delta){
 function setQty(id,val){
   stockQty[id]=Math.max(0,parseInt(val)||0);
   renderStockItems();
+}
+
+// ===== Photo Upload =====
+function triggerPhotoUpload(itemId){
+  let inp=document.getElementById('stockPhotoInput');
+  if(!inp){
+    inp=document.createElement('input');
+    inp.type='file';inp.accept='image/*';inp.capture='environment';
+    inp.id='stockPhotoInput';inp.style.display='none';
+    document.body.appendChild(inp);
+  }
+  inp.dataset.itemId=itemId;
+  inp.value='';
+  inp.onchange=function(){
+    if(!this.files||!this.files[0])return;
+    const file=this.files[0];
+    const itemId=this.dataset.itemId;
+    // Show preview immediately
+    const reader=new FileReader();
+    reader.onload=function(e){
+      const tpl=stockTemplates.find(t=>String(t.id)===String(itemId));
+      if(tpl)tpl._localPhoto=e.target.result;
+      renderStockItems();
+      // Upload to server
+      uploadStockPhoto(itemId,e.target.result);
+    };
+    reader.readAsDataURL(file);
+  };
+  inp.click();
+}
+
+async function uploadStockPhoto(itemId,dataUrl){
+  showToast('Uploading photo...','info');
+  const base64=dataUrl.split(',')[1];
+  const r=await apiPost({action:'saveItemPhoto',itemId:itemId,photo:base64});
+  if(r&&r.fileId){
+    const tpl=stockTemplates.find(t=>String(t.id)===String(itemId));
+    if(tpl){tpl.photo=r.fileId;delete tpl._localPhoto;}
+    renderStockItems();
+    showToast('Photo saved!','success');
+  }else{
+    showToast('Photo upload failed','error');
+  }
 }
 
 async function saveStockCheck(){

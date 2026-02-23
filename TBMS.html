@@ -3927,10 +3927,10 @@ function _deRenderMonthly(){
   </div>`;
 
   // Stats
-  html+=`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">
-    <div style="padding:14px;background:#e8f5e9;border-radius:12px;text-align:center"><div style="font-size:24px;font-weight:800;color:#1b5e20">${filledDays}</div><div style="font-size:11px;font-weight:600;color:#2e7d32">Completed</div></div>
-    <div style="padding:14px;background:#fff3e0;border-radius:12px;text-align:center"><div style="font-size:24px;font-weight:800;color:#e65100">${missingDays}</div><div style="font-size:11px;font-weight:600;color:#ef6c00">Missing</div></div>
-    <div style="padding:14px;background:#e3f2fd;border-radius:12px;text-align:center"><div style="font-size:24px;font-weight:800;color:#1565c0">${pct}%</div><div style="font-size:11px;font-weight:600;color:#1976d2">Compliance</div></div>
+  html+=`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px">
+    <div style="padding:8px;background:#e8f5e9;border-radius:10px;text-align:center"><div style="font-size:16px;font-weight:800;color:#1b5e20">${filledDays}</div><div style="font-size:10px;font-weight:600;color:#2e7d32">Completed</div></div>
+    <div style="padding:8px;background:#fff3e0;border-radius:10px;text-align:center"><div style="font-size:16px;font-weight:800;color:#e65100">${missingDays}</div><div style="font-size:10px;font-weight:600;color:#ef6c00">Missing</div></div>
+    <div style="padding:8px;background:#e3f2fd;border-radius:10px;text-align:center"><div style="font-size:16px;font-weight:800;color:#1565c0">${pct}%</div><div style="font-size:10px;font-weight:600;color:#1976d2">Compliance</div></div>
   </div>`;
 
   // Calendar grid
@@ -3951,7 +3951,7 @@ function _deRenderMonthly(){
   html+=`</div>`;
 
   // Daily records list
-  html+=`<h4 style="margin-bottom:10px;font-size:14px;color:#999">Daily Records</h4>`;
+  html+=`<h4 style="margin-bottom:6px;font-size:12px;color:#999">Daily Records</h4>`;
   for(let d=1;d<=daysInMonth;d++){
     const ds=monthPrefix+'-'+String(d).padStart(2,'0');
     if(ds>todayStr)break;
@@ -3960,19 +3960,19 @@ function _deRenderMonthly(){
     const dayLabel=dayNames2[dayDate.getDay()]+', '+d+' '+monthNames[mo-1].slice(0,3);
     const entry=entryMap[ds];
     if(entry){
-      html+=`<div style="padding:12px;margin-bottom:6px;background:#f8f9fa;border-radius:10px;border-left:4px solid #4caf50;cursor:pointer;display:flex;align-items:center;gap:10px" onclick="_deClickDay('${ds}')">
-        <i class="fas fa-check-circle" style="color:#4caf50"></i>
-        <div style="flex:1"><strong style="font-size:13px">${dayLabel}</strong></div>
-        <div style="font-size:11px;color:#999">${entry.signedBy||'—'}</div>
-        <button onclick="event.stopPropagation();_deGoToEdit('${ds}','${entry.id}')" style="padding:3px 8px;border:1px solid #bbdefb;border-radius:6px;background:#e3f2fd;color:#1565c0;cursor:pointer;font-size:11px"><i class="fas fa-edit"></i></button>
-        <i class="fas fa-chevron-right" style="color:#ccc;font-size:12px"></i>
+      html+=`<div style="padding:6px 10px;margin-bottom:3px;background:#f8f9fa;border-radius:8px;border-left:3px solid #4caf50;cursor:pointer;display:flex;align-items:center;gap:8px" onclick="_deClickDay('${ds}')">
+        <i class="fas fa-check-circle" style="color:#4caf50;font-size:11px"></i>
+        <div style="flex:1"><strong style="font-size:12px">${dayLabel}</strong></div>
+        <div style="font-size:10px;color:#999">${entry.signedBy||'—'}</div>
+        <button onclick="event.stopPropagation();_deGoToEdit('${ds}','${entry.id}')" style="padding:2px 6px;border:1px solid #bbdefb;border-radius:5px;background:#e3f2fd;color:#1565c0;cursor:pointer;font-size:10px"><i class="fas fa-edit"></i></button>
+        <i class="fas fa-chevron-right" style="color:#ccc;font-size:10px"></i>
       </div>`;
     }else{
-      html+=`<div style="padding:12px;margin-bottom:6px;background:#fff8e1;border-radius:10px;border-left:4px solid #ff9800;display:flex;align-items:center;gap:10px">
-        <i class="fas fa-exclamation-circle" style="color:#ff9800"></i>
-        <div style="flex:1"><strong style="font-size:13px">${dayLabel}</strong></div>
-        <button onclick="_deAddForDate('${ds}')" style="padding:3px 8px;border:1px solid #c8e6c9;border-radius:6px;background:#e8f5e9;color:#2e7d32;cursor:pointer;font-size:11px"><i class="fas fa-plus"></i> Add</button>
-        <span style="font-size:11px;color:#ff9800;font-weight:600">Missing</span>
+      html+=`<div style="padding:6px 10px;margin-bottom:3px;background:#fff8e1;border-radius:8px;border-left:3px solid #ff9800;display:flex;align-items:center;gap:8px">
+        <i class="fas fa-exclamation-circle" style="color:#ff9800;font-size:11px"></i>
+        <div style="flex:1"><strong style="font-size:12px">${dayLabel}</strong></div>
+        <button onclick="_deAddForDate('${ds}')" style="padding:2px 6px;border:1px solid #c8e6c9;border-radius:5px;background:#e8f5e9;color:#2e7d32;cursor:pointer;font-size:10px"><i class="fas fa-plus"></i> Add</button>
+        <span style="font-size:10px;color:#ff9800;font-weight:600">Missing</span>
       </div>`;
     }
   }

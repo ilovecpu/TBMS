@@ -993,12 +993,13 @@ function renderStaff(c) {
     <div class="search-box"><i class="fas fa-search"></i><input placeholder="Search staff..." value="${escHtml(sF.search)}" oninput="sF.search=this.value;renderStaff($('pageContent'))"></div>
     <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;white-space:nowrap"><input type="checkbox" ${sF.showLeft?'checked':''} onchange="sF.showLeft=this.checked;renderStaff($('pageContent'))" style="accent-color:var(--accent)"> Show Left (${D.Staff.filter(s=>s.active===false&&hasStoreAccess(s.storeId)).length})</label>
     <button class="btn btn-primary btn-sm" onclick="editStaff()"><i class="fas fa-plus"></i> Add Staff</button>
-    <button class="btn btn-outline btn-sm" onclick="printStaffList()"><i class="fas fa-print"></i> Print</button></div>
-  <div class="card"><div class="table-wrap"><table><thead><tr><th>Name</th><th>Nick Name</th><th>Store</th><th>Kiosk</th><th>Status</th><th>Rate</th><th>Start</th><th>Actions</th></tr></thead><tbody>
+    <button class="btn btn-outline btn-sm" onclick="printStaffList()"><i class="fas fa-print"></i> Print</button>
+    <button class="btn btn-sm" onclick="showRate=!showRate;renderStaff($('pageContent'))" style="background:${showRate?'var(--accent)':'#f0f0f0'};color:${showRate?'#fff':'#555'}"><i class="fas fa-pound-sign"></i> Rate</button></div>
+  <div class="card"><div class="table-wrap"><table><thead><tr><th>Name</th><th>Nick Name</th><th>Store</th><th>Kiosk</th><th>Status</th>${showRate?'<th>Rate</th>':''}<th>Start</th><th>Actions</th></tr></thead><tbody>
   ${staff.map(s=>{const store=D.Stores.find(x=>String(x.id)===String(s.storeId));const isLeft=s.active===false;return`<tr style="${isLeft?'opacity:.5':''}"><td><strong style="cursor:pointer;color:var(--accent);text-decoration:underline" onclick="openTimeRecord('${s.id}')">${escHtml(s.name)}</strong></td><td>${escHtml(s.nickName||'-')}</td><td>${store?escHtml(store.name):s.storeId}</td>
   <td><span class="badge ${(s.kioskLogin===false||s.kioskLogin==='false')?'badge-danger':'badge-success'}" style="font-size:10px">${(s.kioskLogin===false||s.kioskLogin==='false')?'NO':'YES'}</span></td>
   <td>${isLeft?`<span class="badge badge-danger">Left${s.leftDate?' '+fmtDate(s.leftDate):''}</span>`:`<span class="badge badge-success">Active</span>`}</td>
-  <td>£${Number(s.rate).toFixed(2)}</td><td>${fmtDate(s.startDate)}</td>
+  ${showRate?`<td>£${Number(s.rate).toFixed(2)}</td>`:''}<td>${fmtDate(s.startDate)}</td>
   <td><button class="btn btn-sm btn-outline" onclick="viewStaff('${s.id}')"><i class="fas fa-eye"></i></button> <button class="btn btn-sm btn-outline" onclick="editStaff('${s.id}')"><i class="fas fa-edit"></i></button> <button class="btn btn-sm btn-accent" onclick="delStaff('${s.id}')"><i class="fas fa-trash"></i></button></td></tr>`;}).join('')}
   </tbody></table></div></div>`;
 }
@@ -1021,7 +1022,7 @@ function viewStaff(id) {
     <div class="info-item"><i class="fas fa-id-card"></i><div><div class="label">NI No</div><div class="value">${escHtml(s.niNo||'-')}</div></div></div>
     <div class="info-item"><i class="fas fa-passport"></i><div><div class="label">eVisa</div><div class="value">${escHtml(s.eVisa||'-')}</div></div></div>
     <div class="info-item"><i class="fas fa-phone"></i><div><div class="label">Mobile</div><div class="value">${escHtml(s.mobile||'-')}</div></div></div>
-    <div class="info-item"><i class="fas fa-pound-sign"></i><div><div class="label">Rate</div><div class="value">£${Number(s.rate).toFixed(2)}/hr</div></div></div>
+    ${showRate?`<div class="info-item"><i class="fas fa-pound-sign"></i><div><div class="label">Rate</div><div class="value">£${Number(s.rate).toFixed(2)}/hr</div></div></div>`:''}
     <div class="info-item"><i class="fas fa-calendar-plus"></i><div><div class="label">Start Date</div><div class="value">${fmtDate(s.startDate)}</div></div></div>
     ${isLeft?`<div class="info-item"><i class="fas fa-calendar-minus"></i><div><div class="label">Left Date</div><div class="value">${fmtDate(s.leftDate)}</div></div></div>`:''}
     <div class="info-item"><i class="fas fa-university"></i><div><div class="label">Sort Code</div><div class="value">${escHtml(s.sortCode||'-')}</div></div></div>
@@ -1375,6 +1376,7 @@ function printStockCount(){
 let attAutoRefresh=null;
 let attViewMode='daily'; // 'daily' or 'weekly'
 let payViewMode='summary'; // 'summary' or 'weekly'
+let showRate=false;
 let salesHistView='list'; // 'list' or 'calendar'
 function parseTime(t) {
   if(t===null||t===undefined||t==='')return null;
@@ -1694,6 +1696,7 @@ function renderPayroll(c) {
     </div>
     <button class="btn btn-sm btn-primary" onclick="togglePayDetail()"><i class="fas fa-list-alt"></i> Detail View</button>
     <button class="btn btn-sm btn-success" onclick="exportPayroll()"><i class="fas fa-download"></i> Export CSV</button>
+    <button id="payRateBtn" class="btn btn-sm" onclick="showRate=!showRate;this.style.background=showRate?'var(--accent)':'#f0f0f0';this.style.color=showRate?'#fff':'#555';calcPayroll()" style="background:${showRate?'var(--accent)':'#f0f0f0'};color:${showRate?'#fff':'#555'}"><i class="fas fa-pound-sign"></i> Rate</button>
   </div>
   <div id="payMainContent"></div>`;
   calcPayroll();
@@ -1737,13 +1740,13 @@ function calcPayroll() {
   if(payViewMode==='weekly'){
     renderPayrollWeekly(period,rnd,grandTotal);
   }else{
-    $('payMainContent').innerHTML=`<div class="card"><div class="table-wrap"><table><thead><tr><th>Staff</th><th>Store</th><th>Days</th><th>Total Hours</th><th>Rate</th><th>Total Pay</th></tr></thead><tbody id="payBody"></tbody><tfoot id="payFoot"></tfoot></table></div></div>
+    $('payMainContent').innerHTML=`<div class="card"><div class="table-wrap"><table><thead><tr><th>Staff</th><th>Store</th><th>Days</th><th>Total Hours</th>${showRate?'<th>Rate</th><th>Total Pay</th>':''}</tr></thead><tbody id="payBody"></tbody><tfoot id="payFoot"></tfoot></table></div></div>
     <div id="payDetailWrap" class="hidden"><div class="card"><h3 style="margin-bottom:12px"><i class="fas fa-clock"></i> Detailed Attendance (with rounding)</h3><div class="table-wrap"><table><thead><tr><th>Date</th><th>Staff</th><th>Store</th><th>Clock In</th><th>Rounded In</th><th>Clock Out</th><th>Rounded Out</th><th>Raw Hrs</th><th>Paid Hrs</th></tr></thead><tbody id="payDetailBody"></tbody></table></div></div></div>
     <div id="staffDetailWrap" class="hidden" data-staff-id=""><div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><h3 style="margin:0"><i class="fas fa-user-clock"></i> <span id="staffDetailName"></span> — Hours Detail</h3><button class="btn btn-sm" onclick="$('staffDetailWrap').classList.add('hidden');$('staffDetailWrap').dataset.staffId=''" style="background:var(--border);color:var(--text)"><i class="fas fa-times"></i> Close</button></div><div id="staffDetailSummary" style="margin-bottom:10px"></div><div class="table-wrap"><table><thead><tr><th>Date</th><th>Store</th><th>Clock In</th><th>Rounded In</th><th>Clock Out</th><th>Rounded Out</th><th>Raw Hrs</th><th>Paid Hrs</th></tr></thead><tbody id="staffDetailBody"></tbody></table></div></div></div>`;
     $('payBody').innerHTML=payrollData.map(r=>`<tr>
       <td><a href="#" onclick="showStaffPayDetail('${r.id}');return false" style="color:var(--accent);font-weight:600;text-decoration:underline;cursor:pointer">${escHtml(r.nickName||r.name)}</a></td>
-      <td>${escHtml(r.store)}</td><td>${r.days}</td><td>${r.hrs}h</td><td>£${r.rate.toFixed(2)}</td><td><strong>£${r.pay}</strong></td></tr>`).join('');
-    $('payFoot').innerHTML=`<tr><td colspan="5" style="text-align:right;font-weight:700">Total</td><td><strong>£${grandTotal.toFixed(2)}</strong></td></tr>`;
+      <td>${escHtml(r.store)}</td><td>${r.days}</td><td>${r.hrs}h</td>${showRate?`<td>£${r.rate.toFixed(2)}</td><td><strong>£${r.pay}</strong></td>`:''}</tr>`).join('');
+    $('payFoot').innerHTML=showRate?`<tr><td colspan="5" style="text-align:right;font-weight:700">Total</td><td><strong>£${grandTotal.toFixed(2)}</strong></td></tr>`:'';
     if(!$('payDetailWrap')?.classList.contains('hidden'))renderPayDetail();
     const sdw=$('staffDetailWrap');
     if(sdw&&!sdw.classList.contains('hidden')){const sid=sdw.dataset.staffId;if(sid)showStaffPayDetail(sid);}
@@ -1799,7 +1802,7 @@ function renderPayrollWeekly(period,rnd,grandTotal){
     weekGrandHrs+=weekHrs;weekGrandPay+=weekPay;
     rows+=`<tr>${cells}
       <td style="text-align:center;font-weight:700;font-size:13px;color:var(--primary)">${weekHrs.toFixed(1)}</td>
-      <td style="text-align:right;font-size:12px;font-weight:600;color:#2e7d32">£${weekPay.toFixed(2)}</td>
+      ${showRate?`<td style="text-align:right;font-size:12px;font-weight:600;color:#2e7d32">£${weekPay.toFixed(2)}</td>`:''}
       <td style="font-weight:600;white-space:nowrap"><a href="#" onclick="payViewMode='summary';renderPayView();setTimeout(()=>showStaffPayDetail('${st.id}'),100);return false" style="color:var(--accent);text-decoration:underline">${escHtml(st.nickName||st.name)}</a></td>
       <td style="font-size:11px;color:var(--text-light)">${escHtml(st.store)}</td>
     </tr>`;
@@ -1808,7 +1811,7 @@ function renderPayrollWeekly(period,rnd,grandTotal){
     rows+=`<tr style="background:#f5f5f5;font-weight:700">
       ${wk.map(()=>'<td></td>').join('')}
       <td style="text-align:center;font-size:13px;color:var(--primary)">${weekGrandHrs.toFixed(1)}</td>
-      <td style="text-align:right;font-size:12px;color:#2e7d32">£${weekGrandPay.toFixed(2)}</td>
+      ${showRate?`<td style="text-align:right;font-size:12px;color:#2e7d32">£${weekGrandPay.toFixed(2)}</td>`:''}
       <td colspan="2" style="text-align:right;font-size:11px;color:var(--text-light)">Week Total</td>
     </tr>`;
   }else{
@@ -1825,10 +1828,10 @@ function renderPayrollWeekly(period,rnd,grandTotal){
         <button class="btn btn-sm" style="padding:4px 12px" onclick="payWeekIdx++;calcPayroll()" ${payWeekIdx>=weeks.length-1?'disabled':''}><i class="fas fa-chevron-right"></i></button>
       </div>
       <div style="padding:8px 16px;background:#e8f5e9;border-radius:10px;font-size:13px"><strong>${payrollData.length}</strong> staff</div>
-      <div style="padding:8px 16px;background:#e3f2fd;border-radius:10px;font-size:13px">Period: <strong>${payrollData.reduce((s,r)=>s+parseFloat(r.hrs),0).toFixed(1)}h</strong> · £${grandTotal.toFixed(2)}</div>
+      <div style="padding:8px 16px;background:#e3f2fd;border-radius:10px;font-size:13px">Period: <strong>${payrollData.reduce((s,r)=>s+parseFloat(r.hrs),0).toFixed(1)}h</strong>${showRate?' · £'+grandTotal.toFixed(2):''}</div>
       ${rnd?`<div style="padding:8px 16px;background:#fff3e0;border-radius:10px;font-size:13px">Rounding: <strong>${rnd}min</strong></div>`:''}
     </div>
-    <div class="card"><div class="table-wrap"><table style="font-size:12px"><thead><tr>${weekHeaders}<th style="text-align:center">Hrs</th><th style="text-align:right">Pay</th><th>Staff</th><th>Store</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+    <div class="card"><div class="table-wrap"><table style="font-size:12px"><thead><tr>${weekHeaders}<th style="text-align:center">Hrs</th>${showRate?'<th style="text-align:right">Pay</th>':''}<th>Staff</th><th>Store</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
 }
 function renderPayDetail(){
   const rnd=getTimeRounding();
@@ -1895,8 +1898,8 @@ function showStaffPayDetail(staffId){
     <div style="padding:10px 16px;background:#e3f2fd;border-radius:8px;font-size:13px"><strong>Raw Hours:</strong> ${(totalRaw/60).toFixed(1)}h</div>
     <div style="padding:10px 16px;background:#fff3e0;border-radius:8px;font-size:13px"><strong>Paid Hours:</strong> ${(totalPaid/60).toFixed(1)}h</div>
     ${rnd?`<div style="padding:10px 16px;background:#fce4ec;border-radius:8px;font-size:13px"><strong>Rounding Diff:</strong> -${(diffMins/60).toFixed(1)}h</div>`:''}
-    <div style="padding:10px 16px;background:#f3e5f5;border-radius:8px;font-size:13px"><strong>Rate:</strong> £${sd.rate.toFixed(2)}/hr</div>
-    <div style="padding:10px 16px;background:var(--accent);color:#fff;border-radius:8px;font-size:13px"><strong>Total Pay:</strong> £${sd.pay}</div>
+    ${showRate?`<div style="padding:10px 16px;background:#f3e5f5;border-radius:8px;font-size:13px"><strong>Rate:</strong> £${sd.rate.toFixed(2)}/hr</div>
+    <div style="padding:10px 16px;background:var(--accent);color:#fff;border-radius:8px;font-size:13px"><strong>Total Pay:</strong> £${sd.pay}</div>`:''}
   </div>`;
   wrap.scrollIntoView({behavior:'smooth',block:'start'});
 }

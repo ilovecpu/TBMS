@@ -2,7 +2,7 @@
 //  TBMS - The Bap Management System v2.4
 //  Google Apps Script Backend (Code.gs)
 //  Deployed: 2026-02-17
-//  URL: https://script.google.com/macros/s/AKfycbystK0JsURJG9T1tr0cHaRqjy5KtxP8N5Xtd9a2KSkqMTeDnx8OrlQy5N7Ux-Irn9q4/exec
+//  URL: https://script.google.com/macros/s/AKfycbwBsNqFLPw5PRqrgitr85qxJ-aCKbNCgnEByPwZqRIrYoztJXlVrZwv7j4y83OR_kE/exec
 // ============================================================
 //  SETUP:
 //  1. Google Drive > New > Google Sheets > Name "TBMS Database"
@@ -20,7 +20,7 @@ const SHEETS = {
   Staff:         ['id','storeId','name','nickName','clothSize','kioskPwd','dob','address','niNo','eVisa','mobile','startDate','leftDate','rate','sortCode','accountNo','email','memo','active','kioskLogin'],
   Attendance:    ['id','staffId','storeId','date','clockIn','clockOut','photoIn','photoOut','source'],
   Suppliers:     ['id','name','email','phone','address','website','memo','active'],
-  StockTemplate: ['id','category','name','unit','min','sortOrder','supplier1','supplier2','supplier3','memo'],
+  StockTemplate: ['id','category','name','unit','min','sortOrder','supplier1','supplier2','supplier3','memo','photo'],
   StoreStock:    ['storeId','itemId','category','name','unit','min','qty'],
   StockCount:    ['id','storeId','week','countDate','itemId','category','name','unit','qty','submittedBy','submittedAt'],
   WeeklySales:   ['id','storeId','week','weekStart','totalSales','notes','submittedBy','submittedAt'],
@@ -80,6 +80,7 @@ function doPost(e) {
       case 'clockInPhoto':  result = clockInWithPhoto(data); break;
       case 'clockOutPhoto': result = clockOutWithPhoto(data); break;
       case 'saveStockCount': result = saveStockCount(data); break;
+      case 'saveItemPhoto': result = saveItemPhoto(data); break;
       case 'editLog':    result = appendEditLog(data); break;
       case 'timeChangeReq': result = createTimeChangeReq(data); break;
       case 'reviewTimeReq': result = reviewTimeChangeReq(data); break;
@@ -627,6 +628,31 @@ function saveStockCount(data) {
   }
 
   return {status: 'ok', week: week, count: rows.length};
+}
+
+// ============================================================
+//  saveItemPhoto — Save photo for a StockTemplate item
+// ============================================================
+function saveItemPhoto(data) {
+  if (!data.itemId || !data.photo) return {error: 'Missing itemId or photo'};
+  var fileName = 'stock_' + data.itemId + '_' + Date.now();
+  var fileId = savePhotoToDrive(data.photo, fileName);
+  if (!fileId) return {error: 'Failed to save photo'};
+  // Update StockTemplate photo field
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName('StockTemplate');
+  if (!sheet) return {error: 'StockTemplate sheet not found'};
+  var headers = SHEETS.StockTemplate;
+  var photoCol = headers.indexOf('photo') + 1;
+  if (photoCol < 1) return {error: 'photo column not found'};
+  var allData = sheet.getDataRange().getValues();
+  for (var i = 1; i < allData.length; i++) {
+    if (String(allData[i][0]) === String(data.itemId)) {
+      sheet.getRange(i + 1, photoCol).setValue(fileId);
+      return {status: 'ok', fileId: fileId};
+    }
+  }
+  return {error: 'Item not found: ' + data.itemId};
 }
 
 // ============================================================

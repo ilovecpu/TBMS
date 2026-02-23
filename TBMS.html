@@ -1746,7 +1746,8 @@ function calcPayroll() {
     $('payBody').innerHTML=payrollData.map(r=>`<tr>
       <td><a href="#" onclick="showStaffPayDetail('${r.id}');return false" style="color:var(--accent);font-weight:600;text-decoration:underline;cursor:pointer">${escHtml(r.nickName||r.name)}</a></td>
       <td>${escHtml(r.store)}</td><td>${r.days}</td><td>${r.hrs}h</td>${showRate?`<td>£${r.rate.toFixed(2)}</td><td><strong>£${r.pay}</strong></td>`:''}</tr>`).join('');
-    $('payFoot').innerHTML=showRate?`<tr><td colspan="5" style="text-align:right;font-weight:700">Total</td><td><strong>£${grandTotal.toFixed(2)}</strong></td></tr>`:'';
+    const totalHrs=payrollData.reduce((s,r)=>s+parseFloat(r.hrs),0).toFixed(1);
+    $('payFoot').innerHTML=showRate?`<tr><td colspan="3" style="text-align:right;font-weight:700">Total</td><td><strong>${totalHrs}h</strong></td><td></td><td><strong>£${grandTotal.toFixed(2)}</strong></td></tr>`:`<tr><td colspan="3" style="text-align:right;font-weight:700">Total</td><td><strong>${totalHrs}h</strong></td></tr>`;
     if(!$('payDetailWrap')?.classList.contains('hidden'))renderPayDetail();
     const sdw=$('staffDetailWrap');
     if(sdw&&!sdw.classList.contains('hidden')){const sid=sdw.dataset.staffId;if(sid)showStaffPayDetail(sid);}

@@ -521,7 +521,7 @@ const LS = {
   set(k, v) { localStorage.setItem('tbms_'+k, JSON.stringify(v)); },
   getConfig() { return this.get('config') || {}; }
 };
-const CLOUD_URL = 'https://script.google.com/macros/s/AKfycbye_iVuMzY_NOSHwm4w5uWIUxwfAFnyLS0MtQtuQE5NR2WDD13Vq7s-0NgqRW45-JIu/exec';
+const CLOUD_URL = 'https://script.google.com/macros/s/AKfycbystK0JsURJG9T1tr0cHaRqjy5KtxP8N5Xtd9a2KSkqMTeDnx8OrlQy5N7Ux-Irn9q4/exec';
 const API = {
   url: CLOUD_URL, mode: 'cloud',
   async get(action, params={}) {
@@ -689,6 +689,7 @@ function navigate(page) {
   // Permission check
   if(!hasPermission(page)){toast('Access denied','error');return;}
   currentPage=page;
+  if(!userCanViewRate())showRate=false;
   if(attAutoRefresh&&page!=='attendance'){clearInterval(attAutoRefresh);attAutoRefresh=null;}
   if(dashAutoRefresh&&page!=='dashboard'){clearInterval(dashAutoRefresh);dashAutoRefresh=null;}
   $('pageTitle').textContent=pageTitles[page]||page;
@@ -909,15 +910,17 @@ async function confirmDelStore(id){
 const ROLE_BADGES={admin:'badge-info',senior_manager:'badge-warning',manager:'badge-success',account:'badge-danger'};
 function renderUsers(c) {
   c.innerHTML=`<div class="card"><div class="card-header"><h3>Users</h3><button class="btn btn-primary btn-sm" onclick="editUser()"><i class="fas fa-plus"></i> Add User</button></div>
-  <div class="table-wrap"><table><thead><tr><th>Username</th><th>Name</th><th>Role</th><th>Stores</th><th>Menus</th><th>Actions</th></tr></thead><tbody>
+  <div class="table-wrap"><table><thead><tr><th>Username</th><th>Name</th><th>Role</th><th>Stores</th><th>Menus</th><th>Rate</th><th>Actions</th></tr></thead><tbody>
   ${D.Users.map(u=>{
     const perms=getUserPermissions(u);
     const permLabel=u.role==='admin'?'All':perms.length>0?perms.length+'/'+ALL_PAGES.length:'None';
     const stores=getUserStores(u);
     const storeLabel=u.role==='admin'||!u.storeId?'All':stores.map(sid=>{const s=D.Stores.find(x=>x.id===sid);return s?s.code:sid;}).join(', ')||'None';
+    const rateOk=u.role==='admin'||u.canViewRate===true||u.canViewRate==='true';
     return`<tr><td>${escHtml(u.username)}</td><td>${escHtml(u.name)}</td><td><span class="badge ${ROLE_BADGES[u.role]||'badge-success'}">${getRoleLabel(u.role)}</span></td>
     <td><span style="font-size:12px">${storeLabel}</span></td>
     <td><span style="font-size:12px;color:var(--text-light)">${permLabel}</span></td>
+    <td><span class="badge ${rateOk?'badge-success':'badge-danger'}" style="font-size:10px">${rateOk?'YES':'NO'}</span></td>
     <td><button class="btn btn-sm btn-outline" onclick="editUser('${u.id}')"><i class="fas fa-edit"></i></button> <button class="btn btn-sm btn-accent" onclick="delUser('${u.id}')"><i class="fas fa-trash"></i></button></td></tr>`;
   }).join('')}
   </tbody></table></div></div>`;
@@ -944,6 +947,15 @@ function editUser(id) {
         <div class="perm-section-header"><h4><i class="fas fa-shield-halved" style="color:var(--accent)"></i> Menu Permissions</h4><label onclick="toggleAllPerms()"><i class="fas fa-check-double"></i> Toggle All</label></div>
         <div class="perm-grid">
           ${ALL_PAGES.map(p=>`<label class="perm-item${perms.includes(p.id)?' checked':''}" onclick="this.classList.toggle('checked')"><input type="checkbox" name="perm" value="${p.id}" ${perms.includes(p.id)?'checked':''}><i class="fas ${p.icon}"></i>${p.label}</label>`).join('')}
+        </div>
+      </div>
+      <div class="perm-section" style="margin-top:12px">
+        <div class="perm-section-header"><h4><i class="fas fa-pound-sign" style="color:var(--accent)"></i> Special Permissions</h4></div>
+        <div style="padding:8px 12px">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+            <input type="checkbox" id="mURate" ${(u.canViewRate===true||u.canViewRate==='true')?'checked':''} style="accent-color:var(--accent);width:18px;height:18px">
+            <span style="font-size:13px;font-weight:600"><i class="fas fa-pound-sign" style="color:var(--accent);margin-right:4px"></i>Can View Staff Rate / Pay</span>
+          </label>
         </div>
       </div>
     </div>`,
@@ -973,7 +985,8 @@ async function saveUser(id) {
     const checkedStores=[...document.querySelectorAll('input[name=store]:checked')].map(b=>b.value);
     storeId=checkedStores.join(',');
   }
-  const u={id:id||genId('u'),username:$('mUU').value.trim(),password:$('mUP').value,name:$('mUN').value.trim(),role,email:$('mUE').value.trim(),storeId,permissions};
+  const canViewRate=role==='admin'?true:!!$('mURate')?.checked;
+  const u={id:id||genId('u'),username:$('mUU').value.trim(),password:$('mUP').value,name:$('mUN').value.trim(),role,email:$('mUE').value.trim(),storeId,permissions,canViewRate};
   if(!u.username||!u.password){toast('Username and Password required','error');return;}
   await saveRow('Users',u); closeModal(); renderUsers($('pageContent')); toast('User saved','success');
 }
@@ -994,7 +1007,7 @@ function renderStaff(c) {
     <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;white-space:nowrap"><input type="checkbox" ${sF.showLeft?'checked':''} onchange="sF.showLeft=this.checked;renderStaff($('pageContent'))" style="accent-color:var(--accent)"> Show Left (${D.Staff.filter(s=>s.active===false&&hasStoreAccess(s.storeId)).length})</label>
     <button class="btn btn-primary btn-sm" onclick="editStaff()"><i class="fas fa-plus"></i> Add Staff</button>
     <button class="btn btn-outline btn-sm" onclick="printStaffList()"><i class="fas fa-print"></i> Print</button>
-    <button class="btn btn-sm" onclick="showRate=!showRate;renderStaff($('pageContent'))" style="background:${showRate?'var(--accent)':'#f0f0f0'};color:${showRate?'#fff':'#555'}"><i class="fas fa-pound-sign"></i> Rate</button></div>
+    ${userCanViewRate()?`<button class="btn btn-sm" onclick="showRate=!showRate;renderStaff($('pageContent'))" style="background:${showRate?'var(--accent)':'#f0f0f0'};color:${showRate?'#fff':'#555'}"><i class="fas fa-pound-sign"></i> Rate</button>`:''}</div>
   <div class="card"><div class="table-wrap"><table><thead><tr><th>Name</th><th>Nick Name</th><th>Store</th><th>Kiosk</th><th>Status</th>${showRate?'<th>Rate</th>':''}<th>Start</th><th>Actions</th></tr></thead><tbody>
   ${staff.map(s=>{const store=D.Stores.find(x=>String(x.id)===String(s.storeId));const isLeft=s.active===false;return`<tr style="${isLeft?'opacity:.5':''}"><td><strong style="cursor:pointer;color:var(--accent);text-decoration:underline" onclick="openTimeRecord('${s.id}')">${escHtml(s.name)}</strong></td><td>${escHtml(s.nickName||'-')}</td><td>${store?escHtml(store.name):s.storeId}</td>
   <td><span class="badge ${(s.kioskLogin===false||s.kioskLogin==='false')?'badge-danger':'badge-success'}" style="font-size:10px">${(s.kioskLogin===false||s.kioskLogin==='false')?'NO':'YES'}</span></td>
@@ -1377,6 +1390,7 @@ let attAutoRefresh=null;
 let attViewMode='daily'; // 'daily' or 'weekly'
 let payViewMode='summary'; // 'summary' or 'weekly'
 let showRate=false;
+function userCanViewRate(){return currentUser&&(currentUser.role==='admin'||currentUser.canViewRate===true||currentUser.canViewRate==='true');}
 let salesHistView='list'; // 'list' or 'calendar'
 function parseTime(t) {
   if(t===null||t===undefined||t==='')return null;
@@ -1696,7 +1710,7 @@ function renderPayroll(c) {
     </div>
     <button class="btn btn-sm btn-primary" onclick="togglePayDetail()"><i class="fas fa-list-alt"></i> Detail View</button>
     <button class="btn btn-sm btn-success" onclick="exportPayroll()"><i class="fas fa-download"></i> Export CSV</button>
-    <button id="payRateBtn" class="btn btn-sm" onclick="showRate=!showRate;this.style.background=showRate?'var(--accent)':'#f0f0f0';this.style.color=showRate?'#fff':'#555';calcPayroll()" style="background:${showRate?'var(--accent)':'#f0f0f0'};color:${showRate?'#fff':'#555'}"><i class="fas fa-pound-sign"></i> Rate</button>
+    ${userCanViewRate()?`<button id="payRateBtn" class="btn btn-sm" onclick="showRate=!showRate;this.style.background=showRate?'var(--accent)':'#f0f0f0';this.style.color=showRate?'#fff':'#555';calcPayroll()" style="background:${showRate?'var(--accent)':'#f0f0f0'};color:${showRate?'#fff':'#555'}"><i class="fas fa-pound-sign"></i> Rate</button>`:''}
   </div>
   <div id="payMainContent"></div>`;
   calcPayroll();

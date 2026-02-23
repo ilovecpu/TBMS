@@ -2,7 +2,7 @@
 //  TBMS - The Bap Management System v2.4
 //  Google Apps Script Backend (Code.gs)
 //  Deployed: 2026-02-17
-//  URL: https://script.google.com/macros/s/AKfycbye_iVuMzY_NOSHwm4w5uWIUxwfAFnyLS0MtQtuQE5NR2WDD13Vq7s-0NgqRW45-JIu/exec
+//  URL: https://script.google.com/macros/s/AKfycbystK0JsURJG9T1tr0cHaRqjy5KtxP8N5Xtd9a2KSkqMTeDnx8OrlQy5N7Ux-Irn9q4/exec
 // ============================================================
 //  SETUP:
 //  1. Google Drive > New > Google Sheets > Name "TBMS Database"
@@ -34,7 +34,7 @@ const SHEETS = {
 // Fields that should remain numeric
 const NUMERIC_FIELDS = ['rate','min','qty','totalSales','sortOrder'];
 // Fields that are boolean
-const BOOL_FIELDS = ['active'];
+const BOOL_FIELDS = ['active','canViewRate','kioskLogin'];
 // Fields that are time (HH:mm format)
 const TIME_FIELDS = ['clockIn','clockOut'];
 // Fields that are date (yyyy-MM-dd format)

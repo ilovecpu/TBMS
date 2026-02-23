@@ -3960,17 +3960,17 @@ function _deRenderMonthly(){
     const dayLabel=dayNames2[dayDate.getDay()]+', '+d+' '+monthNames[mo-1].slice(0,3);
     const entry=entryMap[ds];
     if(entry){
-      html+=`<div style="padding:6px 10px;margin-bottom:3px;background:#f8f9fa;border-radius:8px;border-left:3px solid #4caf50;cursor:pointer;display:flex;align-items:center;gap:8px" onclick="_deClickDay('${ds}')">
+      html+=`<div style="padding:6px 10px;margin-bottom:3px;background:#f8f9fa;border-radius:8px;border-left:3px solid #4caf50;cursor:pointer;display:flex;align-items:center;gap:6px" onclick="_deClickDay('${ds}')">
         <i class="fas fa-check-circle" style="color:#4caf50;font-size:11px"></i>
-        <div style="flex:1"><strong style="font-size:12px">${dayLabel}</strong></div>
+        <strong style="font-size:12px">${dayLabel}</strong>
         <div style="font-size:10px;color:#999">${entry.signedBy||'—'}</div>
         <button onclick="event.stopPropagation();_deGoToEdit('${ds}','${entry.id}')" style="padding:2px 6px;border:1px solid #bbdefb;border-radius:5px;background:#e3f2fd;color:#1565c0;cursor:pointer;font-size:10px"><i class="fas fa-edit"></i></button>
         <i class="fas fa-chevron-right" style="color:#ccc;font-size:10px"></i>
       </div>`;
     }else{
-      html+=`<div style="padding:6px 10px;margin-bottom:3px;background:#fff8e1;border-radius:8px;border-left:3px solid #ff9800;display:flex;align-items:center;gap:8px">
+      html+=`<div style="padding:6px 10px;margin-bottom:3px;background:#fff8e1;border-radius:8px;border-left:3px solid #ff9800;display:flex;align-items:center;gap:6px">
         <i class="fas fa-exclamation-circle" style="color:#ff9800;font-size:11px"></i>
-        <div style="flex:1"><strong style="font-size:12px">${dayLabel}</strong></div>
+        <strong style="font-size:12px">${dayLabel}</strong>
         <span style="font-size:10px;color:#ff9800;font-weight:600">Missing</span>
         <button onclick="_deAddForDate('${ds}')" style="padding:2px 6px;border:1px solid #c8e6c9;border-radius:5px;background:#e8f5e9;color:#2e7d32;cursor:pointer;font-size:10px"><i class="fas fa-plus"></i> Add</button>
       </div>`;

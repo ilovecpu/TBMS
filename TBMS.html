@@ -2156,76 +2156,104 @@ function printStockStatus(){
   if(catF)dataItems=dataItems.filter(s=>s.category===catF);
   dataItems.forEach(it=>{const tpl=D.StockTemplate.find(t=>String(t.id)===String(it.itemId));it._so=tpl?tpl.sortOrder:9999;it._min=isToday?Number(it.min)||0:(tpl?Number(tpl.min)||0:0);});
   dataItems.sort((a,b)=>{const ci=catIdx.indexOf(a.category)-catIdx.indexOf(b.category);return ci!==0?ci:(a._so||0)-(b._so||0);});
-  // Split into 2 pages (roughly half)
-  const half=Math.ceil(dataItems.length/2);
-  const page1=dataItems.slice(0,half);
-  const page2=dataItems.slice(half);
-  function buildTable(items){
+  // Build compact table HTML
+  function buildTbl(items,title){
     let rows='',lastCat='';
     items.forEach(s=>{
       if(s.category!==lastCat){
         lastCat=s.category;
-        const cnt=items.filter(i=>i.category===lastCat).length;
-        rows+=`<tr class="cat-row"><td colspan="5">${escHtml(lastCat)} (${cnt})</td></tr>`;
+        rows+=`<tr><td colspan="5" style="background:#333;color:#fff;font-weight:700;font-size:8px;padding:3px 5px">${escHtml(lastCat)}</td></tr>`;
       }
       const qty=Number(s.qty)||0;const min=s._min||0;
       const st=qty<=0?'#c62828':qty<=min?'#e65100':'#2e7d32';
       const stTxt=qty<=0?'Out':qty<=min?'Low':'OK';
-      rows+=`<tr>
-        <td><strong>${escHtml(s.name)}</strong></td>
-        <td class="text-center">${escHtml(s.unit)}</td>
-        <td class="text-center">${min}</td>
-        <td class="text-center" style="font-weight:700">${qty}</td>
-        <td class="text-center" style="color:${st};font-weight:600">${stTxt}</td>
-      </tr>`;
+      rows+=`<tr><td>${escHtml(s.name)}</td><td class="tc">${escHtml(s.unit)}</td><td class="tc">${min}</td><td class="tc" style="font-weight:700">${qty}</td><td class="tc" style="color:${st};font-weight:600">${stTxt}</td></tr>`;
     });
-    return `<table>
-      <thead><tr><th>Item</th><th class="text-center">Unit</th><th class="text-center">Min</th><th class="text-center">QTY</th><th class="text-center">Status</th></tr></thead>
-      <tbody>${rows}</tbody></table>`;
+    return `${title?`<div style="font-size:9px;font-weight:700;margin-bottom:3px;color:#333">${title}</div>`:''}<table><thead><tr><th>Item</th><th class="tc">Unit</th><th class="tc">Min</th><th class="tc">QTY</th><th class="tc">Status</th></tr></thead><tbody>${rows}</tbody></table>`;
   }
-  // Build Order Required table (items where qty < min)
+  // Build Order Required
   const orderItems=dataItems.filter(s=>{const qty=Number(s.qty)||0;const min=s._min||0;return min>0&&qty<min;});
   let orderHtml='';
   if(orderItems.length>0){
     let oRows='',oLastCat='';
     orderItems.forEach(s=>{
-      if(s.category!==oLastCat){
-        oLastCat=s.category;
-        oRows+=`<tr style="background:#fff3e0"><td colspan="5" style="font-weight:700;font-size:10px;padding:4px 8px;color:#e65100">■ ${escHtml(oLastCat)}</td></tr>`;
-      }
+      if(s.category!==oLastCat){oLastCat=s.category;oRows+=`<tr><td colspan="5" style="background:#fff3e0;font-weight:700;font-size:8px;padding:3px 5px;color:#e65100">■ ${escHtml(oLastCat)}</td></tr>`;}
       const qty=Number(s.qty)||0;const min=s._min||0;const shortage=min-qty;
-      oRows+=`<tr>
-        <td><strong>${escHtml(s.name)}</strong></td>
-        <td class="text-center">${escHtml(s.unit)}</td>
-        <td class="text-center">${min}</td>
-        <td class="text-center">${qty}</td>
-        <td class="text-center" style="font-weight:700;color:#c62828">${shortage}</td>
-      </tr>`;
+      oRows+=`<tr><td>${escHtml(s.name)}</td><td class="tc">${escHtml(s.unit)}</td><td class="tc">${min}</td><td class="tc">${qty}</td><td class="tc" style="font-weight:700;color:#c62828">${shortage}</td></tr>`;
     });
-    orderHtml=`<div style="margin-bottom:8px">
-      <div style="font-size:13px;font-weight:700;margin-bottom:4px;color:#c62828">🛒 Order Required (${orderItems.length} items)</div>
-      <table>
-        <thead><tr><th>Item</th><th class="text-center">Unit</th><th class="text-center">Min</th><th class="text-center">Current</th><th class="text-center" style="color:#c62828">Order QTY</th></tr></thead>
-        <tbody>${oRows}</tbody>
-      </table>
-    </div><hr style="border:1px dashed #ccc;margin:6px 0">`;
+    orderHtml=`<div style="font-size:10px;font-weight:700;margin-bottom:3px;color:#c62828">🛒 Order Required (${orderItems.length})</div>
+      <table><thead><tr><th>Item</th><th class="tc">Unit</th><th class="tc">Min</th><th class="tc">Cur</th><th class="tc" style="color:#c62828">Order</th></tr></thead><tbody>${oRows}</tbody></table>
+      <hr style="border:none;border-top:1px dashed #ccc;margin:4px 0">`;
   }
+  // Split stock items into 3 parts (order section takes space of ~1 part)
+  const q=Math.ceil(dataItems.length/3);
+  const s1=dataItems.slice(0,q);
+  const s2=dataItems.slice(q,q*2);
+  const s3=dataItems.slice(q*2);
   const subtitle=`${store?escHtml(store.name):''} — ${isToday?'Current Stock':dateVal} — ${dataItems.length} items${catF?' — '+escHtml(catF):''}`;
-  // Fit everything into exactly 2 A4 pages with compact styling
-  const compactCss=`<style>
-    table{margin-bottom:6px}
-    th{padding:3px 6px;font-size:9px}
-    td{padding:3px 6px;font-size:9px}
-    .cat-row td{font-size:10px;padding:4px 6px}
-    .subtitle{font-size:10px;margin-bottom:6px}
-    .brand{margin-bottom:8px;padding-bottom:6px}
-    .brand h1{font-size:15px}
-    .print-date{margin-bottom:4px}
-  </style>`;
-  let bodyHtml=`${compactCss}${orderHtml}<div class="subtitle">${subtitle}</div>${buildTable(page1)}`;
-  bodyHtml+=`<div style="page-break-before:always"></div>
-    <div class="subtitle" style="margin-top:4px">${subtitle} (cont.)</div>${buildTable(page2)}`;
-  openPrintWindow('Stock Status',bodyHtml);
+  const storeName=store?escHtml(store.name):'';
+  const storeClr=_storeClr[store?.code]||_storeClr[store?.id]||'#222';
+  // Build print window with landscape 2-column layout
+  const w=window.open('','_blank','width=1100,height=700');
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Stock Status - ${storeName}</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:'Segoe UI',Arial,sans-serif;color:#222;font-size:8px}
+    .page{width:100%;display:flex;gap:8px;padding:8px}
+    .col{flex:1;min-width:0}
+    table{width:100%;border-collapse:collapse;margin-bottom:4px}
+    th{background:#222;color:#fff;padding:2px 4px;font-size:7px;text-align:left}
+    td{padding:2px 4px;border-bottom:1px solid #ddd;font-size:8px}
+    tr:nth-child(even){background:#f9f9f9}
+    .tc{text-align:center}
+    .hdr{display:flex;justify-content:space-between;align-items:center;padding:6px 8px;border-bottom:2px solid ${storeClr};margin-bottom:4px}
+    .hdr h1{font-size:13px;font-weight:800}
+    .hdr .store{font-size:11px;font-weight:700;color:${storeClr}}
+    .hdr .info{font-size:8px;color:#666}
+    .btn-row{text-align:center;padding:10px}
+    @media print{
+      @page{size:A4 landscape;margin:8mm 12mm}
+      .btn-row{display:none !important}
+      .page{padding:0;gap:6px}
+      body{font-size:8px}
+    }
+  </style></head><body>
+  <div class="btn-row"><button onclick="window.print()" style="padding:8px 24px;font-size:13px;font-weight:700;background:#222;color:#fff;border:none;border-radius:8px;cursor:pointer">🖨 Print</button></div>
+  <!-- Page 1: Order Required (left) + Stock part 1 (right) -->
+  <div class="page">
+    <div class="col">
+      <div class="hdr"><div><h1>The Bap</h1><div class="info">${subtitle}</div></div><div class="store">${storeName}</div></div>
+      ${orderHtml}
+      ${buildTbl(s1,'Stock Status'+(orderItems.length>0?' (1/3)':' (1/3)'))}
+    </div>
+    <div class="col">
+      ${buildTbl(s2,'Stock Status (2/3)')}
+    </div>
+  </div>
+  <!-- Page 2: Stock part 3 (left) + empty/notes (right) -->
+  <div class="page" style="page-break-before:always">
+    <div class="col">
+      <div class="hdr"><div><h1>The Bap</h1><div class="info">${subtitle} (cont.)</div></div><div class="store">${storeName}</div></div>
+      ${buildTbl(s3,'Stock Status (3/3)')}
+    </div>
+    <div class="col" style="padding-top:30px">
+      <div style="border:1px solid #ccc;border-radius:6px;padding:10px;min-height:200px">
+        <div style="font-size:9px;font-weight:700;margin-bottom:6px;color:#666">📝 Notes</div>
+        <div style="border-bottom:1px dotted #ddd;height:20px;margin-bottom:4px"></div>
+        <div style="border-bottom:1px dotted #ddd;height:20px;margin-bottom:4px"></div>
+        <div style="border-bottom:1px dotted #ddd;height:20px;margin-bottom:4px"></div>
+        <div style="border-bottom:1px dotted #ddd;height:20px;margin-bottom:4px"></div>
+        <div style="border-bottom:1px dotted #ddd;height:20px;margin-bottom:4px"></div>
+        <div style="border-bottom:1px dotted #ddd;height:20px;margin-bottom:4px"></div>
+        <div style="border-bottom:1px dotted #ddd;height:20px;margin-bottom:4px"></div>
+        <div style="border-bottom:1px dotted #ddd;height:20px;margin-bottom:4px"></div>
+      </div>
+      <div style="font-size:7px;color:#999;margin-top:8px;text-align:right">Printed: ${new Date().toLocaleString('en-GB')}</div>
+    </div>
+  </div>
+  <div class="btn-row"><button onclick="window.print()" style="padding:8px 24px;font-size:13px;font-weight:700;background:#222;color:#fff;border:none;border-radius:8px;cursor:pointer">🖨 Print</button></div>
+  </body></html>`);
+  w.document.close();
 }
 // ---- Stock Template Page (separate menu) ----
 function renderStockTemplatePage(c){

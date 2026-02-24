@@ -116,12 +116,12 @@ input,select,textarea{font-family:inherit;outline:none}
 .stat-info .stat-num{font-size:24px;font-weight:700}.stat-info .stat-label{font-size:12px;color:var(--text-light);margin-top:2px}
 
 /* Tables */
-.table-wrap{overflow-x:auto}
+.table-wrap{overflow-x:auto;max-width:100%}
 .info-tbl td{white-space:normal !important;word-wrap:break-word;overflow-wrap:break-word;padding:4px 0 !important;border-bottom:none !important;font-size:12px !important}
 .info-tbl tr:hover{background:transparent !important}
 table{width:100%;border-collapse:collapse}
-th,td{padding:12px 16px;text-align:left;border-bottom:1px solid var(--border);font-size:14px;white-space:nowrap}
-th{background:#fdf0f3;font-weight:600;font-size:13px;color:#555;position:sticky;top:0}
+th,td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--border);font-size:13px;white-space:normal;word-break:break-word;overflow-wrap:break-word}
+th{background:#fdf0f3;font-weight:600;font-size:12px;color:#555;position:sticky;top:0;white-space:nowrap}
 .table-wrap tr:hover{background:#f8f9fa}
 .badge{padding:4px 10px;border-radius:20px;font-size:12px;font-weight:500;display:inline-block}
 .badge-success{background:#e8f5e9;color:#2e7d32}.badge-danger{background:#ffebee;color:#c62828}
@@ -2629,7 +2629,7 @@ async function renderSuppliers(c){
       </div></div>
     <div id="supDiag" class="hidden" style="padding:12px;background:#fff3cd;border-radius:8px;margin-bottom:12px;font-size:12px;font-family:monospace;white-space:pre-wrap"></div>
     <div class="table-wrap"><table><thead><tr>
-      <th>#</th><th>ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Website</th><th>Actions</th>
+      <th style="width:36px">#</th><th style="width:60px">ID</th><th>Name</th><th style="width:20%">Email</th><th style="width:100px">Phone</th><th style="width:20%">Website</th><th style="width:80px">Actions</th>
     </tr></thead><tbody id="supBody"></tbody></table></div>
   </div>`;
   renderSupplierTable();
@@ -2668,10 +2668,10 @@ function renderSupplierTable(){
     return`<tr>
       <td style="color:var(--text-light);font-size:12px">${i+1}</td>
       <td style="font-size:12px;color:var(--text-light)">${escHtml(s.id)}</td>
-      <td><strong>${escHtml(s.name)}</strong>${s.memo?`<br><span style="font-size:11px;color:var(--text-light)">${escHtml(s.memo)}</span>`:''}</td>
-      <td style="font-size:13px">${s.email?`<a href="mailto:${escHtml(s.email)}">${escHtml(s.email)}</a>`:'—'}</td>
+      <td class="wrap"><strong>${escHtml(s.name)}</strong>${s.memo?`<br><span style="font-size:11px;color:var(--text-light)">${escHtml(s.memo)}</span>`:''}</td>
+      <td class="wrap" style="font-size:13px">${s.email?`<a href="mailto:${escHtml(s.email)}">${escHtml(s.email)}</a>`:'—'}</td>
       <td style="font-size:13px">${s.phone||'—'}</td>
-      <td>${web}</td>
+      <td class="wrap">${web}</td>
       <td>
         <button class="btn-icon btn-outline" onclick="openSupplierModal('${s.id}')" title="Edit"><i class="fas fa-pen" style="font-size:12px"></i></button>
         <button class="btn-icon" style="color:var(--danger)" onclick="deleteSupplier('${s.id}')" title="Delete"><i class="fas fa-trash" style="font-size:12px"></i></button>

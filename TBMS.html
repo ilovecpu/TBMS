@@ -887,9 +887,16 @@ async function saveStore(id) {
   if(!s.code||!s.name){toast('Code and Name required','error');return;}
   // Update local data
   const idx=D.Stores.findIndex(r=>r.id===s.id);
-  if(idx>=0)D.Stores[idx]=s;else D.Stores.push(s);
+  const isNew=idx<0;
+  if(isNew)D.Stores.push(s);else D.Stores[idx]=s;
+  // If new store, create StoreStock entries for all existing StockTemplate items
+  if(isNew&&D.StockTemplate.length>0){
+    D.StockTemplate.forEach(t=>{
+      D.StoreStock.push({storeId:s.id,itemId:t.id,category:t.category,name:t.name,unit:t.unit,min:t.min,qty:0});
+    });
+    _bgPost({action:'saveSheet',sheet:'StoreStock',rows:D.StoreStock});
+  }
   closeModal();renderStores($('pageContent'));toast('Store saved','success');
-  // Save entire Stores sheet to cloud (background)
   _bgPost({action:'saveSheet',sheet:'Stores',rows:D.Stores});
 }
 function delStore(id){
@@ -2171,8 +2178,16 @@ function renderStockStatusTable(){
   const catIdx=getSortedCategories();
   let html='';
   if(isToday){
-    // Live data from StoreStock
+    // Live data from StoreStock — auto-create if missing for this store
     let items=D.StoreStock.filter(s=>String(s.storeId)===storeId);
+    if(!items.length&&D.StockTemplate.length>0&&storeId){
+      D.StockTemplate.forEach(t=>{
+        D.StoreStock.push({storeId,itemId:t.id,category:t.category,name:t.name,unit:t.unit,min:t.min,qty:0});
+      });
+      _bgPost({action:'saveSheet',sheet:'StoreStock',rows:D.StoreStock});
+      items=D.StoreStock.filter(s=>String(s.storeId)===storeId);
+      toast('Stock items created for this store','info');
+    }
     if(catF)items=items.filter(s=>s.category===catF);
     if(search)items=items.filter(s=>(s.name||'').toLowerCase().includes(search)||(s.category||'').toLowerCase().includes(search));
     items.forEach(it=>{const tpl=D.StockTemplate.find(t=>String(t.id)===String(it.itemId));it._so=tpl?tpl.sortOrder:9999;it._photo=tpl?tpl.photo:'';});

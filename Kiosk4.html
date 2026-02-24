@@ -380,7 +380,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
 // ============================================================
 //  CONFIG
 // ============================================================
-const DEFAULT_API='https://script.google.com/macros/s/AKfycbzFtyLjoNaRawPdQf7dG1NwZD0nn6r-wSjb0ZYSdCgLRf3eegRnQs9pjDgbsn4Ve-Oc/exec';
+const DEFAULT_API='https://script.google.com/macros/s/AKfycbzweiFpH2YSjDnbYUjbBWEU2U2XOz5DLZ7RGKAvn3HkKW89XCZaqmbBCdfV7N32IFA9/exec';
 const API_URL=DEFAULT_API;
 const API_KEY='tBaP2026xKr!mGt9Qz';
 
@@ -443,9 +443,9 @@ const $=id=>document.getElementById(id);
 // ============================================================
 //  API
 // ============================================================
-async function apiGet(action){try{const r=await fetch(API_URL+'?action='+action+'&key='+encodeURIComponent(API_KEY),{redirect:'follow'});return await r.json();}catch(e){return null;}}
-async function apiPost(data){try{data.key=API_KEY;const r=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(data),redirect:'follow'});return await r.json();}catch(e){return null;}}
-function bgPost(data){data.key=API_KEY;fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(data),redirect:'follow'}).catch(()=>{});}
+async function apiGet(action){try{const r=await fetch(API_URL+'?action='+action+'&apikey='+encodeURIComponent(API_KEY),{redirect:'follow'});return await r.json();}catch(e){return null;}}
+async function apiPost(data){try{data.apikey=API_KEY;const r=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(data),redirect:'follow'});return await r.json();}catch(e){return null;}}
+function bgPost(data){data.apikey=API_KEY;fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(data),redirect:'follow'}).catch(()=>{});}
 
 function showLoading(msg){$('loadingMsg').textContent=msg||'Loading...';$('loadingOv').classList.add('show');}
 function hideLoading(){$('loadingOv').classList.remove('show');}

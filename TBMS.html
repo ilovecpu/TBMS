@@ -2053,7 +2053,11 @@ function execDeleteCat(oldCat){
   _bgPost({action:'saveSheet',sheet:'StockTemplate',rows:D.StockTemplate});
   _bgPost({action:'saveSheet',sheet:'StoreStock',rows:D.StoreStock});
 }
-function renderStock(c) {
+async function renderStock(c) {
+  // Refresh StoreStock from server to pick up Kiosk4 changes
+  if(API.mode==='cloud'){
+    try{const r=await API.get('getSheet',{sheet:'StoreStock'});if(r&&r.data)D.StoreStock=r.data;}catch(e){}
+  }
   const cats=getSortedCategories();
   const stores=getAccessibleStores();
   c.innerHTML=`<div style="display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap">
@@ -2962,7 +2966,11 @@ async function saveStockOrder(){
   if(btn){btn.disabled=false;btn.innerHTML='<i class="fas fa-cloud-arrow-up"></i> Save Order';}
 }
 
-function renderStockCount(c){
+async function renderStockCount(c){
+  // Refresh StoreStock from server to pick up Kiosk4 changes
+  if(API.mode==='cloud'){
+    try{const r=await API.get('getSheet',{sheet:'StoreStock'});if(r&&r.data)D.StoreStock=r.data;}catch(e){}
+  }
   const stores=getAccessibleStores();
   const today=new Date().toISOString().split('T')[0];
   const week=getISOWeek(new Date());

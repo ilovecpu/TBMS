@@ -2074,12 +2074,14 @@ async function renderStock(c) {
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">
       <h3><i class="fas fa-warehouse" style="color:var(--accent);margin-right:8px"></i>Stock Status</h3>
       <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
-        <select id="ssStore" onchange="renderStockStatusTable()" style="padding:8px 12px;border:2px solid var(--border);border-radius:8px;font-size:14px;font-weight:600">
-          ${stores.map((s,i)=>`<option value="${s.id}"${i===0?' selected':''}>${escHtml(s.name)}</option>`).join('')}</select>
+        <select id="ssStore" onchange="onStoreSelect()" style="padding:8px 12px;border:2px solid var(--border);border-radius:8px;font-size:14px;font-weight:600">
+          ${stores.map((s,i)=>`<option value="${s.id}" data-color="${escHtml(s.color||'')}"${i===0?' selected':''}>${escHtml(s.name)}</option>`).join('')}</select>
         <input type="date" id="ssDate" value="${today}" onchange="renderStockStatusTable()" style="padding:8px 12px;border:2px solid var(--border);border-radius:8px;font-size:14px">
         <button class="btn btn-sm" onclick="document.getElementById('ssDate').value='${today}';renderStockStatusTable()" style="background:#f0f0f0;color:#555" title="Today"><i class="fas fa-calendar-day"></i> Today</button>
+        <button class="btn btn-sm" onclick="refreshStockStatus()" style="background:#f0f0f0;color:#555" title="Refresh"><i class="fas fa-sync-alt"></i></button>
       </div>
     </div>
+    <div id="ssStoreBanner" style="margin-bottom:12px"></div>
     <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
       <select id="ssCat" onchange="renderStockStatusTable()" style="padding:8px 12px;border:2px solid var(--border);border-radius:8px;font-size:14px">
         <option value="">All Categories</option>${cats.map(cat=>`<option>${escHtml(cat)}</option>`).join('')}</select>
@@ -2092,6 +2094,37 @@ async function renderStock(c) {
     </tr></thead><tbody id="ssBody"></tbody></table></div>
     <div id="ssSaveRow" style="margin-top:12px;text-align:right;display:none"><button class="btn btn-success btn-sm" onclick="saveStockAll()"><i class="fas fa-save"></i> Save All QTY</button></div>
   </div>`;
+  onStoreSelect();
+  renderStockStatusTable();
+}
+const _storeClr={PAB:'#1b5e20',TBS:'#1565c0',TBR:'#6a1b9a',TBB:'#e65100',TBO:'#00838f'};
+function onStoreSelect(){
+  const sel=$('ssStore');if(!sel)return;
+  const storeId=sel.value;
+  const store=D.Stores.find(s=>String(s.id)===storeId);
+  const banner=$('ssStoreBanner');
+  if(banner&&store){
+    const clr=_storeClr[store.code]||_storeClr[store.id]||'var(--primary)';
+    banner.innerHTML=`<div style="background:${clr};color:#fff;padding:12px 20px;border-radius:10px;display:flex;align-items:center;gap:12px">
+      <div style="width:42px;height:42px;background:rgba(255,255,255,.2);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800">${escHtml(store.code||store.id)}</div>
+      <div><div style="font-size:18px;font-weight:700">${escHtml(store.name)}</div><div style="font-size:12px;opacity:.7">${escHtml(store.address||'')}</div></div>
+    </div>`;
+  }else if(banner){banner.innerHTML='';}
+  renderStockStatusTable();
+}
+async function refreshStockStatus(){
+  if(API.mode==='cloud'){
+    toast('Refreshing...','info');
+    try{
+      const [ssR,scR]=await Promise.all([
+        API.get('getSheet',{sheet:'StoreStock'}),
+        API.get('getSheet',{sheet:'StockCount'})
+      ]);
+      if(ssR&&ssR.data)D.StoreStock=ssR.data;
+      if(scR&&scR.data)D.StockCount=scR.data;
+      toast('Data refreshed!','success');
+    }catch(e){toast('Refresh failed','error');}
+  }
   renderStockStatusTable();
 }
 // ---- Stock Template Page (separate menu) ----

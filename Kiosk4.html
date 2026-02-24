@@ -618,27 +618,24 @@ async function openStockCheck(){
   $('stockScreen').classList.add('show');
   $('stockBar').style.background=STORE_COLORS[currentStore];
 
-  if(!stockLoaded){
-    showLoading('Loading stock data...');
-    // Load StockTemplate + StoreStock + catOrder setting
-    const [tplRes,ssRes,coRes]=await Promise.all([
-      apiGet('getSheet&sheet=StockTemplate'),
-      apiGet('getStoreData&store='+currentStore+'&sheets=StoreStock'),
-      apiGet('getSetting&key=catOrder')
-    ]);
-    if(tplRes&&tplRes.data)stockTemplates=tplRes.data;
-    if(ssRes&&ssRes.data&&ssRes.data.StoreStock)storeStockItems=ssRes.data.StoreStock;
-    if(coRes&&coRes.value)stockCatOrder=coRes.value;
-    else stockCatOrder=[];
-    // Init qty from StoreStock
-    stockQty={};
-    stockTemplates.forEach(t=>{
-      const ss=storeStockItems.find(s=>String(s.itemId)===String(t.id));
-      stockQty[t.id]=ss?Number(ss.qty)||0:0;
-    });
-    stockLoaded=true;
-    hideLoading();
-  }
+  // Always load fresh data from server
+  showLoading('Loading stock data...');
+  const [tplRes,ssRes,coRes]=await Promise.all([
+    apiGet('getSheet&sheet=StockTemplate'),
+    apiGet('getStoreData&store='+currentStore+'&sheets=StoreStock'),
+    apiGet('getSetting&key=catOrder')
+  ]);
+  if(tplRes&&tplRes.data)stockTemplates=tplRes.data;
+  if(ssRes&&ssRes.data&&ssRes.data.StoreStock)storeStockItems=ssRes.data.StoreStock;
+  if(coRes&&coRes.value)stockCatOrder=coRes.value;
+  else stockCatOrder=[];
+  // Init qty from StoreStock
+  stockQty={};
+  stockTemplates.forEach(t=>{
+    const ss=storeStockItems.find(s=>String(s.itemId)===String(t.id));
+    stockQty[t.id]=ss?Number(ss.qty)||0:0;
+  });
+  hideLoading();
   currentStockCat='';
   renderStockCatTabs();
   renderStockItems();

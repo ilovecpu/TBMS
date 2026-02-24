@@ -262,9 +262,8 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
       <div class="menu-group">
         <div class="menu-item menu-parent" onclick="toggleMenuGroup(this)"><i class="fas fa-boxes-stacked"></i>Stock<i class="fas fa-chevron-down menu-arrow"></i></div>
         <div class="sub-menu">
-          <div class="menu-item sub" data-page="stock" onclick="navigate('stock')"><i class="fas fa-warehouse"></i>Stock List</div>
+          <div class="menu-item sub" data-page="stock" onclick="navigate('stock')"><i class="fas fa-warehouse"></i>Stock Status</div>
           <div class="menu-item sub" data-page="stock-count" onclick="navigate('stock-count')"><i class="fas fa-clipboard-check"></i>Weekly Count</div>
-          <div class="menu-item sub" data-page="stock-history" onclick="navigate('stock-history')"><i class="fas fa-history"></i>Count History</div>
           <div class="menu-item sub" data-page="sales" onclick="navigate('sales')"><i class="fas fa-chart-bar"></i>Weekly Sales</div>
           <div class="menu-item sub" data-page="analytics" onclick="navigate('analytics')"><i class="fas fa-chart-line"></i>Usage Analytics</div>
           <div class="menu-item sub" data-page="orders" onclick="navigate('orders')"><i class="fas fa-clipboard-list"></i>Order List</div>
@@ -337,9 +336,8 @@ const ALL_PAGES=[
   {id:'attendance',label:'Attendance',icon:'fa-clipboard-check'},
   {id:'payroll',label:'Payroll',icon:'fa-calculator'},
   {id:'messages',label:'Messages',icon:'fa-envelope'},
-  {id:'stock',label:'Stock List',icon:'fa-warehouse'},
+  {id:'stock',label:'Stock Status',icon:'fa-warehouse'},
   {id:'stock-count',label:'Weekly Count',icon:'fa-clipboard-check'},
-  {id:'stock-history',label:'Count History',icon:'fa-history'},
   {id:'sales',label:'Weekly Sales',icon:'fa-chart-bar'},
   {id:'analytics',label:'Usage Analytics',icon:'fa-chart-line'},
   {id:'orders',label:'Order List',icon:'fa-clipboard-list'},
@@ -686,7 +684,7 @@ $('loginUser').addEventListener('keydown',e=>{if(e.key==='Enter')$('loginPass').
 // ==================== NAVIGATION ====================
 function toggleSidebar() { $('sidebar').classList.toggle('open');$('sidebarOverlay').classList.toggle('show'); }
 function toggleMenuGroup(el){el.parentElement.classList.toggle('open');}
-const pageTitles={dashboard:'Dashboard',stores:'Store Management',users:'User Management',staff:'Staff List',attendance:'Attendance Records',payroll:'Payroll',messages:'Staff Messages',stock:'Stock Management','stock-count':'Weekly Stock Count','stock-history':'Count History',sales:'Weekly Sales',analytics:'Usage Analytics',orders:'Order List',suppliers:'Supplier Management','diary-config':'Diary Configuration','diary-entries':'Diary Records',settings:'General Settings'};
+const pageTitles={dashboard:'Dashboard',stores:'Store Management',users:'User Management',staff:'Staff List',attendance:'Attendance Records',payroll:'Payroll',messages:'Staff Messages',stock:'Stock Status','stock-count':'Weekly Stock Count',sales:'Weekly Sales',analytics:'Usage Analytics',orders:'Order List',suppliers:'Supplier Management','diary-config':'Diary Configuration','diary-entries':'Diary Records',settings:'General Settings'};
 let currentPage='dashboard';
 function navigate(page) {
   // Permission check
@@ -719,7 +717,6 @@ function renderPage(page) {
     case 'payroll': renderPayroll(c); break;
     case 'stock': renderStock(c); break;
     case 'stock-count': renderStockCount(c); break;
-    case 'stock-history': renderStockHistory(c); break;
     case 'sales': renderSalesInput(c); break;
     case 'analytics': renderAnalytics(c); break;
     case 'orders': renderOrders(c); break;
@@ -2054,43 +2051,145 @@ function execDeleteCat(oldCat){
   _bgPost({action:'saveSheet',sheet:'StoreStock',rows:D.StoreStock});
 }
 async function renderStock(c) {
-  // Refresh StoreStock from server to pick up Kiosk4 changes
+  // Refresh StoreStock + StockCount from server
   if(API.mode==='cloud'){
-    try{const r=await API.get('getSheet',{sheet:'StoreStock'});if(r&&r.data)D.StoreStock=r.data;}catch(e){}
+    try{
+      const [ssR,scR]=await Promise.all([
+        API.get('getSheet',{sheet:'StoreStock'}),
+        API.get('getSheet',{sheet:'StockCount'})
+      ]);
+      if(ssR&&ssR.data)D.StoreStock=ssR.data;
+      if(scR&&scR.data)D.StockCount=scR.data;
+    }catch(e){}
   }
   const cats=getSortedCategories();
   const stores=getAccessibleStores();
-  c.innerHTML=`<div style="display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap">
-    <div style="flex:1">
-      <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
-        <select id="stockCat" onchange="renderStockTable()" style="padding:10px 14px;border:2px solid var(--border);border-radius:8px;font-size:14px">
-          <option value="">All Categories</option>${cats.map(cat=>`<option>${escHtml(cat)}</option>`).join('')}</select>
-        <div class="search-box" style="min-width:200px;flex:1"><i class="fas fa-search"></i>
-          <input type="text" id="stockSearch" placeholder="Search items..." oninput="renderStockTable()" style="padding:10px 14px 10px 36px;border:2px solid var(--border);border-radius:8px;font-size:14px;width:100%"></div>
-        <button class="btn btn-sm" onclick="openCatOrderModal()" style="background:#f0f0f0;color:#555"><i class="fas fa-layer-group"></i> Manage Categories</button>
+  const today=new Date().toISOString().split('T')[0];
+  c.innerHTML=`
+  <!-- Stock Status Section -->
+  <div class="card" style="margin-bottom:16px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+      <h3><i class="fas fa-warehouse" style="color:var(--accent);margin-right:8px"></i>Stock Status</h3>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+        <select id="ssStore" onchange="renderStockStatusTable()" style="padding:8px 12px;border:2px solid var(--border);border-radius:8px;font-size:14px;font-weight:600">
+          ${stores.map((s,i)=>`<option value="${s.id}"${i===0?' selected':''}>${escHtml(s.name)}</option>`).join('')}</select>
+        <input type="date" id="ssDate" value="${today}" onchange="renderStockStatusTable()" style="padding:8px 12px;border:2px solid var(--border);border-radius:8px;font-size:14px">
+        <button class="btn btn-sm" onclick="document.getElementById('ssDate').value='${today}';renderStockStatusTable()" style="background:#f0f0f0;color:#555" title="Today"><i class="fas fa-calendar-day"></i> Today</button>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
+      <select id="ssCat" onchange="renderStockStatusTable()" style="padding:8px 12px;border:2px solid var(--border);border-radius:8px;font-size:14px">
+        <option value="">All Categories</option>${cats.map(cat=>`<option>${escHtml(cat)}</option>`).join('')}</select>
+      <div style="flex:1;min-width:180px;position:relative"><i class="fas fa-search" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#aaa"></i>
+        <input type="text" id="ssSearch" placeholder="Search items..." oninput="renderStockStatusTable()" style="padding:8px 12px 8px 36px;border:2px solid var(--border);border-radius:8px;font-size:14px;width:100%"></div>
+    </div>
+    <div id="ssDateBanner"></div>
+    <div class="table-wrap"><table><thead><tr>
+      <th style="width:40px">#</th><th style="width:50px">Photo</th><th>Item</th><th>Category</th><th>Unit</th><th>Min</th><th style="width:90px">QTY</th><th style="width:80px">Status</th>
+    </tr></thead><tbody id="ssBody"></tbody></table></div>
+    <div id="ssSaveRow" style="margin-top:12px;text-align:right;display:none"><button class="btn btn-success btn-sm" onclick="saveStockAll()"><i class="fas fa-save"></i> Save All QTY</button></div>
+  </div>
+  <!-- Stock Template Management -->
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+      <h3><i class="fas fa-boxes-stacked" style="color:var(--accent);margin-right:8px"></i>Stock Template <span id="stockCount" style="font-size:13px;font-weight:400;color:var(--text-light)"></span></h3>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span style="font-size:12px;color:var(--text-light)"><i class="fas fa-info-circle"></i> All ${stores.length} stores</span>
+        <button class="btn btn-sm" onclick="openCatOrderModal()" style="background:#f0f0f0;color:#555"><i class="fas fa-layer-group"></i> Categories</button>
         <button class="btn btn-primary btn-sm" onclick="openStockItemModal()"><i class="fas fa-plus"></i> Add Item</button>
       </div>
     </div>
-  </div>
-  <div class="card" style="margin-bottom:16px">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-      <h3><i class="fas fa-boxes-stacked" style="color:var(--accent);margin-right:8px"></i>Stock Template <span id="stockCount" style="font-size:13px;font-weight:400;color:var(--text-light)"></span></h3>
-      <span style="font-size:12px;color:var(--text-light)"><i class="fas fa-info-circle"></i> Changes apply to <strong>all ${stores.length} stores</strong></span>
+    <div style="display:flex;gap:10px;margin-bottom:8px;flex-wrap:wrap;align-items:center">
+      <select id="stockCat" onchange="renderStockTable()" style="padding:8px 12px;border:2px solid var(--border);border-radius:8px;font-size:13px">
+        <option value="">All Categories</option>${cats.map(cat=>`<option>${escHtml(cat)}</option>`).join('')}</select>
+      <div style="flex:1;min-width:150px;position:relative"><i class="fas fa-search" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#aaa"></i>
+        <input type="text" id="stockSearch" placeholder="Search..." oninput="renderStockTable()" style="padding:8px 12px 8px 36px;border:2px solid var(--border);border-radius:8px;font-size:13px;width:100%"></div>
     </div>
     <div class="table-wrap"><table><thead><tr>
       <th style="width:40px">#</th><th style="width:50px">Sort</th><th style="width:50px">Photo</th><th>Item</th><th>Category</th><th>Unit</th><th>Min</th><th>Supplier</th><th style="width:100px">Actions</th>
     </tr></thead><tbody id="stockBody"></tbody></table></div>
-  </div>
-  <div class="card">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-      <h3><i class="fas fa-store" style="color:var(--accent);margin-right:8px"></i>Store QTY Snapshot</h3>
-      <select id="stockStore" onchange="renderStoreQtyTable()" style="padding:8px 12px;border:2px solid var(--border);border-radius:8px;font-size:14px">
-        <option value="">Select Store</option>${stores.map(s=>`<option value="${s.id}">${escHtml(s.name)}</option>`).join('')}</select>
-    </div>
-    <div class="table-wrap"><table><thead><tr><th>Category</th><th>Item</th><th>Unit</th><th>Min</th><th>QTY</th><th>Status</th></tr></thead><tbody id="storeQtyBody"></tbody></table></div>
-    <div style="margin-top:12px;text-align:right"><button class="btn btn-success btn-sm" onclick="saveStockAll()"><i class="fas fa-save"></i> Save All QTY</button></div>
   </div>`;
+  renderStockStatusTable();
   renderStockTable();
+}
+// ---- Stock Status Table (current / historical) ----
+function renderStockStatusTable(){
+  const storeId=$('ssStore')?.value;
+  const dateVal=$('ssDate')?.value||'';
+  const catF=$('ssCat')?.value||'';
+  const search=($('ssSearch')?.value||'').toLowerCase().trim();
+  const today=new Date().toISOString().split('T')[0];
+  const isToday=!dateVal||dateVal===today;
+  // Date banner
+  const banner=$('ssDateBanner');
+  if(banner){
+    if(isToday)banner.innerHTML=`<div style="background:linear-gradient(135deg,#43a047,#66bb6a);color:#fff;padding:10px 16px;border-radius:8px;margin-bottom:12px;font-size:13px;font-weight:600"><i class="fas fa-clock" style="margin-right:8px"></i>Current Stock (Live Data)</div>`;
+    else banner.innerHTML=`<div style="background:linear-gradient(135deg,#5c6bc0,#7986cb);color:#fff;padding:10px 16px;border-radius:8px;margin-bottom:12px;font-size:13px;font-weight:600"><i class="fas fa-history" style="margin-right:8px"></i>Stock Count Record: ${dateVal}</div>`;
+  }
+  // Show/hide save button (only for live mode)
+  const saveRow=$('ssSaveRow');if(saveRow)saveRow.style.display=isToday?'block':'none';
+  const catIdx=getSortedCategories();
+  let html='';
+  if(isToday){
+    // Live data from StoreStock
+    let items=D.StoreStock.filter(s=>String(s.storeId)===storeId);
+    if(catF)items=items.filter(s=>s.category===catF);
+    if(search)items=items.filter(s=>(s.name||'').toLowerCase().includes(search)||(s.category||'').toLowerCase().includes(search));
+    items.forEach(it=>{const tpl=D.StockTemplate.find(t=>String(t.id)===String(it.itemId));it._so=tpl?tpl.sortOrder:9999;it._photo=tpl?tpl.photo:'';});
+    items.sort((a,b)=>{const ci=catIdx.indexOf(a.category)-catIdx.indexOf(b.category);return ci!==0?ci:a._so-b._so;});
+    let lastCat='';
+    items.forEach((s,idx)=>{
+      if(s.category!==lastCat){
+        lastCat=s.category;
+        const cnt=items.filter(i=>i.category===lastCat).length;
+        html+=`<tr><td colspan="8" style="background:var(--primary);color:#fff;font-weight:700;font-size:13px;padding:8px 16px;border:none"><i class="fas fa-layer-group" style="margin-right:8px"></i>${escHtml(lastCat)} <span style="opacity:.6;font-size:12px;margin-left:8px">${cnt} items</span></td></tr>`;
+      }
+      const qty=Number(s.qty)||0;const min=Number(s.min)||0;
+      const status=qty<=0?'badge-danger':qty<=min?'badge-warning':'badge-success';
+      const statusText=qty<=0?'Out':qty<=min?'Low':'OK';
+      const photoHtml=s._photo?`<img src="https://drive.google.com/thumbnail?id=${s._photo}&sz=w80" style="width:36px;height:36px;object-fit:cover;border-radius:6px;cursor:pointer" onclick="showPhotoLightbox('${s._photo}','${escHtml(s.name)}')">`:'<span style="font-size:18px;opacity:.3">📦</span>';
+      html+=`<tr>
+        <td style="color:var(--text-light);font-size:12px">${idx+1}</td>
+        <td style="text-align:center">${photoHtml}</td>
+        <td><strong>${escHtml(s.name)}</strong></td>
+        <td style="font-size:12px;color:var(--text-light)">${escHtml(s.category)}</td>
+        <td>${escHtml(s.unit)}</td><td>${min}</td>
+        <td><input type="number" min="0" value="${qty}" style="width:70px;padding:6px;border:2px solid var(--border);border-radius:6px;font-weight:600;text-align:center" data-store="${storeId}" data-item="${s.itemId}" onchange="updateStockQty(this)"></td>
+        <td><span class="badge ${status}">${statusText}</span></td>
+      </tr>`;
+    });
+    if(!items.length)html='<tr><td colspan="8" style="text-align:center;color:var(--text-light)">No items for this store</td></tr>';
+  }else{
+    // Historical data from StockCount
+    let recs=D.StockCount.filter(sc=>String(sc.storeId)===storeId&&sc.countDate===dateVal);
+    if(catF)recs=recs.filter(r=>r.category===catF);
+    if(search)recs=recs.filter(r=>(r.name||'').toLowerCase().includes(search)||(r.category||'').toLowerCase().includes(search));
+    recs.forEach(r=>{const tpl=D.StockTemplate.find(t=>String(t.id)===String(r.itemId));r._so=tpl?tpl.sortOrder:9999;r._photo=tpl?tpl.photo:'';r._min=tpl?Number(tpl.min)||0:0;});
+    recs.sort((a,b)=>{const ci=catIdx.indexOf(a.category)-catIdx.indexOf(b.category);return ci!==0?ci:a._so-b._so;});
+    let lastCat='';
+    recs.forEach((r,idx)=>{
+      if(r.category!==lastCat){
+        lastCat=r.category;
+        const cnt=recs.filter(i=>i.category===lastCat).length;
+        html+=`<tr><td colspan="8" style="background:#5c6bc0;color:#fff;font-weight:700;font-size:13px;padding:8px 16px;border:none"><i class="fas fa-layer-group" style="margin-right:8px"></i>${escHtml(lastCat)} <span style="opacity:.6;font-size:12px;margin-left:8px">${cnt} items</span></td></tr>`;
+      }
+      const qty=Number(r.qty)||0;const min=r._min;
+      const status=qty<=0?'badge-danger':qty<=min?'badge-warning':'badge-success';
+      const statusText=qty<=0?'Out':qty<=min?'Low':'OK';
+      const photoHtml=r._photo?`<img src="https://drive.google.com/thumbnail?id=${r._photo}&sz=w80" style="width:36px;height:36px;object-fit:cover;border-radius:6px">`:'<span style="font-size:18px;opacity:.3">📦</span>';
+      html+=`<tr>
+        <td style="color:var(--text-light);font-size:12px">${idx+1}</td>
+        <td style="text-align:center">${photoHtml}</td>
+        <td><strong>${escHtml(r.name)}</strong></td>
+        <td style="font-size:12px;color:var(--text-light)">${escHtml(r.category)}</td>
+        <td>${escHtml(r.unit)}</td><td>${min}</td>
+        <td style="font-weight:600;text-align:center">${qty}</td>
+        <td><span class="badge ${status}">${statusText}</span></td>
+      </tr>`;
+    });
+    if(!recs.length)html=`<tr><td colspan="8" style="text-align:center;color:var(--text-light);padding:24px"><i class="fas fa-calendar-times" style="font-size:24px;display:block;margin-bottom:8px;opacity:.3"></i>No stock count record for ${dateVal}</td></tr>`;
+  }
+  $('ssBody').innerHTML=html;
 }
 function renderStockTable() {
   const catF=$('stockCat')?.value||'';
@@ -2967,9 +3066,16 @@ async function saveStockOrder(){
 }
 
 async function renderStockCount(c){
-  // Refresh StoreStock from server to pick up Kiosk4 changes
+  // Refresh StoreStock + StockCount from server
   if(API.mode==='cloud'){
-    try{const r=await API.get('getSheet',{sheet:'StoreStock'});if(r&&r.data)D.StoreStock=r.data;}catch(e){}
+    try{
+      const [ssR,scR]=await Promise.all([
+        API.get('getSheet',{sheet:'StoreStock'}),
+        API.get('getSheet',{sheet:'StockCount'})
+      ]);
+      if(ssR&&ssR.data)D.StoreStock=ssR.data;
+      if(scR&&scR.data)D.StockCount=scR.data;
+    }catch(e){}
   }
   const stores=getAccessibleStores();
   const today=new Date().toISOString().split('T')[0];
@@ -3109,7 +3215,7 @@ async function submitStockCount(){
       });
       const store=D.Stores.find(s=>String(s.id)===storeId);
       toast(`Week ${week}: ${items.length} items saved for ${store?store.name:'store'}`,'success');
-      navigate('stock-history');
+      navigate('stock');
     }else{toast('Failed: '+(r?.error||'Unknown error'),'error');}
   }catch(e){toast('Error: '+e.message,'error');}
   if(btn){btn.disabled=false;btn.innerHTML='<i class="fas fa-check"></i> Submit Count';}

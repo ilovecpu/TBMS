@@ -172,8 +172,9 @@ body{font-family:'Noto Sans KR',sans-serif;background:linear-gradient(135deg,#1b
 <div class="status-bar"><span class="status-dot" id="statusDot"></span><span id="statusText">Connecting...</span></div>
 <script>
 const STORE_ID='PAB',STORE_NAME='Pick A Bap';
-const DEFAULT_API='https://script.google.com/macros/s/AKfycbxG4J25YCDRDMJuFShvUIiO6CpYTQY8hemDcjaak8s53-S4z2r6SlbSPN_Lxn5sFFWF/exec';
+const DEFAULT_API='https://script.google.com/macros/s/AKfycbzFtyLjoNaRawPdQf7dG1NwZD0nn6r-wSjb0ZYSdCgLRf3eegRnQs9pjDgbsn4Ve-Oc/exec';
 const API_URL=DEFAULT_API;
+const API_KEY='tBaP2026xKr!mGt9Qz';
 const $=id=>document.getElementById(id);
 function toast(msg,type='info'){const t=document.createElement('div');t.className='toast '+type;t.innerHTML='<i class="fas fa-'+(type==='error'?'exclamation-circle':type==='success'?'check-circle':'info-circle')+'"></i>'+msg;$('toastBox').appendChild(t);setTimeout(()=>t.remove(),3000);}
 function showLoad(t){$('loadingText').textContent=t;$('loading').classList.remove('hidden');}
@@ -182,8 +183,8 @@ function genId(){return 'a_'+Date.now()+'_'+Math.random().toString(36).substr(2,
 function fmtTime(d){return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');}
 function esc(s){if(!s&&s!==0)return'';const d=document.createElement('div');d.textContent=String(s);return d.innerHTML;}
 
-async function apiGet(action){try{const r=await fetch(API_URL+'?action='+action,{redirect:'follow'});return await r.json();}catch(e){console.error(e);return null;}}
-async function apiPost(data){try{const r=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(data),redirect:'follow'});return await r.json();}catch(e){console.error(e);return null;}}
+async function apiGet(action){try{const r=await fetch(API_URL+'?action='+action+'&key='+encodeURIComponent(API_KEY),{redirect:'follow'});return await r.json();}catch(e){console.error(e);return null;}}
+async function apiPost(data){try{data.key=API_KEY;const r=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(data),redirect:'follow'});return await r.json();}catch(e){console.error(e);return null;}}
 
 let staff=[],attendance=[],staffMessages=[],clockTimer=null,currentStaff=null,pinCode='';
 let timeChangeReqs=[],recordsLoaded=false;

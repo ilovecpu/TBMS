@@ -522,13 +522,14 @@ const LS = {
   set(k, v) { localStorage.setItem('tbms_'+k, JSON.stringify(v)); },
   getConfig() { return this.get('config') || {}; }
 };
-const CLOUD_URL = 'https://script.google.com/macros/s/AKfycbxG4J25YCDRDMJuFShvUIiO6CpYTQY8hemDcjaak8s53-S4z2r6SlbSPN_Lxn5sFFWF/exec';
+const CLOUD_URL = 'https://script.google.com/macros/s/AKfycbzFtyLjoNaRawPdQf7dG1NwZD0nn6r-wSjb0ZYSdCgLRf3eegRnQs9pjDgbsn4Ve-Oc/exec';
+const API_KEY = 'tBaP2026xKr!mGt9Qz';
 const API = {
   url: CLOUD_URL, mode: 'cloud',
   async get(action, params={}) {
     if (this.mode !== 'cloud' || !this.url) return null;
     try {
-      let url = this.url + '?action=' + action;
+      let url = this.url + '?action=' + action + '&key=' + encodeURIComponent(API_KEY);
       for (let k in params) url += '&' + k + '=' + encodeURIComponent(params[k]);
       const r = await fetch(url, {redirect:'follow'});
       return await r.json();
@@ -537,6 +538,7 @@ const API = {
   async post(data) {
     if (this.mode !== 'cloud' || !this.url) return null;
     try {
+      data.key = API_KEY;
       const r = await fetch(this.url, {method:'POST', headers:{'Content-Type':'text/plain'}, body:JSON.stringify(data), redirect:'follow'});
       return await r.json();
     } catch(e) { console.error('API POST error:', e); return null; }

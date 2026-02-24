@@ -2179,8 +2179,35 @@ function printStockStatus(){
       <thead><tr><th>Item</th><th class="text-center">Unit</th><th class="text-center">Min</th><th class="text-center">QTY</th><th class="text-center">Status</th></tr></thead>
       <tbody>${rows}</tbody></table>`;
   }
+  // Build Order Required table (items where qty < min)
+  const orderItems=dataItems.filter(s=>{const qty=Number(s.qty)||0;const min=s._min||0;return min>0&&qty<min;});
+  let orderHtml='';
+  if(orderItems.length>0){
+    let oRows='',oLastCat='';
+    orderItems.forEach(s=>{
+      if(s.category!==oLastCat){
+        oLastCat=s.category;
+        oRows+=`<tr style="background:#fff3e0"><td colspan="5" style="font-weight:700;font-size:13px;padding:6px 10px;color:#e65100"><i>⬛</i> ${escHtml(oLastCat)}</td></tr>`;
+      }
+      const qty=Number(s.qty)||0;const min=s._min||0;const shortage=min-qty;
+      oRows+=`<tr>
+        <td><strong>${escHtml(s.name)}</strong></td>
+        <td class="text-center">${escHtml(s.unit)}</td>
+        <td class="text-center">${min}</td>
+        <td class="text-center">${qty}</td>
+        <td class="text-center" style="font-weight:700;color:#c62828;font-size:15px">${shortage}</td>
+      </tr>`;
+    });
+    orderHtml=`<div style="margin-bottom:16px">
+      <div style="font-size:16px;font-weight:700;margin-bottom:6px;color:#c62828">🛒 Order Required (${orderItems.length} items)</div>
+      <table>
+        <thead><tr><th>Item</th><th class="text-center">Unit</th><th class="text-center">Min</th><th class="text-center">Current</th><th class="text-center" style="color:#c62828">Order QTY</th></tr></thead>
+        <tbody>${oRows}</tbody>
+      </table>
+    </div><hr style="border:1px dashed #ccc;margin:12px 0">`;
+  }
   const subtitle=`${store?escHtml(store.name):''} — ${isToday?'Current Stock':dateVal} — ${dataItems.length} items${catF?' — '+escHtml(catF):''}`;
-  let bodyHtml=`<div class="subtitle">${subtitle}</div>${buildTable(page1)}`;
+  let bodyHtml=`${orderHtml}<div class="subtitle">${subtitle}</div>${buildTable(page1)}`;
   if(page2.length>0){
     bodyHtml+=`<div style="page-break-before:always"></div>
       <div class="subtitle" style="margin-top:8px">${subtitle} (cont.)</div>${buildTable(page2)}`;

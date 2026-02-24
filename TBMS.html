@@ -2272,8 +2272,9 @@ function updateStockQty(el) {
   if(item)item.qty=qty;
 }
 function saveStockAll() {
-  renderStoreQtyTable(); toast('Stock quantities saved!','success');
   _bgPost({action:'saveSheet',sheet:'StoreStock',rows:D.StoreStock});
+  toast('Stock quantities saved!','success');
+  renderStockStatusTable();
 }
 
 // ---- Stock Item Add/Edit Modal ----

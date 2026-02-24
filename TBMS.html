@@ -2275,7 +2275,7 @@ function renderStockTable() {
     const supCount=[sup1,sup2,sup3].filter(Boolean).length;
     const supDisplay=sup1?`<span>${escHtml(supName(sup1))}</span>`:'<span style="color:#ccc">—</span>';
     const supExtra=supCount>1?`<span style="font-size:11px;color:var(--accent);margin-left:4px;cursor:help" title="${[sup2,sup3].filter(Boolean).map(c=>supName(c)).join(', ')}">+${supCount-1}</span>`:'';
-    const memoIcon=t.memo?`<i class="fas fa-sticky-note" style="color:var(--warning);margin-left:6px;font-size:11px;cursor:help" title="${escHtml(t.memo)}"></i>`:'';
+    const memoHtml=t.memo?`<div style="font-size:11px;color:var(--text-light);margin-top:2px;line-height:1.3;max-width:200px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical"><i class="fas fa-sticky-note" style="color:var(--warning);margin-right:4px;font-size:10px"></i>${escHtml(t.memo)}</div>`:'';
     const sameCat=items.filter(i=>i.category===t.category);
     const posInCat=sameCat.findIndex(i=>i.id===t.id);
     const isFirst=posInCat===0;const isLast=posInCat===sameCat.length-1;
@@ -2286,7 +2286,7 @@ function renderStockTable() {
         <button onclick="moveTemplateItem('${t.id}',1)"${isLast?' disabled':''}><i class="fas fa-chevron-down"></i></button>
       </div></td>
       <td style="text-align:center;padding:4px">${t.photo?`<img src="https://drive.google.com/thumbnail?id=${t.photo}&sz=w80" style="width:40px;height:40px;object-fit:cover;border-radius:6px;cursor:pointer" onclick="showPhotoLightbox('${t.photo}','${escHtml(t.name)}')">`:'<span style="font-size:20px;opacity:.3">📦</span>'}</td>
-      <td><div style="display:flex;align-items:center"><span class="item-icon ${iconCls}"><i class="fas ${icon}"></i></span><strong>${escHtml(t.name)}</strong>${memoIcon}</div></td>
+      <td><div style="display:flex;align-items:center"><span class="item-icon ${iconCls}"><i class="fas ${icon}"></i></span><div><strong>${escHtml(t.name)}</strong>${memoHtml}</div></div></td>
       <td><span style="font-size:12px;color:var(--text-light)">${escHtml(t.category)}</span></td>
       <td>${escHtml(t.unit)}</td>
       <td style="font-weight:600">${t.min}</td>

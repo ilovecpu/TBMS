@@ -263,6 +263,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
         <div class="menu-item menu-parent" onclick="toggleMenuGroup(this)"><i class="fas fa-boxes-stacked"></i>Stock<i class="fas fa-chevron-down menu-arrow"></i></div>
         <div class="sub-menu">
           <div class="menu-item sub" data-page="stock" onclick="navigate('stock')"><i class="fas fa-warehouse"></i>Stock Status</div>
+          <div class="menu-item sub" data-page="stock-template" onclick="navigate('stock-template')"><i class="fas fa-boxes-stacked"></i>Stock Template</div>
           <div class="menu-item sub" data-page="stock-count" onclick="navigate('stock-count')"><i class="fas fa-clipboard-check"></i>Weekly Count</div>
           <div class="menu-item sub" data-page="sales" onclick="navigate('sales')"><i class="fas fa-chart-bar"></i>Weekly Sales</div>
           <div class="menu-item sub" data-page="analytics" onclick="navigate('analytics')"><i class="fas fa-chart-line"></i>Usage Analytics</div>
@@ -337,6 +338,7 @@ const ALL_PAGES=[
   {id:'payroll',label:'Payroll',icon:'fa-calculator'},
   {id:'messages',label:'Messages',icon:'fa-envelope'},
   {id:'stock',label:'Stock Status',icon:'fa-warehouse'},
+  {id:'stock-template',label:'Stock Template',icon:'fa-boxes-stacked'},
   {id:'stock-count',label:'Weekly Count',icon:'fa-clipboard-check'},
   {id:'sales',label:'Weekly Sales',icon:'fa-chart-bar'},
   {id:'analytics',label:'Usage Analytics',icon:'fa-chart-line'},
@@ -684,7 +686,7 @@ $('loginUser').addEventListener('keydown',e=>{if(e.key==='Enter')$('loginPass').
 // ==================== NAVIGATION ====================
 function toggleSidebar() { $('sidebar').classList.toggle('open');$('sidebarOverlay').classList.toggle('show'); }
 function toggleMenuGroup(el){el.parentElement.classList.toggle('open');}
-const pageTitles={dashboard:'Dashboard',stores:'Store Management',users:'User Management',staff:'Staff List',attendance:'Attendance Records',payroll:'Payroll',messages:'Staff Messages',stock:'Stock Status','stock-count':'Weekly Stock Count',sales:'Weekly Sales',analytics:'Usage Analytics',orders:'Order List',suppliers:'Supplier Management','diary-config':'Diary Configuration','diary-entries':'Diary Records',settings:'General Settings'};
+const pageTitles={dashboard:'Dashboard',stores:'Store Management',users:'User Management',staff:'Staff List',attendance:'Attendance Records',payroll:'Payroll',messages:'Staff Messages',stock:'Stock Status','stock-template':'Stock Template','stock-count':'Weekly Stock Count',sales:'Weekly Sales',analytics:'Usage Analytics',orders:'Order List',suppliers:'Supplier Management','diary-config':'Diary Configuration','diary-entries':'Diary Records',settings:'General Settings'};
 let currentPage='dashboard';
 function navigate(page) {
   // Permission check
@@ -716,6 +718,7 @@ function renderPage(page) {
     case 'attendance': renderAttendance(c); break;
     case 'payroll': renderPayroll(c); break;
     case 'stock': renderStock(c); break;
+    case 'stock-template': renderStockTemplatePage(c); break;
     case 'stock-count': renderStockCount(c); break;
     case 'sales': renderSalesInput(c); break;
     case 'analytics': renderAnalytics(c); break;
@@ -2088,9 +2091,14 @@ async function renderStock(c) {
       <th style="width:40px">#</th><th style="width:50px">Photo</th><th>Item</th><th>Category</th><th>Unit</th><th>Min</th><th style="width:90px">QTY</th><th style="width:80px">Status</th>
     </tr></thead><tbody id="ssBody"></tbody></table></div>
     <div id="ssSaveRow" style="margin-top:12px;text-align:right;display:none"><button class="btn btn-success btn-sm" onclick="saveStockAll()"><i class="fas fa-save"></i> Save All QTY</button></div>
-  </div>
-  <!-- Stock Template Management -->
-  <div class="card">
+  </div>`;
+  renderStockStatusTable();
+}
+// ---- Stock Template Page (separate menu) ----
+function renderStockTemplatePage(c){
+  const cats=getSortedCategories();
+  const stores=getAccessibleStores();
+  c.innerHTML=`<div class="card">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
       <h3><i class="fas fa-boxes-stacked" style="color:var(--accent);margin-right:8px"></i>Stock Template <span id="stockCount" style="font-size:13px;font-weight:400;color:var(--text-light)"></span></h3>
       <div style="display:flex;gap:8px;align-items:center">
@@ -2109,7 +2117,6 @@ async function renderStock(c) {
       <th style="width:40px">#</th><th style="width:50px">Sort</th><th style="width:50px">Photo</th><th>Item</th><th>Category</th><th>Unit</th><th>Min</th><th>Supplier</th><th style="width:100px">Actions</th>
     </tr></thead><tbody id="stockBody"></tbody></table></div>
   </div>`;
-  renderStockStatusTable();
   renderStockTable();
 }
 // ---- Stock Status Table (current / historical) ----

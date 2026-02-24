@@ -1288,7 +1288,7 @@ function openPrintWindow(title,bodyHtml){
     .brand{display:flex;align-items:center;gap:12px;margin-bottom:16px;padding-bottom:12px;border-bottom:2px solid #222}
     .brand h1{margin:0}
     .print-date{font-size:10px;color:#999;text-align:right;margin-bottom:8px}
-    @media print{@page{size:A4;margin:10mm}body{padding:5px}button{display:none !important}}
+    @media print{@page{size:A4;margin:10mm 25mm}body{padding:5px}button{display:none !important}}
   </style></head><body>
   <div class="print-date">Printed: ${new Date().toLocaleString('en-GB')}</div>
   <div class="brand"><h1>The Bap</h1><span style="font-size:12px;color:#666">— ${title}</span></div>

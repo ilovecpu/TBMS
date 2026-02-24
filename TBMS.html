@@ -2191,7 +2191,7 @@ function printStockStatus(){
     orderItems.forEach(s=>{
       if(s.category!==oLastCat){
         oLastCat=s.category;
-        oRows+=`<tr style="background:#fff3e0"><td colspan="5" style="font-weight:700;font-size:13px;padding:6px 10px;color:#e65100"><i>⬛</i> ${escHtml(oLastCat)}</td></tr>`;
+        oRows+=`<tr style="background:#fff3e0"><td colspan="5" style="font-weight:700;font-size:10px;padding:4px 8px;color:#e65100">■ ${escHtml(oLastCat)}</td></tr>`;
       }
       const qty=Number(s.qty)||0;const min=s._min||0;const shortage=min-qty;
       oRows+=`<tr>
@@ -2199,23 +2199,32 @@ function printStockStatus(){
         <td class="text-center">${escHtml(s.unit)}</td>
         <td class="text-center">${min}</td>
         <td class="text-center">${qty}</td>
-        <td class="text-center" style="font-weight:700;color:#c62828;font-size:15px">${shortage}</td>
+        <td class="text-center" style="font-weight:700;color:#c62828">${shortage}</td>
       </tr>`;
     });
-    orderHtml=`<div style="margin-bottom:16px">
-      <div style="font-size:16px;font-weight:700;margin-bottom:6px;color:#c62828">🛒 Order Required (${orderItems.length} items)</div>
+    orderHtml=`<div style="margin-bottom:8px">
+      <div style="font-size:13px;font-weight:700;margin-bottom:4px;color:#c62828">🛒 Order Required (${orderItems.length} items)</div>
       <table>
         <thead><tr><th>Item</th><th class="text-center">Unit</th><th class="text-center">Min</th><th class="text-center">Current</th><th class="text-center" style="color:#c62828">Order QTY</th></tr></thead>
         <tbody>${oRows}</tbody>
       </table>
-    </div><hr style="border:1px dashed #ccc;margin:12px 0">`;
+    </div><hr style="border:1px dashed #ccc;margin:6px 0">`;
   }
   const subtitle=`${store?escHtml(store.name):''} — ${isToday?'Current Stock':dateVal} — ${dataItems.length} items${catF?' — '+escHtml(catF):''}`;
-  let bodyHtml=`${orderHtml}<div class="subtitle">${subtitle}</div>${buildTable(page1)}`;
-  if(page2.length>0){
-    bodyHtml+=`<div style="page-break-before:always"></div>
-      <div class="subtitle" style="margin-top:8px">${subtitle} (cont.)</div>${buildTable(page2)}`;
-  }
+  // Fit everything into exactly 2 A4 pages with compact styling
+  const compactCss=`<style>
+    table{margin-bottom:6px}
+    th{padding:3px 6px;font-size:9px}
+    td{padding:3px 6px;font-size:9px}
+    .cat-row td{font-size:10px;padding:4px 6px}
+    .subtitle{font-size:10px;margin-bottom:6px}
+    .brand{margin-bottom:8px;padding-bottom:6px}
+    .brand h1{font-size:15px}
+    .print-date{margin-bottom:4px}
+  </style>`;
+  let bodyHtml=`${compactCss}${orderHtml}<div class="subtitle">${subtitle}</div>${buildTable(page1)}`;
+  bodyHtml+=`<div style="page-break-before:always"></div>
+    <div class="subtitle" style="margin-top:4px">${subtitle} (cont.)</div>${buildTable(page2)}`;
   openPrintWindow('Stock Status',bodyHtml);
 }
 // ---- Stock Template Page (separate menu) ----

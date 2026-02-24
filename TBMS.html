@@ -1288,7 +1288,7 @@ function openPrintWindow(title,bodyHtml){
     .brand{display:flex;align-items:center;gap:12px;margin-bottom:16px;padding-bottom:12px;border-bottom:2px solid #222}
     .brand h1{margin:0}
     .print-date{font-size:10px;color:#999;text-align:right;margin-bottom:8px}
-    @media print{body{padding:10px}button{display:none !important}}
+    @media print{@page{size:A4;margin:10mm}body{padding:5px}button{display:none !important}}
   </style></head><body>
   <div class="print-date">Printed: ${new Date().toLocaleString('en-GB')}</div>
   <div class="brand"><h1>The Bap</h1><span style="font-size:12px;color:#666">— ${title}</span></div>
@@ -2086,6 +2086,7 @@ async function renderStock(c) {
         <input type="date" id="ssDate" value="${today}" onchange="renderStockStatusTable()" style="padding:8px 12px;border:2px solid var(--border);border-radius:8px;font-size:14px">
         <button class="btn btn-sm" onclick="document.getElementById('ssDate').value='${today}';renderStockStatusTable()" style="background:#f0f0f0;color:#555" title="Today"><i class="fas fa-calendar-day"></i> Today</button>
         <button class="btn btn-sm" onclick="refreshStockStatus()" style="background:#f0f0f0;color:#555" title="Refresh"><i class="fas fa-sync-alt"></i></button>
+        <button class="btn btn-sm" onclick="printStockStatus()" style="background:#f0f0f0;color:#555" title="Print"><i class="fas fa-print"></i></button>
       </div>
     </div>
     <div id="ssStoreBanner" style="margin-bottom:12px"></div>
@@ -2133,6 +2134,58 @@ async function refreshStockStatus(){
     }catch(e){toast('Refresh failed','error');}
   }
   renderStockStatusTable();
+}
+function printStockStatus(){
+  const storeId=$('ssStore')?.value;if(!storeId)return;
+  const store=D.Stores.find(s=>String(s.id)===storeId);
+  const dateVal=$('ssDate')?.value||'';
+  const today=new Date().toISOString().split('T')[0];
+  const isToday=!dateVal||dateVal===today;
+  const catF=$('ssCat')?.value||'';
+  const catIdx=getSortedCategories();
+  let dataItems=[];
+  if(isToday){
+    dataItems=D.StoreStock.filter(s=>String(s.storeId)===storeId);
+  }else{
+    dataItems=D.StockCount.filter(sc=>String(sc.storeId)===storeId&&sc.countDate===dateVal);
+  }
+  if(catF)dataItems=dataItems.filter(s=>s.category===catF);
+  dataItems.forEach(it=>{const tpl=D.StockTemplate.find(t=>String(t.id)===String(it.itemId));it._so=tpl?tpl.sortOrder:9999;it._min=isToday?Number(it.min)||0:(tpl?Number(tpl.min)||0:0);});
+  dataItems.sort((a,b)=>{const ci=catIdx.indexOf(a.category)-catIdx.indexOf(b.category);return ci!==0?ci:(a._so||0)-(b._so||0);});
+  // Split into 2 pages (roughly half)
+  const half=Math.ceil(dataItems.length/2);
+  const page1=dataItems.slice(0,half);
+  const page2=dataItems.slice(half);
+  function buildTable(items){
+    let rows='',lastCat='';
+    items.forEach(s=>{
+      if(s.category!==lastCat){
+        lastCat=s.category;
+        const cnt=items.filter(i=>i.category===lastCat).length;
+        rows+=`<tr class="cat-row"><td colspan="5">${escHtml(lastCat)} (${cnt})</td></tr>`;
+      }
+      const qty=Number(s.qty)||0;const min=s._min||0;
+      const st=qty<=0?'#c62828':qty<=min?'#e65100':'#2e7d32';
+      const stTxt=qty<=0?'Out':qty<=min?'Low':'OK';
+      rows+=`<tr>
+        <td><strong>${escHtml(s.name)}</strong></td>
+        <td class="text-center">${escHtml(s.unit)}</td>
+        <td class="text-center">${min}</td>
+        <td class="text-center" style="font-weight:700">${qty}</td>
+        <td class="text-center" style="color:${st};font-weight:600">${stTxt}</td>
+      </tr>`;
+    });
+    return `<table>
+      <thead><tr><th>Item</th><th class="text-center">Unit</th><th class="text-center">Min</th><th class="text-center">QTY</th><th class="text-center">Status</th></tr></thead>
+      <tbody>${rows}</tbody></table>`;
+  }
+  const subtitle=`${store?escHtml(store.name):''} — ${isToday?'Current Stock':dateVal} — ${dataItems.length} items${catF?' — '+escHtml(catF):''}`;
+  let bodyHtml=`<div class="subtitle">${subtitle}</div>${buildTable(page1)}`;
+  if(page2.length>0){
+    bodyHtml+=`<div style="page-break-before:always"></div>
+      <div class="subtitle" style="margin-top:8px">${subtitle} (cont.)</div>${buildTable(page2)}`;
+  }
+  openPrintWindow('Stock Status',bodyHtml);
 }
 // ---- Stock Template Page (separate menu) ----
 function renderStockTemplatePage(c){

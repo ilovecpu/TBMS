@@ -1292,6 +1292,7 @@ function openPrintWindow(title,bodyHtml){
   </style></head><body>
   <div class="print-date">Printed: ${new Date().toLocaleString('en-GB')}</div>
   <div class="brand"><h1>The Bap</h1><span style="font-size:12px;color:#666">— ${title}</span></div>
+  <div style="text-align:center;margin-bottom:16px"><button onclick="window.print()" style="padding:10px 30px;font-size:14px;font-weight:700;background:#222;color:#fff;border:none;border-radius:8px;cursor:pointer">🖨 Print</button></div>
   ${bodyHtml}
   <div style="text-align:center;margin-top:20px"><button onclick="window.print()" style="padding:10px 30px;font-size:14px;font-weight:700;background:#222;color:#fff;border:none;border-radius:8px;cursor:pointer">🖨 Print</button></div>
   </body></html>`);

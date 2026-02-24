@@ -2178,15 +2178,19 @@ function renderStockStatusTable(){
   const catIdx=getSortedCategories();
   let html='';
   if(isToday){
-    // Live data from StoreStock — auto-create if missing for this store
+    // Live data from StoreStock — auto-fill missing items for this store
     let items=D.StoreStock.filter(s=>String(s.storeId)===storeId);
-    if(!items.length&&D.StockTemplate.length>0&&storeId){
-      D.StockTemplate.forEach(t=>{
-        D.StoreStock.push({storeId,itemId:t.id,category:t.category,name:t.name,unit:t.unit,min:t.min,qty:0});
-      });
-      _bgPost({action:'saveSheet',sheet:'StoreStock',rows:D.StoreStock});
-      items=D.StoreStock.filter(s=>String(s.storeId)===storeId);
-      toast('Stock items created for this store','info');
+    if(storeId&&D.StockTemplate.length>0){
+      const existingIds=new Set(items.map(s=>String(s.itemId)));
+      const missing=D.StockTemplate.filter(t=>!existingIds.has(String(t.id)));
+      if(missing.length>0){
+        missing.forEach(t=>{
+          D.StoreStock.push({storeId,itemId:t.id,category:t.category,name:t.name,unit:t.unit,min:t.min,qty:0});
+        });
+        _bgPost({action:'saveSheet',sheet:'StoreStock',rows:D.StoreStock});
+        items=D.StoreStock.filter(s=>String(s.storeId)===storeId);
+        toast(missing.length+' missing items added','info');
+      }
     }
     if(catF)items=items.filter(s=>s.category===catF);
     if(search)items=items.filter(s=>(s.name||'').toLowerCase().includes(search)||(s.category||'').toLowerCase().includes(search));

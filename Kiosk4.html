@@ -619,32 +619,64 @@ async function openDiary(){
 // ============================================================
 //  STOCK CHECK
 // ============================================================
+let _stockDataDate='';
 async function openStockCheck(){
   $('menuScreen').style.display='none';
   $('stockScreen').classList.add('show');
   $('stockBar').style.background=STORE_COLORS[currentStore];
-  // Set date picker to today
-  // Always load fresh data from server
   showLoading('Loading stock data...');
   const [tplRes,ssRes,coRes]=await Promise.all([
     apiGet('getSheet&sheet=StockTemplate'),
-    apiGet('getStoreData&store='+currentStore+'&sheets=StoreStock'),
+    apiGet('getStoreData&store='+currentStore+'&sheets=StoreStock,StockCount'),
     apiGet('getSetting&key=catOrder')
   ]);
   if(tplRes&&tplRes.data)stockTemplates=tplRes.data;
   if(ssRes&&ssRes.data&&ssRes.data.StoreStock)storeStockItems=ssRes.data.StoreStock;
+  const stockCounts=(ssRes&&ssRes.data&&ssRes.data.StockCount)||[];
   if(coRes&&coRes.value)stockCatOrder=coRes.value;
   else stockCatOrder=[];
-  // Init qty from StoreStock
+  // Find most recent date with valid (non-all-zero) StockCount data
+  const _byDate={};
+  stockCounts.forEach(sc=>{if(!_byDate[sc.countDate])_byDate[sc.countDate]=[];_byDate[sc.countDate].push(sc);});
+  const validDates=Object.keys(_byDate).filter(dt=>_byDate[dt].some(r=>(Number(r.qty)||0)>0)).sort();
+  const latestDate=validDates.length?validDates[validDates.length-1]:'';
+  const latestRecs=latestDate?_byDate[latestDate]:[];
+  _stockDataDate=latestDate;
+  // Init qty: prefer latest StockCount data, fallback to StoreStock
   stockQty={};
-  stockTemplates.forEach(t=>{
-    const ss=storeStockItems.find(s=>String(s.itemId)===String(t.id));
-    stockQty[t.id]=ss?Number(ss.qty)||0:0;
-  });
+  if(latestRecs.length>0){
+    stockTemplates.forEach(t=>{
+      const rec=latestRecs.find(r=>String(r.itemId)===String(t.id));
+      if(rec)stockQty[t.id]=Number(rec.qty)||0;
+      else{const ss=storeStockItems.find(s=>String(s.itemId)===String(t.id));stockQty[t.id]=ss?Number(ss.qty)||0:0;}
+    });
+  }else{
+    stockTemplates.forEach(t=>{
+      const ss=storeStockItems.find(s=>String(s.itemId)===String(t.id));
+      stockQty[t.id]=ss?Number(ss.qty)||0:0;
+    });
+  }
   hideLoading();
   currentStockCat='';
   renderStockCatTabs();
   renderStockItems();
+  // Show data date in stock bar
+  _updateStockBarDate();
+}
+function _updateStockBarDate(){
+  let el=$('stockBarDate');
+  if(!el){
+    const bar=$('stockBar');if(!bar)return;
+    el=document.createElement('span');el.id='stockBarDate';
+    el.style.cssText='font-size:12px;opacity:.85;margin-left:8px;font-weight:400';
+    bar.querySelector('h3').appendChild(el);
+  }
+  if(_stockDataDate){
+    const d=new Date(_stockDataDate+'T12:00:00');
+    el.textContent=' ('+d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})+')';
+  }else{
+    el.textContent=' (No data)';
+  }
 }
 function closeStockCheck(){
   $('stockScreen').classList.remove('show');

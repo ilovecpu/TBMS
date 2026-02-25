@@ -2075,13 +2075,24 @@ async function renderStock(c) {
   const cats=getSortedCategories();
   const stores=getAccessibleStores();
   const today=new Date().toISOString().split('T')[0];
-  const now=new Date();_ssCalYear=now.getFullYear();_ssCalMonth=now.getMonth();
+  // Find most recent date with valid (non-all-zero) stock data for first store
+  const _firstStoreId=stores.length?String(stores[0].id):'';
+  let _latestValid=today;
+  if(_firstStoreId){
+    const _byDate={};
+    D.StockCount.filter(sc=>String(sc.storeId)===_firstStoreId).forEach(sc=>{if(!_byDate[sc.countDate])_byDate[sc.countDate]=[];_byDate[sc.countDate].push(sc);});
+    const _validDates=Object.keys(_byDate).filter(dt=>_byDate[dt].some(r=>(Number(r.qty)||0)>0)).sort();
+    if(_validDates.length)_latestValid=_validDates[_validDates.length-1];
+  }
+  const _initDate=_latestValid;
+  const _initDt=new Date(_initDate+'T12:00:00');
+  _ssCalYear=_initDt.getFullYear();_ssCalMonth=_initDt.getMonth();
   c.innerHTML=`
   <div class="card" style="margin-bottom:16px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">
       <h3><i class="fas fa-warehouse" style="color:var(--accent);margin-right:8px"></i>Stock Status</h3>
       <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
-        <select id="ssStore" onchange="onStoreSelect();renderStockCalendar();renderStockStatusTable()" style="padding:8px 12px;border:2px solid var(--border);border-radius:8px;font-size:14px;font-weight:600">
+        <select id="ssStore" onchange="onStoreSelect()" style="padding:8px 12px;border:2px solid var(--border);border-radius:8px;font-size:14px;font-weight:600">
           ${stores.map((s,i)=>`<option value="${s.id}" data-color="${escHtml(s.color||'')}"${i===0?' selected':''}>${escHtml(s.name)}</option>`).join('')}</select>
         <button class="btn btn-sm" onclick="ssSelectDate('${today}')" style="background:#f0f0f0;color:#555" title="Today"><i class="fas fa-calendar-day"></i> Today</button>
         <button class="btn btn-sm" onclick="refreshStockStatus()" style="background:#f0f0f0;color:#555" title="Refresh"><i class="fas fa-sync-alt"></i></button>
@@ -2094,7 +2105,7 @@ async function renderStock(c) {
     <div id="ssStoreBanner" style="margin-bottom:12px"></div>
     <!-- Calendar -->
     <div id="ssCalendar" style="margin-bottom:16px"></div>
-    <input type="hidden" id="ssDate" value="${today}">
+    <input type="hidden" id="ssDate" value="${_initDate}">
     <!-- Filters -->
     <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
       <select id="ssCat" onchange="renderStockStatusTable()" style="padding:8px 12px;border:2px solid var(--border);border-radius:8px;font-size:14px">
@@ -2127,7 +2138,12 @@ function renderStockCalendar(){
   const today=new Date().toISOString().split('T')[0];
   // Get dates with stock count data for this store+month
   const ym=_ssCalYear+'-'+String(_ssCalMonth+1).padStart(2,'0');
-  const countDates=new Set(D.StockCount.filter(sc=>String(sc.storeId)===storeId&&(sc.countDate||'').startsWith(ym)).map(sc=>sc.countDate));
+  // Only mark dates that have at least one non-zero qty
+  const _scMonth=D.StockCount.filter(sc=>String(sc.storeId)===storeId&&(sc.countDate||'').startsWith(ym));
+  const countDates=new Set();
+  const _scByDate={};
+  _scMonth.forEach(sc=>{if(!_scByDate[sc.countDate])_scByDate[sc.countDate]=[];_scByDate[sc.countDate].push(sc);});
+  Object.keys(_scByDate).forEach(dt=>{if(_scByDate[dt].some(r=>(Number(r.qty)||0)>0))countDates.add(dt);});
   // Build calendar grid
   const firstDay=new Date(_ssCalYear,_ssCalMonth,1).getDay();// 0=Sun
   const daysInMonth=new Date(_ssCalYear,_ssCalMonth+1,0).getDate();
@@ -2163,9 +2179,19 @@ function renderStockCalendar(){
   cal.innerHTML=html;
 }
 const _storeClr={PAB:'#1b5e20',TBS:'#1565c0',TBR:'#6a1b9a',TBB:'#e65100',TBO:'#00838f'};
+function _getLatestValidDate(storeId){
+  const today=new Date().toISOString().split('T')[0];
+  const _byDate={};
+  D.StockCount.filter(sc=>String(sc.storeId)===storeId).forEach(sc=>{if(!_byDate[sc.countDate])_byDate[sc.countDate]=[];_byDate[sc.countDate].push(sc);});
+  const _validDates=Object.keys(_byDate).filter(dt=>_byDate[dt].some(r=>(Number(r.qty)||0)>0)).sort();
+  return _validDates.length?_validDates[_validDates.length-1]:today;
+}
 function onStoreSelect(){
   const sel=$('ssStore');if(!sel)return;
   const storeId=sel.value;
+  // Jump to latest valid date for this store
+  const latestDate=_getLatestValidDate(storeId);
+  ssSelectDate(latestDate);
   const store=D.Stores.find(s=>String(s.id)===storeId);
   const banner=$('ssStoreBanner');
   if(banner&&store){
@@ -2175,7 +2201,6 @@ function onStoreSelect(){
       <div><div style="font-size:18px;font-weight:700">${escHtml(store.name)}</div><div style="font-size:12px;opacity:.7">${escHtml(store.address||'')}</div></div>
     </div>`;
   }else if(banner){banner.innerHTML='';}
-  renderStockStatusTable();
 }
 async function refreshStockStatus(){
   if(API.mode==='cloud'){
@@ -2343,7 +2368,7 @@ function renderStockStatusTable(){
   // Date banner
   const banner=$('ssDateBanner');
   if(banner){
-    if(isToday)banner.innerHTML=`<div style="background:linear-gradient(135deg,#43a047,#66bb6a);color:#fff;padding:10px 16px;border-radius:8px;margin-bottom:12px;font-size:13px;font-weight:600"><i class="fas fa-clock" style="margin-right:8px"></i>Current Stock (Live Data)</div>`;
+    if(isToday)banner.innerHTML=`<div style="background:linear-gradient(135deg,#43a047,#66bb6a);color:#fff;padding:10px 16px;border-radius:8px;margin-bottom:12px;font-size:13px;font-weight:600"><i class="fas fa-clock" style="margin-right:8px"></i>Current Stock — Today (${today})</div>`;
     else if(hasExisting)banner.innerHTML=`<div style="background:linear-gradient(135deg,#1565c0,#42a5f5);color:#fff;padding:10px 16px;border-radius:8px;margin-bottom:12px;font-size:13px;font-weight:600"><i class="fas fa-edit" style="margin-right:8px"></i>Editing stock count for ${dateLabel} (${existingRecs.length} items)</div>`;
     else banner.innerHTML=`<div style="background:linear-gradient(135deg,#e65100,#ff9800);color:#fff;padding:10px 16px;border-radius:8px;margin-bottom:12px;font-size:13px;font-weight:600"><i class="fas fa-plus-circle" style="margin-right:8px"></i>New stock count entry for ${dateLabel}</div>`;
   }
@@ -2494,9 +2519,11 @@ function resetAllQty(){
 async function copyStockToDate(){
   const storeId=$('ssStore')?.value;
   if(!storeId){toast('Select a store','error');return;}
-  const targetDate=prompt('Copy current stock to date (YYYY-MM-DD):');
-  if(!targetDate)return;
-  if(!/^\d{4}-\d{2}-\d{2}$/.test(targetDate)){toast('Invalid date format. Use YYYY-MM-DD','error');return;}
+  const inp=prompt('Copy current stock to date (DD/MM/YYYY):');
+  if(!inp)return;
+  if(!/^\d{2}\/\d{2}\/\d{4}$/.test(inp)){toast('Invalid date format. Use DD/MM/YYYY','error');return;}
+  const [dd,mm,yyyy]=inp.split('/');
+  const targetDate=`${yyyy}-${mm}-${dd}`;
   const today=new Date().toISOString().split('T')[0];
   if(targetDate===today){toast('Cannot copy to today — use Save All QTY instead','error');return;}
   const items=D.StoreStock.filter(s=>String(s.storeId)===storeId).map(s=>({

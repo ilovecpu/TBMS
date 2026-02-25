@@ -2164,7 +2164,9 @@ function printStockStatus(){
     if(s.category!==lastCat){
       const clr=_catColors[catIdx2%_catColors.length];catIdx2++;
       lastCat=s.category;
-      allRows+=`<tr><td colspan="5" style="background:${clr}!important;color:#fff!important;font-weight:700;padding:3px 6px;font-size:8px;text-transform:uppercase">${escHtml(lastCat)}</td></tr>`;
+      const txtClr=['#e65100','#ef6c00'].includes(clr)?'#000':'#fff';
+      allRows+=`<tr><td colspan="5" style="background:${clr}!important;color:${txtClr}!important;font-weight:700;padding:3px 6px;font-size:8px;text-transform:uppercase">${escHtml(lastCat)}</td></tr>`;
+      allRows+=`<tr><td style="background:${clr}!important;color:${txtClr}!important;font-weight:600;font-size:7px;padding:1px 4px">Items</td><td class="c" style="background:${clr}!important;color:${txtClr}!important;font-weight:600;font-size:7px;padding:1px 2px">Unit</td><td class="c" style="background:${clr}!important;color:${txtClr}!important;font-weight:600;font-size:7px;padding:1px 2px">Min</td><td class="c" style="background:${clr}!important;color:${txtClr}!important;font-weight:600;font-size:7px;padding:1px 2px">QTY</td><td class="c" style="background:${clr}!important;color:${txtClr}!important;font-weight:600;font-size:7px;padding:1px 2px">Order</td></tr>`;
     }
     const qty=Number(s.qty)||0;const min=s._min||0;
     const shortage=min>0&&qty<min?min-qty:0;
@@ -2180,7 +2182,7 @@ function printStockStatus(){
   const mid=Math.ceil(rowArr.length/2);
   const leftRows2=rowArr.slice(0,mid).join('</tr>')+'</tr>';
   const rightRows2=rowArr.slice(mid).join('</tr>')+(rowArr.length>mid?'</tr>':'');
-  const thHtml='<thead><tr><th>Items</th><th class="c" style="width:30px">Unit</th><th class="c" style="width:28px">Min</th><th class="c" style="width:28px">QTY</th><th class="c" style="width:34px">Order</th></tr></thead>';
+  const thHtml='';
   const storeName=store?escHtml(store.name):'';
   const storeClr=_storeClr[store?.code]||_storeClr[store?.id]||'#222';
   const dateStr=isToday?today:dateVal;

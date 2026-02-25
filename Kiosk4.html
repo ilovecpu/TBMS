@@ -262,7 +262,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
 <div id="storeScreen" class="store-screen">
   <div style="text-align:center">
     <div style="font-size:48px;margin-bottom:8px">📋</div>
-    <h1>Kiosk 4</h1>
+    <h1>The Bap Management System</h1>
     <p id="storeMsg">Loading stores...</p>
   </div>
   <div class="store-grid" id="storeGrid"></div>
@@ -698,10 +698,12 @@ function renderStockItems(){
       <div class="item-info">
         <div class="item-name">${t.name}</div>
         <div class="item-detail">${t.supplier1||''}</div>
-        <div class="item-min ${isLow?'low':'ok'}"><i class="fas ${isLow?'fa-exclamation-triangle':'fa-check-circle'}"></i> Min: ${storeMin}</div>
       </div>
-      <div style="display:flex;flex-direction:column;align-items:center;gap:2px">
-        <div style="font-size:11px;font-weight:600;color:var(--text-light)">${t.unit||''}</div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:3px">
+        <div style="display:flex;gap:6px;align-items:center">
+          <div style="font-size:11px;font-weight:600;color:var(--text-light)">${t.unit||''}</div>
+          <div class="item-min ${isLow?'low':'ok'}" style="font-size:10px;white-space:nowrap"><i class="fas ${isLow?'fa-exclamation-triangle':'fa-check-circle'}"></i> Min:${storeMin}</div>
+        </div>
         <div class="qty-control">
           <button class="qty-btn minus" onclick="adjQty('${t.id}',-1)">−</button>
           <input type="number" class="qty-val" id="q_${t.id}" value="${qty}" min="0" onchange="setQty('${t.id}',this.value)" inputmode="numeric">

@@ -382,7 +382,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
 // ============================================================
 //  CONFIG
 // ============================================================
-const DEFAULT_API='https://script.google.com/macros/s/AKfycbzweiFpH2YSjDnbYUjbBWEU2U2XOz5DLZ7RGKAvn3HkKW89XCZaqmbBCdfV7N32IFA9/exec';
+const DEFAULT_API='https://script.google.com/macros/s/AKfycbzAWalUojPOQNdAfRzNuDMFYmxUGWdeU5ceKocK4V_s60JDFCBpilvywelKqT5EjX-F/exec';
 const API_URL=DEFAULT_API;
 const API_KEY='tBaP2026xKr!mGt9Qz';
 
@@ -771,10 +771,33 @@ function showStockPhotoView(itemId){
   lb.innerHTML=`<img src="${url}" style="max-width:90vw;max-height:65vh;border-radius:12px;box-shadow:0 8px 40px rgba(0,0,0,.5)">
     <div style="color:#fff;font-size:16px;font-weight:600">${t.name}</div>
     <div style="display:flex;gap:12px;margin-top:8px">
-      <button onclick="document.getElementById('photoLightbox').remove();triggerPhotoUpload('${itemId}')" style="padding:12px 24px;border:none;border-radius:10px;background:var(--accent);color:#fff;font-size:14px;font-weight:600;cursor:pointer"><i class="fas fa-camera"></i> Change Photo</button>
+      <button onclick="document.getElementById('photoLightbox').remove();triggerPhotoUpload('${itemId}')" style="padding:12px 24px;border:none;border-radius:10px;background:var(--accent);color:#fff;font-size:14px;font-weight:600;cursor:pointer"><i class="fas fa-camera"></i> Change</button>
+      <button onclick="deleteStockPhoto('${itemId}')" style="padding:12px 24px;border:none;border-radius:10px;background:#c62828;color:#fff;font-size:14px;font-weight:600;cursor:pointer"><i class="fas fa-trash"></i> Delete</button>
       <button onclick="document.getElementById('photoLightbox').remove()" style="padding:12px 24px;border:none;border-radius:10px;background:rgba(255,255,255,.2);color:#fff;font-size:14px;font-weight:600;cursor:pointer"><i class="fas fa-times"></i> Close</button>
     </div>`;
   document.body.appendChild(lb);
+}
+
+async function deleteStockPhoto(itemId){
+  const lb=document.getElementById('photoLightbox');
+  if(lb)lb.remove();
+  const t=stockTemplates.find(x=>String(x.id)===String(itemId));
+  if(!t)return;
+  if(!confirm('Delete photo for "'+t.name+'"?'))return;
+  showToast('Deleting photo...','info');
+  try{
+    const r=await apiPost({action:'deleteItemPhoto',itemId:itemId});
+    if(r&&r.status==='ok'){
+      delete t._localPhoto;
+      t.photo='';
+      renderStockItems();
+      showToast('Photo deleted!','success');
+    }else{
+      showToast('Delete failed: '+(r?.error||''),'error');
+    }
+  }catch(e){
+    showToast('Delete error','error');
+  }
 }
 
 let _photoUploading=false;

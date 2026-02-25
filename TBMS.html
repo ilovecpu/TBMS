@@ -4090,9 +4090,9 @@ async function renderDiaryConfig(c){
   } else if(!diag||diag.error){
     console.log('[DiaryConfig] diagSheets not available (old deployment). Server ping:', await API.get('ping'));
   }
-  const storeFilter=currentUser.storeId||'';
-  const stores=D.Stores.filter(s=>s.active!==false&&s.active!=='false');
-  let selStore=storeFilter||stores[0]?.code||'';
+  const stores=getAccessibleStores();
+  const _userStore=currentUser.storeId?D.Stores.find(s=>String(s.id)===String(currentUser.storeId)):null;
+  let selStore=_userStore?_userStore.code:(stores[0]?.code||'');
   const selStoreName=(stores.find(s=>s.code===selStore)||{}).name||selStore;
   c.innerHTML=`
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap">
@@ -4212,8 +4212,9 @@ let _deEditEntryId=null;
 
 async function renderDiaryEntries(c){
   await loadDiaryData();
-  const stores=D.Stores.filter(s=>s.active!==false&&s.active!=='false');
-  const selStore=currentUser.storeId||stores[0]?.code||'';
+  const stores=getAccessibleStores();
+  const _userStore2=currentUser.storeId?D.Stores.find(s=>String(s.id)===String(currentUser.storeId)):null;
+  const selStore=_userStore2?_userStore2.code:(stores[0]?.code||'');
   const selStoreName=(stores.find(s=>s.code===selStore)||{}).name||selStore;
   c.innerHTML=`
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px;flex-wrap:wrap">

@@ -523,7 +523,7 @@ const LS = {
   set(k, v) { localStorage.setItem('tbms_'+k, JSON.stringify(v)); },
   getConfig() { return this.get('config') || {}; }
 };
-const CLOUD_URL = 'https://script.google.com/macros/s/AKfycbzAWalUojPOQNdAfRzNuDMFYmxUGWdeU5ceKocK4V_s60JDFCBpilvywelKqT5EjX-F/exec';
+const CLOUD_URL = 'https://script.google.com/macros/s/AKfycbyMFWvkIEjupDwXv3ORoS00sBJEjfNgc0-TGyXf-0o3r0orEZ-WF6KmuLy-Msxdv8eI/exec';
 const API_KEY = 'tBaP2026xKr!mGt9Qz';
 const API = {
   url: CLOUD_URL, mode: 'cloud',
@@ -3244,7 +3244,7 @@ async function renderStockCount(c){
         <select id="scCat" onchange="renderStockCountTable()" style="padding:10px;border:2px solid var(--border);border-radius:8px">
           <option value="">All Categories</option>${cats.map(cat=>`<option>${escHtml(cat)}</option>`).join('')}</select></div>
       <div class="form-group" style="margin:0"><label>Count Date</label>
-        <input type="date" id="scDate" value="${today}" style="padding:10px;border:2px solid var(--border);border-radius:8px"></div>
+        <input type="date" id="scDate" value="${today}" onchange="onScDateChange()" style="padding:10px;border:2px solid var(--border);border-radius:8px"></div>
       <button class="btn btn-outline btn-sm" id="scReorderBtn" onclick="toggleReorderMode()" style="height:44px"><i class="fas fa-arrows-up-down"></i> Reorder</button>
       <button class="btn btn-outline btn-sm" onclick="printStockCount()" style="height:44px"><i class="fas fa-print"></i> Print</button>
       <button class="btn btn-primary" id="scSubmitBtn" onclick="submitStockCount()" style="height:44px"><i class="fas fa-check"></i> Submit Count</button>
@@ -3285,8 +3285,26 @@ function renderStockCountTable(){
   items.forEach(it=>{const tpl=D.StockTemplate.find(t=>t.id===it.itemId);it._so=tpl?tpl.sortOrder:9999;});
   const _ci3=getSortedCategories();
   items.sort((a,b)=>{const ci=_ci3.indexOf(a.category)-_ci3.indexOf(b.category);return ci!==0?ci:a._so-b._so;});
+  // Check if editing existing date
+  const selDate=$('scDate')?.value||'';
+  const today=new Date().toISOString().split('T')[0];
+  const isToday=selDate===today;
+  const existingForDate=D.StockCount.filter(sc=>String(sc.storeId)===storeId&&sc.countDate===selDate);
+  const hasExisting=existingForDate.length>0;
+  // Date banner
+  const scSubmitBtn=$('scSubmitBtn');
+  if(scSubmitBtn){
+    if(!isToday&&hasExisting){scSubmitBtn.innerHTML='<i class="fas fa-save"></i> Update Count';}
+    else{scSubmitBtn.innerHTML='<i class="fas fa-check"></i> Submit Count';}
+  }
   // Group by category with section headers
-  let html='';let lastCat='';
+  let html='';
+  if(!isToday){
+    const dateLabel=new Date(selDate+'T12:00:00').toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+    html+=`<tr><td colspan="${cols}" style="background:${hasExisting?'#1565c0':'#e65100'};color:#fff;font-weight:600;font-size:13px;padding:8px 16px;border:none;text-align:center">
+      <i class="fas ${hasExisting?'fa-edit':'fa-plus-circle'}" style="margin-right:6px"></i>${hasExisting?'Editing existing count for':'New count for'} ${dateLabel} ${hasExisting?'('+existingForDate.length+' items)':''}</td></tr>`;
+  }
+  let lastCat='';
   items.forEach((item,idx)=>{
     if(item.category!==lastCat){
       lastCat=item.category;
@@ -3296,6 +3314,9 @@ function renderStockCountTable(){
         <i class="fas ${catIcon}" style="margin-right:8px"></i>${escHtml(lastCat)} <span style="opacity:.6;font-weight:400;font-size:12px;margin-left:8px">${catCount} items</span></td></tr>`;
     }
     const prev=getLastCount(storeId,item.itemId);
+    // If editing past date, fill with that date's value
+    const dateVal=!isToday?getCountForDate(storeId,item.itemId,selDate):null;
+    const fillVal=dateVal!==null?dateVal:(prev!==null?prev:'');
     const icon=stockItemIcon(item.name);
     const iconCls=stockIconClass(item.category);
     const catItems=items.filter(i=>i.category===item.category);
@@ -3311,7 +3332,7 @@ function renderStockCountTable(){
       <td style="padding:5px 6px;white-space:nowrap"><div style="display:flex;align-items:center"><span class="item-icon ${iconCls}" style="width:22px;height:22px;font-size:9px;margin-right:5px;flex-shrink:0"><i class="fas ${icon}"></i></span><strong style="font-size:13px">${escHtml(item.name)}</strong></div></td>
       <td style="text-align:center;padding:4px 6px;font-size:11px;white-space:nowrap">${escHtml(item.unit)}</td>
       <td style="text-align:center;padding:4px 6px;color:var(--text-light);font-size:12px;white-space:nowrap">${prev!==null?prev:'—'}</td>
-      <td style="padding:4px 6px;white-space:nowrap"><input type="number" min="0" step="0.5" class="sc-qty" data-item="${item.itemId}" data-cat="${escHtml(item.category)}" data-name="${escHtml(item.name)}" data-unit="${escHtml(item.unit)}" value="${prev!==null?prev:''}" placeholder="0" style="width:60px;padding:5px 2px;border:2px solid var(--border);border-radius:6px;font-size:13px;font-weight:600;text-align:center" oninput="updateScDelta(this)"></td>
+      <td style="padding:4px 6px;white-space:nowrap"><input type="number" min="0" step="0.5" class="sc-qty" data-item="${item.itemId}" data-cat="${escHtml(item.category)}" data-name="${escHtml(item.name)}" data-unit="${escHtml(item.unit)}" value="${fillVal}" placeholder="0" style="width:60px;padding:5px 2px;border:2px solid ${dateVal!==null?'#1565c0':'var(--border)'};border-radius:6px;font-size:13px;font-weight:600;text-align:center${dateVal!==null?';background:#e3f2fd':''}" oninput="updateScDelta(this)"></td>
       <td style="text-align:center;padding:4px 6px;font-size:11px;white-space:nowrap"><span class="sc-delta" data-item="${item.itemId}">—</span></td>
     </tr>`;
   });
@@ -3321,6 +3342,13 @@ function renderStockCountTable(){
 function getLastCount(storeId,itemId){
   const recs=D.StockCount.filter(sc=>String(sc.storeId)===storeId&&String(sc.itemId)===itemId).sort((a,b)=>(b.countDate||'').localeCompare(a.countDate||''));
   return recs.length?Number(recs[0].qty):null;
+}
+function getCountForDate(storeId,itemId,date){
+  const rec=D.StockCount.find(sc=>String(sc.storeId)===storeId&&String(sc.itemId)===itemId&&sc.countDate===date);
+  return rec?Number(rec.qty):null;
+}
+function onScDateChange(){
+  renderStockCountTable();
 }
 function updateScDelta(el){
   const newQty=parseFloat(el.value)||0;
@@ -3352,27 +3380,33 @@ async function submitStockCount(){
     }
   });
   if(items.length===0){toast('Enter at least one item','error');return;}
+  const today=new Date().toISOString().split('T')[0];
+  const isToday=countDate===today;
   const btn=$('scSubmitBtn');if(btn){btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Saving...';}
   try{
     const r=await API.post({action:'saveStockCount',storeId,countDate,items,submittedBy:currentUser?.id||''});
     if(r&&!r.error){
-      // Update local StoreStock qty
-      items.forEach(item=>{
-        const ss=D.StoreStock.find(s=>String(s.storeId)===storeId&&String(s.itemId)===item.itemId);
-        if(ss)ss.qty=item.qty;
-      });
-      // Add to local StockCount
+      // Only update current StoreStock qty if saving today's data
+      if(isToday){
+        items.forEach(item=>{
+          const ss=D.StoreStock.find(s=>String(s.storeId)===storeId&&String(s.itemId)===item.itemId);
+          if(ss)ss.qty=item.qty;
+        });
+      }
+      // Remove old local StockCount for this store+date, then add new
+      D.StockCount=D.StockCount.filter(sc=>!(String(sc.storeId)===storeId&&sc.countDate===countDate));
       const week=getISOWeek(new Date(countDate));
       const ts=new Date().toISOString();
       items.forEach(item=>{
         D.StockCount.push({id:'sc'+Date.now()+Math.random().toString(36).substr(2,4),storeId,week,countDate,itemId:item.itemId,category:item.category,name:item.name,unit:item.unit,qty:item.qty,submittedBy:currentUser?.id||'',submittedAt:ts});
       });
       const store=D.Stores.find(s=>String(s.id)===storeId);
-      toast(`Week ${week}: ${items.length} items saved for ${store?store.name:'store'}`,'success');
+      const action=isToday?'saved':'updated';
+      toast(`Week ${week}: ${items.length} items ${action} for ${store?store.name:'store'} (${countDate})`,'success');
       navigate('stock');
     }else{toast('Failed: '+(r?.error||'Unknown error'),'error');}
   }catch(e){toast('Error: '+e.message,'error');}
-  if(btn){btn.disabled=false;btn.innerHTML='<i class="fas fa-check"></i> Submit Count';}
+  if(btn){btn.disabled=false;btn.innerHTML=isToday?'<i class="fas fa-check"></i> Submit Count':'<i class="fas fa-save"></i> Update Count';}
 }
 
 // ==================== COUNT HISTORY ====================

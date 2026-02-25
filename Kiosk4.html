@@ -386,7 +386,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
 // ============================================================
 //  CONFIG
 // ============================================================
-const DEFAULT_API='https://script.google.com/macros/s/AKfycbzAWalUojPOQNdAfRzNuDMFYmxUGWdeU5ceKocK4V_s60JDFCBpilvywelKqT5EjX-F/exec';
+const DEFAULT_API='https://script.google.com/macros/s/AKfycbyMFWvkIEjupDwXv3ORoS00sBJEjfNgc0-TGyXf-0o3r0orEZ-WF6KmuLy-Msxdv8eI/exec';
 const API_URL=DEFAULT_API;
 const API_KEY='tBaP2026xKr!mGt9Qz';
 
@@ -623,7 +623,7 @@ async function openStockCheck(){
   $('menuScreen').style.display='none';
   $('stockScreen').classList.add('show');
   $('stockBar').style.background=STORE_COLORS[currentStore];
-
+  // Set date picker to today
   // Always load fresh data from server
   showLoading('Loading stock data...');
   const [tplRes,ssRes,coRes]=await Promise.all([

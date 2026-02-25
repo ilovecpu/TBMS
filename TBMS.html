@@ -2164,23 +2164,23 @@ function printStockStatus(){
     if(s.category!==lastCat){
       const clr=_catColors[catIdx2%_catColors.length];catIdx2++;
       lastCat=s.category;
-      allRows+=`<tr><td colspan="4" style="background:${clr}!important;color:#fff!important;font-weight:700;padding:3px 6px;font-size:8px;text-transform:uppercase">${escHtml(lastCat)}</td></tr>`;
+      allRows+=`<tr><td colspan="5" style="background:${clr}!important;color:#fff!important;font-weight:700;padding:3px 6px;font-size:8px;text-transform:uppercase">${escHtml(lastCat)}</td></tr>`;
     }
     const qty=Number(s.qty)||0;const min=s._min||0;
     const shortage=min>0&&qty<min?min-qty:0;
     const needOrder=shortage>0;
-    const unit=s.unit?` <span class="u">(${escHtml(s.unit)})</span>`:'';
-    const nameHtml=needOrder?`<b>${escHtml(s.name)}</b>${unit}`:escHtml(s.name)+unit;
+    const nameHtml=needOrder?`<b>${escHtml(s.name)}</b>`:escHtml(s.name);
+    const unitHtml=s.unit?escHtml(s.unit):'';
     const qtyStyle=needOrder?'font-weight:700;color:#c62828':'';
     const orderCell=needOrder?`<td class="c" style="font-weight:700;color:#c62828">${shortage}</td>`:`<td class="c" style="color:#ccc">-</td>`;
-    allRows+=`<tr${needOrder?' style="background:#ffe0e6!important"':''}><td>${nameHtml}</td><td class="c">${min}</td><td class="c" style="${qtyStyle}">${qty}</td>${orderCell}</tr>`;
+    allRows+=`<tr${needOrder?' style="background:#ffe0e6!important"':''}><td>${nameHtml}</td><td class="c">${unitHtml}</td><td class="c">${min}</td><td class="c" style="${qtyStyle}">${qty}</td>${orderCell}</tr>`;
   });
   // Split rows into 2 halves for left/right columns
   const rowArr=allRows.split('</tr>').filter(r=>r.trim());
   const mid=Math.ceil(rowArr.length/2);
   const leftRows2=rowArr.slice(0,mid).join('</tr>')+'</tr>';
   const rightRows2=rowArr.slice(mid).join('</tr>')+(rowArr.length>mid?'</tr>':'');
-  const thHtml='<thead><tr><th>Items</th><th class="c" style="width:32px">Min</th><th class="c" style="width:32px">QTY</th><th class="c" style="width:38px">Order</th></tr></thead>';
+  const thHtml='<thead><tr><th>Items</th><th class="c" style="width:30px">Unit</th><th class="c" style="width:28px">Min</th><th class="c" style="width:28px">QTY</th><th class="c" style="width:34px">Order</th></tr></thead>';
   const storeName=store?escHtml(store.name):'';
   const storeClr=_storeClr[store?.code]||_storeClr[store?.id]||'#222';
   const dateStr=isToday?today:dateVal;

@@ -697,13 +697,16 @@ function renderStockItems(){
       <div class="item-photo" onclick="${photoUrl?`showStockPhotoView('${t.id}')`:`triggerPhotoUpload('${t.id}')`}">${photoUrl?'<img src="'+photoUrl+'" alt="">':'📦'}<div class="photo-badge"><i class="fas ${photoUrl?'fa-search-plus':'fa-camera'}"></i></div></div>
       <div class="item-info">
         <div class="item-name">${t.name}</div>
-        <div class="item-detail">${t.unit}${t.supplier1?' · '+t.supplier1:''}</div>
+        <div class="item-detail">${t.supplier1||''}</div>
         <div class="item-min ${isLow?'low':'ok'}"><i class="fas ${isLow?'fa-exclamation-triangle':'fa-check-circle'}"></i> Min: ${storeMin}</div>
       </div>
-      <div class="qty-control">
-        <button class="qty-btn minus" onclick="adjQty('${t.id}',-1)">−</button>
-        <input type="number" class="qty-val" id="q_${t.id}" value="${qty}" min="0" onchange="setQty('${t.id}',this.value)" inputmode="numeric">
-        <button class="qty-btn plus" onclick="adjQty('${t.id}',1)">+</button>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+        <div style="font-size:11px;font-weight:600;color:var(--text-light)">${t.unit||''}</div>
+        <div class="qty-control">
+          <button class="qty-btn minus" onclick="adjQty('${t.id}',-1)">−</button>
+          <input type="number" class="qty-val" id="q_${t.id}" value="${qty}" min="0" onchange="setQty('${t.id}',this.value)" inputmode="numeric">
+          <button class="qty-btn plus" onclick="adjQty('${t.id}',1)">+</button>
+        </div>
       </div>
     </div>`;
   });

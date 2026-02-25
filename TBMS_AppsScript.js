@@ -2,7 +2,7 @@
 //  TBMS - The Bap Management System v2.4
 //  Google Apps Script Backend (Code.gs)
 //  Deployed: 2026-02-17
-//  URL: https://script.google.com/macros/s/AKfycbxG4J25YCDRDMJuFShvUIiO6CpYTQY8hemDcjaak8s53-S4z2r6SlbSPN_Lxn5sFFWF/exec
+//  URL: https://script.google.com/macros/s/AKfycbzEegRzp3A5qE_7Flu2Mi301RnikBpnYdmyuzU7YDNgVR7bZsNhYsr04ylvi7ZyXttc/exec
 // ============================================================
 //  SETUP:
 //  1. Google Drive > New > Google Sheets > Name "TBMS Database"
@@ -40,6 +40,13 @@ const TIME_FIELDS = ['clockIn','clockOut'];
 // Fields that are date (yyyy-MM-dd format)
 const DATE_FIELDS = ['dob','startDate','leftDate','date','countDate','weekStart'];
 
+// ===== SECRET KEY — change this to your own random string =====
+const API_SECRET = 'tBaP2026xKr!mGt9Qz';
+
+function checkKey(key) {
+  return key === API_SECRET;
+}
+
 // Normalize header for fuzzy matching: "Nick Name" → "nickname", "nickName" → "nickname"
 function normalizeHeader(h) {
   return String(h).replace(/[\s_-]+/g, '').toLowerCase();
@@ -48,6 +55,12 @@ function normalizeHeader(h) {
 function doGet(e) {
   try {
     var action = (e && e.parameter && e.parameter.action) ? e.parameter.action : 'ping';
+    if (action === 'ping') {
+      return ContentService.createTextOutput(JSON.stringify({status:'ok'})).setMimeType(ContentService.MimeType.JSON);
+    }
+    if (!checkKey(e && e.parameter ? e.parameter.apikey : '')) {
+      return ContentService.createTextOutput(JSON.stringify({error:'Unauthorized'})).setMimeType(ContentService.MimeType.JSON);
+    }
     var sheet = (e && e.parameter) ? e.parameter.sheet : null;
     var result;
     switch(action) {
@@ -58,6 +71,7 @@ function doGet(e) {
       case 'init':     result = initSheets(); break;
       case 'ping':     result = {status:'ok', time: new Date().toISOString(), version:'TBMS 2.4'}; break;
       case 'diagSheets': result = {status:'ok', sheets: Object.keys(SHEETS)}; break;
+      case 'getArchive': result = getArchiveData(e.parameter.sheet, e.parameter.store, e.parameter.from, e.parameter.to); break;
       default:         result = {error:'Unknown action: '+action};
     }
     return ContentService.createTextOutput(JSON.stringify(result)).setMimeType(ContentService.MimeType.JSON);
@@ -71,6 +85,9 @@ function doPost(e) {
   try {
     lock.waitLock(30000);
     var data = JSON.parse(e.postData.contents);
+    if (!checkKey(data.apikey)) {
+      return ContentService.createTextOutput(JSON.stringify({error:'Unauthorized'})).setMimeType(ContentService.MimeType.JSON);
+    }
     var result;
     switch(data.action) {
       case 'saveSheet':  result = saveSheet(data.sheet, data.rows); break;
@@ -81,11 +98,13 @@ function doPost(e) {
       case 'clockOutPhoto': result = clockOutWithPhoto(data); break;
       case 'saveStockCount': result = saveStockCount(data); break;
       case 'saveItemPhoto': result = saveItemPhoto(data); break;
+      case 'deleteItemPhoto': result = deleteItemPhoto(data); break;
       case 'editLog':    result = appendEditLog(data); break;
       case 'timeChangeReq': result = createTimeChangeReq(data); break;
       case 'reviewTimeReq': result = reviewTimeChangeReq(data); break;
       case 'ackTimeReq':   result = ackTimeChangeReq(data); break;
       case 'saveSetting': result = saveSetting(data.key, data.value); break;
+      case 'runArchive': result = archiveOldData(); break;
       case 'initData':   result = initWithData(data); break;
       default:           result = {error:'Unknown action: '+data.action};
     }
@@ -578,6 +597,23 @@ function saveStockCount(data) {
   var timestamp = new Date().toISOString();
   var submittedBy = data.submittedBy || '';
 
+  // Delete existing rows for same storeId + countDate (upsert behavior)
+  var storeCol = headers.indexOf('storeId') + 1;
+  var dateCol = headers.indexOf('countDate') + 1;
+  if (storeCol > 0 && dateCol > 0) {
+    var allData = scSheet.getDataRange().getValues();
+    var delRows = [];
+    for (var d = allData.length - 1; d >= 1; d--) {
+      if (String(allData[d][storeCol - 1]) === String(data.storeId) && String(allData[d][dateCol - 1]) === String(data.countDate)) {
+        delRows.push(d + 1);
+      }
+    }
+    // Delete from bottom to top to preserve row indices
+    for (var dr = 0; dr < delRows.length; dr++) {
+      scSheet.deleteRow(delRows[dr]);
+    }
+  }
+
   // Build rows for batch append
   var rows = [];
   for (var i = 0; i < data.items.length; i++) {
@@ -603,25 +639,27 @@ function saveStockCount(data) {
     scSheet.getRange(scSheet.getLastRow() + 1, 1, rows.length, headers.length).setValues(rows);
     // Force text format for date column
     var lastRow = scSheet.getLastRow();
-    var dateCol = headers.indexOf('countDate') + 1;
     if (dateCol > 0) {
       scSheet.getRange(lastRow - rows.length + 1, dateCol, rows.length, 1).setNumberFormat('@');
     }
   }
 
-  // Sync StoreStock qty for each item
-  var ssSheet = ss.getSheetByName('StoreStock');
-  if (ssSheet) {
-    var ssData = ssSheet.getDataRange().getValues();
-    var ssHeaders = SHEETS.StoreStock;
-    var storeCol = ssHeaders.indexOf('storeId');
-    var itemCol = ssHeaders.indexOf('itemId');
-    var qtyCol = ssHeaders.indexOf('qty');
-    for (var j = 0; j < data.items.length; j++) {
-      for (var r = 1; r < ssData.length; r++) {
-        if (String(ssData[r][storeCol]) === String(data.storeId) && String(ssData[r][itemCol]) === String(data.items[j].itemId)) {
-          ssSheet.getRange(r + 1, qtyCol + 1).setValue(Number(data.items[j].qty) || 0);
-          break;
+  // Sync StoreStock qty only if countDate is today (don't overwrite current stock with past data)
+  var todayStr = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd');
+  if (data.countDate === todayStr) {
+    var ssSheet = ss.getSheetByName('StoreStock');
+    if (ssSheet) {
+      var ssData = ssSheet.getDataRange().getValues();
+      var ssHeaders = SHEETS.StoreStock;
+      var ssStoreCol = ssHeaders.indexOf('storeId');
+      var ssItemCol = ssHeaders.indexOf('itemId');
+      var ssQtyCol = ssHeaders.indexOf('qty');
+      for (var j = 0; j < data.items.length; j++) {
+        for (var r = 1; r < ssData.length; r++) {
+          if (String(ssData[r][ssStoreCol]) === String(data.storeId) && String(ssData[r][ssItemCol]) === String(data.items[j].itemId)) {
+            ssSheet.getRange(r + 1, ssQtyCol + 1).setValue(Number(data.items[j].qty) || 0);
+            break;
+          }
         }
       }
     }
@@ -650,6 +688,32 @@ function saveItemPhoto(data) {
     if (String(allData[i][0]) === String(data.itemId)) {
       sheet.getRange(i + 1, photoCol).setValue(fileId);
       return {status: 'ok', fileId: fileId};
+    }
+  }
+  return {error: 'Item not found: ' + data.itemId};
+}
+
+// ============================================================
+//  deleteItemPhoto — Remove photo from a StockTemplate item
+// ============================================================
+function deleteItemPhoto(data) {
+  if (!data.itemId) return {error: 'Missing itemId'};
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName('StockTemplate');
+  if (!sheet) return {error: 'StockTemplate sheet not found'};
+  var headers = SHEETS.StockTemplate;
+  var photoCol = headers.indexOf('photo') + 1;
+  if (photoCol < 1) return {error: 'photo column not found'};
+  var allData = sheet.getDataRange().getValues();
+  for (var i = 1; i < allData.length; i++) {
+    if (String(allData[i][0]) === String(data.itemId)) {
+      var oldFileId = allData[i][photoCol - 1];
+      sheet.getRange(i + 1, photoCol).setValue('');
+      // Try to delete the file from Drive
+      if (oldFileId) {
+        try { DriveApp.getFileById(String(oldFileId)).setTrashed(true); } catch(e) {}
+      }
+      return {status: 'ok'};
     }
   }
   return {error: 'Item not found: ' + data.itemId};
@@ -772,4 +836,99 @@ function ackTimeChangeReq(data) {
     }
   }
   return {error: 'Request not found'};
+}
+
+// ============================================================
+//  DATA ARCHIVE — moves records older than 3 months to archive sheets
+//  Sheets archived: StockCount, Attendance, EditLog, DiaryEntry
+//  Archive sheet names: StockCount_Archive, Attendance_Archive, etc.
+//  Run manually or via time-based trigger (monthly recommended)
+// ============================================================
+function archiveOldData() {
+  var cutoff = new Date();
+  cutoff.setMonth(cutoff.getMonth() - 3);
+  var cutoffStr = Utilities.formatDate(cutoff, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheetsToArchive = [
+    {name: 'StockCount', dateField: 'countDate'},
+    {name: 'Attendance', dateField: 'date'},
+    {name: 'EditLog', dateField: 'date'},
+    {name: 'DiaryEntry', dateField: 'date'}
+  ];
+  var summary = [];
+  sheetsToArchive.forEach(function(cfg) {
+    var sheet = ss.getSheetByName(cfg.name);
+    if (!sheet || sheet.getLastRow() < 2) return;
+    var headers = SHEETS[cfg.name];
+    if (!headers) return;
+    var dateCol = headers.indexOf(cfg.dateField);
+    if (dateCol < 0) return;
+    var allData = sheet.getDataRange().getValues();
+    var headerRow = allData[0];
+    // Split into keep vs archive
+    var keep = [];
+    var archive = [];
+    for (var i = 1; i < allData.length; i++) {
+      var dateVal = String(allData[i][dateCol] || '');
+      if (dateVal.length >= 10) dateVal = dateVal.substring(0, 10);
+      if (dateVal && dateVal < cutoffStr) {
+        archive.push(allData[i]);
+      } else {
+        keep.push(allData[i]);
+      }
+    }
+    if (archive.length === 0) { summary.push(cfg.name + ': 0 archived'); return; }
+    // Get or create archive sheet
+    var archName = cfg.name + '_Archive';
+    var archSheet = ss.getSheetByName(archName);
+    if (!archSheet) {
+      archSheet = ss.insertSheet(archName);
+      archSheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+    }
+    // Append archived rows
+    var lastRow = archSheet.getLastRow();
+    archSheet.getRange(lastRow + 1, 1, archive.length, headers.length).setValues(archive);
+    // Rewrite main sheet with kept rows only
+    if (sheet.getLastRow() > 1) {
+      sheet.getRange(2, 1, sheet.getLastRow() - 1, sheet.getLastColumn()).clearContent();
+    }
+    if (keep.length > 0) {
+      sheet.getRange(2, 1, keep.length, headers.length).setValues(keep);
+    }
+    summary.push(cfg.name + ': ' + archive.length + ' archived, ' + keep.length + ' kept');
+  });
+  return {status: 'ok', cutoffDate: cutoffStr, results: summary};
+}
+
+// Retrieve archived data for a specific sheet, optionally filtered by store and date range
+function getArchiveData(sheetName, storeId, dateFrom, dateTo) {
+  if (!sheetName) return {error: 'Missing sheetName'};
+  var archName = sheetName + '_Archive';
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var archSheet = ss.getSheetByName(archName);
+  if (!archSheet || archSheet.getLastRow() < 2) return {status: 'ok', data: []};
+  var headers = SHEETS[sheetName];
+  if (!headers) return {error: 'Unknown sheet: ' + sheetName};
+  var storeCol = headers.indexOf('storeId');
+  var dateField = sheetName === 'StockCount' ? 'countDate' : 'date';
+  var dateCol = headers.indexOf(dateField);
+  var allData = archSheet.getDataRange().getValues();
+  var rows = [];
+  for (var i = 1; i < allData.length; i++) {
+    // Filter by store
+    if (storeId && storeCol >= 0 && String(allData[i][storeCol]) !== String(storeId)) continue;
+    // Filter by date range
+    if (dateCol >= 0) {
+      var d = String(allData[i][dateCol] || '');
+      if (d.length >= 10) d = d.substring(0, 10);
+      if (dateFrom && d < dateFrom) continue;
+      if (dateTo && d > dateTo) continue;
+    }
+    var row = {};
+    for (var j = 0; j < headers.length; j++) {
+      row[headers[j]] = allData[i][j] !== undefined ? allData[i][j] : '';
+    }
+    rows.push(row);
+  }
+  return {status: 'ok', data: rows, total: rows.length};
 }

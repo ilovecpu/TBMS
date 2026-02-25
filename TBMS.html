@@ -527,7 +527,7 @@ const LS = {
   set(k, v) { localStorage.setItem('tbms_'+k, JSON.stringify(v)); },
   getConfig() { return this.get('config') || {}; }
 };
-const CLOUD_URL = 'https://script.google.com/macros/s/AKfycbyMFWvkIEjupDwXv3ORoS00sBJEjfNgc0-TGyXf-0o3r0orEZ-WF6KmuLy-Msxdv8eI/exec';
+const CLOUD_URL = 'https://script.google.com/macros/s/AKfycbzEegRzp3A5qE_7Flu2Mi301RnikBpnYdmyuzU7YDNgVR7bZsNhYsr04ylvi7ZyXttc/exec';
 const API_KEY = 'tBaP2026xKr!mGt9Qz';
 const API = {
   url: CLOUD_URL, mode: 'cloud',
@@ -2141,10 +2141,10 @@ async function renderStock(c) {
   renderStockCalendar();
   renderStockStatusTable();
 }
-function ssSelectDate(d){
+async function ssSelectDate(d){
   const el=$('ssDate');if(el)el.value=d;
   const dt=new Date(d+'T12:00:00');_ssCalYear=dt.getFullYear();_ssCalMonth=dt.getMonth();
-  renderStockCalendar();renderStockStatusTable();
+  renderStockCalendar();await renderStockStatusTable();renderStockCalendar();
 }
 function renderStockCalendar(){
   const cal=$('ssCalendar');if(!cal)return;
@@ -2384,14 +2384,25 @@ function renderStockTemplatePage(c){
   renderStockTable();
 }
 // ---- Stock Status Table (current / historical) ----
-function renderStockStatusTable(){
+async function renderStockStatusTable(){
   const storeId=$('ssStore')?.value;
   const dateVal=$('ssDate')?.value||'';
   const catF=$('ssCat')?.value||'';
   const search=($('ssSearch')?.value||'').toLowerCase().trim();
   const today=new Date().toISOString().split('T')[0];
   const isToday=!dateVal||dateVal===today;
-  const existingRecs=!isToday?D.StockCount.filter(sc=>String(sc.storeId)===storeId&&sc.countDate===dateVal):[];
+  let existingRecs=!isToday?D.StockCount.filter(sc=>String(sc.storeId)===storeId&&sc.countDate===dateVal):[];
+  // If no local data for past date, try archive
+  if(!isToday&&existingRecs.length===0&&API.mode==='cloud'){
+    try{
+      const arch=await API.get('getArchive',{sheet:'StockCount',store:storeId,from:dateVal,to:dateVal});
+      if(arch&&arch.data&&arch.data.length>0){
+        existingRecs=arch.data;
+        // Merge into local cache so calendar also reflects it
+        arch.data.forEach(r=>{if(!D.StockCount.find(sc=>sc.id===r.id))D.StockCount.push(r);});
+      }
+    }catch(e){console.log('Archive fetch error:',e);}
+  }
   const hasExisting=existingRecs.length>0;
   const dateLabel=isToday?'':new Date(dateVal+'T12:00:00').toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
   // Date banner
@@ -4048,7 +4059,13 @@ function renderSettings(c) {
     </div></div>
     <div class="card"><div class="card-header"><h3>Change Password</h3></div>
     <div class="form-row"><div class="form-group"><label>New Password</label><input id="newPwd" type="password"></div><div class="form-group"><label>Confirm</label><input id="confirmPwd" type="password"></div></div>
-    <button class="btn btn-primary btn-sm" onclick="changePwd()"><i class="fas fa-key"></i> Change Password</button></div>`;
+    <button class="btn btn-primary btn-sm" onclick="changePwd()"><i class="fas fa-key"></i> Change Password</button></div>
+    <div class="card"><div class="card-header"><h3><i class="fas fa-archive" style="color:var(--accent);margin-right:8px"></i>Data Archive</h3></div>
+    <p style="font-size:13px;color:var(--text-light);margin-bottom:12px">3개월 지난 StockCount, Attendance, EditLog, DiaryEntry 데이터를 아카이브 시트로 이동합니다. 데이터는 삭제되지 않으며, 과거 조회 시 아카이브에서 자동으로 불러옵니다.</p>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+      <button class="btn btn-primary btn-sm" onclick="runArchive()"><i class="fas fa-archive"></i> Archive Now</button>
+      <span id="archiveResult" style="font-size:13px;color:var(--text-light)"></span>
+    </div></div>`;
 }
 async function updateApiUrl(){
   const newUrl=$('settingsApiUrl').value.trim();
@@ -4065,6 +4082,24 @@ async function resetData(){
   toast('Data reset to defaults');navigate('dashboard');
 }
 function clearAndSetup(){localStorage.clear();location.reload();}
+async function runArchive(){
+  if(!confirm('3개월 이전 데이터를 아카이브 시트로 이동합니다. 계속하시겠습니까?'))return;
+  const el=$('archiveResult');if(el)el.textContent='Archiving...';
+  toast('Archiving old data...','info');
+  try{
+    const r=await API.post({action:'runArchive'});
+    if(r&&!r.error){
+      const msg=r.results?r.results.join(' | '):'Done';
+      if(el)el.innerHTML='<i class="fas fa-check-circle" style="color:var(--success)"></i> '+msg+' (cutoff: '+r.cutoffDate+')';
+      toast('Archive complete!','success');
+      // Reload data to reflect changes
+      await loadAllData();
+    }else{
+      if(el)el.textContent='Error: '+(r?.error||'Unknown');
+      toast('Archive failed: '+(r?.error||''),'error');
+    }
+  }catch(e){if(el)el.textContent='Error: '+e.message;toast('Archive error','error');}
+}
 async function changePwd(){
   const np=$('newPwd').value,cp=$('confirmPwd').value;
   if(!np){toast('Enter new password','error');return;}

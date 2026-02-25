@@ -2078,12 +2078,7 @@ async function renderStock(c) {
   // Find most recent date with valid (non-all-zero) stock data for first store
   const _firstStoreId=stores.length?String(stores[0].id):'';
   let _latestValid=today;
-  if(_firstStoreId){
-    const _byDate={};
-    D.StockCount.filter(sc=>String(sc.storeId)===_firstStoreId).forEach(sc=>{if(!_byDate[sc.countDate])_byDate[sc.countDate]=[];_byDate[sc.countDate].push(sc);});
-    const _validDates=Object.keys(_byDate).filter(dt=>_byDate[dt].some(r=>(Number(r.qty)||0)>0)).sort();
-    if(_validDates.length)_latestValid=_validDates[_validDates.length-1];
-  }
+  if(_firstStoreId){_latestValid=_getLatestValidDate(_firstStoreId);}
   const _initDate=_latestValid;
   const _initDt=new Date(_initDate+'T12:00:00');
   _ssCalYear=_initDt.getFullYear();_ssCalMonth=_initDt.getMonth();
@@ -2139,11 +2134,20 @@ function renderStockCalendar(){
   // Get dates with stock count data for this store+month
   const ym=_ssCalYear+'-'+String(_ssCalMonth+1).padStart(2,'0');
   // Only mark dates that have at least one non-zero qty
+  // For today: check StoreStock (live). For past dates: check StockCount.
   const _scMonth=D.StockCount.filter(sc=>String(sc.storeId)===storeId&&(sc.countDate||'').startsWith(ym));
   const countDates=new Set();
   const _scByDate={};
   _scMonth.forEach(sc=>{if(!_scByDate[sc.countDate])_scByDate[sc.countDate]=[];_scByDate[sc.countDate].push(sc);});
-  Object.keys(_scByDate).forEach(dt=>{if(_scByDate[dt].some(r=>(Number(r.qty)||0)>0))countDates.add(dt);});
+  Object.keys(_scByDate).forEach(dt=>{
+    if(dt===today){return;}// skip today — handled below via StoreStock
+    if(_scByDate[dt].some(r=>(Number(r.qty)||0)>0))countDates.add(dt);
+  });
+  // Today: check StoreStock live data
+  if(ym===today.substring(0,7)){
+    const todayStock=D.StoreStock.filter(s=>String(s.storeId)===storeId);
+    if(todayStock.some(s=>(Number(s.qty)||0)>0))countDates.add(today);
+  }
   // Build calendar grid
   const firstDay=new Date(_ssCalYear,_ssCalMonth,1).getDay();// 0=Sun
   const daysInMonth=new Date(_ssCalYear,_ssCalMonth+1,0).getDate();
@@ -2181,9 +2185,14 @@ function renderStockCalendar(){
 const _storeClr={PAB:'#1b5e20',TBS:'#1565c0',TBR:'#6a1b9a',TBB:'#e65100',TBO:'#00838f'};
 function _getLatestValidDate(storeId){
   const today=new Date().toISOString().split('T')[0];
+  // Past dates: check StockCount
   const _byDate={};
   D.StockCount.filter(sc=>String(sc.storeId)===storeId).forEach(sc=>{if(!_byDate[sc.countDate])_byDate[sc.countDate]=[];_byDate[sc.countDate].push(sc);});
-  const _validDates=Object.keys(_byDate).filter(dt=>_byDate[dt].some(r=>(Number(r.qty)||0)>0)).sort();
+  const _validDates=Object.keys(_byDate).filter(dt=>dt!==today&&_byDate[dt].some(r=>(Number(r.qty)||0)>0)).sort();
+  // Today: check StoreStock (live data)
+  const todayStock=D.StoreStock.filter(s=>String(s.storeId)===storeId);
+  const todayHasData=todayStock.some(s=>(Number(s.qty)||0)>0);
+  if(todayHasData)return today;
   return _validDates.length?_validDates[_validDates.length-1]:today;
 }
 function onStoreSelect(){

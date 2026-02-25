@@ -635,26 +635,35 @@ async function openStockCheck(){
   const stockCounts=(ssRes&&ssRes.data&&ssRes.data.StockCount)||[];
   if(coRes&&coRes.value)stockCatOrder=coRes.value;
   else stockCatOrder=[];
-  // Find most recent date with valid (non-all-zero) StockCount data
+  // Find most recent date with valid (non-all-zero) data
+  // Today: check StoreStock (live). Past dates: check StockCount.
+  const today=new Date().toISOString().split('T')[0];
   const _byDate={};
   stockCounts.forEach(sc=>{if(!_byDate[sc.countDate])_byDate[sc.countDate]=[];_byDate[sc.countDate].push(sc);});
-  const validDates=Object.keys(_byDate).filter(dt=>_byDate[dt].some(r=>(Number(r.qty)||0)>0)).sort();
-  const latestDate=validDates.length?validDates[validDates.length-1]:'';
-  const latestRecs=latestDate?_byDate[latestDate]:[];
+  const pastValidDates=Object.keys(_byDate).filter(dt=>dt!==today&&_byDate[dt].some(r=>(Number(r.qty)||0)>0)).sort();
+  const todayHasData=storeStockItems.some(s=>(Number(s.qty)||0)>0);
+  let latestDate='';
+  if(todayHasData){latestDate=today;}
+  else if(pastValidDates.length){latestDate=pastValidDates[pastValidDates.length-1];}
+  const latestRecs=(latestDate&&latestDate!==today)?(_byDate[latestDate]||[]):[];
   _stockDataDate=latestDate;
-  // Init qty: prefer latest StockCount data, fallback to StoreStock
+  // Init qty
   stockQty={};
-  if(latestRecs.length>0){
-    stockTemplates.forEach(t=>{
-      const rec=latestRecs.find(r=>String(r.itemId)===String(t.id));
-      if(rec)stockQty[t.id]=Number(rec.qty)||0;
-      else{const ss=storeStockItems.find(s=>String(s.itemId)===String(t.id));stockQty[t.id]=ss?Number(ss.qty)||0:0;}
-    });
-  }else{
+  if(latestDate===today){
+    // Use StoreStock live data
     stockTemplates.forEach(t=>{
       const ss=storeStockItems.find(s=>String(s.itemId)===String(t.id));
       stockQty[t.id]=ss?Number(ss.qty)||0:0;
     });
+  }else if(latestRecs.length>0){
+    // Use StockCount from past date
+    stockTemplates.forEach(t=>{
+      const rec=latestRecs.find(r=>String(r.itemId)===String(t.id));
+      stockQty[t.id]=rec?Number(rec.qty)||0:0;
+    });
+  }else{
+    // No valid data anywhere
+    stockTemplates.forEach(t=>{stockQty[t.id]=0;});
   }
   hideLoading();
   currentStockCat='';

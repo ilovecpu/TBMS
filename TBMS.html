@@ -2165,8 +2165,8 @@ function printStockStatus(){
       const clr=_catColors[catIdx2%_catColors.length];catIdx2++;
       lastCat=s.category;
       const txtClr=['#e65100','#ef6c00'].includes(clr)?'#000':'#fff';
-      allRows+=`<tr><td colspan="5" style="background:${clr}!important;color:${txtClr}!important;font-weight:700;padding:3px 6px;font-size:8px;text-transform:uppercase">${escHtml(lastCat)}</td></tr>`;
-      allRows+=`<tr><td style="background:${clr}!important;color:${txtClr}!important;font-weight:600;font-size:7px;padding:1px 4px">Items</td><td class="c" style="background:${clr}!important;color:${txtClr}!important;font-weight:600;font-size:7px;padding:1px 2px">Unit</td><td class="c" style="background:${clr}!important;color:${txtClr}!important;font-weight:600;font-size:7px;padding:1px 2px">Min</td><td class="c" style="background:${clr}!important;color:${txtClr}!important;font-weight:600;font-size:7px;padding:1px 2px">QTY</td><td class="c" style="background:${clr}!important;color:${txtClr}!important;font-weight:600;font-size:7px;padding:1px 2px">Order</td></tr>`;
+      const cs='background:'+clr+'!important;color:'+txtClr+'!important;padding:2px 4px;font-size:7px;font-weight:700';
+      allRows+=`<tr><td style="${cs};text-transform:uppercase">${escHtml(lastCat)}</td><td class="c" style="${cs}">Unit</td><td class="c" style="${cs}">Min</td><td class="c" style="${cs}">QTY</td><td class="c" style="${cs}">Order</td></tr>`;
     }
     const qty=Number(s.qty)||0;const min=s._min||0;
     const shortage=min>0&&qty<min?min-qty:0;

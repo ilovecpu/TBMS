@@ -2087,6 +2087,8 @@ async function renderStock(c) {
         <button class="btn btn-sm" onclick="refreshStockStatus()" style="background:#f0f0f0;color:#555" title="Refresh"><i class="fas fa-sync-alt"></i></button>
         <button class="btn btn-sm" onclick="printStockStatus()" style="background:#f0f0f0;color:#555" title="Print Stock Sheet"><i class="fas fa-print"></i> Stock Sheet</button>
         <button class="btn btn-sm" onclick="printBlankStockForm()" style="background:#f0f0f0;color:#555" title="Print Blank Form"><i class="fas fa-file-alt"></i> Blank Form</button>
+        <button class="btn btn-sm" onclick="resetAllQty()" style="background:#fff0f0;color:#c62828" title="Reset all QTY to 0"><i class="fas fa-eraser"></i> Reset QTY</button>
+        <button class="btn btn-sm" onclick="copyStockToDate()" style="background:#e3f2fd;color:#1565c0" title="Copy current stock to a date"><i class="fas fa-copy"></i> Copy to Date</button>
       </div>
     </div>
     <div id="ssStoreBanner" style="margin-bottom:12px"></div>
@@ -2193,54 +2195,53 @@ async function refreshStockStatus(){
 function printBlankStockForm(){
   const storeId=$('ssStore')?.value;if(!storeId){toast('Select a store','error');return;}
   const store=D.Stores.find(s=>String(s.id)===storeId);
-  const storeName=store?escHtml(store.name):'';
   const storeClr=_storeClr[store?.code]||_storeClr[store?.id]||'#222';
   const catIdx=getSortedCategories();
   let items=D.StoreStock.filter(s=>String(s.storeId)===storeId);
   items.forEach(it=>{const tpl=D.StockTemplate.find(t=>String(t.id)===String(it.itemId));it._so=tpl?tpl.sortOrder:9999;});
   items.sort((a,b)=>{const ci=catIdx.indexOf(a.category)-catIdx.indexOf(b.category);return ci!==0?ci:(a._so||0)-(b._so||0);});
   const _catColors=['#111111','#1565c0','#6a1b9a','#e65100','#00838f','#2e7d32','#c62828','#4527a0','#ef6c00','#00695c','#ad1457','#283593','#4e342e','#37474f','#1b5e20','#880e4f'];
-  let allRows='',catIdx2=0,lastCat='';
+  let catBlocks='',catIdx2=0,lastCat='',rows='';
+  const flushCat=()=>{if(rows)catBlocks+=`<div class="cat-block"><table>${rows}</table></div>`;rows='';};
   items.forEach(s=>{
     if(s.category!==lastCat){
+      flushCat();
       const clr=_catColors[catIdx2%_catColors.length];catIdx2++;
       lastCat=s.category;
       const txtClr=['#e65100','#ef6c00'].includes(clr)?'#000':'#fff';
       const cs='background:'+clr+'!important;color:'+txtClr+'!important;padding:2px 4px;font-size:7px;font-weight:700';
-      allRows+=`<tr><td style="${cs};text-transform:uppercase">${escHtml(lastCat)}</td><td class="c" style="${cs}">Unit</td><td class="c" style="${cs}">Min</td><td class="c" style="${cs}">QTY</td></tr>`;
+      rows+=`<tr><td style="${cs};text-transform:uppercase">${escHtml(lastCat)}</td><td class="c" style="${cs}">Unit</td><td class="c" style="${cs}">Min</td><td class="c" style="${cs}">QTY</td></tr>`;
     }
-    allRows+=`<tr><td>${escHtml(s.name)}</td><td class="c">${escHtml(s.unit||'')}</td><td class="c">${fmtQty(Number(s.min)||0)}</td><td class="c" style="border:1.5px solid #aaa;background:#fff;min-width:40px"></td></tr>`;
+    rows+=`<tr><td>${escHtml(s.name)}</td><td class="c">${escHtml(s.unit||'')}</td><td class="c">${fmtQty(Number(s.min)||0)}</td><td class="c" style="border:1.5px solid #aaa;background:#fff;min-width:40px"></td></tr>`;
   });
-  const rowArr=allRows.split('</tr>').filter(r=>r.trim());
-  const mid=Math.ceil(rowArr.length/2);
-  const leftRows=rowArr.slice(0,mid).join('</tr>')+'</tr>';
-  const rightRows=rowArr.slice(mid).join('</tr>')+(rowArr.length>mid?'</tr>':'');
+  flushCat();
   const w=window.open('','_blank','width=900,height=700');
-  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Blank Stock Form - ${storeName}</title>
-<style>
-*{margin:0;padding:0;box-sizing:border-box;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;color-adjust:exact!important}
-body{font-family:Arial,sans-serif;color:#222;font-size:8px;padding:6px}
-.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;padding-bottom:3px;border-bottom:2px solid ${storeClr}}
-.top h1{font-size:13px;font-weight:800}
-.top .info{font-size:9px;color:#555}
-.top .branch{display:inline-block;background:${storeClr};color:#fff;padding:2px 8px;border-radius:3px;font-size:9px;font-weight:700}
-.cols{display:table;width:100%;table-layout:fixed}
-.cols>div{display:table-cell;width:50%;vertical-align:top;padding:0 3px}
-table{width:100%;border-collapse:collapse}
-td{padding:2px 4px;font-size:8px;border-bottom:1px solid #eee;line-height:1.3}
-.c{text-align:center}
-.btn-row{text-align:center;padding:8px}
-@media print{@page{size:A4;margin:5mm 8mm}.btn-row{display:none!important}body{padding:0}}
-</style></head><body>
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Blank Stock Form</title>
+<style>${_printStockCSS(storeClr)}</style></head><body>
 <div class="btn-row"><button onclick="window.print()" style="padding:8px 24px;font-size:13px;font-weight:700;background:#222;color:#fff;border:none;border-radius:8px;cursor:pointer">PRINT</button></div>
 <div class="top">
   <h1>Stock Check Form</h1>
   <div class="info">Store: ______________ &nbsp; Date: ______________ &nbsp; Checked by: ______________</div>
 </div>
-<div class="cols"><div><table><tbody>${leftRows}</tbody></table></div><div><table><tbody>${rightRows}</tbody></table></div></div>
+<div class="cols">${catBlocks}</div>
 <div class="btn-row" style="margin-top:10px"><button onclick="window.print()" style="padding:8px 24px;font-size:13px;font-weight:700;background:#222;color:#fff;border:none;border-radius:8px;cursor:pointer">PRINT</button></div>
 </body></html>`);
   w.document.close();
+}
+function _printStockCSS(storeClr){
+  return `*{margin:0;padding:0;box-sizing:border-box;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;color-adjust:exact!important}
+body{font-family:Arial,sans-serif;color:#222;font-size:8px;padding:6px}
+.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;padding-bottom:3px;border-bottom:2px solid ${storeClr}}
+.top h1{font-size:13px;font-weight:800}
+.top .info{font-size:9px;color:#555}
+.top .branch{display:inline-block;background:${storeClr};color:#fff;padding:2px 8px;border-radius:3px;font-size:9px;font-weight:700}
+.cols{column-count:2;column-gap:8px}
+.cat-block{break-inside:avoid;-webkit-column-break-inside:avoid;margin-bottom:2px}
+table{width:100%;border-collapse:collapse}
+td{padding:2px 4px;font-size:8px;border-bottom:1px solid #eee;line-height:1.3}
+.c{text-align:center}
+.btn-row{text-align:center;padding:8px}
+@media print{@page{size:A4;margin:5mm 8mm}.btn-row{display:none!important}body{padding:0}}`;
 }
 function printStockStatus(){
   const storeId=$('ssStore')?.value;if(!storeId)return;
@@ -2259,59 +2260,35 @@ function printStockStatus(){
   if(catF)dataItems=dataItems.filter(s=>s.category===catF);
   dataItems.forEach(it=>{const tpl=D.StockTemplate.find(t=>String(t.id)===String(it.itemId));it._so=tpl?tpl.sortOrder:9999;it._min=isToday?Number(it.min)||0:(tpl?Number(tpl.min)||0:0);});
   dataItems.sort((a,b)=>{const ci=catIdx.indexOf(a.category)-catIdx.indexOf(b.category);return ci!==0?ci:(a._so||0)-(b._so||0);});
-  // Build one continuous table with category color rows
   const _catColors=['#111111','#1565c0','#6a1b9a','#e65100','#00838f','#2e7d32','#c62828','#4527a0','#ef6c00','#00695c','#ad1457','#283593','#4e342e','#37474f','#1b5e20','#880e4f'];
-  let allRows='',catIdx2=0,lastCat='';
   const orderItems=dataItems.filter(s=>{const q=Number(s.qty)||0;const m=s._min||0;return m>0&&q<m;});
+  // Build category blocks
+  let catBlocks='',catIdx2=0,lastCat='',rows='';
+  const flushCat=()=>{if(rows)catBlocks+=`<div class="cat-block"><table>${rows}</table></div>`;rows='';};
   dataItems.forEach(s=>{
     if(s.category!==lastCat){
+      flushCat();
       const clr=_catColors[catIdx2%_catColors.length];catIdx2++;
       lastCat=s.category;
       const txtClr=['#e65100','#ef6c00'].includes(clr)?'#000':'#fff';
       const cs='background:'+clr+'!important;color:'+txtClr+'!important;padding:2px 4px;font-size:7px;font-weight:700';
-      allRows+=`<tr><td style="${cs};text-transform:uppercase">${escHtml(lastCat)}</td><td class="c" style="${cs}">Unit</td><td class="c" style="${cs}">Min</td><td class="c" style="${cs}">QTY</td><td class="c" style="${cs}">Order</td></tr>`;
+      rows+=`<tr><td style="${cs};text-transform:uppercase">${escHtml(lastCat)}</td><td class="c" style="${cs}">Unit</td><td class="c" style="${cs}">Min</td><td class="c" style="${cs}">QTY</td><td class="c" style="${cs}">Order</td></tr>`;
     }
     const qty=Number(s.qty)||0;const min=s._min||0;
     const shortage=min>0&&qty<min?min-qty:0;
     const needOrder=shortage>0;
     const nameHtml=needOrder?`<b>${escHtml(s.name)}</b>`:escHtml(s.name);
-    const unitHtml=s.unit?escHtml(s.unit):'';
     const qtyStyle=needOrder?'font-weight:700;color:#c62828':'';
     const orderCell=needOrder?`<td class="c" style="font-weight:700;color:#c62828">${fmtQty(shortage)}</td>`:`<td class="c" style="color:#ccc">-</td>`;
-    allRows+=`<tr${needOrder?' style="background:#ffe0e6!important"':''}><td>${nameHtml}</td><td class="c">${unitHtml}</td><td class="c">${fmtQty(min)}</td><td class="c" style="${qtyStyle}">${fmtQty(qty)}</td>${orderCell}</tr>`;
+    rows+=`<tr${needOrder?' style="background:#ffe0e6!important"':''}><td>${nameHtml}</td><td class="c">${escHtml(s.unit||'')}</td><td class="c">${fmtQty(min)}</td><td class="c" style="${qtyStyle}">${fmtQty(qty)}</td>${orderCell}</tr>`;
   });
-  // Split rows into 2 halves for left/right columns
-  const rowArr=allRows.split('</tr>').filter(r=>r.trim());
-  const mid=Math.ceil(rowArr.length/2);
-  const leftRows2=rowArr.slice(0,mid).join('</tr>')+'</tr>';
-  const rightRows2=rowArr.slice(mid).join('</tr>')+(rowArr.length>mid?'</tr>':'');
-  const thHtml='';
+  flushCat();
   const storeName=store?escHtml(store.name):'';
   const storeClr=_storeClr[store?.code]||_storeClr[store?.id]||'#222';
   const dateStr=isToday?today:dateVal;
   const w=window.open('','_blank','width=900,height=700');
   w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Stock Sheet - ${storeName}</title>
-<style>
-*{margin:0;padding:0;box-sizing:border-box;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;color-adjust:exact!important}
-body{font-family:Arial,sans-serif;color:#222;font-size:8px;padding:6px}
-.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;padding-bottom:3px;border-bottom:2px solid ${storeClr}}
-.top h1{font-size:13px;font-weight:800}
-.top .info{font-size:8px;color:#555}
-.top .branch{display:inline-block;background:${storeClr};color:#fff;padding:2px 8px;border-radius:3px;font-size:9px;font-weight:700}
-.cols{display:table;width:100%;table-layout:fixed}
-.cols>div{display:table-cell;width:50%;vertical-align:top;padding:0 3px}
-table{width:100%;border-collapse:collapse}
-th{background:#f0f0f0;padding:2px 4px;font-size:7px;text-align:left;border-bottom:1px solid #aaa;color:#555}
-td{padding:2px 4px;font-size:8px;border-bottom:1px solid #eee;line-height:1.3}
-.c{text-align:center}
-.u{color:#888;font-size:6px}
-.btn-row{text-align:center;padding:8px}
-@media print{
-  @page{size:A4;margin:5mm 8mm}
-  .btn-row{display:none!important}
-  body{padding:0}
-}
-</style></head><body>
+<style>${_printStockCSS(storeClr)}</style></head><body>
 <div class="btn-row"><button onclick="window.print()" style="padding:8px 24px;font-size:13px;font-weight:700;background:#222;color:#fff;border:none;border-radius:8px;cursor:pointer">PRINT</button></div>
 <div class="top">
   <h1>The Bap — Stock Sheet</h1>
@@ -2322,10 +2299,7 @@ td{padding:2px 4px;font-size:8px;border-bottom:1px solid #eee;line-height:1.3}
     ${orderItems.length>0?' &nbsp; <span style="color:#c62828;font-weight:700">Order: '+orderItems.length+'</span>':''}
   </div>
 </div>
-<div class="cols">
-  <div><table>${thHtml}<tbody>${leftRows2}</tbody></table></div>
-  <div><table>${thHtml}<tbody>${rightRows2}</tbody></table></div>
-</div>
+<div class="cols">${catBlocks}</div>
 <div class="btn-row" style="margin-top:10px"><button onclick="window.print()" style="padding:8px 24px;font-size:13px;font-weight:700;background:#222;color:#fff;border:none;border-radius:8px;cursor:pointer">PRINT</button></div>
 </body></html>`);
   w.document.close();
@@ -2511,6 +2485,39 @@ function saveStockAll() {
   _bgPost({action:'saveSheet',sheet:'StoreStock',rows:D.StoreStock});
   toast('Stock quantities saved!','success');
   renderStockStatusTable();
+}
+function resetAllQty(){
+  if(!confirm('Reset all QTY to 0?'))return;
+  document.querySelectorAll('.ss-qty').forEach(el=>{el.value=0;el.dispatchEvent(new Event('change'));});
+  toast('All QTY reset to 0','info');
+}
+async function copyStockToDate(){
+  const storeId=$('ssStore')?.value;
+  if(!storeId){toast('Select a store','error');return;}
+  const targetDate=prompt('Copy current stock to date (YYYY-MM-DD):');
+  if(!targetDate)return;
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(targetDate)){toast('Invalid date format. Use YYYY-MM-DD','error');return;}
+  const today=new Date().toISOString().split('T')[0];
+  if(targetDate===today){toast('Cannot copy to today — use Save All QTY instead','error');return;}
+  const items=D.StoreStock.filter(s=>String(s.storeId)===storeId).map(s=>({
+    itemId:s.itemId,category:s.category,name:s.name,unit:s.unit,qty:Number(s.qty)||0
+  }));
+  if(!items.length){toast('No stock data to copy','error');return;}
+  if(!confirm(`Copy ${items.length} items to ${targetDate}?`))return;
+  toast('Copying...','info');
+  try{
+    const r=await API.post({action:'saveStockCount',storeId,countDate:targetDate,items,submittedBy:currentUser?.id||''});
+    if(r&&!r.error){
+      D.StockCount=D.StockCount.filter(sc=>!(String(sc.storeId)===storeId&&sc.countDate===targetDate));
+      const week=getISOWeek(new Date(targetDate));
+      const ts=new Date().toISOString();
+      items.forEach(item=>{
+        D.StockCount.push({id:'sc'+Date.now()+Math.random().toString(36).substr(2,4),storeId,week,countDate:targetDate,itemId:item.itemId,category:item.category,name:item.name,unit:item.unit,qty:item.qty,submittedBy:currentUser?.id||'',submittedAt:ts});
+      });
+      toast(`${items.length} items copied to ${targetDate}`,'success');
+      ssSelectDate(targetDate);
+    }else{toast('Failed: '+(r?.error||''),'error');}
+  }catch(e){toast('Error: '+e.message,'error');}
 }
 
 async function submitStockFromStatus(){

@@ -2156,72 +2156,62 @@ function printStockStatus(){
   if(catF)dataItems=dataItems.filter(s=>s.category===catF);
   dataItems.forEach(it=>{const tpl=D.StockTemplate.find(t=>String(t.id)===String(it.itemId));it._so=tpl?tpl.sortOrder:9999;it._min=isToday?Number(it.min)||0:(tpl?Number(tpl.min)||0:0);});
   dataItems.sort((a,b)=>{const ci=catIdx.indexOf(a.category)-catIdx.indexOf(b.category);return ci!==0?ci:(a._so||0)-(b._so||0);});
-  // Single unified table with Order column included
+  // Build rows — one unified Stock Status table with Order column
   function mkRows(items){
     let rows='',lastCat='';
     items.forEach(s=>{
       if(s.category!==lastCat){lastCat=s.category;rows+=`<tr><td colspan="6" style="background:#333;color:#fff;font-weight:700;padding:2px 4px">${escHtml(lastCat)}</td></tr>`;}
       const qty=Number(s.qty)||0;const min=s._min||0;
+      const shortage=min>0&&qty<min?min-qty:0;
       const st=qty<=0?'#c62828':qty<=min?'#e65100':'#2e7d32';
       const stTxt=qty<=0?'Out':qty<=min?'Low':'OK';
-      const need=min>0&&qty<min?min-qty:0;
-      const needHtml=need>0?`<span style="font-weight:700;color:#c62828">${need}</span>`:'';
-      rows+=`<tr${need>0?' style="background:#fff8f8"':''}>
+      rows+=`<tr${shortage>0?' style="background:#fff8f8"':''}>
         <td>${escHtml(s.name)}</td><td class="c">${escHtml(s.unit)}</td><td class="c">${min}</td>
         <td class="c" style="font-weight:700">${qty}</td><td class="c" style="color:${st};font-weight:600">${stTxt}</td>
-        <td class="c">${needHtml}</td></tr>`;
+        <td class="c">${shortage>0?'<b style="color:#c62828">'+shortage+'</b>':'-'}</td></tr>`;
     });
     return rows;
   }
-  const thHtml='<thead><tr><th>Item</th><th class="c">Unit</th><th class="c">Min</th><th class="c">QTY</th><th class="c">Status</th><th class="c" style="color:#fcc">Order</th></tr></thead>';
-  // Split into 4 columns for 2 landscape pages (2 cols each)
-  const quarter=Math.ceil(dataItems.length/4);
-  const parts=[dataItems.slice(0,quarter),dataItems.slice(quarter,quarter*2),dataItems.slice(quarter*2,quarter*3),dataItems.slice(quarter*3)];
-  const subtitle=`${store?escHtml(store.name):''} | ${isToday?'Current Stock':dateVal} | ${dataItems.length} items${catF?' | '+escHtml(catF):''}`;
+  const thHtml='<thead><tr><th>Item</th><th class="c">Unit</th><th class="c">Min</th><th class="c">QTY</th><th class="c">Status</th><th class="c">Order</th></tr></thead>';
+  // Split into 2 halves for 2 A4 portrait pages
+  const half=Math.ceil(dataItems.length/2);
+  const page1=dataItems.slice(0,half);
+  const page2=dataItems.slice(half);
   const storeName=store?escHtml(store.name):'';
   const storeClr=_storeClr[store?.code]||_storeClr[store?.id]||'#222';
   const orderCnt=dataItems.filter(s=>{const q=Number(s.qty)||0;const m=s._min||0;return m>0&&q<m;}).length;
-  const w=window.open('','_blank','width=1100,height=750');
-  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Stock - ${storeName}</title>
+  const subtitle=`${storeName} | ${isToday?'Current Stock':dateVal} | ${dataItems.length} items${orderCnt>0?' | Order: '+orderCnt:''}${catF?' | '+escHtml(catF):''}`;
+  const w=window.open('','_blank','width=800,height=600');
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Stock Status - ${storeName}</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:Arial,sans-serif;color:#222;font-size:7px;padding:6px}
-table{width:100%;border-collapse:collapse}
-th{background:#222;color:#fff;padding:1px 3px;font-size:6px;text-align:left;white-space:nowrap}
-td{padding:1px 3px;border-bottom:1px solid #ddd;font-size:7px;line-height:1.2}
+body{font-family:Arial,sans-serif;color:#222;font-size:11px;padding:10px}
+table{width:100%;border-collapse:collapse;margin-bottom:8px}
+th{background:#222;color:#fff;padding:4px 6px;font-size:10px;text-align:left}
+td{padding:3px 6px;border-bottom:1px solid #ddd;font-size:11px}
 tr:nth-child(even):not([style]){background:#f9f9f9}
 .c{text-align:center}
-.layout{width:100%}
-.layout>tbody>tr>td{width:50%;vertical-align:top;padding:0 4px}
-.layout>tbody>tr>td:first-child{border-right:1px solid #ccc}
-.hdr{padding:3px 0;border-bottom:2px solid ${storeClr};margin-bottom:3px}
-.hdr b{font-size:11px}
-.hdr .st{color:${storeClr};font-weight:700;font-size:10px;float:right}
-.hdr .sub{font-size:7px;color:#666}
-.hdr .ord{font-size:8px;color:#c62828;font-weight:700;margin-left:10px}
-.pb{page-break-before:always}
-.btn-row{text-align:center;padding:8px}
+.hdr{padding:6px 0;border-bottom:3px solid ${storeClr};margin-bottom:8px}
+.hdr b{font-size:16px}
+.hdr .st{color:${storeClr};font-weight:700;font-size:14px;float:right}
+.hdr .sub{font-size:10px;color:#666}
+.btn-row{text-align:center;padding:10px}
+.printed{font-size:8px;color:#999;text-align:right;margin-bottom:4px}
 @media print{
-  @page{size:A4 landscape;margin:6mm 10mm}
+  @page{size:A4;margin:10mm 15mm}
   .btn-row{display:none!important}
-  body{padding:0}
+  body{padding:0;font-size:10px}
+  td{padding:2px 5px;font-size:10px}
+  th{padding:3px 5px;font-size:9px}
 }
 </style></head><body>
 <div class="btn-row"><button onclick="window.print()" style="padding:8px 24px;font-size:13px;font-weight:700;background:#222;color:#fff;border:none;border-radius:8px;cursor:pointer">PRINT</button></div>
-<div>
-  <div class="hdr"><b>The Bap</b> <span class="sub">${subtitle}</span><span class="ord">${orderCnt>0?'Order: '+orderCnt+' items':''}</span><span class="st">${storeName}</span></div>
-  <table class="layout"><tbody><tr>
-    <td><table>${thHtml}<tbody>${mkRows(parts[0])}</tbody></table></td>
-    <td><table>${thHtml}<tbody>${mkRows(parts[1])}</tbody></table></td>
-  </tr></tbody></table>
-</div>
-<div class="pb">
-  <div class="hdr"><b>The Bap</b> <span class="sub">${subtitle} (cont.)</span><span class="st">${storeName}</span></div>
-  <table class="layout"><tbody><tr>
-    <td><table>${thHtml}<tbody>${mkRows(parts[2])}</tbody></table></td>
-    <td><table>${thHtml}<tbody>${mkRows(parts[3])}</tbody></table></td>
-  </tr></tbody></table>
-</div>
+<div class="printed">Printed: ${new Date().toLocaleString('en-GB')}</div>
+<div class="hdr"><b>The Bap</b> <span class="sub">Stock Status — ${subtitle}</span><span class="st">${storeName}</span></div>
+<table>${thHtml}<tbody>${mkRows(page1)}</tbody></table>
+<div style="page-break-before:always"></div>
+<div class="hdr"><b>The Bap</b> <span class="sub">Stock Status — ${subtitle} (cont.)</span><span class="st">${storeName}</span></div>
+<table>${thHtml}<tbody>${mkRows(page2)}</tbody></table>
 <div class="btn-row"><button onclick="window.print()" style="padding:8px 24px;font-size:13px;font-weight:700;background:#222;color:#fff;border:none;border-radius:8px;cursor:pointer">PRINT</button></div>
 </body></html>`);
   w.document.close();

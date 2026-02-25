@@ -2170,26 +2170,17 @@ function printStockStatus(){
     g.items.forEach(s=>{
       const qty=Number(s.qty)||0;const min=s._min||0;
       const shortage=min>0&&qty<min?min-qty:0;
-      const qtyStyle=shortage>0?'font-weight:700;color:#c62828':'';
-      const orderCell=shortage>0?`<td class="c" style="font-weight:700;color:#c62828">${shortage}</td>`:`<td class="c" style="color:#999">-</td>`;
-      rows+=`<tr${shortage>0?' style="background:#fff0f0"':''}><td>${escHtml(s.name)}</td><td class="c">${escHtml(s.unit)}</td><td class="c">${min}</td><td class="c" style="${qtyStyle}">${qty}</td>${orderCell}</tr>`;
+      const needOrder=shortage>0;
+      const nameHtml=needOrder?`<b>${escHtml(s.name)}</b>`:escHtml(s.name);
+      const qtyStyle=needOrder?'font-weight:700;color:#c62828':'';
+      const orderCell=needOrder?`<td class="c" style="font-weight:700;color:#c62828">${shortage}</td>`:`<td class="c" style="color:#ccc">-</td>`;
+      rows+=`<tr${needOrder?' style="background:#ffe0e6"':''}><td>${nameHtml}</td><td class="c">${escHtml(s.unit)}</td><td class="c">${min}</td><td class="c" style="${qtyStyle}">${qty}</td>${orderCell}</tr>`;
     });
     return `<div class="cat-block"><div class="cat-hdr">${escHtml(g.name)}</div><table><thead><tr><th>Items</th><th class="c">Unit</th><th class="c">Min</th><th class="c">QTY</th><th class="c">Order</th></tr></thead><tbody>${rows}</tbody></table></div>`;
   }
-  // Build Order Request section
   const orderItems=dataItems.filter(s=>{const q=Number(s.qty)||0;const m=s._min||0;return m>0&&q<m;});
-  let orderBlock='';
-  if(orderItems.length>0){
-    let oRows='';
-    orderItems.forEach(s=>{
-      const qty=Number(s.qty)||0;const min=s._min||0;
-      oRows+=`<tr><td>${escHtml(s.name)}</td><td class="c">${escHtml(s.unit)}</td><td class="c" style="font-weight:700;color:#c62828">${min-qty}</td></tr>`;
-    });
-    orderBlock=`<div class="cat-block"><div class="cat-hdr" style="background:#c62828">Less in Stock &amp; Order Request (${orderItems.length})</div><table><thead><tr><th>Items</th><th class="c">Unit</th><th class="c">Order QTY</th></tr></thead><tbody>${oRows}</tbody></table></div>`;
-  }
-  // Distribute category blocks into 2 columns
+  // Distribute category blocks into 2 columns (no separate order section)
   const allBlocks=catGroups.map(g=>({html:mkCatBlock(g),rows:g.items.length+2}));
-  if(orderBlock)allBlocks.push({html:orderBlock,rows:orderItems.length+2});
   // Simple greedy split into left/right columns
   let leftRows=0,rightRows=0,leftHtml='',rightHtml='';
   allBlocks.forEach(b=>{

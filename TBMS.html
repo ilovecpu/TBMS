@@ -887,12 +887,16 @@ async function saveStore(id) {
   const idx=D.Stores.findIndex(r=>r.id===s.id);
   const isNew=idx<0;
   if(isNew)D.Stores.push(s);else D.Stores[idx]=s;
-  // If new store, create StoreStock entries for all existing StockTemplate items
+  // If new store (or re-added), initialize StoreStock for all template items
   if(isNew&&D.StockTemplate.length>0){
+    // Remove any stale StoreStock data for this store id
+    D.StoreStock=D.StoreStock.filter(ss=>String(ss.storeId)!==String(s.id));
+    // Create fresh entries
     D.StockTemplate.forEach(t=>{
       D.StoreStock.push({storeId:s.id,itemId:t.id,category:t.category,name:t.name,unit:t.unit,min:t.min,qty:0});
     });
     _bgPost({action:'saveSheet',sheet:'StoreStock',rows:D.StoreStock});
+    toast(D.StockTemplate.length+' stock items initialized for '+s.name,'info');
   }
   closeModal();renderStores($('pageContent'));toast('Store saved','success');
   _bgPost({action:'saveSheet',sheet:'Stores',rows:D.Stores});
@@ -911,7 +915,17 @@ async function confirmDelStore(id){
   const pwd=$('delPwd')?.value||'';
   const admin=D.Users.find(u=>u.role==='admin');
   if(!admin||pwd!==admin.password){toast('Incorrect admin password','error');return;}
-  closeModal();await deleteData('Stores',id);renderStores($('pageContent'));toast('Store deleted','success');
+  closeModal();
+  // Remove store
+  await deleteData('Stores',id);
+  // Also clean up related data for this store
+  const hadSS=D.StoreStock.length;
+  D.StoreStock=D.StoreStock.filter(s=>String(s.storeId)!==String(id));
+  if(D.StoreStock.length!==hadSS)_bgPost({action:'saveSheet',sheet:'StoreStock',rows:D.StoreStock});
+  const hadSC=D.StockCount.length;
+  D.StockCount=D.StockCount.filter(sc=>String(sc.storeId)!==String(id));
+  if(D.StockCount.length!==hadSC)_bgPost({action:'saveSheet',sheet:'StockCount',rows:D.StockCount});
+  renderStores($('pageContent'));toast('Store deleted','success');
 }
 
 // ==================== USERS ====================

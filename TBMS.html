@@ -2156,40 +2156,31 @@ function printStockStatus(){
   if(catF)dataItems=dataItems.filter(s=>s.category===catF);
   dataItems.forEach(it=>{const tpl=D.StockTemplate.find(t=>String(t.id)===String(it.itemId));it._so=tpl?tpl.sortOrder:9999;it._min=isToday?Number(it.min)||0:(tpl?Number(tpl.min)||0:0);});
   dataItems.sort((a,b)=>{const ci=catIdx.indexOf(a.category)-catIdx.indexOf(b.category);return ci!==0?ci:(a._so||0)-(b._so||0);});
-  // Group items by category
-  const catGroups=[];
-  let curCat=null,curItems=[];
-  dataItems.forEach(s=>{
-    if(s.category!==curCat){if(curCat!==null)catGroups.push({name:curCat,items:curItems});curCat=s.category;curItems=[];}
-    curItems.push(s);
-  });
-  if(curCat!==null)catGroups.push({name:curCat,items:curItems});
-  // Category color palette
+  // Build one continuous table with category color rows
   const _catColors=['#111111','#1565c0','#6a1b9a','#e65100','#00838f','#2e7d32','#c62828','#4527a0','#ef6c00','#00695c','#ad1457','#283593','#4e342e','#37474f','#1b5e20','#880e4f'];
-  function mkCatBlock(g,idx){
-    const bgClr=_catColors[idx%_catColors.length];
-    let rows='';
-    g.items.forEach(s=>{
-      const qty=Number(s.qty)||0;const min=s._min||0;
-      const shortage=min>0&&qty<min?min-qty:0;
-      const needOrder=shortage>0;
-      const unit=s.unit?` <span style="color:#888;font-size:7px">(${escHtml(s.unit)})</span>`:'';
-      const nameHtml=needOrder?`<b>${escHtml(s.name)}</b>${unit}`:escHtml(s.name)+unit;
-      const qtyStyle=needOrder?'font-weight:700;color:#c62828':'';
-      const orderCell=needOrder?`<td class="c" style="font-weight:700;color:#c62828">${shortage}</td>`:`<td class="c" style="color:#ccc">-</td>`;
-      rows+=`<tr${needOrder?' style="background:#ffe0e6"':''}><td>${nameHtml}</td><td class="c">${min}</td><td class="c" style="${qtyStyle}">${qty}</td>${orderCell}</tr>`;
-    });
-    return `<div class="cat-block"><div class="cat-hdr" style="background:${bgClr}!important">${escHtml(g.name)}</div><table><thead><tr><th>Items</th><th class="c">Min</th><th class="c">QTY</th><th class="c">Order</th></tr></thead><tbody>${rows}</tbody></table></div>`;
-  }
+  let allRows='',catIdx2=0,lastCat='';
   const orderItems=dataItems.filter(s=>{const q=Number(s.qty)||0;const m=s._min||0;return m>0&&q<m;});
-  // Distribute category blocks into 2 columns (no separate order section)
-  const allBlocks=catGroups.map((g,i)=>({html:mkCatBlock(g,i),rows:g.items.length+2}));
-  // Simple greedy split into left/right columns
-  let leftRows=0,rightRows=0,leftHtml='',rightHtml='';
-  allBlocks.forEach(b=>{
-    if(leftRows<=rightRows){leftHtml+=b.html;leftRows+=b.rows;}
-    else{rightHtml+=b.html;rightRows+=b.rows;}
+  dataItems.forEach(s=>{
+    if(s.category!==lastCat){
+      const clr=_catColors[catIdx2%_catColors.length];catIdx2++;
+      lastCat=s.category;
+      allRows+=`<tr><td colspan="4" style="background:${clr}!important;color:#fff!important;font-weight:700;padding:3px 6px;font-size:8px;text-transform:uppercase">${escHtml(lastCat)}</td></tr>`;
+    }
+    const qty=Number(s.qty)||0;const min=s._min||0;
+    const shortage=min>0&&qty<min?min-qty:0;
+    const needOrder=shortage>0;
+    const unit=s.unit?` <span class="u">(${escHtml(s.unit)})</span>`:'';
+    const nameHtml=needOrder?`<b>${escHtml(s.name)}</b>${unit}`:escHtml(s.name)+unit;
+    const qtyStyle=needOrder?'font-weight:700;color:#c62828':'';
+    const orderCell=needOrder?`<td class="c" style="font-weight:700;color:#c62828">${shortage}</td>`:`<td class="c" style="color:#ccc">-</td>`;
+    allRows+=`<tr${needOrder?' style="background:#ffe0e6!important"':''}><td>${nameHtml}</td><td class="c">${min}</td><td class="c" style="${qtyStyle}">${qty}</td>${orderCell}</tr>`;
   });
+  // Split rows into 2 halves for left/right columns
+  const rowArr=allRows.split('</tr>').filter(r=>r.trim());
+  const mid=Math.ceil(rowArr.length/2);
+  const leftRows2=rowArr.slice(0,mid).join('</tr>')+'</tr>';
+  const rightRows2=rowArr.slice(mid).join('</tr>')+(rowArr.length>mid?'</tr>':'');
+  const thHtml='<thead><tr><th>Items</th><th class="c" style="width:32px">Min</th><th class="c" style="width:32px">QTY</th><th class="c" style="width:38px">Order</th></tr></thead>';
   const storeName=store?escHtml(store.name):'';
   const storeClr=_storeClr[store?.code]||_storeClr[store?.id]||'#222';
   const dateStr=isToday?today:dateVal;
@@ -2203,13 +2194,12 @@ body{font-family:Arial,sans-serif;color:#222;font-size:8px;padding:6px}
 .top .info{font-size:8px;color:#555}
 .top .branch{display:inline-block;background:${storeClr};color:#fff;padding:2px 8px;border-radius:3px;font-size:9px;font-weight:700}
 .cols{display:table;width:100%;table-layout:fixed}
-.col{display:table-cell;width:50%;vertical-align:top;padding:0 3px}
-.cat-block{margin-bottom:3px;border:1px solid #ccc;border-radius:3px;overflow:hidden}
-.cat-hdr{background:#e84393!important;color:#fff!important;font-weight:700;font-size:8px;padding:2px 5px;text-transform:uppercase}
+.cols>div{display:table-cell;width:50%;vertical-align:top;padding:0 3px}
 table{width:100%;border-collapse:collapse}
-th{background:#f5f5f5;padding:1px 2px;font-size:7px;text-align:left;border-bottom:1px solid #ccc;color:#555}
-td{padding:1px 3px;font-size:8px;border-bottom:1px solid #eee;line-height:1.3}
+th{background:#f0f0f0;padding:2px 4px;font-size:7px;text-align:left;border-bottom:1px solid #aaa;color:#555}
+td{padding:2px 4px;font-size:8px;border-bottom:1px solid #eee;line-height:1.3}
 .c{text-align:center}
+.u{color:#888;font-size:6px}
 .btn-row{text-align:center;padding:8px}
 @media print{
   @page{size:A4;margin:5mm 8mm}
@@ -2228,8 +2218,8 @@ td{padding:1px 3px;font-size:8px;border-bottom:1px solid #eee;line-height:1.3}
   </div>
 </div>
 <div class="cols">
-  <div class="col">${leftHtml}</div>
-  <div class="col">${rightHtml}</div>
+  <div><table>${thHtml}<tbody>${leftRows2}</tbody></table></div>
+  <div><table>${thHtml}<tbody>${rightRows2}</tbody></table></div>
 </div>
 <div class="btn-row" style="margin-top:10px"><button onclick="window.print()" style="padding:8px 24px;font-size:13px;font-weight:700;background:#222;color:#fff;border:none;border-radius:8px;cursor:pointer">PRINT</button></div>
 </body></html>`);

@@ -2164,8 +2164,10 @@ function printStockStatus(){
     curItems.push(s);
   });
   if(curCat!==null)catGroups.push({name:curCat,items:curItems});
-  // Build category mini-table
-  function mkCatBlock(g){
+  // Category color palette
+  const _catColors=['#111111','#1565c0','#6a1b9a','#e65100','#00838f','#2e7d32','#c62828','#4527a0','#ef6c00','#00695c','#ad1457','#283593','#4e342e','#37474f','#1b5e20','#880e4f'];
+  function mkCatBlock(g,idx){
+    const bgClr=_catColors[idx%_catColors.length];
     let rows='';
     g.items.forEach(s=>{
       const qty=Number(s.qty)||0;const min=s._min||0;
@@ -2176,11 +2178,11 @@ function printStockStatus(){
       const orderCell=needOrder?`<td class="c" style="font-weight:700;color:#c62828">${shortage}</td>`:`<td class="c" style="color:#ccc">-</td>`;
       rows+=`<tr${needOrder?' style="background:#ffe0e6"':''}><td>${nameHtml}</td><td class="c">${escHtml(s.unit)}</td><td class="c">${min}</td><td class="c" style="${qtyStyle}">${qty}</td>${orderCell}</tr>`;
     });
-    return `<div class="cat-block"><div class="cat-hdr">${escHtml(g.name)}</div><table><thead><tr><th>Items</th><th class="c">Unit</th><th class="c">Min</th><th class="c">QTY</th><th class="c">Order</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+    return `<div class="cat-block"><div class="cat-hdr" style="background:${bgClr}!important">${escHtml(g.name)}</div><table><thead><tr><th>Items</th><th class="c">Unit</th><th class="c">Min</th><th class="c">QTY</th><th class="c">Order</th></tr></thead><tbody>${rows}</tbody></table></div>`;
   }
   const orderItems=dataItems.filter(s=>{const q=Number(s.qty)||0;const m=s._min||0;return m>0&&q<m;});
   // Distribute category blocks into 2 columns (no separate order section)
-  const allBlocks=catGroups.map(g=>({html:mkCatBlock(g),rows:g.items.length+2}));
+  const allBlocks=catGroups.map((g,i)=>({html:mkCatBlock(g,i),rows:g.items.length+2}));
   // Simple greedy split into left/right columns
   let leftRows=0,rightRows=0,leftHtml='',rightHtml='';
   allBlocks.forEach(b=>{

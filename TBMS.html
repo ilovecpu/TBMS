@@ -264,7 +264,6 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
         <div class="sub-menu">
           <div class="menu-item sub" data-page="stock" onclick="navigate('stock')"><i class="fas fa-warehouse"></i>Stock Status</div>
           <div class="menu-item sub" data-page="stock-template" onclick="navigate('stock-template')"><i class="fas fa-boxes-stacked"></i>Stock Template</div>
-          <div class="menu-item sub" data-page="stock-count" onclick="navigate('stock-count')"><i class="fas fa-clipboard-check"></i>Weekly Count</div>
           <div class="menu-item sub" data-page="sales" onclick="navigate('sales')"><i class="fas fa-chart-bar"></i>Weekly Sales</div>
           <div class="menu-item sub" data-page="analytics" onclick="navigate('analytics')"><i class="fas fa-chart-line"></i>Usage Analytics</div>
           <div class="menu-item sub" data-page="orders" onclick="navigate('orders')"><i class="fas fa-clipboard-list"></i>Order List</div>
@@ -340,7 +339,6 @@ const ALL_PAGES=[
   {id:'messages',label:'Messages',icon:'fa-envelope'},
   {id:'stock',label:'Stock Status',icon:'fa-warehouse'},
   {id:'stock-template',label:'Stock Template',icon:'fa-boxes-stacked'},
-  {id:'stock-count',label:'Weekly Count',icon:'fa-clipboard-check'},
   {id:'sales',label:'Weekly Sales',icon:'fa-chart-bar'},
   {id:'analytics',label:'Usage Analytics',icon:'fa-chart-line'},
   {id:'orders',label:'Order List',icon:'fa-clipboard-list'},
@@ -720,7 +718,6 @@ function renderPage(page) {
     case 'payroll': renderPayroll(c); break;
     case 'stock': renderStock(c); break;
     case 'stock-template': renderStockTemplatePage(c); break;
-    case 'stock-count': renderStockCount(c); break;
     case 'sales': renderSalesInput(c); break;
     case 'analytics': renderAnalytics(c); break;
     case 'orders': renderOrders(c); break;
@@ -2062,6 +2059,7 @@ function execDeleteCat(oldCat){
   _bgPost({action:'saveSheet',sheet:'StockTemplate',rows:D.StockTemplate});
   _bgPost({action:'saveSheet',sheet:'StoreStock',rows:D.StoreStock});
 }
+let _ssCalYear,_ssCalMonth;
 async function renderStock(c) {
   // Refresh StoreStock + StockCount from server
   if(API.mode==='cloud'){
@@ -2077,21 +2075,25 @@ async function renderStock(c) {
   const cats=getSortedCategories();
   const stores=getAccessibleStores();
   const today=new Date().toISOString().split('T')[0];
+  const now=new Date();_ssCalYear=now.getFullYear();_ssCalMonth=now.getMonth();
   c.innerHTML=`
-  <!-- Stock Status Section -->
   <div class="card" style="margin-bottom:16px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">
       <h3><i class="fas fa-warehouse" style="color:var(--accent);margin-right:8px"></i>Stock Status</h3>
       <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
-        <select id="ssStore" onchange="onStoreSelect()" style="padding:8px 12px;border:2px solid var(--border);border-radius:8px;font-size:14px;font-weight:600">
+        <select id="ssStore" onchange="onStoreSelect();renderStockCalendar();renderStockStatusTable()" style="padding:8px 12px;border:2px solid var(--border);border-radius:8px;font-size:14px;font-weight:600">
           ${stores.map((s,i)=>`<option value="${s.id}" data-color="${escHtml(s.color||'')}"${i===0?' selected':''}>${escHtml(s.name)}</option>`).join('')}</select>
-        <input type="date" id="ssDate" value="${today}" onchange="renderStockStatusTable()" style="padding:8px 12px;border:2px solid var(--border);border-radius:8px;font-size:14px">
-        <button class="btn btn-sm" onclick="document.getElementById('ssDate').value='${today}';renderStockStatusTable()" style="background:#f0f0f0;color:#555" title="Today"><i class="fas fa-calendar-day"></i> Today</button>
+        <button class="btn btn-sm" onclick="ssSelectDate('${today}')" style="background:#f0f0f0;color:#555" title="Today"><i class="fas fa-calendar-day"></i> Today</button>
         <button class="btn btn-sm" onclick="refreshStockStatus()" style="background:#f0f0f0;color:#555" title="Refresh"><i class="fas fa-sync-alt"></i></button>
-        <button class="btn btn-sm" onclick="printStockStatus()" style="background:#f0f0f0;color:#555" title="Print"><i class="fas fa-print"></i></button>
+        <button class="btn btn-sm" onclick="printStockStatus()" style="background:#f0f0f0;color:#555" title="Print Stock Sheet"><i class="fas fa-print"></i> Stock Sheet</button>
+        <button class="btn btn-sm" onclick="printBlankStockForm()" style="background:#f0f0f0;color:#555" title="Print Blank Form"><i class="fas fa-file-alt"></i> Blank Form</button>
       </div>
     </div>
     <div id="ssStoreBanner" style="margin-bottom:12px"></div>
+    <!-- Calendar -->
+    <div id="ssCalendar" style="margin-bottom:16px"></div>
+    <input type="hidden" id="ssDate" value="${today}">
+    <!-- Filters -->
     <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
       <select id="ssCat" onchange="renderStockStatusTable()" style="padding:8px 12px;border:2px solid var(--border);border-radius:8px;font-size:14px">
         <option value="">All Categories</option>${cats.map(cat=>`<option>${escHtml(cat)}</option>`).join('')}</select>
@@ -2102,13 +2104,61 @@ async function renderStock(c) {
     <div class="table-wrap"><table><thead><tr>
       <th style="width:40px">#</th><th style="width:50px">Photo</th><th>Item</th><th>Category</th><th>Unit</th><th>Min</th><th style="width:90px">QTY</th><th style="width:80px">Status</th>
     </tr></thead><tbody id="ssBody"></tbody></table></div>
-    <div style="margin-top:12px;display:flex;justify-content:space-between;align-items:center">
+    <div id="ssActionBar" style="margin-top:12px;display:flex;justify-content:space-between;align-items:center">
       <button class="btn btn-sm" onclick="printStockStatus()" style="background:#f0f0f0;color:#555"><i class="fas fa-print"></i> Print</button>
-      <div id="ssSaveRow" style="display:none"><button class="btn btn-success btn-sm" onclick="saveStockAll()"><i class="fas fa-save"></i> Save All QTY</button></div>
+      <div id="ssSaveRow" style="display:none"></div>
     </div>
   </div>`;
   onStoreSelect();
+  renderStockCalendar();
   renderStockStatusTable();
+}
+function ssSelectDate(d){
+  const el=$('ssDate');if(el)el.value=d;
+  const dt=new Date(d+'T12:00:00');_ssCalYear=dt.getFullYear();_ssCalMonth=dt.getMonth();
+  renderStockCalendar();renderStockStatusTable();
+}
+function renderStockCalendar(){
+  const cal=$('ssCalendar');if(!cal)return;
+  const storeId=$('ssStore')?.value||'';
+  const selDate=$('ssDate')?.value||'';
+  const today=new Date().toISOString().split('T')[0];
+  // Get dates with stock count data for this store+month
+  const ym=_ssCalYear+'-'+String(_ssCalMonth+1).padStart(2,'0');
+  const countDates=new Set(D.StockCount.filter(sc=>String(sc.storeId)===storeId&&(sc.countDate||'').startsWith(ym)).map(sc=>sc.countDate));
+  // Build calendar grid
+  const firstDay=new Date(_ssCalYear,_ssCalMonth,1).getDay();// 0=Sun
+  const daysInMonth=new Date(_ssCalYear,_ssCalMonth+1,0).getDate();
+  const monthName=new Date(_ssCalYear,_ssCalMonth,1).toLocaleDateString('en-GB',{month:'long',year:'numeric'});
+  let html=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+    <button class="btn btn-sm" onclick="_ssCalMonth--;if(_ssCalMonth<0){_ssCalMonth=11;_ssCalYear--;}renderStockCalendar()" style="background:#f0f0f0;color:#555;padding:4px 10px"><i class="fas fa-chevron-left"></i></button>
+    <span style="font-size:15px;font-weight:700">${monthName}</span>
+    <button class="btn btn-sm" onclick="_ssCalMonth++;if(_ssCalMonth>11){_ssCalMonth=0;_ssCalYear++;}renderStockCalendar()" style="background:#f0f0f0;color:#555;padding:4px 10px"><i class="fas fa-chevron-right"></i></button>
+  </div>`;
+  html+=`<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center">`;
+  ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].forEach(d=>{html+=`<div style="font-size:11px;font-weight:700;color:var(--text-light);padding:4px 0">${d}</div>`;});
+  // Adjust firstDay to Monday-start (0=Mon)
+  const startDay=(firstDay+6)%7;
+  for(let i=0;i<startDay;i++)html+=`<div></div>`;
+  for(let d=1;d<=daysInMonth;d++){
+    const ds=_ssCalYear+'-'+String(_ssCalMonth+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    const hasData=countDates.has(ds);
+    const isSelected=ds===selDate;
+    const isToday=ds===today;
+    let bg='#fff';let clr='var(--primary)';let border='1px solid var(--border)';let fw='400';
+    if(isSelected){bg='var(--accent)';clr='#fff';border='2px solid var(--accent)';fw='700';}
+    else if(hasData){bg='#e8f5e9';clr='#2e7d32';border='1.5px solid #a5d6a7';fw='600';}
+    if(isToday&&!isSelected){border='2px solid #1565c0';}
+    html+=`<div onclick="ssSelectDate('${ds}')" style="padding:6px 2px;cursor:pointer;border-radius:8px;background:${bg};color:${clr};border:${border};font-weight:${fw};font-size:13px;position:relative;transition:all .15s">${d}${hasData&&!isSelected?'<div style="width:5px;height:5px;border-radius:50%;background:#43a047;position:absolute;bottom:2px;left:50%;transform:translateX(-50%)"></div>':''}</div>`;
+  }
+  html+=`</div>`;
+  // Legend
+  html+=`<div style="display:flex;gap:16px;margin-top:8px;font-size:11px;color:var(--text-light)">
+    <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#e8f5e9;border:1px solid #a5d6a7;vertical-align:middle;margin-right:3px"></span>Stock counted</span>
+    <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--accent);vertical-align:middle;margin-right:3px"></span>Selected</span>
+    <span><span style="display:inline-block;width:10px;height:10px;border-radius:3px;border:2px solid #1565c0;vertical-align:middle;margin-right:3px"></span>Today</span>
+  </div>`;
+  cal.innerHTML=html;
 }
 const _storeClr={PAB:'#1b5e20',TBS:'#1565c0',TBR:'#6a1b9a',TBB:'#e65100',TBO:'#00838f'};
 function onStoreSelect(){
@@ -2139,6 +2189,58 @@ async function refreshStockStatus(){
     }catch(e){toast('Refresh failed','error');}
   }
   renderStockStatusTable();
+}
+function printBlankStockForm(){
+  const storeId=$('ssStore')?.value;if(!storeId){toast('Select a store','error');return;}
+  const store=D.Stores.find(s=>String(s.id)===storeId);
+  const storeName=store?escHtml(store.name):'';
+  const storeClr=_storeClr[store?.code]||_storeClr[store?.id]||'#222';
+  const catIdx=getSortedCategories();
+  let items=D.StoreStock.filter(s=>String(s.storeId)===storeId);
+  items.forEach(it=>{const tpl=D.StockTemplate.find(t=>String(t.id)===String(it.itemId));it._so=tpl?tpl.sortOrder:9999;});
+  items.sort((a,b)=>{const ci=catIdx.indexOf(a.category)-catIdx.indexOf(b.category);return ci!==0?ci:(a._so||0)-(b._so||0);});
+  const _catColors=['#111111','#1565c0','#6a1b9a','#e65100','#00838f','#2e7d32','#c62828','#4527a0','#ef6c00','#00695c','#ad1457','#283593','#4e342e','#37474f','#1b5e20','#880e4f'];
+  let allRows='',catIdx2=0,lastCat='';
+  items.forEach(s=>{
+    if(s.category!==lastCat){
+      const clr=_catColors[catIdx2%_catColors.length];catIdx2++;
+      lastCat=s.category;
+      const txtClr=['#e65100','#ef6c00'].includes(clr)?'#000':'#fff';
+      const cs='background:'+clr+'!important;color:'+txtClr+'!important;padding:2px 4px;font-size:7px;font-weight:700';
+      allRows+=`<tr><td style="${cs};text-transform:uppercase">${escHtml(lastCat)}</td><td class="c" style="${cs}">Unit</td><td class="c" style="${cs}">Min</td><td class="c" style="${cs}">QTY</td></tr>`;
+    }
+    allRows+=`<tr><td>${escHtml(s.name)}</td><td class="c">${escHtml(s.unit||'')}</td><td class="c">${fmtQty(Number(s.min)||0)}</td><td class="c" style="border:1.5px solid #aaa;background:#fff;min-width:40px"></td></tr>`;
+  });
+  const rowArr=allRows.split('</tr>').filter(r=>r.trim());
+  const mid=Math.ceil(rowArr.length/2);
+  const leftRows=rowArr.slice(0,mid).join('</tr>')+'</tr>';
+  const rightRows=rowArr.slice(mid).join('</tr>')+(rowArr.length>mid?'</tr>':'');
+  const w=window.open('','_blank','width=900,height=700');
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Blank Stock Form - ${storeName}</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;color-adjust:exact!important}
+body{font-family:Arial,sans-serif;color:#222;font-size:8px;padding:6px}
+.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;padding-bottom:3px;border-bottom:2px solid ${storeClr}}
+.top h1{font-size:13px;font-weight:800}
+.top .info{font-size:9px;color:#555}
+.top .branch{display:inline-block;background:${storeClr};color:#fff;padding:2px 8px;border-radius:3px;font-size:9px;font-weight:700}
+.cols{display:table;width:100%;table-layout:fixed}
+.cols>div{display:table-cell;width:50%;vertical-align:top;padding:0 3px}
+table{width:100%;border-collapse:collapse}
+td{padding:2px 4px;font-size:8px;border-bottom:1px solid #eee;line-height:1.3}
+.c{text-align:center}
+.btn-row{text-align:center;padding:8px}
+@media print{@page{size:A4;margin:5mm 8mm}.btn-row{display:none!important}body{padding:0}}
+</style></head><body>
+<div class="btn-row"><button onclick="window.print()" style="padding:8px 24px;font-size:13px;font-weight:700;background:#222;color:#fff;border:none;border-radius:8px;cursor:pointer">PRINT</button></div>
+<div class="top">
+  <h1>Stock Check Form</h1>
+  <div class="info"><span class="branch">${storeName}</span> &nbsp; Date: ______________ &nbsp; Checked by: ______________</div>
+</div>
+<div class="cols"><div><table><tbody>${leftRows}</tbody></table></div><div><table><tbody>${rightRows}</tbody></table></div></div>
+<div class="btn-row" style="margin-top:10px"><button onclick="window.print()" style="padding:8px 24px;font-size:13px;font-weight:700;background:#222;color:#fff;border:none;border-radius:8px;cursor:pointer">PRINT</button></div>
+</body></html>`);
+  w.document.close();
 }
 function printStockStatus(){
   const storeId=$('ssStore')?.value;if(!storeId)return;
@@ -2261,87 +2363,75 @@ function renderStockStatusTable(){
   const search=($('ssSearch')?.value||'').toLowerCase().trim();
   const today=new Date().toISOString().split('T')[0];
   const isToday=!dateVal||dateVal===today;
+  const existingRecs=!isToday?D.StockCount.filter(sc=>String(sc.storeId)===storeId&&sc.countDate===dateVal):[];
+  const hasExisting=existingRecs.length>0;
+  const dateLabel=isToday?'':new Date(dateVal+'T12:00:00').toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
   // Date banner
   const banner=$('ssDateBanner');
   if(banner){
     if(isToday)banner.innerHTML=`<div style="background:linear-gradient(135deg,#43a047,#66bb6a);color:#fff;padding:10px 16px;border-radius:8px;margin-bottom:12px;font-size:13px;font-weight:600"><i class="fas fa-clock" style="margin-right:8px"></i>Current Stock (Live Data)</div>`;
-    else banner.innerHTML=`<div style="background:linear-gradient(135deg,#5c6bc0,#7986cb);color:#fff;padding:10px 16px;border-radius:8px;margin-bottom:12px;font-size:13px;font-weight:600"><i class="fas fa-history" style="margin-right:8px"></i>Stock Count Record: ${dateVal}</div>`;
+    else if(hasExisting)banner.innerHTML=`<div style="background:linear-gradient(135deg,#1565c0,#42a5f5);color:#fff;padding:10px 16px;border-radius:8px;margin-bottom:12px;font-size:13px;font-weight:600"><i class="fas fa-edit" style="margin-right:8px"></i>Editing stock count for ${dateLabel} (${existingRecs.length} items)</div>`;
+    else banner.innerHTML=`<div style="background:linear-gradient(135deg,#e65100,#ff9800);color:#fff;padding:10px 16px;border-radius:8px;margin-bottom:12px;font-size:13px;font-weight:600"><i class="fas fa-plus-circle" style="margin-right:8px"></i>New stock count entry for ${dateLabel}</div>`;
   }
-  // Show/hide save button (only for live mode)
-  const saveRow=$('ssSaveRow');if(saveRow)saveRow.style.display=isToday?'block':'none';
+  // Save button — always visible with appropriate label
+  const saveRow=$('ssSaveRow');
+  if(saveRow){
+    saveRow.style.display='block';
+    if(isToday)saveRow.innerHTML=`<button class="btn btn-success btn-sm" onclick="saveStockAll()"><i class="fas fa-save"></i> Save All QTY</button>`;
+    else if(hasExisting)saveRow.innerHTML=`<button class="btn btn-primary btn-sm" onclick="submitStockFromStatus()"><i class="fas fa-save"></i> Update Count</button>`;
+    else saveRow.innerHTML=`<button class="btn btn-primary btn-sm" onclick="submitStockFromStatus()"><i class="fas fa-paper-plane"></i> Submit Count</button>`;
+  }
   const catIdx=getSortedCategories();
   let html='';
-  if(isToday){
-    // Live data from StoreStock — auto-fill missing items for this store
-    let items=D.StoreStock.filter(s=>String(s.storeId)===storeId);
-    if(storeId&&D.StockTemplate.length>0){
-      const existingIds=new Set(items.map(s=>String(s.itemId)));
-      const missing=D.StockTemplate.filter(t=>!existingIds.has(String(t.id)));
-      if(missing.length>0){
-        missing.forEach(t=>{
-          D.StoreStock.push({storeId,itemId:t.id,category:t.category,name:t.name,unit:t.unit,min:t.min,qty:0});
-        });
-        _bgPost({action:'saveSheet',sheet:'StoreStock',rows:D.StoreStock});
-        items=D.StoreStock.filter(s=>String(s.storeId)===storeId);
-        toast(missing.length+' missing items added','info');
-      }
+  // For today: live StoreStock data; for past dates: show all items with existing data pre-filled
+  let items=D.StoreStock.filter(s=>String(s.storeId)===storeId);
+  if(isToday&&storeId&&D.StockTemplate.length>0){
+    const existingIds=new Set(items.map(s=>String(s.itemId)));
+    const missing=D.StockTemplate.filter(t=>!existingIds.has(String(t.id)));
+    if(missing.length>0){
+      missing.forEach(t=>{
+        D.StoreStock.push({storeId,itemId:t.id,category:t.category,name:t.name,unit:t.unit,min:t.min,qty:0});
+      });
+      _bgPost({action:'saveSheet',sheet:'StoreStock',rows:D.StoreStock});
+      items=D.StoreStock.filter(s=>String(s.storeId)===storeId);
+      toast(missing.length+' missing items added','info');
     }
-    if(catF)items=items.filter(s=>s.category===catF);
-    if(search)items=items.filter(s=>(s.name||'').toLowerCase().includes(search)||(s.category||'').toLowerCase().includes(search));
-    items.forEach(it=>{const tpl=D.StockTemplate.find(t=>String(t.id)===String(it.itemId));it._so=tpl?tpl.sortOrder:9999;it._photo=tpl?tpl.photo:'';});
-    items.sort((a,b)=>{const ci=catIdx.indexOf(a.category)-catIdx.indexOf(b.category);return ci!==0?ci:a._so-b._so;});
-    let lastCat='';
-    items.forEach((s,idx)=>{
-      if(s.category!==lastCat){
-        lastCat=s.category;
-        const cnt=items.filter(i=>i.category===lastCat).length;
-        html+=`<tr><td colspan="8" style="background:var(--primary);color:#fff;font-weight:700;font-size:13px;padding:8px 16px;border:none"><i class="fas fa-layer-group" style="margin-right:8px"></i>${escHtml(lastCat)} <span style="opacity:.6;font-size:12px;margin-left:8px">${cnt} items</span></td></tr>`;
-      }
-      const qty=Number(s.qty)||0;const min=Number(s.min)||0;
-      const status=qty<=0?'badge-danger':qty<=min?'badge-warning':'badge-success';
-      const statusText=qty<=0?'Out':qty<=min?'Low':'OK';
-      const photoHtml=s._photo?`<img src="https://drive.google.com/thumbnail?id=${s._photo}&sz=w80" style="width:36px;height:36px;object-fit:cover;border-radius:6px;cursor:pointer" onclick="showPhotoLightbox('${s._photo}','${escHtml(s.name)}')">`:'<span style="font-size:18px;opacity:.3">📦</span>';
-      html+=`<tr>
-        <td style="color:var(--text-light);font-size:12px">${idx+1}</td>
-        <td style="text-align:center">${photoHtml}</td>
-        <td><strong>${escHtml(s.name)}</strong></td>
-        <td style="font-size:12px;color:var(--text-light)">${escHtml(s.category)}</td>
-        <td>${escHtml(s.unit)}</td><td>${min}</td>
-        <td><input type="number" min="0" step="0.5" value="${qty}" style="width:70px;padding:6px;border:2px solid var(--border);border-radius:6px;font-weight:600;text-align:center" data-store="${storeId}" data-item="${s.itemId}" onchange="updateStockQty(this)"></td>
-        <td><span class="badge ${status}">${statusText}</span></td>
-      </tr>`;
-    });
-    if(!items.length)html='<tr><td colspan="8" style="text-align:center;color:var(--text-light)">No items for this store</td></tr>';
-  }else{
-    // Historical data from StockCount
-    let recs=D.StockCount.filter(sc=>String(sc.storeId)===storeId&&sc.countDate===dateVal);
-    if(catF)recs=recs.filter(r=>r.category===catF);
-    if(search)recs=recs.filter(r=>(r.name||'').toLowerCase().includes(search)||(r.category||'').toLowerCase().includes(search));
-    recs.forEach(r=>{const tpl=D.StockTemplate.find(t=>String(t.id)===String(r.itemId));r._so=tpl?tpl.sortOrder:9999;r._photo=tpl?tpl.photo:'';r._min=tpl?Number(tpl.min)||0:0;});
-    recs.sort((a,b)=>{const ci=catIdx.indexOf(a.category)-catIdx.indexOf(b.category);return ci!==0?ci:a._so-b._so;});
-    let lastCat='';
-    recs.forEach((r,idx)=>{
-      if(r.category!==lastCat){
-        lastCat=r.category;
-        const cnt=recs.filter(i=>i.category===lastCat).length;
-        html+=`<tr><td colspan="8" style="background:#5c6bc0;color:#fff;font-weight:700;font-size:13px;padding:8px 16px;border:none"><i class="fas fa-layer-group" style="margin-right:8px"></i>${escHtml(lastCat)} <span style="opacity:.6;font-size:12px;margin-left:8px">${cnt} items</span></td></tr>`;
-      }
-      const qty=Number(r.qty)||0;const min=r._min;
-      const status=qty<=0?'badge-danger':qty<=min?'badge-warning':'badge-success';
-      const statusText=qty<=0?'Out':qty<=min?'Low':'OK';
-      const photoHtml=r._photo?`<img src="https://drive.google.com/thumbnail?id=${r._photo}&sz=w80" style="width:36px;height:36px;object-fit:cover;border-radius:6px">`:'<span style="font-size:18px;opacity:.3">📦</span>';
-      html+=`<tr>
-        <td style="color:var(--text-light);font-size:12px">${idx+1}</td>
-        <td style="text-align:center">${photoHtml}</td>
-        <td><strong>${escHtml(r.name)}</strong></td>
-        <td style="font-size:12px;color:var(--text-light)">${escHtml(r.category)}</td>
-        <td>${escHtml(r.unit)}</td><td>${min}</td>
-        <td style="font-weight:600;text-align:center">${qty}</td>
-        <td><span class="badge ${status}">${statusText}</span></td>
-      </tr>`;
-    });
-    if(!recs.length)html=`<tr><td colspan="8" style="text-align:center;color:var(--text-light);padding:24px"><i class="fas fa-calendar-times" style="font-size:24px;display:block;margin-bottom:8px;opacity:.3"></i>No stock count record for ${dateVal}</td></tr>`;
   }
+  if(catF)items=items.filter(s=>s.category===catF);
+  if(search)items=items.filter(s=>(s.name||'').toLowerCase().includes(search)||(s.category||'').toLowerCase().includes(search));
+  items.forEach(it=>{const tpl=D.StockTemplate.find(t=>String(t.id)===String(it.itemId));it._so=tpl?tpl.sortOrder:9999;it._photo=tpl?tpl.photo:'';});
+  items.sort((a,b)=>{const ci=catIdx.indexOf(a.category)-catIdx.indexOf(b.category);return ci!==0?ci:a._so-b._so;});
+  let lastCat='';
+  items.forEach((s,idx)=>{
+    if(s.category!==lastCat){
+      lastCat=s.category;
+      const cnt=items.filter(i=>i.category===lastCat).length;
+      const catBg=isToday?'var(--primary)':(hasExisting?'#1565c0':'#e65100');
+      html+=`<tr><td colspan="8" style="background:${catBg};color:#fff;font-weight:700;font-size:13px;padding:8px 16px;border:none"><i class="fas fa-layer-group" style="margin-right:8px"></i>${escHtml(lastCat)} <span style="opacity:.6;font-size:12px;margin-left:8px">${cnt} items</span></td></tr>`;
+    }
+    // Determine QTY to show
+    let qty;
+    if(isToday){qty=Number(s.qty)||0;}
+    else{
+      const rec=existingRecs.find(r=>String(r.itemId)===String(s.itemId));
+      qty=rec?Number(rec.qty):0;
+    }
+    const min=Number(s.min)||0;
+    const status=qty<=0?'badge-danger':qty<=min?'badge-warning':'badge-success';
+    const statusText=qty<=0?'Out':qty<=min?'Low':'OK';
+    const photoHtml=s._photo?`<img src="https://drive.google.com/thumbnail?id=${s._photo}&sz=w80" style="width:36px;height:36px;object-fit:cover;border-radius:6px;cursor:pointer" onclick="showPhotoLightbox('${s._photo}','${escHtml(s.name)}')">`:'<span style="font-size:18px;opacity:.3">📦</span>';
+    const inputStyle=!isToday&&existingRecs.find(r=>String(r.itemId)===String(s.itemId))?'border-color:#1565c0;background:#e3f2fd':'';
+    html+=`<tr>
+      <td style="color:var(--text-light);font-size:12px">${idx+1}</td>
+      <td style="text-align:center">${photoHtml}</td>
+      <td><strong>${escHtml(s.name)}</strong></td>
+      <td style="font-size:12px;color:var(--text-light)">${escHtml(s.category)}</td>
+      <td>${escHtml(s.unit)}</td><td>${min}</td>
+      <td><input type="number" min="0" step="0.5" value="${qty}" class="ss-qty" data-store="${storeId}" data-item="${s.itemId}" data-cat="${escHtml(s.category)}" data-name="${escHtml(s.name)}" data-unit="${escHtml(s.unit)}" style="width:70px;padding:6px;border:2px solid var(--border);border-radius:6px;font-weight:600;text-align:center;${inputStyle}" onchange="${isToday?'updateStockQty(this)':''}"></td>
+      <td><span class="badge ${status}">${statusText}</span></td>
+    </tr>`;
+  });
+  if(!items.length)html='<tr><td colspan="8" style="text-align:center;color:var(--text-light)">No items for this store</td></tr>';
   $('ssBody').innerHTML=html;
 }
 function renderStockTable() {
@@ -2421,6 +2511,45 @@ function saveStockAll() {
   _bgPost({action:'saveSheet',sheet:'StoreStock',rows:D.StoreStock});
   toast('Stock quantities saved!','success');
   renderStockStatusTable();
+}
+
+async function submitStockFromStatus(){
+  const storeId=$('ssStore')?.value;
+  const countDate=$('ssDate')?.value;
+  if(!storeId){toast('Select a store','error');return;}
+  if(!countDate){toast('Select a date','error');return;}
+  const items=[];
+  document.querySelectorAll('.ss-qty').forEach(el=>{
+    const qty=parseFloat(el.value);
+    if(!isNaN(qty)){
+      items.push({itemId:el.dataset.item,category:el.dataset.cat,name:el.dataset.name,unit:el.dataset.unit,qty:qty});
+    }
+  });
+  if(items.length===0){toast('Enter at least one item','error');return;}
+  const today=new Date().toISOString().split('T')[0];
+  const isToday=countDate===today;
+  toast('Saving...','info');
+  try{
+    const r=await API.post({action:'saveStockCount',storeId,countDate,items,submittedBy:currentUser?.id||''});
+    if(r&&!r.error){
+      if(isToday){
+        items.forEach(item=>{
+          const ss=D.StoreStock.find(s=>String(s.storeId)===storeId&&String(s.itemId)===item.itemId);
+          if(ss)ss.qty=item.qty;
+        });
+      }
+      D.StockCount=D.StockCount.filter(sc=>!(String(sc.storeId)===storeId&&sc.countDate===countDate));
+      const week=getISOWeek(new Date(countDate));
+      const ts=new Date().toISOString();
+      items.forEach(item=>{
+        D.StockCount.push({id:'sc'+Date.now()+Math.random().toString(36).substr(2,4),storeId,week,countDate,itemId:item.itemId,category:item.category,name:item.name,unit:item.unit,qty:item.qty,submittedBy:currentUser?.id||'',submittedAt:ts});
+      });
+      const store=D.Stores.find(s=>String(s.id)===storeId);
+      toast(`${items.length} items saved for ${store?store.name:'store'} (${countDate})`,'success');
+      renderStockCalendar();
+      renderStockStatusTable();
+    }else{toast('Failed: '+(r?.error||'Unknown error'),'error');}
+  }catch(e){toast('Error: '+e.message,'error');}
 }
 
 // ---- Stock Item Add/Edit Modal ----

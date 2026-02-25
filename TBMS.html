@@ -318,6 +318,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
 // ==================== UTILITIES ====================
 function $(id){return document.getElementById(id)}
 function escHtml(s){if(!s&&s!==0)return'';const d=document.createElement('div');d.textContent=String(s);return d.innerHTML;}
+function fmtQty(n){n=Number(n)||0;if(n===0)return'0';const w=Math.floor(n);const f=Math.round((n-w)*100);let fr='';if(f>=45&&f<=55)fr='½';else if(f>=30&&f<=36)fr='⅓';else if(f>=63&&f<=70)fr='⅔';else if(f>=23&&f<=27)fr='¼';else if(f>=73&&f<=77)fr='¾';else if(f>0)fr='.'+f;if(w===0&&fr)return fr;if(fr)return w+fr;return String(w);}
 function toast(msg,type='info'){const t=document.createElement('div');t.className='toast '+type;t.innerHTML='<i class="fas fa-'+(type==='error'?'exclamation-circle':type==='success'?'check-circle':'info-circle')+'"></i>'+escHtml(msg);$('toastContainer').appendChild(t);setTimeout(()=>t.remove(),3000);}
 function showLoading(t='Loading...'){$('loadingText').textContent=t;$('loadingOverlay').classList.remove('hidden');}
 function hideLoading(){$('loadingOverlay').classList.add('hidden');}
@@ -2174,8 +2175,8 @@ function printStockStatus(){
     const nameHtml=needOrder?`<b>${escHtml(s.name)}</b>`:escHtml(s.name);
     const unitHtml=s.unit?escHtml(s.unit):'';
     const qtyStyle=needOrder?'font-weight:700;color:#c62828':'';
-    const orderCell=needOrder?`<td class="c" style="font-weight:700;color:#c62828">${shortage}</td>`:`<td class="c" style="color:#ccc">-</td>`;
-    allRows+=`<tr${needOrder?' style="background:#ffe0e6!important"':''}><td>${nameHtml}</td><td class="c">${unitHtml}</td><td class="c">${min}</td><td class="c" style="${qtyStyle}">${qty}</td>${orderCell}</tr>`;
+    const orderCell=needOrder?`<td class="c" style="font-weight:700;color:#c62828">${fmtQty(shortage)}</td>`:`<td class="c" style="color:#ccc">-</td>`;
+    allRows+=`<tr${needOrder?' style="background:#ffe0e6!important"':''}><td>${nameHtml}</td><td class="c">${unitHtml}</td><td class="c">${fmtQty(min)}</td><td class="c" style="${qtyStyle}">${fmtQty(qty)}</td>${orderCell}</tr>`;
   });
   // Split rows into 2 halves for left/right columns
   const rowArr=allRows.split('</tr>').filter(r=>r.trim());
@@ -2306,7 +2307,7 @@ function renderStockStatusTable(){
         <td><strong>${escHtml(s.name)}</strong></td>
         <td style="font-size:12px;color:var(--text-light)">${escHtml(s.category)}</td>
         <td>${escHtml(s.unit)}</td><td>${min}</td>
-        <td><input type="number" min="0" value="${qty}" style="width:70px;padding:6px;border:2px solid var(--border);border-radius:6px;font-weight:600;text-align:center" data-store="${storeId}" data-item="${s.itemId}" onchange="updateStockQty(this)"></td>
+        <td><input type="number" min="0" step="0.5" value="${qty}" style="width:70px;padding:6px;border:2px solid var(--border);border-radius:6px;font-weight:600;text-align:center" data-store="${storeId}" data-item="${s.itemId}" onchange="updateStockQty(this)"></td>
         <td><span class="badge ${status}">${statusText}</span></td>
       </tr>`;
     });
@@ -2412,7 +2413,7 @@ function renderStoreQtyTable(){
   }).join('')||'<tr><td colspan="6" style="text-align:center;color:var(--text-light)">No items</td></tr>';
 }
 function updateStockQty(el) {
-  const storeId=el.dataset.store, itemId=el.dataset.item, qty=Number(el.value)||0;
+  const storeId=el.dataset.store, itemId=el.dataset.item, qty=Math.round((parseFloat(el.value)||0)*2)/2;
   const item=D.StoreStock.find(s=>String(s.storeId)===storeId&&String(s.itemId)===itemId);
   if(item)item.qty=qty;
 }

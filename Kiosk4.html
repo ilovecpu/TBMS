@@ -213,6 +213,8 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
 .stock-item .item-min.ok{color:var(--success)}
 .qty-control{display:flex;align-items:center;gap:0;border:2px solid var(--border);border-radius:10px;overflow:hidden}
 .qty-btn{width:42px;height:42px;border:none;background:#f5f5f5;font-size:20px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center}
+.frac-btn{padding:3px 10px;border:1.5px solid var(--border);border-radius:6px;background:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;color:var(--primary)}
+.frac-btn:active{background:var(--accent);color:#fff;border-color:var(--accent)}
 .qty-btn:active{background:#e0e0e0}
 .qty-btn.minus{color:var(--danger)}
 .qty-btn.plus{color:var(--success)}
@@ -704,6 +706,11 @@ function renderStockItems(){
           <div style="font-size:11px;font-weight:600;color:var(--text-light)">${t.unit||''}</div>
           <div class="item-min ${isLow?'low':'ok'}" style="font-size:10px;white-space:nowrap"><i class="fas ${isLow?'fa-exclamation-triangle':'fa-check-circle'}"></i> Min:${storeMin}</div>
         </div>
+        <div style="display:flex;gap:3px;margin-bottom:1px">
+          <button class="frac-btn" onclick="setFrac('${t.id}',0.5)">½</button>
+          <button class="frac-btn" onclick="setFrac('${t.id}',0.33)">⅓</button>
+          <button class="frac-btn" onclick="setFrac('${t.id}',0.25)">¼</button>
+        </div>
         <div class="qty-control">
           <button class="qty-btn minus" onclick="adjQty('${t.id}',-1)">−</button>
           <input type="number" class="qty-val" id="q_${t.id}" value="${qty}" min="0" onchange="setQty('${t.id}',this.value)" inputmode="numeric">
@@ -718,17 +725,37 @@ function renderStockItems(){
   $('stockItems').innerHTML=html;
 }
 
+function fmtQty(n){
+  n=Number(n)||0;if(n===0)return'0';
+  const w=Math.floor(n);const f=Math.round((n-w)*100);
+  let frac='';
+  if(f>=45&&f<=55)frac='½';
+  else if(f>=30&&f<=36)frac='⅓';
+  else if(f>=63&&f<=70)frac='⅔';
+  else if(f>=23&&f<=27)frac='¼';
+  else if(f>=73&&f<=77)frac='¾';
+  else if(f>0)frac='.'+f;
+  if(w===0&&frac)return frac;
+  if(frac)return w+frac;
+  return String(w);
+}
 function adjQty(id,delta){
   const cur=stockQty[id]||0;
-  const nv=Math.max(0,cur+delta);
+  const whole=Math.floor(cur);const frac=cur-whole;
+  const nv=Math.max(0,whole+delta+frac);
   stockQty[id]=nv;
-  const el=$('q_'+id);
-  if(el)el.value=nv;
-  // Update low indicator
+  const el=$('q_'+id);if(el)el.value=nv;
   renderStockItems();
 }
 function setQty(id,val){
-  stockQty[id]=Math.max(0,parseInt(val)||0);
+  stockQty[id]=Math.max(0,parseFloat(val)||0);
+  renderStockItems();
+}
+function setFrac(id,frac){
+  const cur=stockQty[id]||0;
+  const whole=Math.floor(cur);
+  stockQty[id]=whole+frac;
+  const el=$('q_'+id);if(el)el.value=stockQty[id];
   renderStockItems();
 }
 

@@ -2156,63 +2156,88 @@ function printStockStatus(){
   if(catF)dataItems=dataItems.filter(s=>s.category===catF);
   dataItems.forEach(it=>{const tpl=D.StockTemplate.find(t=>String(t.id)===String(it.itemId));it._so=tpl?tpl.sortOrder:9999;it._min=isToday?Number(it.min)||0:(tpl?Number(tpl.min)||0:0);});
   dataItems.sort((a,b)=>{const ci=catIdx.indexOf(a.category)-catIdx.indexOf(b.category);return ci!==0?ci:(a._so||0)-(b._so||0);});
-  // Build rows — one unified Stock Status table with Order column
-  function mkRows(items){
-    let rows='',lastCat='';
-    items.forEach(s=>{
-      if(s.category!==lastCat){lastCat=s.category;rows+=`<tr><td colspan="6" style="background:#333;color:#fff;font-weight:700;padding:2px 4px">${escHtml(lastCat)}</td></tr>`;}
+  // Group items by category
+  const catGroups=[];
+  let curCat=null,curItems=[];
+  dataItems.forEach(s=>{
+    if(s.category!==curCat){if(curCat!==null)catGroups.push({name:curCat,items:curItems});curCat=s.category;curItems=[];}
+    curItems.push(s);
+  });
+  if(curCat!==null)catGroups.push({name:curCat,items:curItems});
+  // Build category mini-table
+  function mkCatBlock(g){
+    let rows='';
+    g.items.forEach(s=>{
       const qty=Number(s.qty)||0;const min=s._min||0;
       const shortage=min>0&&qty<min?min-qty:0;
-      const st=qty<=0?'#c62828':qty<=min?'#e65100':'#2e7d32';
-      const stTxt=qty<=0?'Out':qty<=min?'Low':'OK';
-      rows+=`<tr${shortage>0?' style="background:#fff8f8"':''}>
-        <td>${escHtml(s.name)}</td><td class="c">${escHtml(s.unit)}</td><td class="c">${min}</td>
-        <td class="c" style="font-weight:700">${qty}</td><td class="c" style="color:${st};font-weight:600">${stTxt}</td>
-        <td class="c">${shortage>0?'<b style="color:#c62828">'+shortage+'</b>':'-'}</td></tr>`;
+      const qtyStyle=shortage>0?'font-weight:700;color:#c62828':'';
+      const orderCell=shortage>0?`<td class="c" style="font-weight:700;color:#c62828">${shortage}</td>`:`<td class="c" style="color:#999">-</td>`;
+      rows+=`<tr${shortage>0?' style="background:#fff0f0"':''}><td>${escHtml(s.name)}</td><td class="c">${escHtml(s.unit)}</td><td class="c">${min}</td><td class="c" style="${qtyStyle}">${qty}</td>${orderCell}</tr>`;
     });
-    return rows;
+    return `<div class="cat-block"><div class="cat-hdr">${escHtml(g.name)}</div><table><thead><tr><th>Items</th><th class="c">Unit</th><th class="c">Min</th><th class="c">QTY</th><th class="c">Order</th></tr></thead><tbody>${rows}</tbody></table></div>`;
   }
-  const thHtml='<thead><tr><th>Item</th><th class="c">Unit</th><th class="c">Min</th><th class="c">QTY</th><th class="c">Status</th><th class="c">Order</th></tr></thead>';
-  // Split into 2 halves for 2 A4 portrait pages
-  const half=Math.ceil(dataItems.length/2);
-  const page1=dataItems.slice(0,half);
-  const page2=dataItems.slice(half);
+  // Build Order Request section
+  const orderItems=dataItems.filter(s=>{const q=Number(s.qty)||0;const m=s._min||0;return m>0&&q<m;});
+  let orderBlock='';
+  if(orderItems.length>0){
+    let oRows='';
+    orderItems.forEach(s=>{
+      const qty=Number(s.qty)||0;const min=s._min||0;
+      oRows+=`<tr><td>${escHtml(s.name)}</td><td class="c">${escHtml(s.unit)}</td><td class="c" style="font-weight:700;color:#c62828">${min-qty}</td></tr>`;
+    });
+    orderBlock=`<div class="cat-block"><div class="cat-hdr" style="background:#c62828">Less in Stock &amp; Order Request (${orderItems.length})</div><table><thead><tr><th>Items</th><th class="c">Unit</th><th class="c">Order QTY</th></tr></thead><tbody>${oRows}</tbody></table></div>`;
+  }
+  // Distribute category blocks into 2 columns
+  const allBlocks=catGroups.map(g=>({html:mkCatBlock(g),rows:g.items.length+2}));
+  if(orderBlock)allBlocks.push({html:orderBlock,rows:orderItems.length+2});
+  // Simple greedy split into left/right columns
+  let leftRows=0,rightRows=0,leftHtml='',rightHtml='';
+  allBlocks.forEach(b=>{
+    if(leftRows<=rightRows){leftHtml+=b.html;leftRows+=b.rows;}
+    else{rightHtml+=b.html;rightRows+=b.rows;}
+  });
   const storeName=store?escHtml(store.name):'';
   const storeClr=_storeClr[store?.code]||_storeClr[store?.id]||'#222';
-  const orderCnt=dataItems.filter(s=>{const q=Number(s.qty)||0;const m=s._min||0;return m>0&&q<m;}).length;
-  const subtitle=`${storeName} | ${isToday?'Current Stock':dateVal} | ${dataItems.length} items${orderCnt>0?' | Order: '+orderCnt:''}${catF?' | '+escHtml(catF):''}`;
-  const w=window.open('','_blank','width=800,height=600');
-  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Stock Status - ${storeName}</title>
+  const dateStr=isToday?today:dateVal;
+  const w=window.open('','_blank','width=900,height=700');
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Stock Sheet - ${storeName}</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:Arial,sans-serif;color:#222;font-size:11px;padding:10px}
-table{width:100%;border-collapse:collapse;margin-bottom:8px}
-th{background:#222;color:#fff;padding:4px 6px;font-size:10px;text-align:left}
-td{padding:3px 6px;border-bottom:1px solid #ddd;font-size:11px}
-tr:nth-child(even):not([style]){background:#f9f9f9}
+body{font-family:Arial,sans-serif;color:#222;font-size:9px;padding:8px}
+.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;padding-bottom:6px;border-bottom:3px solid ${storeClr}}
+.top h1{font-size:16px;font-weight:800}
+.top .info{font-size:10px;color:#555}
+.top .branch{display:inline-block;background:${storeClr};color:#fff;padding:3px 12px;border-radius:4px;font-size:11px;font-weight:700}
+.cols{display:table;width:100%;table-layout:fixed}
+.col{display:table-cell;width:50%;vertical-align:top;padding:0 4px}
+.cat-block{margin-bottom:6px;border:1px solid #ccc;border-radius:4px;overflow:hidden}
+.cat-hdr{background:#e84393;color:#fff;font-weight:700;font-size:10px;padding:3px 8px;text-transform:uppercase}
+table{width:100%;border-collapse:collapse}
+th{background:#f5f5f5;padding:2px 4px;font-size:8px;text-align:left;border-bottom:1px solid #ccc;color:#555}
+td{padding:2px 4px;font-size:9px;border-bottom:1px solid #eee}
 .c{text-align:center}
-.hdr{padding:6px 0;border-bottom:3px solid ${storeClr};margin-bottom:8px}
-.hdr b{font-size:16px}
-.hdr .st{color:${storeClr};font-weight:700;font-size:14px;float:right}
-.hdr .sub{font-size:10px;color:#666}
-.btn-row{text-align:center;padding:10px}
-.printed{font-size:8px;color:#999;text-align:right;margin-bottom:4px}
+.btn-row{text-align:center;padding:8px}
 @media print{
-  @page{size:A4;margin:10mm 15mm}
+  @page{size:A4;margin:8mm 12mm}
   .btn-row{display:none!important}
-  body{padding:0;font-size:10px}
-  td{padding:2px 5px;font-size:10px}
-  th{padding:3px 5px;font-size:9px}
+  body{padding:0}
 }
 </style></head><body>
 <div class="btn-row"><button onclick="window.print()" style="padding:8px 24px;font-size:13px;font-weight:700;background:#222;color:#fff;border:none;border-radius:8px;cursor:pointer">PRINT</button></div>
-<div class="printed">Printed: ${new Date().toLocaleString('en-GB')}</div>
-<div class="hdr"><b>The Bap</b> <span class="sub">Stock Status — ${subtitle}</span><span class="st">${storeName}</span></div>
-<table>${thHtml}<tbody>${mkRows(page1)}</tbody></table>
-<div style="page-break-before:always"></div>
-<div class="hdr"><b>The Bap</b> <span class="sub">Stock Status — ${subtitle} (cont.)</span><span class="st">${storeName}</span></div>
-<table>${thHtml}<tbody>${mkRows(page2)}</tbody></table>
-<div class="btn-row"><button onclick="window.print()" style="padding:8px 24px;font-size:13px;font-weight:700;background:#222;color:#fff;border:none;border-radius:8px;cursor:pointer">PRINT</button></div>
+<div class="top">
+  <h1>The Bap — Stock Sheet</h1>
+  <div class="info">
+    <span class="branch">${storeName}</span>
+    &nbsp; Date: <b>${dateStr}</b>
+    &nbsp; Items: <b>${dataItems.length}</b>
+    ${orderItems.length>0?' &nbsp; <span style="color:#c62828;font-weight:700">Order: '+orderItems.length+'</span>':''}
+  </div>
+</div>
+<div class="cols">
+  <div class="col">${leftHtml}</div>
+  <div class="col">${rightHtml}</div>
+</div>
+<div class="btn-row" style="margin-top:10px"><button onclick="window.print()" style="padding:8px 24px;font-size:13px;font-weight:700;background:#222;color:#fff;border:none;border-radius:8px;cursor:pointer">PRINT</button></div>
 </body></html>`);
   w.document.close();
 }

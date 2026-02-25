@@ -377,10 +377,11 @@ function getUserStores(u){
   return(u.storeId||'').split(',').map(s=>s.trim()).filter(Boolean);
 }
 function getAccessibleStores(){
-  if(!currentUser||currentUser.role==='admin')return D.Stores;
+  const active=D.Stores.filter(s=>s.active!==false);
+  if(!currentUser||currentUser.role==='admin')return active;
   const ids=getUserStores(currentUser);
-  if(ids.length===0)return D.Stores;
-  return D.Stores.filter(s=>ids.includes(String(s.id)));
+  if(ids.length===0)return active;
+  return active.filter(s=>ids.includes(String(s.id)));
 }
 function applyPermissions(){
   // Show/hide sidebar menu items based on current user permissions
@@ -513,6 +514,11 @@ function normalizeRow(sheetName, row) {
   for (const canonical of schema) {
     const normKey = canonical.replace(/[\s_\-]+/g, '').toLowerCase();
     result[canonical] = normLookup[normKey] !== undefined ? normLookup[normKey] : '';
+  }
+  // Normalize 'active' field to boolean
+  if('active' in result){
+    const v=result.active;
+    result.active=(v===true||v==='true'||v==='TRUE'||v===1||v==='1');
   }
   return result;
 }
@@ -2669,7 +2675,7 @@ function openStockItemModal(editId){
     </div>
     <div style="border-top:1px solid var(--border);margin:16px 0 12px;padding-top:14px">
       <label style="font-size:13px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:6px;margin-bottom:10px"><i class="fas fa-store" style="color:var(--accent)"></i>Per-Store Minimum Quantities</label>
-      <div style="display:flex;flex-direction:column;gap:6px">${D.Stores.filter(s=>s.active===true||s.active==='true').map(s=>{
+      <div style="display:flex;flex-direction:column;gap:6px">${D.Stores.filter(s=>s.active!==false).map(s=>{
         const ss=D.StoreStock.find(x=>String(x.storeId)===String(s.id)&&String(x.itemId)===editId);
         const sMin=ss?ss.min:existing.min;
         return `<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:#f8f9fa;border-radius:8px">
@@ -4125,7 +4131,7 @@ function _dcUpdateStoreName(){
 }
 function renderDiaryConfigBody(){
   const store=$('dcStoreFilter')?.value||'';
-  const items=(D.DiaryConfig||[]).filter(dc=>dc.storeId===store&&(dc.active!==false&&dc.active!=='false')).sort((a,b)=>{
+  const items=(D.DiaryConfig||[]).filter(dc=>dc.storeId===store&&(dc.active!==false)).sort((a,b)=>{
     const typeOrder={fridge:1,freezer:2,menuItem:3};
     return (typeOrder[a.configType]||9)-(typeOrder[b.configType]||9)||(a.sortOrder||0)-(b.sortOrder||0);
   });
@@ -4165,7 +4171,7 @@ async function addDiaryConfigItem(type){
   const typeLabel={fridge:'Fridge',freezer:'Freezer',menuItem:'Menu Item'}[type];
   const name=prompt('New '+typeLabel+' name:');
   if(!name)return;
-  const existing=(D.DiaryConfig||[]).filter(dc=>dc.storeId===store&&dc.configType===type&&(dc.active!==false&&dc.active!=='false'));
+  const existing=(D.DiaryConfig||[]).filter(dc=>dc.storeId===store&&dc.configType===type&&(dc.active!==false));
   const order=existing.length+1;
   const item={id:genId('dc'),storeId:store,configType:type,name:name.trim(),sortOrder:order,active:'true'};
   D.DiaryConfig.push(item);
@@ -4216,7 +4222,7 @@ function _parseDiaryEntry(raw){
   });
   return e;
 }
-function _getStoreConfigs(storeId){return (D.DiaryConfig||[]).filter(c=>c.storeId===storeId&&(c.active===true||c.active==='true'||c.active==='TRUE'));}
+function _getStoreConfigs(storeId){return (D.DiaryConfig||[]).filter(c=>c.storeId===storeId&&(c.active!==false));}
 
 let _deViewTab='monthly';
 let _deViewDate=new Date();

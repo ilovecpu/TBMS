@@ -701,16 +701,14 @@ function renderStockItems(){
         <div class="item-name">${t.name}</div>
         <div class="item-detail">${t.supplier1||''}</div>
       </div>
-      <div style="display:flex;flex-direction:column;align-items:center;gap:3px">
-        <div style="display:flex;gap:6px;align-items:center">
-          <div style="font-size:11px;font-weight:600;color:var(--text-light)">${t.unit||''}</div>
-          <div class="item-min ${isLow?'low':'ok'}" style="font-size:10px;white-space:nowrap"><i class="fas ${isLow?'fa-exclamation-triangle':'fa-check-circle'}"></i> Min:${storeMin}</div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <div style="display:flex;gap:3px;align-items:center">
+          <span style="font-size:11px;font-weight:600;color:var(--text-light)">${t.unit||''}</span>
+          <span class="item-min ${isLow?'low':'ok'}" style="font-size:10px;white-space:nowrap"><i class="fas ${isLow?'fa-exclamation-triangle':'fa-check-circle'}"></i> ${storeMin}</span>
         </div>
-        <div style="display:flex;gap:3px;margin-bottom:1px">
-          <button class="frac-btn" onclick="setFrac('${t.id}',0.5)">½</button>
-          <button class="frac-btn" onclick="setFrac('${t.id}',0.33)">⅓</button>
-          <button class="frac-btn" onclick="setFrac('${t.id}',0.25)">¼</button>
-        </div>
+        <button class="frac-btn" onclick="setFrac('${t.id}',0.5)">½</button>
+        <button class="frac-btn" onclick="setFrac('${t.id}',0.33)">⅓</button>
+        <button class="frac-btn" onclick="setFrac('${t.id}',0.25)">¼</button>
         <div class="qty-control">
           <button class="qty-btn minus" onclick="adjQty('${t.id}',-1)">−</button>
           <input type="number" class="qty-val" id="q_${t.id}" value="${qty}" min="0" onchange="setQty('${t.id}',this.value)" inputmode="numeric">

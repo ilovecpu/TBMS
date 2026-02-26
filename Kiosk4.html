@@ -1194,13 +1194,14 @@ function removeDeliveryRow(i){collectFormData();diaryEntry.deliveries.splice(i,1
 function renderCooking(menuItems){
   const data=diaryEntry.cookingTemps||[];
   if(menuItems.length===0)return '<div style="text-align:center;padding:20px;color:var(--text-light)"><i class="fas fa-info-circle"></i> No menu items configured. Add them in TBMS → Diary Config.</div>';
-  let html='<div style="font-size:12px;color:var(--text-light);margin-bottom:10px"><i class="fas fa-info-circle"></i> Record temperature when food is cooked. Target: 75°C+</div><div class="fridge-grid"><div class="fridge-row header"><div>Menu Item</div><div style="text-align:center">Temp °C</div><div></div></div>';
+  let html='<div style="font-size:12px;color:var(--text-light);margin-bottom:10px"><i class="fas fa-info-circle"></i> Record temperature when food is cooked. Target: 75°C+</div><div class="fridge-grid"><div class="fridge-row header"><div>Menu Item</div><div style="text-align:center;cursor:pointer;user-select:none;color:var(--accent)" onclick="fillRandomCookTemps()" title="Tap to auto-fill random temps">Temp °C <i class="fas fa-random" style="font-size:10px"></i></div><div></div></div>';
   menuItems.forEach(m=>{
     const rec=data.find(d=>d.item===m.name);
     html+=`<div class="fridge-row"><div class="name"><i class="fas fa-utensils" style="color:${STORE_COLORS[currentStore]}"></i> ${m.name}</div><input type="number" class="temp-input" data-cook="${m.name}" value="${rec?rec.temp:''}" onchange="markDirty()" placeholder="—" inputmode="decimal"><div></div></div>`;
   });
   return html+'</div>';
 }
+function fillRandomCookTemps(){document.querySelectorAll('[data-cook]').forEach(el=>{el.value=Math.floor(Math.random()*9)+89;});markDirty();}
 // ===== 5. Hold Temp =====
 function renderHoldTemp(menuItems){
   const data=diaryEntry.holdTemps||[];

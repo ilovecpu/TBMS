@@ -4338,10 +4338,14 @@ function _deRenderDaily(){
 
   if(!e){
     html+=`<div style="text-align:center;padding:40px 20px;color:#999"><i class="fas fa-inbox" style="font-size:48px;display:block;margin-bottom:12px;opacity:.4"></i><div style="font-size:16px;font-weight:600">No diary entry for this date</div>
-      <button class="btn btn-primary btn-sm" onclick="_deAddForDate('${ds}')" style="margin-top:12px"><i class="fas fa-plus"></i> Create Entry</button></div>`;
+      <div style="display:flex;gap:8px;justify-content:center;margin-top:12px">
+        <button class="btn btn-primary btn-sm" onclick="_deAddForDate('${ds}')"><i class="fas fa-plus"></i> Create Entry</button>
+        <button class="btn btn-sm" onclick="_deAutoFillDirect('${store}','${ds}','')" style="background:#ff9800;color:#fff;border:none;padding:8px 16px;font-weight:700"><i class="fas fa-magic"></i> Auto Fill</button>
+      </div></div>`;
   }else{
     // Action buttons
     html+=`<div style="display:flex;gap:8px;justify-content:flex-end;margin-bottom:12px">
+      <button onclick="_deAutoFillDirect('${store}','${ds}','${e.id}')" class="btn btn-sm" style="background:#ff9800;color:#fff;border:none;padding:8px 16px;font-weight:700"><i class="fas fa-magic"></i> Auto Fill</button>
       <button onclick="_dePrintEntry('${e.id}')" class="btn btn-outline btn-sm"><i class="fas fa-print"></i> Print</button>
       <button onclick="_deStartEdit('${e.id}')" class="btn btn-outline btn-sm"><i class="fas fa-edit"></i> Edit</button>
       <button onclick="deleteDiaryEntry('${e.id}')" class="btn btn-sm" style="background:#fee;color:#c00;border:1px solid #fcc"><i class="fas fa-trash"></i> Delete</button>
@@ -4416,7 +4420,7 @@ th{background:#f0f0f0;font-weight:700;font-size:8px}
     h+=`<div class="sec"><h3 style="background:#c62828">Food Hold Temps</h3><table><tr><th>Item</th>`;
     DE_HOLD_TIMES.forEach(t=>h+=`<th style="text-align:center;width:50px">${t}</th>`);
     h+='</tr>';
-    ht.forEach(hi=>{h+=`<tr><td>${hi.item}</td>`;DE_HOLD_TIMES.forEach(t=>{const k='t'+t.replace(':','');const v=hi[k]||'—';h+=`<td style="text-align:center;font-weight:700;${(v==='N')?'color:#1565c0;font-style:italic':''}">${v}</td>`;});h+='</tr>';});
+    ht.forEach(hi=>{h+=`<tr><td>${hi.item}</td>`;DE_HOLD_TIMES.forEach(t=>{const k='t'+t.replace(':','');const nk='n'+t.replace(':','');let v=hi[k]||'—';const isN=(v==='N'||v==='n'||hi[nk]===true||hi[nk]==='true');const disp=isN?(v!=='N'&&v!=='n'&&v!=='—'?v+'(N)':'N'):v;h+=`<td style="text-align:center;font-weight:700;${isN?'color:#1565c0;font-style:italic':''}">${disp}</td>`;});h+='</tr>';});
     h+=`</table></div>`;
   }
 
@@ -4473,6 +4477,7 @@ function _deRenderInlineForm(storeId,e,isNew,storeName,niceD){
   let html=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding:14px;background:linear-gradient(135deg,#e3f2fd,#fff);border-radius:12px;border:2px solid #90caf9">
     <div><h3 style="margin:0;color:#1565c0"><i class="fas fa-edit" style="margin-right:8px"></i>${isNew?'New Entry':'Editing'} — ${storeName}</h3><div style="font-size:13px;color:#666;margin-top:2px">${niceD}</div></div>
     <div style="display:flex;gap:8px">
+      <button onclick="_deAutoFill('${storeId}')" class="btn btn-sm" style="background:#ff9800;color:#fff;border:none;padding:8px 16px;font-weight:700"><i class="fas fa-magic"></i> Auto Fill</button>
       <button onclick="_deCancelEdit()" class="btn btn-outline btn-sm"><i class="fas fa-times"></i> Cancel</button>
       <button onclick="_saveDiaryFormInline('${storeId}','${e.id||''}')" class="btn btn-sm" style="background:var(--accent);color:#fff;border:none;padding:8px 20px;font-weight:700"><i class="fas fa-save"></i> Save</button>
     </div>
@@ -4511,7 +4516,7 @@ function _deRenderInlineForm(storeId,e,isNew,storeName,niceD){
     html+=`<div class="card" style="margin-bottom:12px;padding:14px"><h4 style="color:#c62828;margin-bottom:8px"><i class="fas fa-clock" style="margin-right:6px"></i>Food Hold Temperature</h4><table style="width:100%;border-collapse:collapse;font-size:13px"><tr style="background:#f5f5f5"><th style="padding:6px;text-align:left">Item</th>`;
     DE_HOLD_TIMES.forEach(t=>html+=`<th style="padding:6px;text-align:center;width:65px">${t}</th>`);
     html+='</tr>';
-    menuItems.forEach(m=>{const h=htMap[m.name]||{};html+=`<tr style="border-bottom:1px solid #eee"><td style="padding:6px">${m.name}</td>`;DE_HOLD_TIMES.forEach(t=>{const k='t'+t.replace(':','');html+=`<td style="padding:4px;text-align:center"><input type="text" class="deHT" data-item="${escHtml(m.name)}" data-time="${k}" value="${h[k]||''}" placeholder="°C/N" style="width:50px;padding:3px;border:1px solid #ddd;border-radius:4px;text-align:center;font-size:12px"></td>`;});html+='</tr>';});
+    menuItems.forEach(m=>{const h=htMap[m.name]||{};html+=`<tr style="border-bottom:1px solid #eee"><td style="padding:6px">${m.name}</td>`;DE_HOLD_TIMES.forEach(t=>{const k='t'+t.replace(':','');const nk='n'+t.replace(':','');let dispVal=h[k]||'';if(dispVal&&dispVal!=='N'&&(h[nk]===true||h[nk]==='true'))dispVal+='N';html+=`<td style="padding:4px;text-align:center"><input type="text" class="deHT" data-item="${escHtml(m.name)}" data-time="${k}" value="${dispVal}" placeholder="°C/N" style="width:50px;padding:3px;border:1px solid #ddd;border-radius:4px;text-align:center;font-size:12px"></td>`;});html+='</tr>';});
     html+=`</table></div>`;
   }
 
@@ -4589,6 +4594,20 @@ function _deRenderMonthly(){
     <div style="padding:8px;background:#e8f5e9;border-radius:10px;text-align:center"><div style="font-size:16px;font-weight:800;color:#1b5e20">${filledDays}</div><div style="font-size:10px;font-weight:600;color:#2e7d32">Completed</div></div>
     <div style="padding:8px;background:#fff3e0;border-radius:10px;text-align:center"><div style="font-size:16px;font-weight:800;color:#e65100">${missingDays}</div><div style="font-size:10px;font-weight:600;color:#ef6c00">Missing</div></div>
     <div style="padding:8px;background:#e3f2fd;border-radius:10px;text-align:center"><div style="font-size:16px;font-weight:800;color:#1565c0">${pct}%</div><div style="font-size:10px;font-weight:600;color:#1976d2">Compliance</div></div>
+  </div>`;
+
+  // Auto Fill Range
+  const firstDate=monthPrefix+'-01';
+  const lastPast=todayStr<monthPrefix+'-'+String(daysInMonth).padStart(2,'0')?todayStr:monthPrefix+'-'+String(daysInMonth).padStart(2,'0');
+  html+=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;padding:10px 14px;background:linear-gradient(135deg,#fff3e0,#fff);border-radius:10px;border:1.5px solid #ffcc80;flex-wrap:wrap">
+    <i class="fas fa-magic" style="color:#ff9800;font-size:16px"></i>
+    <span style="font-size:13px;font-weight:700;color:#e65100">Auto Fill Range</span>
+    <input type="date" id="deAFFrom" value="${firstDate}" min="${firstDate}" max="${lastPast}" style="padding:5px 8px;border:1.5px solid #ddd;border-radius:6px;font-size:12px;font-family:inherit">
+    <span style="font-size:12px;color:#999">~</span>
+    <input type="date" id="deAFTo" value="${lastPast}" min="${firstDate}" max="${lastPast}" style="padding:5px 8px;border:1.5px solid #ddd;border-radius:6px;font-size:12px;font-family:inherit">
+    <label style="font-size:11px;display:flex;align-items:center;gap:4px;color:#666"><input type="checkbox" id="deAFSkipExisting" checked style="width:14px;height:14px;accent-color:#ff9800">Skip existing</label>
+    <button onclick="_deAutoFillRange('${store}')" style="padding:6px 16px;border:none;border-radius:8px;background:#ff9800;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit"><i class="fas fa-magic"></i> Fill</button>
+    <button onclick="_deDeleteRange('${store}')" style="padding:6px 16px;border:none;border-radius:8px;background:#e53935;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit"><i class="fas fa-trash"></i> Reset</button>
   </div>`;
 
   // Calendar grid
@@ -4710,7 +4729,7 @@ function _deRenderEntryReadonly(e){
     html+=`<div class="card" style="margin-bottom:12px;padding:14px"><h4 style="color:#c62828;margin-bottom:8px"><i class="fas fa-clock" style="margin-right:6px"></i>Food Hold Temps</h4><table style="width:100%;border-collapse:collapse;font-size:13px"><tr style="background:#f5f5f5"><th style="padding:4px 8px;text-align:left">Item</th>`;
     DE_HOLD_TIMES.forEach(t=>html+=`<th style="padding:4px 8px;text-align:center">${t}</th>`);
     html+='</tr>';
-    ht.forEach(h=>{html+=`<tr style="border-bottom:1px solid #f0f0f0"><td style="padding:4px 8px">${h.item}</td>`;DE_HOLD_TIMES.forEach(t=>{const k='t'+t.replace(':','');const v=h[k]||'—';const isN=(v==='N'||v==='n');html+=`<td style="padding:4px 8px;text-align:center;font-weight:700;${isN?'color:#1565c0;font-style:italic':''}">${isN?'N':v}</td>`;});html+='</tr>';});
+    ht.forEach(h=>{html+=`<tr style="border-bottom:1px solid #f0f0f0"><td style="padding:4px 8px">${h.item}</td>`;DE_HOLD_TIMES.forEach(t=>{const k='t'+t.replace(':','');const nk='n'+t.replace(':','');let v=h[k]||'—';const isN=(v==='N'||v==='n'||h[nk]===true||h[nk]==='true');const display=isN?(v!=='N'&&v!=='n'&&v!=='—'?v+'(N)':'N'):v;html+=`<td style="padding:4px 8px;text-align:center;font-weight:700;${isN?'color:#1565c0;font-style:italic':''}">${display}</td>`;});html+='</tr>';});
     html+=`</table></div>`;
   }
   // Cooling
@@ -4885,7 +4904,7 @@ function _openDiaryForm(storeId,entry,isNewWithDate){
     html+=`<h4 style="color:#c62828;margin:14px 0 8px"><i class="fas fa-clock" style="margin-right:6px"></i>Food Hold Temperature</h4><table style="width:100%;border-collapse:collapse;font-size:13px"><tr style="background:#f5f5f5"><th style="padding:6px;text-align:left">Item</th>`;
     DE_HOLD_TIMES.forEach(t=>html+=`<th style="padding:6px;text-align:center;width:65px">${t}</th>`);
     html+='</tr>';
-    menuItems.forEach(m=>{const h=htMap[m.name]||{};html+=`<tr style="border-bottom:1px solid #eee"><td style="padding:6px">${m.name}</td>`;DE_HOLD_TIMES.forEach(t=>{const k='t'+t.replace(':','');html+=`<td style="padding:4px;text-align:center"><input type="text" class="deHT" data-item="${escHtml(m.name)}" data-time="${k}" value="${h[k]||''}" placeholder="°C/N" style="width:50px;padding:3px;border:1px solid #ddd;border-radius:4px;text-align:center;font-size:12px"></td>`;});html+='</tr>';});
+    menuItems.forEach(m=>{const h=htMap[m.name]||{};html+=`<tr style="border-bottom:1px solid #eee"><td style="padding:6px">${m.name}</td>`;DE_HOLD_TIMES.forEach(t=>{const k='t'+t.replace(':','');const nk='n'+t.replace(':','');let dispVal=h[k]||'';if(dispVal&&dispVal!=='N'&&(h[nk]===true||h[nk]==='true'))dispVal+='N';html+=`<td style="padding:4px;text-align:center"><input type="text" class="deHT" data-item="${escHtml(m.name)}" data-time="${k}" value="${dispVal}" placeholder="°C/N" style="width:50px;padding:3px;border:1px solid #ddd;border-radius:4px;text-align:center;font-size:12px"></td>`;});html+='</tr>';});
     html+=`</table>`;
   }
 
@@ -4969,6 +4988,209 @@ function _deLeftoverRowHtml(i,l){
 }
 function _deAddLeftoverRow(){$('deLeftoverRows').insertAdjacentHTML('beforeend',_deLeftoverRowHtml(0,{}));}
 
+async function _deAutoFillDirect(storeId,ds,existingId,silent){
+  const dt=new Date(ds+'T00:00:00');
+  const dow=dt.getDay();
+  const randInt=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
+  const randDec=(a,b)=>+(Math.random()*(b-a)+a).toFixed(1);
+  const pickN=(arr,n)=>{const s=[...arr];for(let i=s.length-1;i>0;i--){const j=randInt(0,i);[s[i],s[j]]=[s[j],s[i]];}return s.slice(0,n);};
+
+  if(!silent)await loadDiaryData();
+  const configs=_getStoreConfigs(storeId);
+  const fridges=configs.filter(c=>c.configType==='fridge').sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0));
+  const freezers=configs.filter(c=>c.configType==='freezer').sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0));
+  const menuItems=configs.filter(c=>c.configType==='menuItem').sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0));
+  const allCold=[...fridges,...freezers];
+
+  // 1. Opening Checks - all true
+  const openChecks={};
+  DE_OPENING_CHECKS.forEach(c=>{openChecks[c.key]=true;});
+
+  // 2. Cold Storage
+  const fridgeTemps=allCold.map(c=>({name:c.name,am:String(randDec(1.0,4.9)),pm:String(randDec(1.0,4.9))}));
+
+  // 3. Deliveries
+  const deliveries=[];
+  if(dow===2||dow===5)deliveries.push({product:'Treestone',visualOk:true,tempOk:true,accepted:true});
+  if(dow===3)deliveries.push({product:'PanAsia',visualOk:true,tempOk:true,accepted:true});
+
+  // 4. Cooking Temps
+  const cookingTemps=menuItems.map(m=>({item:m.name,temp:String(randInt(89,97))}));
+
+  // 5. Hold Temps
+  const holdTemps=menuItems.map(m=>{
+    const h={item:m.name};
+    DE_HOLD_TIMES.forEach(t=>{
+      const k='t'+t.replace(':','');const nk='n'+t.replace(':','');
+      const isN=Math.random()<0.35;
+      if(isN){h[k]=String(randInt(89,97));h[nk]=true;}
+      else{h[k]=String(randInt(65,78));h[nk]=false;}
+    });return h;
+  });
+
+  // 6. Cooling - Thu/Fri
+  const coolingRecords=[];
+  if(dow===4||dow===5){
+    const coolPool=['Spinach','Beansprout','Courgettes','Mushroom'];
+    pickN(coolPool,randInt(1,2)).forEach(p=>{coolingRecords.push({product:p,timeTaken:String(randInt(60,80)),ok:true});});
+  }
+
+  // 7. Leftovers
+  const loPool=['Rice','Noodle','KFC','Beef','Pork','Mandu','Sweet Soy','Katsu'];
+  const leftovers=pickN(loPool,randInt(2,3)).map(p=>({product:p,action:'discard'}));
+
+  // 8. Closing Checks
+  const closingChecks={};
+  DE_CLOSING_CHECKS.forEach(c=>{closingChecks[c.key]=true;});
+
+  // 9. Extra Checks - Sunday deep cleaning
+  const extraChecks={};
+  DE_EXTRA_CHECKS.forEach(c=>{extraChecks[c.key]=(dow===0&&c.key==='deepCleaning');});
+
+  // 10. Signed By
+  let signedBy='';
+  const storeStaff=(D.Staff||[]).filter(s=>String(s.storeId)===String(storeId)&&s.active!==false&&s.kioskPwd);
+  if(storeStaff.length>0){const sn=storeStaff[randInt(0,storeStaff.length-1)];signedBy=sn.nickName||sn.name;}
+
+  const row={
+    id:existingId||genId('diary'),storeId,date:ds,
+    openChecks:JSON.stringify(openChecks),fridgeTemps:JSON.stringify(fridgeTemps),deliveries:JSON.stringify(deliveries),
+    cookingTemps:JSON.stringify(cookingTemps),holdTemps:JSON.stringify(holdTemps),coolingRecords:JSON.stringify(coolingRecords),
+    leftovers:JSON.stringify(leftovers),closingChecks:JSON.stringify(closingChecks),extraChecks:JSON.stringify(extraChecks),
+    holdTemps:JSON.stringify(holdTemps),issues:'',signedBy,submittedBy:currentUser?.name||'admin',submittedAt:new Date().toISOString()
+  };
+
+  if(!silent)showLoading();
+  try{
+    const r=await API.post({action:'upsert',sheet:'DiaryEntry',row});
+    if(r&&r.status==='ok'){
+      const idx=(D.DiaryEntry||[]).findIndex(x=>x.id===row.id);
+      if(idx>=0)D.DiaryEntry[idx]=row;else D.DiaryEntry.push(row);
+      if(!silent){toast('Auto Fill saved!','success');_deRenderDaily();}
+    }else{if(!silent)toast('Save failed: '+(r?.error||'Unknown'),'error');throw new Error(r?.error||'fail');}
+  }catch(ex){if(!silent){toast('Error: '+ex.message,'error');}else{throw ex;}}
+  if(!silent)hideLoading();
+}
+async function _deAutoFillRange(storeId){
+  const from=$('deAFFrom')?.value;const to=$('deAFTo')?.value;
+  if(!from||!to||from>to){toast('Invalid date range','error');return;}
+  const skipExisting=$('deAFSkipExisting')?.checked!==false;
+  const todayStr=new Date().toISOString().slice(0,10);
+  const dates=[];
+  let cur=new Date(from+'T00:00:00');
+  const end=new Date(to+'T00:00:00');
+  while(cur<=end){
+    const ds=cur.toISOString().slice(0,10);
+    if(ds<=todayStr)dates.push(ds);
+    cur.setDate(cur.getDate()+1);
+  }
+  if(dates.length===0){toast('No valid dates in range','error');return;}
+
+  // Filter out existing if skip
+  const existing=new Set((D.DiaryEntry||[]).filter(e=>e.storeId===storeId).map(e=>e.date));
+  const toFill=skipExisting?dates.filter(d=>!existing.has(d)):dates;
+  if(toFill.length===0){toast('All dates already filled','info');return;}
+
+  await loadDiaryData();
+  showLoading();
+  let done=0,fail=0;
+  for(const ds of toFill){
+    try{
+      const existingEntry=skipExisting?null:(D.DiaryEntry||[]).find(e=>e.storeId===storeId&&e.date===ds);
+      await _deAutoFillDirect(storeId,ds,existingEntry?existingEntry.id:'',true);
+      done++;
+    }catch(ex){fail++;}
+  }
+  hideLoading();
+  toast(`Auto Fill: ${done} days filled${fail?' ('+fail+' failed)':''}`,fail?'warning':'success');
+  _deRenderMonthly();
+}
+async function _deDeleteRange(storeId){
+  const from=$('deAFFrom')?.value;const to=$('deAFTo')?.value;
+  if(!from||!to||from>to){toast('Invalid date range','error');return;}
+  const entries=(D.DiaryEntry||[]).filter(e=>e.storeId===storeId&&e.date>=from&&e.date<=to);
+  if(entries.length===0){toast('No entries in this range','info');return;}
+  if(!confirm(`Delete ${entries.length} diary entries from ${from} to ${to}?`))return;
+  showLoading();
+  let done=0,fail=0;
+  for(const e of entries){
+    try{
+      const r=await API.post({action:'deleteRow',sheet:'DiaryEntry',id:e.id});
+      if(r&&r.status==='ok'){D.DiaryEntry=D.DiaryEntry.filter(x=>x.id!==e.id);done++;}
+      else{fail++;}
+    }catch(ex){fail++;}
+  }
+  hideLoading();
+  toast(`Reset: ${done} days deleted${fail?' ('+fail+' failed)':''}`,fail?'warning':'success');
+  _deRenderMonthly();
+}
+function _deAutoFill(storeId){
+  const ds=$('deFormDate')?.value;if(!ds)return;
+  const dt=new Date(ds+'T00:00:00');
+  const dow=dt.getDay(); // 0=Sun,1=Mon,2=Tue,3=Wed,4=Thu,5=Fri,6=Sat
+
+  // Helper
+  const randInt=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
+  const randDec=(a,b)=>+(Math.random()*(b-a)+a).toFixed(1);
+  const pickN=(arr,n)=>{const s=[...arr];for(let i=s.length-1;i>0;i--){const j=randInt(0,i);[s[i],s[j]]=[s[j],s[i]];}return s.slice(0,n);};
+
+  // 1. Opening Checks - all checked
+  document.querySelectorAll('.deOC').forEach(cb=>{cb.checked=true;});
+
+  // 2. Cold Storage - AM/PM random 1.0-4.9
+  document.querySelectorAll('.deFT').forEach(inp=>{inp.value=randDec(1.0,4.9);});
+
+  // 3. Deliveries - clear existing, add by day
+  const dlBox=$('deDeliveryRows');if(dlBox)dlBox.innerHTML='';
+  if(dow===2||dow===5){ // Tue or Fri => Treestone
+    dlBox.insertAdjacentHTML('beforeend',_deDeliveryRowHtml(0,{product:'Treestone',visualOk:true,tempOk:true,accepted:true}));
+  }
+  if(dow===3){ // Wed => PanAsia
+    dlBox.insertAdjacentHTML('beforeend',_deDeliveryRowHtml(0,{product:'PanAsia',visualOk:true,tempOk:true,accepted:true}));
+  }
+
+  // 4. Cooking Temp - 89~97
+  document.querySelectorAll('.deCT').forEach(inp=>{inp.value=randInt(89,97);});
+
+  // 5. Hold Temps - 65~78, random N(35%), N=89~97
+  document.querySelectorAll('.deHT').forEach(inp=>{
+    const isN=Math.random()<0.35;
+    if(isN){inp.value=randInt(89,97)+'N';}
+    else{inp.value=randInt(65,78);}
+  });
+
+  // 6. Cooling - Thu/Fri: random 1-2 from list, time 60-80, OK
+  const clBox=$('deCoolingRows');if(clBox)clBox.innerHTML='';
+  if(dow===4||dow===5){ // Thu or Fri
+    const coolItems=['Spinach','Beansprout','Courgettes','Mushroom'];
+    const picks=pickN(coolItems,randInt(1,2));
+    picks.forEach(p=>{clBox.insertAdjacentHTML('beforeend',_deCoolingRowHtml(0,{product:p,timeTaken:String(randInt(60,80)),ok:true}));});
+  }
+
+  // 7. Leftovers - daily 2-3 from list, all Discarded
+  const loBox=$('deLeftoverRows');if(loBox)loBox.innerHTML='';
+  const loItems=['Rice','Noodle','KFC','Beef','Pork','Mandu','Sweet Soy','Katsu'];
+  const loPicks=pickN(loItems,randInt(2,3));
+  loPicks.forEach(p=>{loBox.insertAdjacentHTML('beforeend',_deLeftoverRowHtml(0,{product:p,action:'discard'}));});
+
+  // 8. Closing Checks - all checked
+  document.querySelectorAll('.deCC').forEach(cb=>{cb.checked=true;});
+
+  // 9. Extra Checks - Sunday only: Deep Cleaning
+  document.querySelectorAll('.deEC').forEach(cb=>{
+    if(dow===0&&cb.dataset.key==='deepCleaning'){cb.checked=true;}
+    else{cb.checked=false;}
+  });
+
+  // 10. Signed By - random staff from that store (active, has kioskPwd)
+  const storeStaff=(D.Staff||[]).filter(s=>String(s.storeId)===String(storeId)&&s.active!==false&&s.kioskPwd);
+  if(storeStaff.length>0){
+    const signer=storeStaff[randInt(0,storeStaff.length-1)];
+    const signInp=$('deFormSigned');if(signInp)signInp.value=signer.nickName||signer.name;
+  }
+
+  toast('Auto Fill complete!','success');
+}
 async function _saveDiaryFormInline(storeId,existingId){
   const date=$('deFormDate')?.value;
   if(!date){toast('Please select a date','error');return;}
@@ -4977,7 +5199,7 @@ async function _saveDiaryFormInline(storeId,existingId){
   const fridgeTemps=Object.values(ftRaw).filter(f=>f.am||f.pm);
   const ctRaw={};document.querySelectorAll('.deCT').forEach(inp=>{ctRaw[inp.dataset.item]={item:inp.dataset.item,temp:inp.value};});
   const cookingTemps=Object.values(ctRaw).filter(c=>c.temp);
-  const htRaw={};document.querySelectorAll('.deHT').forEach(inp=>{const item=inp.dataset.item,time=inp.dataset.time;if(!htRaw[item])htRaw[item]={item};const v=inp.value.trim();htRaw[item][time]=(v.toUpperCase()==='N')?'N':v;});
+  const htRaw={};document.querySelectorAll('.deHT').forEach(inp=>{const item=inp.dataset.item,time=inp.dataset.time;if(!htRaw[item])htRaw[item]={item};const v=inp.value.trim();if(v.toUpperCase()==='N'){htRaw[item][time]='N';}else if(/\d+N$/i.test(v)){const nk='n'+time.slice(1);htRaw[item][time]=v.replace(/N$/i,'');htRaw[item][nk]=true;}else{htRaw[item][time]=v;}});
   const holdTemps=Object.values(htRaw).filter(h=>DE_HOLD_TIMES.some(t=>h['t'+t.replace(':','')]));
   const closingChecks={};document.querySelectorAll('.deCC').forEach(cb=>{closingChecks[cb.dataset.key]=cb.checked;});
   const extraChecks={};document.querySelectorAll('.deEC').forEach(cb=>{extraChecks[cb.dataset.key]=cb.checked;});
@@ -5026,7 +5248,7 @@ async function _saveDiaryForm(storeId,existingId){
   const cookingTemps=Object.values(ctRaw).filter(c=>c.temp);
 
   // Collect hold temps
-  const htRaw={};document.querySelectorAll('.deHT').forEach(inp=>{const item=inp.dataset.item,time=inp.dataset.time;if(!htRaw[item])htRaw[item]={item};const v=inp.value.trim();htRaw[item][time]=(v.toUpperCase()==='N')?'N':v;});
+  const htRaw={};document.querySelectorAll('.deHT').forEach(inp=>{const item=inp.dataset.item,time=inp.dataset.time;if(!htRaw[item])htRaw[item]={item};const v=inp.value.trim();if(v.toUpperCase()==='N'){htRaw[item][time]='N';}else if(/\d+N$/i.test(v)){const nk='n'+time.slice(1);htRaw[item][time]=v.replace(/N$/i,'');htRaw[item][nk]=true;}else{htRaw[item][time]=v;}});
   const holdTemps=Object.values(htRaw).filter(h=>DE_HOLD_TIMES.some(t=>h['t'+t.replace(':','')]));
 
   // Collect closing checks

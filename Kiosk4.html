@@ -1214,7 +1214,9 @@ function renderHoldTemp(menuItems){
     html+=`<tr><td>${m.name}</td>`;
     HOLD_TIMES.forEach(t=>{
       const tKey='t'+t.replace(':','');const nKey='n'+t.replace(':','');
-      const val=rec[tKey]||'';const isN=rec[nKey]?true:false;
+      let rawVal=rec[tKey]||'';let isN=rec[nKey]?true:false;
+      let val=rawVal;
+      if(typeof rawVal==='string'&&/\d+N$/i.test(rawVal)){val=rawVal.replace(/N$/i,'');isN=true;}
       html+=`<td><input type="number" class="hold-input ${isN?'newly':''}" data-hold="${m.name}" data-time="${tKey}" value="${val}" onchange="markDirty()" placeholder="—" inputmode="decimal"><div class="n-check"><input type="checkbox" ${isN?'checked':''} data-hold="${m.name}" data-ntime="${nKey}" onchange="toggleNewly(this);markDirty()"><label>N</label></div></td>`;
     });
     html+='</tr>';

@@ -2551,9 +2551,25 @@ function saveStockAll() {
   toast('Stock quantities saved!','success');
   renderStockStatusTable();
 }
-function resetAllQty(){
+async function resetAllQty(){
+  const dateVal=$('ssDate')?.value;const storeId=$('ssStore')?.value;
+  const today=new Date().toISOString().split('T')[0];
+  const isToday=dateVal===today;
   if(!confirm('Reset all QTY to 0?'))return;
   document.querySelectorAll('.ss-qty').forEach(el=>{el.value=0;el.dispatchEvent(new Event('change'));});
+  if(!isToday&&dateVal&&storeId){
+    // Past date: delete StockCount rows for this store+date from server
+    const scRows=D.StockCount.filter(sc=>String(sc.storeId)===storeId&&sc.countDate===dateVal);
+    for(const sc of scRows){try{await API.post({action:'deleteRow',sheet:'StockCount',id:sc.id});}catch(ex){}}
+    D.StockCount=D.StockCount.filter(sc=>!(String(sc.storeId)===storeId&&sc.countDate===dateVal));
+    renderStockCalendar();
+  }
+  if(isToday&&storeId){
+    // Today: reset StoreStock qty to 0
+    D.StoreStock.filter(s=>String(s.storeId)===storeId).forEach(s=>{s.qty=0;});
+    if(API.mode==='cloud'){try{await API.post({action:'saveSheet',sheet:'StoreStock',rows:D.StoreStock});}catch(ex){}}
+    renderStockCalendar();
+  }
   toast('All QTY reset to 0','info');
 }
 async function copyStockToDate(){

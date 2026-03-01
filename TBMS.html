@@ -237,7 +237,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
   <div class="login-logo">
     <div class="logo-icon"><i class="fas fa-bowl-food"></i></div>
     <h1>TBMS</h1>
-    <p>The Bap Management System <span style="opacity:.5;font-size:11px">Ver1.0</span></p>
+    <p>The Bap Management System <span style="opacity:.5;font-size:11px">Ver1.1</span></p>
   </div>
   <div class="form-group"><label>Username</label><input id="loginUser" placeholder="Enter username"></div>
   <div class="form-group"><label>Password</label><input id="loginPass" type="password" placeholder="Enter password"></div>
@@ -255,7 +255,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
 <!-- MAIN APP -->
 <div id="mainApp" class="hidden">
   <div class="sidebar" id="sidebar">
-    <div class="sidebar-header"><h2>TBMS <span style="font-size:12px;font-weight:400;opacity:.6">Ver1.0</span></h2><p>The Bap Management System</p></div>
+    <div class="sidebar-header"><h2>TBMS <span style="font-size:12px;font-weight:400;opacity:.6">Ver1.1</span></h2><p>The Bap Management System</p></div>
     <div class="sidebar-menu">
       <div class="menu-item active" data-page="dashboard" onclick="navigate('dashboard')"><i class="fas fa-home"></i>Dashboard</div>
       <div class="menu-item" data-page="stores" onclick="navigate('stores')"><i class="fas fa-store"></i>Stores</div>
@@ -302,7 +302,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
   <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
   <div class="main-content">
     <div class="header">
-      <div class="header-left"><button class="menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button><h2 id="pageTitle" style="font-size:18px">Dashboard</h2><span style="font-size:11px;color:var(--text-light);margin-left:8px;font-weight:400;opacity:.7">Ver1.0</span></div>
+      <div class="header-left"><button class="menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button><h2 id="pageTitle" style="font-size:18px">Dashboard</h2><span style="font-size:11px;color:var(--text-light);margin-left:8px;font-weight:400;opacity:.7">Ver1.1</span></div>
       <div class="header-right"><span id="headerDate"></span><span class="sync-status"><span class="dot offline" id="syncDot"></span><span id="syncText">Local</span></span><button class="btn btn-sm btn-outline" onclick="doLogout()"><i class="fas fa-sign-out-alt"></i> Logout</button></div>
     </div>
     <div class="page-content" id="pageContent"></div>
@@ -2432,7 +2432,7 @@ async function renderStockStatusTable(){
   const today=new Date().toISOString().split('T')[0];
   const isToday=!dateVal||dateVal===today;
   let existingRecs=!isToday?D.StockCount.filter(sc=>String(sc.storeId)===storeId&&sc.countDate===dateVal):[];
-  const todayCounted=isToday&&D.StockCount.some(sc=>String(sc.storeId)===storeId&&sc.countDate===today&&(Number(sc.qty)||0)>0);
+  const todayCounted=isToday&&D.StoreStock.filter(s=>String(s.storeId)===storeId).some(s=>(Number(s.qty)||0)>0);
   // If no local data for past date, try archive
   if(!isToday&&existingRecs.length===0&&API.mode==='cloud'){
     try{

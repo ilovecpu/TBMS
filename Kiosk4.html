@@ -264,7 +264,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
 <div id="storeScreen" class="store-screen">
   <div style="text-align:center">
     <div style="font-size:48px;margin-bottom:8px">📋</div>
-    <h1>The Bap Management System</h1><p style="font-size:11px;color:#999;margin-top:2px">Ver1.5</p>
+    <h1>The Bap Management System</h1><p style="font-size:11px;color:#999;margin-top:2px">Ver1.6</p>
     <p id="storeMsg">Loading stores...</p>
   </div>
   <div class="store-grid" id="storeGrid"></div>
@@ -374,6 +374,19 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
   </div>
 </div>
 
+<!-- ===== CONFIRM DIALOG ===== -->
+<div id="confirmOv" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:9999;justify-content:center;align-items:center">
+  <div style="background:#fff;border-radius:16px;padding:28px 24px;max-width:340px;width:90%;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.3)">
+    <div id="confirmIcon" style="font-size:48px;margin-bottom:12px"></div>
+    <div id="confirmTitle" style="font-size:18px;font-weight:800;margin-bottom:8px"></div>
+    <div id="confirmMsg" style="font-size:14px;color:#666;margin-bottom:24px;line-height:1.5"></div>
+    <div style="display:flex;gap:12px">
+      <button id="confirmNo" onclick="_confirmResolve(false)" style="flex:1;padding:14px;border-radius:12px;border:2px solid #ddd;background:#f5f5f5;font-size:16px;font-weight:700;color:#666;cursor:pointer">No</button>
+      <button id="confirmYes" onclick="_confirmResolve(true)" style="flex:1;padding:14px;border-radius:12px;border:none;background:#1b5e20;color:#fff;font-size:16px;font-weight:700;cursor:pointer">Yes</button>
+    </div>
+  </div>
+</div>
+
 <!-- ===== LOADING ===== -->
 <div id="loadingOv" class="loading-overlay">
   <div class="spinner"></div>
@@ -436,6 +449,19 @@ let mainTab='daily';
 let mainMonth=new Date();
 let pinCode='';
 let pinCallback=null;
+
+// Confirm dialog
+let _confirmResolveFunc=null;
+function _confirmResolve(val){$('confirmOv').style.display='none';if(_confirmResolveFunc)_confirmResolveFunc(val);_confirmResolveFunc=null;}
+function showConfirm(icon,title,msg){
+  return new Promise(resolve=>{
+    _confirmResolveFunc=resolve;
+    $('confirmIcon').textContent=icon;
+    $('confirmTitle').textContent=title;
+    $('confirmMsg').textContent=msg;
+    $('confirmOv').style.display='flex';
+  });
+}
 
 // Stock Check state
 let stockTemplates=[];
@@ -934,7 +960,9 @@ async function uploadStockPhoto(itemId,dataUrl){
 }
 
 async function saveStockCheck(){
-  if(!confirm('Save stock count for today?'))return;
+  const today=fmtDate(new Date());
+  const ok=await showConfirm('📋','Save Stock Count?','Stock data will be saved for today ('+today+').');
+  if(!ok)return;
   showLoading('Saving stock count...');
   const countDate=fmtDate(new Date());
   const items=stockTemplates.map(t=>({

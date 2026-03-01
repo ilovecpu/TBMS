@@ -264,7 +264,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
 <div id="storeScreen" class="store-screen">
   <div style="text-align:center">
     <div style="font-size:48px;margin-bottom:8px">📋</div>
-    <h1>The Bap Management System</h1><p style="font-size:11px;color:#999;margin-top:2px">Ver1.1</p>
+    <h1>The Bap Management System</h1><p style="font-size:11px;color:#999;margin-top:2px">Ver1.4</p>
     <p id="storeMsg">Loading stores...</p>
   </div>
   <div class="store-grid" id="storeGrid"></div>
@@ -366,6 +366,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
     <h3><i class="fas fa-boxes-stacked"></i> Stock Check</h3>
     <button style="background:rgba(255,255,255,.2);color:#fff" onclick="closeStockCheck()"><i class="fas fa-th-large"></i> Menu</button>
   </div>
+  <div id="stockDateBanner" style="padding:12px 16px;background:#fff;border-bottom:2px solid #eee;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"></div>
   <div class="cat-tabs" id="catTabs"></div>
   <div class="stock-items" id="stockItems"></div>
   <div class="stock-save-bar">
@@ -386,7 +387,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
 // ============================================================
 //  CONFIG
 // ============================================================
-const DEFAULT_API='https://script.google.com/macros/s/AKfycbwmRgkJiyQcvUwCCayuZD0kmJIq_mB5OPwPt3xcX8CRYogUPDAA87CPkj2NEFBFN-XY/exec';
+const DEFAULT_API='https://script.google.com/macros/s/AKfycbxDji8-zfNHt48am3e1t4xGk4PyN0-50q5RXuiQ8jbc2O-yQTSGQXAqLFgqCejkwSk8/exec';
 const API_URL=DEFAULT_API;
 const API_KEY='tBaP2026xKr!mGt9Qz';
 
@@ -673,18 +674,21 @@ async function openStockCheck(){
   _updateStockBarDate();
 }
 function _updateStockBarDate(){
-  let el=$('stockBarDate');
-  if(!el){
-    const bar=$('stockBar');if(!bar)return;
-    el=document.createElement('span');el.id='stockBarDate';
-    el.style.cssText='font-size:12px;opacity:.85;margin-left:8px;font-weight:400';
-    bar.querySelector('h3').appendChild(el);
-  }
+  const banner=$('stockDateBanner');if(!banner)return;
+  const today=new Date();
+  const todayStr=fmtDate(today);
+  const todayLabel=today.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  const isToday=_stockDataDate===todayStr;
   if(_stockDataDate){
     const d=new Date(_stockDataDate+'T12:00:00');
-    el.textContent=' ('+d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})+')';
+    const dataLabel=d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'long',year:'numeric'});
+    if(isToday){
+      banner.innerHTML=`<div><div style="font-size:11px;color:#888;font-weight:600">TODAY</div><div style="font-size:20px;font-weight:800;color:#1b5e20">${todayLabel}</div></div><div style="background:#e8f5e9;color:#2e7d32;padding:6px 14px;border-radius:20px;font-size:13px;font-weight:700"><i class="fas fa-clock"></i> Live</div>`;
+    }else{
+      banner.innerHTML=`<div><div style="font-size:11px;color:#888;font-weight:600">TODAY</div><div style="font-size:20px;font-weight:800;color:#1b5e20">${todayLabel}</div></div><div style="text-align:right"><div style="font-size:11px;color:#888;font-weight:600">DATA FROM</div><div style="font-size:14px;font-weight:700;color:#e65100">${dataLabel}</div></div>`;
+    }
   }else{
-    el.textContent=' (No data)';
+    banner.innerHTML=`<div><div style="font-size:11px;color:#888;font-weight:600">TODAY</div><div style="font-size:20px;font-weight:800;color:#333">${todayLabel}</div></div><div style="background:#fff3e0;color:#e65100;padding:6px 14px;border-radius:20px;font-size:13px;font-weight:700"><i class="fas fa-exclamation-triangle"></i> No data</div>`;
   }
 }
 function closeStockCheck(){
@@ -948,12 +952,16 @@ async function saveStockCheck(){
   });
   hideLoading();
   if(res&&!res.error){
-    showToast('Stock count saved!','success');
+    showToast('Stock count saved for '+countDate+'!','success');
     // Update local StoreStock qty
     items.forEach(it=>{
       const ss=storeStockItems.find(s=>String(s.itemId)===String(it.itemId));
       if(ss)ss.qty=it.qty;
     });
+    // Update display to show today's date
+    _stockDataDate=countDate;
+    _updateStockBarDate();
+    renderStockItems();
   }else{
     showToast('Save failed: '+(res?.error||'Unknown'),'error');
   }

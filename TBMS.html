@@ -2418,7 +2418,9 @@ function renderStockTemplatePage(c){
   renderStockTable();
 }
 // ---- Stock Status Table (current / historical) ----
+let _ssRenderToken=0;
 async function renderStockStatusTable(){
+  const _myToken=++_ssRenderToken;
   const storeId=$('ssStore')?.value;
   const dateVal=$('ssDate')?.value||'';
   const catF=$('ssCat')?.value||'';
@@ -2430,6 +2432,7 @@ async function renderStockStatusTable(){
   if(!isToday&&existingRecs.length===0&&API.mode==='cloud'){
     try{
       const arch=await API.get('getArchive',{sheet:'StockCount',store:storeId,from:dateVal,to:dateVal});
+      if(_myToken!==_ssRenderToken)return; // Stale request — newer date was selected
       if(arch&&arch.data&&arch.data.length>0){
         existingRecs=arch.data;
         // Merge into local cache so calendar also reflects it
@@ -2437,6 +2440,7 @@ async function renderStockStatusTable(){
       }
     }catch(e){console.log('Archive fetch error:',e);}
   }
+  if(_myToken!==_ssRenderToken)return; // Stale request — abort
   const hasExisting=existingRecs.length>0;
   const dateLabel=isToday?'':new Date(dateVal+'T12:00:00').toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
   // Date banner

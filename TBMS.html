@@ -125,7 +125,7 @@ th{background:#fdf0f3;font-weight:600;font-size:12px;color:#555;position:sticky;
 .table-wrap tr:hover{background:#f8f9fa}
 .badge{padding:4px 10px;border-radius:20px;font-size:12px;font-weight:500;display:inline-block}
 .badge-success{background:#e8f5e9;color:#2e7d32}.badge-danger{background:#ffebee;color:#c62828}
-.badge-warning{background:#fff3e0;color:#e65100}.badge-info{background:#fce4ec;color:#c2185b}
+.badge-warning{background:#fff3e0;color:#e65100}.badge-info{background:#fce4ec;color:#c2185b}.badge-secondary{background:#f5f5f5;color:#999}
 
 /* Permission Checkboxes */
 .perm-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:8px}
@@ -2432,6 +2432,7 @@ async function renderStockStatusTable(){
   const today=new Date().toISOString().split('T')[0];
   const isToday=!dateVal||dateVal===today;
   let existingRecs=!isToday?D.StockCount.filter(sc=>String(sc.storeId)===storeId&&sc.countDate===dateVal):[];
+  const todayCounted=isToday&&D.StockCount.some(sc=>String(sc.storeId)===storeId&&sc.countDate===today&&(Number(sc.qty)||0)>0);
   // If no local data for past date, try archive
   if(!isToday&&existingRecs.length===0&&API.mode==='cloud'){
     try{
@@ -2500,10 +2501,11 @@ async function renderStockStatusTable(){
     const min=Number(s.min)||0;
     const oq=Number(s.orderQty)||0;
     const ao=s.alwaysOrder===true||s.alwaysOrder==='true';
-    const needOrder=(min>0&&qty<min)||(ao&&oq>0);
+    const counted=isToday?todayCounted:hasExisting;
+    const needOrder=counted&&((min>0&&qty<min)||(ao&&oq>0));
     const orderVal=needOrder?Math.max(0,oq-qty):0;
-    const status=qty<=0?'badge-danger':qty<=min?'badge-warning':'badge-success';
-    const statusText=qty<=0?'Out':qty<=min?'Low':'OK';
+    const status=!counted?'badge-secondary':qty<=0?'badge-danger':qty<=min?'badge-warning':'badge-success';
+    const statusText=!counted?'—':qty<=0?'Out':qty<=min?'Low':'OK';
     const photoHtml=s._photo?`<img src="https://drive.google.com/thumbnail?id=${s._photo}&sz=w80" style="width:36px;height:36px;object-fit:cover;border-radius:6px;cursor:pointer" onclick="showPhotoLightbox('${s._photo}','${escHtml(s.name)}')">`:'<span style="font-size:18px;opacity:.3">📦</span>';
     const inputStyle=!isToday&&existingRecs.find(r=>String(r.itemId)===String(s.itemId))?'border-color:#1565c0;background:#e3f2fd':'';
     const aoIcon=ao?'<i class="fas fa-cart-plus" style="color:#1565c0;font-size:10px;margin-left:4px" title="Always Order"></i>':'';
@@ -2670,9 +2672,10 @@ async function copyStockToDate(){
   }));
   if(!items.length){toast('No stock data to copy','error');return;}
   if(!confirm(`Copy ${items.length} items to ${targetDate}?`))return;
-  toast('Copying...','info');
+  showLoading(`Copying ${items.length} items to ${targetDate}...`);
   try{
     const r=await API.post({action:'saveStockCount',storeId,countDate:targetDate,items,submittedBy:currentUser?.id||''});
+    hideLoading();
     if(r&&!r.error){
       D.StockCount=D.StockCount.filter(sc=>!(String(sc.storeId)===storeId&&sc.countDate===targetDate));
       const week=getISOWeek(new Date(targetDate));
@@ -2681,9 +2684,9 @@ async function copyStockToDate(){
         D.StockCount.push({id:'sc'+Date.now()+Math.random().toString(36).substr(2,4),storeId,week,countDate:targetDate,itemId:item.itemId,category:item.category,name:item.name,unit:item.unit,qty:item.qty,submittedBy:currentUser?.id||'',submittedAt:ts});
       });
       toast(`${items.length} items copied to ${targetDate}`,'success');
-      ssSelectDate(targetDate);
+      await ssSelectDate(targetDate);
     }else{toast('Failed: '+(r?.error||''),'error');}
-  }catch(e){toast('Error: '+e.message,'error');}
+  }catch(e){hideLoading();toast('Error: '+e.message,'error');}
 }
 
 async function submitStockFromStatus(){

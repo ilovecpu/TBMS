@@ -293,6 +293,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
         <div class="sub-menu">
           <div class="menu-item sub" data-page="users" onclick="navigate('users')"><i class="fas fa-users-cog"></i>Users</div>
           <div class="menu-item sub" data-page="settings" onclick="navigate('settings')"><i class="fas fa-sliders"></i>General</div>
+          <div class="menu-item sub" data-page="ai-assistant" onclick="navigate('ai-assistant')"><i class="fas fa-robot"></i>AI Assistant</div>
         </div>
       </div>
     </div>
@@ -348,7 +349,8 @@ const ALL_PAGES=[
   {id:'diary-config',label:'Diary Config',icon:'fa-cogs'},
   {id:'diary-entries',label:'Diary Records',icon:'fa-book'},
   {id:'users',label:'Users',icon:'fa-users-cog'},
-  {id:'settings',label:'Settings',icon:'fa-sliders'}
+  {id:'settings',label:'Settings',icon:'fa-sliders'},
+  {id:'ai-assistant',label:'AI Assistant',icon:'fa-robot'}
 ];
 function hasPermission(page){
   if(!currentUser)return false;
@@ -478,7 +480,7 @@ const DEFAULT_DATA = {
 // Generate StoreStock for all stores × templates
 DEFAULT_DATA.Stores.forEach(store => {
   DEFAULT_DATA.StockTemplate.forEach(item => {
-    DEFAULT_DATA.StoreStock.push({storeId:store.id, itemId:item.id, category:item.category, name:item.name, unit:item.unit, min:item.min, qty:0});
+    DEFAULT_DATA.StoreStock.push({storeId:store.id, itemId:item.id, category:item.category, name:item.name, unit:item.unit, min:item.min, orderQty:item.orderQty||0, qty:0});
   });
 });
 
@@ -489,11 +491,11 @@ const D = { Users:[], Stores:[], Staff:[], Attendance:[], Suppliers:[], StockTem
 const FIELD_SCHEMA = {
   Users:['id','username','password','name','role','email','storeId','permissions'],
   Stores:['id','code','name','company','companyNo','vatNo','vatQuarter','address','phone','email','manager','memo','active'],
-  Staff:['id','storeId','name','nickName','clothSize','kioskPwd','dob','address','niNo','eVisa','mobile','startDate','leftDate','rate','sortCode','accountNo','email','memo','active'],
+  Staff:['id','storeId','name','nickName','clothSize','kioskPwd','kioskLogin','dob','address','niNo','eVisa','mobile','startDate','leftDate','rate','sortCode','accountNo','email','memo','active'],
   Attendance:['id','staffId','storeId','date','clockIn','clockOut','photoIn','photoOut','source'],
   Suppliers:['id','name','email','phone','address','website','memo','active'],
-  StockTemplate:['id','category','name','unit','min','sortOrder','supplier1','supplier2','supplier3','memo','photo'],
-  StoreStock:['storeId','itemId','category','name','unit','min','qty'],
+  StockTemplate:['id','category','name','unit','min','orderQty','sortOrder','supplier1','supplier2','supplier3','memo','photo'],
+  StoreStock:['storeId','itemId','category','name','unit','min','orderQty','qty'],
   StockCount:['id','storeId','week','countDate','itemId','category','name','unit','qty','submittedBy','submittedAt'],
   WeeklySales:['id','storeId','week','weekStart','totalSales','notes','submittedBy','submittedAt'],
   StaffMessages:['id','storeId','staffId','type','message','active','createdBy','createdAt'],
@@ -520,6 +522,11 @@ function normalizeRow(sheetName, row) {
     const v=result.active;
     result.active=(v===true||v==='true'||v==='TRUE'||v===1||v==='1');
   }
+  // Normalize 'kioskLogin' field to boolean (default true)
+  if('kioskLogin' in result){
+    const v=result.kioskLogin;
+    result.kioskLogin=(v===''||v===true||v==='true'||v==='TRUE'||v===1||v==='1');
+  }
   return result;
 }
 const LS = {
@@ -527,7 +534,7 @@ const LS = {
   set(k, v) { localStorage.setItem('tbms_'+k, JSON.stringify(v)); },
   getConfig() { return this.get('config') || {}; }
 };
-const CLOUD_URL = 'https://script.google.com/macros/s/AKfycbzEegRzp3A5qE_7Flu2Mi301RnikBpnYdmyuzU7YDNgVR7bZsNhYsr04ylvi7ZyXttc/exec';
+const CLOUD_URL = 'https://script.google.com/macros/s/AKfycbwH2Rzm8RfZIJ-Ym5JCT95kEBUNjsZMyII-nWWoGT-XB8Y_yQdLrUcJcincZdNPuKoS/exec';
 const API_KEY = 'tBaP2026xKr!mGt9Qz';
 const API = {
   url: CLOUD_URL, mode: 'cloud',
@@ -589,6 +596,22 @@ async function loadAllData() {
         }
       }
       if (loaded) {
+        // Fix duplicate IDs — assign new unique IDs to duplicates and sync
+        for(const sheet of ['Staff','Stores','Suppliers','StockTemplate']){
+          if(!D[sheet]||!D[sheet].length)continue;
+          const seen=new Set();let fixed=0;
+          D[sheet].forEach(r=>{
+            if(!r.id||seen.has(r.id)){
+              const oldId=r.id;
+              r.id=genId(sheet[0].toLowerCase());
+              console.warn(`[TBMS] Fixed duplicate/empty ID in ${sheet}: "${oldId}" → "${r.id}" (${r.name||'?'})`);
+              _bgPost({action:'upsert',sheet,row:r});
+              fixed++;
+            }
+            seen.add(r.id);
+          });
+          if(fixed)console.log(`[TBMS] Fixed ${fixed} duplicate IDs in ${sheet}`);
+        }
         // Load catOrder from cloud
         try{const catRes=await API.get('getSetting',{key:'catOrder'});if(catRes&&catRes.value){LS.set('catOrder',catRes.value);console.log('[TBMS] catOrder loaded from cloud:',catRes.value);}}catch(e){}
         // Load timeRounding from cloud
@@ -691,7 +714,7 @@ $('loginUser').addEventListener('keydown',e=>{if(e.key==='Enter')$('loginPass').
 // ==================== NAVIGATION ====================
 function toggleSidebar() { $('sidebar').classList.toggle('open');$('sidebarOverlay').classList.toggle('show'); }
 function toggleMenuGroup(el){el.parentElement.classList.toggle('open');}
-const pageTitles={dashboard:'Dashboard',stores:'Store Management',users:'User Management',staff:'Staff List',attendance:'Attendance Records',payroll:'Payroll',messages:'Staff Messages',stock:'Stock Status','stock-template':'Stock Template','stock-count':'Weekly Stock Count',sales:'Weekly Sales',analytics:'Usage Analytics',orders:'Order List',suppliers:'Supplier Management','diary-config':'Diary Configuration','diary-entries':'Diary Records',settings:'General Settings'};
+const pageTitles={dashboard:'Dashboard',stores:'Store Management',users:'User Management',staff:'Staff List',attendance:'Attendance Records',payroll:'Payroll',messages:'Staff Messages',stock:'Stock Status','stock-template':'Stock Template','stock-count':'Weekly Stock Count',sales:'Weekly Sales',analytics:'Usage Analytics',orders:'Order List',suppliers:'Supplier Management','diary-config':'Diary Configuration','diary-entries':'Diary Records',settings:'General Settings','ai-assistant':'AI Assistant'};
 let currentPage='dashboard';
 function navigate(page) {
   // Permission check
@@ -734,6 +757,7 @@ function renderPage(page) {
     case 'settings': renderSettings(c); break;
     case 'diary-config': renderDiaryConfig(c); break;
     case 'diary-entries': renderDiaryEntries(c); break;
+    case 'ai-assistant': renderAiAssistant(c); break;
     default: c.innerHTML='<p>Page not found</p>';
   }
 }
@@ -899,7 +923,7 @@ async function saveStore(id) {
     D.StoreStock=D.StoreStock.filter(ss=>String(ss.storeId)!==String(s.id));
     // Create fresh entries
     D.StockTemplate.forEach(t=>{
-      D.StoreStock.push({storeId:s.id,itemId:t.id,category:t.category,name:t.name,unit:t.unit,min:t.min,qty:0});
+      D.StoreStock.push({storeId:s.id,itemId:t.id,category:t.category,name:t.name,unit:t.unit,min:t.min,orderQty:t.orderQty||0,qty:0});
     });
     _bgPost({action:'saveSheet',sheet:'StoreStock',rows:D.StoreStock});
     toast(D.StockTemplate.length+' stock items initialized for '+s.name,'info');
@@ -1330,16 +1354,19 @@ function printStaffList(){
       <td>${escHtml(s.nickName||'-')}</td>
       <td>${store?escHtml(store.name):'-'}</td>
       <td>${isLeft?'Left':'Active'}</td>
+      <td>${fmtDate(s.dob)}</td>
       <td>£${Number(s.rate).toFixed(2)}</td>
       <td>${fmtDate(s.startDate)}</td>
       <td>${escHtml(s.mobile||'-')}</td>
       <td>${escHtml(s.niNo||'-')}</td>
+      <td>${escHtml(s.kioskPwd||'-')}</td>
+      <td>${escHtml(s.clothSize||'-')}</td>
     </tr>`;
   }).join('');
   const html=`
     <div class="subtitle">${escHtml(storeName)} — ${staff.length} staff members</div>
     <table>
-      <thead><tr><th>Name</th><th>Nick</th><th>Store</th><th>Status</th><th>Rate</th><th>Start</th><th>Mobile</th><th>NI No</th></tr></thead>
+      <thead><tr><th>Name</th><th>Nick</th><th>Store</th><th>Status</th><th>DOB</th><th>Rate</th><th>Start</th><th>Mobile</th><th>NI No</th><th>Kiosk PIN</th><th>Size</th></tr></thead>
       <tbody>${rows}</tbody>
     </table>`;
   openPrintWindow('Staff List',html);
@@ -2130,7 +2157,7 @@ async function renderStock(c) {
     </div>
     <div id="ssDateBanner"></div>
     <div class="table-wrap"><table><thead><tr>
-      <th style="width:40px">#</th><th style="width:50px">Photo</th><th>Item</th><th>Category</th><th>Unit</th><th>Min</th><th style="width:90px">QTY</th><th style="width:80px">Status</th>
+      <th style="width:40px">#</th><th style="width:50px">Photo</th><th>Item</th><th>Category</th><th>Unit</th><th>Min</th><th style="width:90px">QTY</th><th>Order</th><th style="width:80px">Status</th>
     </tr></thead><tbody id="ssBody"></tbody></table></div>
     <div id="ssActionBar" style="margin-top:12px;display:flex;justify-content:space-between;align-items:center">
       <button class="btn btn-sm" onclick="printStockStatus()" style="background:#f0f0f0;color:#555"><i class="fas fa-print"></i> Print</button>
@@ -2312,7 +2339,13 @@ function printStockStatus(){
     dataItems=D.StockCount.filter(sc=>String(sc.storeId)===storeId&&sc.countDate===dateVal);
   }
   if(catF)dataItems=dataItems.filter(s=>s.category===catF);
-  dataItems.forEach(it=>{const tpl=D.StockTemplate.find(t=>String(t.id)===String(it.itemId));it._so=tpl?tpl.sortOrder:9999;it._min=isToday?Number(it.min)||0:(tpl?Number(tpl.min)||0:0);});
+  dataItems.forEach(it=>{
+    const tpl=D.StockTemplate.find(t=>String(t.id)===String(it.itemId));
+    const ss=D.StoreStock.find(x=>String(x.storeId)===storeId&&String(x.itemId)===String(it.itemId));
+    it._so=tpl?tpl.sortOrder:9999;
+    it._min=isToday?Number(it.min)||0:(tpl?Number(tpl.min)||0:0);
+    it._orderQty=ss?Number(ss.orderQty)||0:(tpl?Number(tpl.orderQty)||0:0);
+  });
   dataItems.sort((a,b)=>{const ci=catIdx.indexOf(a.category)-catIdx.indexOf(b.category);return ci!==0?ci:(a._so||0)-(b._so||0);});
   const _catColors=['#111111','#1565c0','#6a1b9a','#e65100','#00838f','#2e7d32','#c62828','#4527a0','#ef6c00','#00695c','#ad1457','#283593','#4e342e','#37474f','#1b5e20','#880e4f'];
   const orderItems=dataItems.filter(s=>{const q=Number(s.qty)||0;const m=s._min||0;return m>0&&q<m;});
@@ -2329,11 +2362,12 @@ function printStockStatus(){
       rows+=`<tr><td style="${cs};text-transform:uppercase">${escHtml(lastCat)}</td><td class="c" style="${cs}">Unit</td><td class="c" style="${cs}">Min</td><td class="c" style="${cs}">QTY</td><td class="c" style="${cs}">Order</td></tr>`;
     }
     const qty=Number(s.qty)||0;const min=s._min||0;
-    const shortage=min>0&&qty<min?min-qty:0;
-    const needOrder=shortage>0;
+    const needOrder=min>0&&qty<min;
+    const oq=s._orderQty||0;
+    const orderVal=needOrder?(oq>0?oq:(min-qty)):0;
     const nameHtml=needOrder?`<b>${escHtml(s.name)}</b>`:escHtml(s.name);
     const qtyStyle=needOrder?'font-weight:700;color:#c62828':'';
-    const orderCell=needOrder?`<td class="c" style="font-weight:700;color:#c62828">${fmtQty(shortage)}</td>`:`<td class="c" style="color:#ccc">-</td>`;
+    const orderCell=needOrder?`<td class="c" style="font-weight:700;color:#c62828">${fmtQty(orderVal)}</td>`:`<td class="c" style="color:#ccc">-</td>`;
     rows+=`<tr${needOrder?' style="background:#ffe0e6!important"':''}><td>${nameHtml}</td><td class="c">${escHtml(s.unit||'')}</td><td class="c">${fmtQty(min)}</td><td class="c" style="${qtyStyle}">${fmtQty(qty)}</td>${orderCell}</tr>`;
   });
   flushCat();
@@ -2378,7 +2412,7 @@ function renderStockTemplatePage(c){
         <input type="text" id="stockSearch" placeholder="Search..." oninput="renderStockTable()" style="padding:8px 12px 8px 36px;border:2px solid var(--border);border-radius:8px;font-size:13px;width:100%"></div>
     </div>
     <div class="table-wrap"><table><thead><tr>
-      <th style="width:40px">#</th><th style="width:50px">Sort</th><th style="width:50px">Photo</th><th>Item</th><th>Category</th><th>Unit</th><th>Min</th><th>Supplier</th><th style="width:100px">Actions</th>
+      <th style="width:40px">#</th><th style="width:50px">Sort</th><th style="width:50px">Photo</th><th>Item</th><th>Category</th><th>Unit</th><th>Min</th><th>Order</th><th>Supplier</th><th style="width:100px">Actions</th>
     </tr></thead><tbody id="stockBody"></tbody></table></div>
   </div>`;
   renderStockTable();
@@ -2429,7 +2463,7 @@ async function renderStockStatusTable(){
     const missing=D.StockTemplate.filter(t=>!existingIds.has(String(t.id)));
     if(missing.length>0){
       missing.forEach(t=>{
-        D.StoreStock.push({storeId,itemId:t.id,category:t.category,name:t.name,unit:t.unit,min:t.min,qty:0});
+        D.StoreStock.push({storeId,itemId:t.id,category:t.category,name:t.name,unit:t.unit,min:t.min,orderQty:t.orderQty||0,qty:0});
       });
       _bgPost({action:'saveSheet',sheet:'StoreStock',rows:D.StoreStock});
       items=D.StoreStock.filter(s=>String(s.storeId)===storeId);
@@ -2446,7 +2480,7 @@ async function renderStockStatusTable(){
       lastCat=s.category;
       const cnt=items.filter(i=>i.category===lastCat).length;
       const catBg=isToday?'var(--primary)':(hasExisting?'#1565c0':'#e65100');
-      html+=`<tr><td colspan="8" style="background:${catBg};color:#fff;font-weight:700;font-size:13px;padding:8px 16px;border:none"><i class="fas fa-layer-group" style="margin-right:8px"></i>${escHtml(lastCat)} <span style="opacity:.6;font-size:12px;margin-left:8px">${cnt} items</span></td></tr>`;
+      html+=`<tr><td colspan="9" style="background:${catBg};color:#fff;font-weight:700;font-size:13px;padding:8px 16px;border:none"><i class="fas fa-layer-group" style="margin-right:8px"></i>${escHtml(lastCat)} <span style="opacity:.6;font-size:12px;margin-left:8px">${cnt} items</span></td></tr>`;
     }
     // Determine QTY to show
     let qty;
@@ -2456,21 +2490,26 @@ async function renderStockStatusTable(){
       qty=rec?Number(rec.qty):0;
     }
     const min=Number(s.min)||0;
+    const oq=Number(s.orderQty)||0;
+    const needOrder=min>0&&qty<min;
+    const orderVal=needOrder?(oq>0?oq:(min-qty)):0;
     const status=qty<=0?'badge-danger':qty<=min?'badge-warning':'badge-success';
     const statusText=qty<=0?'Out':qty<=min?'Low':'OK';
     const photoHtml=s._photo?`<img src="https://drive.google.com/thumbnail?id=${s._photo}&sz=w80" style="width:36px;height:36px;object-fit:cover;border-radius:6px;cursor:pointer" onclick="showPhotoLightbox('${s._photo}','${escHtml(s.name)}')">`:'<span style="font-size:18px;opacity:.3">📦</span>';
     const inputStyle=!isToday&&existingRecs.find(r=>String(r.itemId)===String(s.itemId))?'border-color:#1565c0;background:#e3f2fd':'';
-    html+=`<tr>
+    const orderCellHtml=needOrder?`<span style="font-weight:700;color:#c62828">${fmtQty(orderVal)}</span>`:`<span style="color:#ccc">—</span>`;
+    html+=`<tr${needOrder?' style="background:#fff8f8"':''}>
       <td style="color:var(--text-light);font-size:12px">${idx+1}</td>
       <td style="text-align:center">${photoHtml}</td>
       <td><strong>${escHtml(s.name)}</strong></td>
       <td style="font-size:12px;color:var(--text-light)">${escHtml(s.category)}</td>
       <td>${escHtml(s.unit)}</td><td>${min}</td>
       <td><input type="number" min="0" step="0.5" value="${qty}" class="ss-qty" data-store="${storeId}" data-item="${s.itemId}" data-cat="${escHtml(s.category)}" data-name="${escHtml(s.name)}" data-unit="${escHtml(s.unit)}" style="width:70px;padding:6px;border:2px solid var(--border);border-radius:6px;font-weight:600;text-align:center;${inputStyle}" onchange="${isToday?'updateStockQty(this)':''}"></td>
+      <td style="text-align:center">${orderCellHtml}</td>
       <td><span class="badge ${status}">${statusText}</span></td>
     </tr>`;
   });
-  if(!items.length)html='<tr><td colspan="8" style="text-align:center;color:var(--text-light)">No items for this store</td></tr>';
+  if(!items.length)html='<tr><td colspan="9" style="text-align:center;color:var(--text-light)">No items for this store</td></tr>';
   $('ssBody').innerHTML=html;
 }
 function renderStockTable() {
@@ -2488,7 +2527,7 @@ function renderStockTable() {
       lastCat=t.category;
       const catItems=items.filter(i=>i.category===lastCat);
       const catIcon=lastCat.toLowerCase().includes('dry')?'fa-boxes-stacked':'fa-seedling';
-      html+=`<tr><td colspan="9" style="background:var(--primary);color:#fff;font-weight:700;font-size:14px;padding:10px 16px;border:none">
+      html+=`<tr><td colspan="10" style="background:var(--primary);color:#fff;font-weight:700;font-size:14px;padding:10px 16px;border:none">
         <i class="fas ${catIcon}" style="margin-right:8px"></i>${escHtml(lastCat)} <span style="opacity:.6;font-weight:400;font-size:12px;margin-left:8px">${catItems.length} items</span></td></tr>`;
     }
     const icon=stockItemIcon(t.name);
@@ -2502,6 +2541,7 @@ function renderStockTable() {
     const sameCat=items.filter(i=>i.category===t.category);
     const posInCat=sameCat.findIndex(i=>i.id===t.id);
     const isFirst=posInCat===0;const isLast=posInCat===sameCat.length-1;
+    const oq=t.orderQty||0;
     html+=`<tr>
       <td style="color:var(--text-light);font-size:12px">${idx+1}</td>
       <td style="text-align:center;padding:4px"><div class="sort-arrows">
@@ -2513,6 +2553,7 @@ function renderStockTable() {
       <td><span style="font-size:12px;color:var(--text-light)">${escHtml(t.category)}</span></td>
       <td>${escHtml(t.unit)}</td>
       <td style="font-weight:600">${t.min}</td>
+      <td style="font-weight:600;color:${oq>0?'#1565c0':'#ccc'}">${oq>0?oq:'—'}</td>
       <td style="font-size:12px">${supDisplay}${supExtra}</td>
       <td>
         <button class="btn-icon btn-outline" onclick="openStockItemModal('${t.id}')" title="Edit"><i class="fas fa-pen" style="font-size:12px"></i></button>
@@ -2520,7 +2561,7 @@ function renderStockTable() {
       </td>
     </tr>`;
   });
-  $('stockBody').innerHTML=html||'<tr><td colspan="9" style="text-align:center;color:var(--text-light)">No items found</td></tr>';
+  $('stockBody').innerHTML=html||'<tr><td colspan="10" style="text-align:center;color:var(--text-light)">No items found</td></tr>';
 }
 // ---- Store QTY Snapshot table ----
 function renderStoreQtyTable(){
@@ -2668,8 +2709,10 @@ function openStockItemModal(editId){
         </select></div>
     </div>
     <div class="form-row">
-      <div class="form-group"><label>Minimum Stock Level</label>
+      <div class="form-group"><label>Minimum Stock</label>
         <input type="number" id="siMin" min="0" value="${existing?existing.min:1}" style="padding:10px;border:2px solid var(--border);border-radius:8px"></div>
+      <div class="form-group"><label>Order Qty</label>
+        <input type="number" id="siOrderQty" min="0" value="${existing?(existing.orderQty||0):0}" style="padding:10px;border:2px solid var(--border);border-radius:8px" title="Fixed quantity to order when below minimum"></div>
       <div class="form-group"><label>Sort Order</label>
         <input type="number" id="siSort" min="0" value="${existing?existing.sortOrder:(maxSort+1)}" style="padding:10px;border:2px solid var(--border);border-radius:8px"></div>
     </div>
@@ -2701,13 +2744,16 @@ function openStockItemModal(editId){
       </div>
     </div>
     <div style="border-top:1px solid var(--border);margin:16px 0 12px;padding-top:14px">
-      <label style="font-size:13px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:6px;margin-bottom:10px"><i class="fas fa-store" style="color:var(--accent)"></i>Per-Store Minimum Quantities</label>
+      <label style="font-size:13px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:6px;margin-bottom:10px"><i class="fas fa-store" style="color:var(--accent)"></i>Per-Store Min / Order Qty</label>
+      <div style="display:flex;gap:8px;padding:4px 10px;margin-bottom:4px"><span style="flex:1;font-size:11px;font-weight:700;color:var(--text-light)">Store</span><span style="width:70px;text-align:center;font-size:11px;font-weight:700;color:var(--text-light)">Min</span><span style="width:70px;text-align:center;font-size:11px;font-weight:700;color:var(--text-light)">Order Qty</span></div>
       <div style="display:flex;flex-direction:column;gap:6px">${D.Stores.filter(s=>s.active!==false).map(s=>{
         const ss=D.StoreStock.find(x=>String(x.storeId)===String(s.id)&&String(x.itemId)===editId);
         const sMin=ss?ss.min:existing.min;
+        const sOQ=ss?(ss.orderQty||0):(existing.orderQty||0);
         return `<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:#f8f9fa;border-radius:8px">
           <span style="flex:1;font-size:13px;font-weight:600">${escHtml(s.name)}</span>
           <input type="number" min="0" value="${sMin}" data-store-min="${s.id}" style="width:70px;padding:6px;border:2px solid var(--border);border-radius:6px;text-align:center;font-weight:600">
+          <input type="number" min="0" value="${sOQ}" data-store-oq="${s.id}" style="width:70px;padding:6px;border:2px solid var(--border);border-radius:6px;text-align:center;font-weight:600;color:#1565c0">
         </div>`;
       }).join('')}</div>
     </div>`:''}
@@ -2727,6 +2773,7 @@ async function saveStockItem(editId){
   const name=($('siName').value||'').trim();
   const unit=$('siUnit').value;
   const min=parseInt($('siMin').value)||0;
+  const orderQty=parseInt($('siOrderQty')?.value)||0;
   const sortOrder=parseInt($('siSort').value)||0;
   const supplier1=($('siSup1')?.value||'').trim();
   const supplier2=($('siSup2')?.value||'').trim();
@@ -2741,14 +2788,16 @@ async function saveStockItem(editId){
     // ---- EDIT existing ----
     const tpl=D.StockTemplate.find(t=>t.id===editId);
     if(!tpl){toast('Item not found','error');return;}
-    tpl.category=category;tpl.name=name;tpl.unit=unit;tpl.min=min;tpl.sortOrder=sortOrder;
+    tpl.category=category;tpl.name=name;tpl.unit=unit;tpl.min=min;tpl.orderQty=orderQty;tpl.sortOrder=sortOrder;
     tpl.supplier1=supplier1;tpl.supplier2=supplier2;tpl.supplier3=supplier3;tpl.memo=memo;
-    // Update per-store min from modal inputs
+    // Update per-store min + orderQty from modal inputs
     document.querySelectorAll('[data-store-min]').forEach(el=>{
       const storeId=el.dataset.storeMin;
       const storeMin=parseInt(el.value)||0;
+      const oqEl=document.querySelector(`[data-store-oq="${storeId}"]`);
+      const storeOQ=oqEl?parseInt(oqEl.value)||0:orderQty;
       const ss=D.StoreStock.find(x=>String(x.storeId)===storeId&&String(x.itemId)===editId);
-      if(ss){ss.category=category;ss.name=name;ss.unit=unit;ss.min=storeMin;}
+      if(ss){ss.category=category;ss.name=name;ss.unit=unit;ss.min=storeMin;ss.orderQty=storeOQ;}
     });
     // Also update any StoreStock not shown (inactive stores)
     D.StoreStock.forEach(ss=>{
@@ -2769,11 +2818,11 @@ async function saveStockItem(editId){
   } else {
     // ---- ADD new ----
     const newId=genId('t');
-    const tpl={id:newId,category,name,unit,min,sortOrder,supplier1,supplier2,supplier3,memo,photo:''};
+    const tpl={id:newId,category,name,unit,min,orderQty,sortOrder,supplier1,supplier2,supplier3,memo,photo:''};
     D.StockTemplate.push(tpl);
     // Add to StoreStock for EVERY store
     D.Stores.forEach(store=>{
-      D.StoreStock.push({storeId:store.id,itemId:newId,category,name,unit,min,qty:0});
+      D.StoreStock.push({storeId:store.id,itemId:newId,category,name,unit,min,orderQty,qty:0});
     });
     // Photo upload for new item
     const photoFileNew=$('siPhotoFile');
@@ -2905,9 +2954,14 @@ function renderOrderTable() {
   const storeId=$('orderStore')?.value;
   if(!storeId){$('orderBody').innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--text-light)">Please select a store</td></tr>';return;}
   const items=D.StoreStock.filter(s=>String(s.storeId)===storeId&&Number(s.qty)<=Number(s.min));
+  const catIdx=getSortedCategories();
+  items.forEach(it=>{const tpl=D.StockTemplate.find(t=>String(t.id)===String(it.itemId));it._so=tpl?tpl.sortOrder:9999;});
+  items.sort((a,b)=>{const ci=catIdx.indexOf(a.category)-catIdx.indexOf(b.category);return ci!==0?ci:(a._so||0)-(b._so||0);});
   $('orderBody').innerHTML=items.length?items.map(s=>{
-    const need=Math.max(0,Number(s.min)-Number(s.qty));
-    return`<tr><td>${escHtml(s.category)}</td><td>${escHtml(s.name)}</td><td>${escHtml(s.unit)}</td><td>${s.min}</td><td><span class="badge ${Number(s.qty)<=0?'badge-danger':'badge-warning'}">${s.qty}</span></td><td><strong>${need}</strong></td></tr>`;
+    const oq=Number(s.orderQty)||0;
+    const shortage=Math.max(0,Number(s.min)-Number(s.qty));
+    const orderVal=oq>0?oq:shortage;
+    return`<tr><td>${escHtml(s.category)}</td><td>${escHtml(s.name)}</td><td>${escHtml(s.unit)}</td><td>${s.min}</td><td><span class="badge ${Number(s.qty)<=0?'badge-danger':'badge-warning'}">${s.qty}</span></td><td><strong style="color:#c62828">${orderVal}</strong></td></tr>`;
   }).join(''):'<tr><td colspan="6" style="text-align:center;color:var(--success)"><i class="fas fa-check-circle"></i> All items are sufficiently stocked!</td></tr>';
 }
 function exportOrder() {
@@ -4121,6 +4175,292 @@ async function changePwd(){
   if(!np){toast('Enter new password','error');return;}
   if(np!==cp){toast('Passwords do not match','error');return;}
   currentUser.password=np;await saveRow('Users',currentUser);toast('Password changed!','success');
+}
+
+// ==================== AI ASSISTANT (Tool-Calling) ====================
+// --- Tool Definition ---
+const AI_TOOL={name:'query_tbms',description:'Query TBMS Google Sheets database. Returns filtered records with store/staff names resolved. Call multiple times for different tables.',input_schema:{type:'object',properties:{sheet:{type:'string',enum:['Staff','Stores','Attendance','StockCount','StoreStock','StockTemplate','WeeklySales','TimeChangeReq','EditLog','DiaryEntry','Suppliers'],description:'Table to query'},storeName:{type:'string',description:'Filter by store name (partial match)'},staffName:{type:'string',description:'Filter by staff name (partial match)'},dateFrom:{type:'string',description:'Start date YYYY-MM-DD'},dateTo:{type:'string',description:'End date YYYY-MM-DD'},category:{type:'string',description:'Filter by category (stock)'},limit:{type:'number',description:'Max rows (default 200)'}},required:['sheet']}};
+
+// --- Provider Configs (with tool-calling support) ---
+const AI_PROVIDERS={
+  chatgpt:{name:'ChatGPT',model:'gpt-4o',color:'#10a37f',icon:'fa-brain',
+    url:'https://api.openai.com/v1/chat/completions',
+    headers:k=>({'Content-Type':'application/json','Authorization':'Bearer '+k}),
+    initMsgs(sys,chat){return[{role:'system',content:sys},...chat.map(m=>({role:m.role,content:m.content}))]},
+    buildBody(msgs,model,tools){const b={model:model||'gpt-4o',messages:msgs,temperature:0.3,max_tokens:4096};if(tools)b.tools=tools.map(t=>({type:'function',function:{name:t.name,description:t.description,parameters:t.input_schema}}));return JSON.stringify(b)},
+    parseResp(r){const msg=r.choices?.[0]?.message;if(msg?.tool_calls?.length)return{calls:msg.tool_calls.map(t=>({id:t.id,name:t.function.name,args:JSON.parse(t.function.arguments)})),raw:msg,text:null};return{calls:null,raw:msg,text:msg?.content||''}},
+    addToolResults(msgs,raw,calls,results){msgs.push({role:'assistant',content:raw.content||null,tool_calls:raw.tool_calls});calls.forEach((c,i)=>msgs.push({role:'tool',tool_call_id:c.id,content:JSON.stringify(results[i])}));}
+  },
+  gemini:{name:'Gemini',model:'gemini-2.0-flash',color:'#4285f4',icon:'fa-gem',
+    url:(k,m)=>`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${k}`,
+    headers:()=>({'Content-Type':'application/json'}),
+    initMsgs(sys,chat){return{_sys:sys,_contents:chat.map(c=>({role:c.role==='assistant'?'model':'user',parts:[{text:c.content}]}))}},
+    buildBody(msgs,model,tools){const b={contents:msgs._contents,systemInstruction:{parts:[{text:msgs._sys}]}};if(tools)b.tools=[{functionDeclarations:tools.map(t=>({name:t.name,description:t.description,parameters:t.input_schema}))}];return JSON.stringify(b)},
+    parseResp(r){const parts=r.candidates?.[0]?.content?.parts||[];const fc=parts.filter(p=>p.functionCall);if(fc.length)return{calls:fc.map(p=>({id:p.functionCall.name,name:p.functionCall.name,args:p.functionCall.args})),raw:r.candidates[0].content,text:null};return{calls:null,raw:null,text:parts.filter(p=>p.text).map(p=>p.text).join('')}},
+    addToolResults(msgs,raw,calls,results){msgs._contents.push({role:'model',parts:raw.parts});msgs._contents.push({role:'user',parts:calls.map((c,i)=>({functionResponse:{name:c.name,response:{content:results[i]}}}))})}
+  },
+  claude:{name:'Claude',model:'claude-sonnet-4-20250514',color:'#d97706',icon:'fa-comment-dots',
+    url:'https://api.anthropic.com/v1/messages',
+    headers:k=>({'Content-Type':'application/json','x-api-key':k,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'}),
+    initMsgs(sys,chat){return{_sys:sys,_msgs:chat.map(m=>({role:m.role,content:m.content}))}},
+    buildBody(msgs,model,tools){const b={model:model||'claude-sonnet-4-20250514',max_tokens:4096,system:msgs._sys,messages:msgs._msgs};if(tools)b.tools=tools;return JSON.stringify(b)},
+    parseResp(r){const blocks=r.content||[];const tc=blocks.filter(b=>b.type==='tool_use');if(tc.length)return{calls:tc.map(b=>({id:b.id,name:b.name,args:b.input})),raw:blocks,text:null};return{calls:null,raw:blocks,text:blocks.filter(b=>b.type==='text').map(b=>b.text).join('')}},
+    addToolResults(msgs,raw,calls,results){msgs._msgs.push({role:'assistant',content:raw});msgs._msgs.push({role:'user',content:calls.map((c,i)=>({type:'tool_result',tool_use_id:c.id,content:JSON.stringify(results[i])}))})}
+  }
+};
+let aiChat=[],aiProvider='claude';
+
+function getAiKeys(){return LS.get('aiKeys')||{};}
+function saveAiKeys(keys){LS.set('aiKeys',keys);}
+
+// --- Flexible field access (handles raw/normalized data) ---
+function _gf(r,...names){for(const n of names){if(r[n]!==undefined&&r[n]!=='')return r[n];}return '';}
+
+// --- Local Query Engine: AI calls this via tool ---
+function executeAiQuery(params){
+  const{sheet,storeName,staffName,dateFrom,dateTo,category,limit=200}=params;
+  let data=[...(D[sheet]||[])];
+  if(!data.length)return{sheet,totalInDB:0,matchingRows:0,returnedRows:0,rows:[],note:'Table empty or not loaded: '+sheet};
+  // Store filter
+  if(storeName){
+    const sm=D.Stores.find(s=>(s.name||'').toLowerCase().includes(storeName.toLowerCase()));
+    if(sm){data=data.filter(r=>String(_gf(r,'storeId','storeid','store_id','StoreId'))===String(sm.id));}
+    else return{sheet,totalInDB:(D[sheet]||[]).length,matchingRows:0,returnedRows:0,rows:[],note:'Store not found: '+storeName};
+  }
+  // Staff filter
+  if(staffName){
+    const sm=D.Staff.find(s=>(s.name||'').toLowerCase().includes(staffName.toLowerCase())||(s.nickName||'').toLowerCase().includes(staffName.toLowerCase()));
+    if(sm){data=data.filter(r=>String(_gf(r,'staffId','staffid','staff_id','StaffId'))===String(sm.id));}
+  }
+  // Date filter
+  if(dateFrom||dateTo){
+    data=data.filter(r=>{
+      const d=_gf(r,'date','countDate','count_date','Count Date','weekStart','week_start')||'';
+      if(dateFrom&&d<dateFrom)return false;if(dateTo&&d>dateTo)return false;return true;
+    });
+  }
+  // Category filter
+  if(category){data=data.filter(r=>(_gf(r,'category','Category')||'').toLowerCase().includes(category.toLowerCase()));}
+  // Build compact output — resolve IDs, remove empties
+  const rows=data.slice(0,limit).map(r=>{
+    const row={};
+    for(const k in r){
+      if(k==='id'||k==='itemId')continue;
+      const v=r[k];if(v===''||v===null||v===undefined)continue;
+      row[k]=v;
+    }
+    // Resolve storeId→store name
+    const sid=_gf(r,'storeId','storeid','StoreId');
+    if(sid){const s=D.Stores.find(x=>String(x.id)===String(sid));if(s)row.store=s.name;delete row.storeId;delete row.storeid;delete row.StoreId;}
+    // Resolve staffId→staff name
+    const sfid=_gf(r,'staffId','staffid','StaffId');
+    if(sfid){const s=D.Staff.find(x=>String(x.id)===String(sfid));if(s)row.staff=s.name;delete row.staffId;delete row.staffid;delete row.StaffId;}
+    return row;
+  });
+  return{sheet,totalInDB:(D[sheet]||[]).length,matchingRows:data.length,returnedRows:rows.length,rows};
+}
+
+// --- Fetch fresh data from Google Sheets ---
+async function aiFetchAllData(){
+  try{const r=await API.get('getAll');if(r&&r.data&&!r.error){for(let s in r.data){if(Array.isArray(r.data[s])&&r.data[s].length>0)D[s]=r.data[s].map(row=>normalizeRow(s,row));}}}catch(e){}
+  // Stock & Diary: raw (like renderStock does)
+  try{const[ssR,scR]=await Promise.all([API.get('getSheet',{sheet:'StoreStock'}),API.get('getSheet',{sheet:'StockCount'})]);if(ssR&&ssR.data)D.StoreStock=ssR.data;if(scR&&scR.data)D.StockCount=scR.data;}catch(e){}
+  try{const[deR,dcR]=await Promise.all([API.get('getSheet',{sheet:'DiaryEntry'}),API.get('getSheet',{sheet:'DiaryConfig'})]);if(deR&&deR.data)D.DiaryEntry=deR.data;if(dcR&&dcR.data)D.DiaryConfig=dcR.data;}catch(e){}
+  console.log('[AI] Loaded — Staff:',D.Staff?.length||0,'Att:',D.Attendance?.length||0,'SC:',D.StockCount?.length||0,'SS:',D.StoreStock?.length||0,'Sales:',D.WeeklySales?.length||0);
+}
+
+// --- System Prompt: schema only, ~300 tokens ---
+function buildSystemPrompt(){
+  const today=new Date().toISOString().split('T')[0];
+  const stores=D.Stores.filter(s=>s.active!==false).map(s=>`${s.name}(${s.code||''})`).join(', ');
+  return `You are THE BAP's AI data analyst. Today: ${today}.
+THE BAP = Korean takeaway restaurant chain in UK. Pay period: 26th–25th monthly.
+Stores: ${stores}
+Staff: ${D.Staff.filter(s=>s.active!==false).length} active, ${D.Staff.filter(s=>s.active===false).length} left
+DB sizes: Attendance=${D.Attendance?.length||0}, StockCount=${D.StockCount?.length||0}, StoreStock=${D.StoreStock?.length||0}, StockTemplate=${D.StockTemplate?.length||0}, Sales=${D.WeeklySales?.length||0}, ChangeReq=${D.TimeChangeReq?.length||0}, Diary=${D.DiaryEntry?.length||0}
+
+Use query_tbms tool to look up data. ALWAYS query before answering — never guess.
+Tables & key fields:
+• Staff: name, nickName, storeId, rate(£/hr), dob, startDate, leftDate, clothSize, kioskPwd, active
+• Stores: name, code, address, manager
+• Attendance: staffId, storeId, date(YYYY-MM-DD), clockIn(HH:MM), clockOut(HH:MM), source
+• StockCount: storeId, countDate, week, name, category, qty, unit, submittedBy (stock counts per store per date)
+• StoreStock: storeId, name, category, qty, unit, min, orderQty (current stock levels, minimums & fixed order quantities per store)
+• StockTemplate: name, category, unit, min, orderQty, supplier1/2/3 (item definitions, min levels & default order quantities)
+• WeeklySales: storeId, week, weekStart, totalSales, notes
+• TimeChangeReq: staffId, date, field, currentValue, requestedValue, reason, status
+• EditLog: staffId, date, fieldChanged, oldValue, newValue
+• DiaryEntry: storeId, date, fridgeTemps, deliveries, cookingTemps, issues, signedBy
+• Suppliers: name, email, phone, address
+
+Tips: For stock analysis, query both StockCount(actual qty) AND StockTemplate(min levels) to compare.
+For ordering needs, compare StockCount qty vs StockTemplate min for each item.
+Answer in the user's language (English/Korean). Use £ for money. Hours=clockOut-clockIn.`;
+}
+
+function renderAiAssistant(c){
+  const keys=getAiKeys();
+  const hasKey=p=>!!(keys[p]&&keys[p].trim());
+  c.innerHTML=`
+  <div class="card" style="margin-bottom:16px">
+    <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+      <h3><i class="fas fa-robot" style="color:var(--accent)"></i> AI Data Assistant</h3>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        ${Object.entries(AI_PROVIDERS).map(([k,v])=>`<button class="btn btn-sm ${aiProvider===k?'btn-primary':'btn-outline'}" onclick="aiProvider='${k}';renderAiAssistant($('pageContent'))" style="${aiProvider===k?'background:'+v.color+';border-color:'+v.color:''}"><i class="fas ${v.icon}"></i> ${v.name}</button>`).join('')}
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px">
+      <div style="flex:1;display:flex;gap:6px;align-items:center">
+        <i class="fas fa-key" style="color:var(--text-light)"></i>
+        <input id="aiApiKey" type="password" placeholder="${AI_PROVIDERS[aiProvider].name} API Key" value="${escHtml(keys[aiProvider]||'')}" style="flex:1;font-size:13px">
+        <button class="btn btn-sm btn-primary" onclick="saveAiKey()"><i class="fas fa-save"></i></button>
+        ${hasKey(aiProvider)?'<span style="color:var(--success);font-size:12px"><i class="fas fa-check-circle"></i> Saved</span>':'<span style="color:var(--warning);font-size:12px"><i class="fas fa-exclamation-circle"></i> No key</span>'}
+      </div>
+      <select id="aiModel" style="font-size:12px;padding:4px 8px;max-width:200px" onchange="LS.set('aiModel_'+aiProvider,this.value)">
+        ${aiProvider==='chatgpt'?'<option value="gpt-4o">GPT-4o</option><option value="gpt-4o-mini">GPT-4o-mini</option><option value="gpt-4.1-mini">GPT-4.1-mini</option><option value="gpt-4.1-nano">GPT-4.1-nano</option>':''}
+        ${aiProvider==='gemini'?'<option value="gemini-2.0-flash">Gemini 2.0 Flash</option><option value="gemini-2.5-flash-preview-05-20">Gemini 2.5 Flash</option><option value="gemini-2.5-pro-preview-05-06">Gemini 2.5 Pro</option>':''}
+        ${aiProvider==='claude'?'<option value="claude-sonnet-4-20250514">Claude Sonnet 4</option><option value="claude-haiku-4-20250414">Claude Haiku 4</option>':''}
+      </select>
+    </div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">
+      <button class="btn btn-sm btn-outline" onclick="aiAsk('오늘 출근 현황 요약해줘')"><i class="fas fa-clock"></i> Today Attendance</button>
+      <button class="btn btn-sm btn-outline" onclick="aiAsk('이번 주 매출 분석해줘')"><i class="fas fa-chart-bar"></i> Sales Analysis</button>
+      <button class="btn btn-sm btn-outline" onclick="aiAsk('직원별 근무시간 비교해줘')"><i class="fas fa-users"></i> Staff Hours</button>
+      <button class="btn btn-sm btn-outline" onclick="aiAsk('문제가 있거나 주의가 필요한 사항이 있어?')"><i class="fas fa-exclamation-triangle"></i> Issues</button>
+    </div>
+  </div>
+  <div class="card" style="flex:1;display:flex;flex-direction:column;min-height:400px">
+    <div id="aiChatBox" style="flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:10px;max-height:60vh">
+      ${aiChat.length===0?`<div style="text-align:center;color:var(--text-light);padding:40px 20px">
+        <i class="fas fa-robot" style="font-size:48px;margin-bottom:12px;color:var(--accent);opacity:.5"></i>
+        <p style="font-size:15px;font-weight:600">Ask me anything about your data!</p>
+        <p style="font-size:13px;margin-top:4px">매출, 근태, 직원 현황 등 TBMS 데이터를 분석해드려요</p>
+      </div>`:''}
+      ${aiChat.map(m=>`<div style="display:flex;${m.role==='user'?'justify-content:flex-end':''}">
+        <div style="max-width:80%;padding:10px 14px;border-radius:${m.role==='user'?'16px 16px 4px 16px':'16px 16px 16px 4px'};background:${m.role==='user'?'var(--accent)':'#f5f5f5'};color:${m.role==='user'?'#fff':'var(--text)'};font-size:13px;line-height:1.6;white-space:pre-wrap">${m.role==='assistant'?formatAiMsg(m.content):escHtml(m.content)}</div>
+      </div>`).join('')}
+      <div id="aiTyping" style="display:none"><div style="padding:10px 14px;border-radius:16px;background:#f5f5f5;display:inline-flex;gap:4px"><span class="ai-dot"></span><span class="ai-dot"></span><span class="ai-dot"></span></div></div>
+    </div>
+    <div style="border-top:1px solid var(--border);padding:12px;display:flex;gap:8px">
+      <input id="aiInput" placeholder="질문을 입력하세요..." style="flex:1;font-size:14px" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();aiSend()}">
+      <button class="btn btn-primary" onclick="aiSend()"><i class="fas fa-paper-plane"></i></button>
+      <button class="btn btn-outline btn-sm" onclick="aiChat=[];renderAiAssistant($('pageContent'))" title="Clear chat"><i class="fas fa-trash"></i></button>
+    </div>
+  </div>
+  <style>
+    .ai-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);animation:aiBounce .6s infinite alternate}
+    .ai-dot:nth-child(2){animation-delay:.2s}
+    .ai-dot:nth-child(3){animation-delay:.4s}
+    @keyframes aiBounce{from{opacity:.3;transform:translateY(0)}to{opacity:1;transform:translateY(-4px)}}
+  </style>`;
+  // Restore model selection
+  const savedModel=LS.get('aiModel_'+aiProvider);
+  if(savedModel){const sel=$('aiModel');if(sel){for(let o of sel.options){if(o.value===savedModel){o.selected=true;break;}}}}
+  // Scroll chat to bottom
+  const box=$('aiChatBox');if(box)box.scrollTop=box.scrollHeight;
+}
+
+function formatAiMsg(text){
+  // Basic markdown-like formatting
+  return escHtml(text)
+    .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g,'<em>$1</em>')
+    .replace(/`(.*?)`/g,'<code style="background:#e8e8e8;padding:1px 4px;border-radius:3px;font-size:12px">$1</code>')
+    .replace(/^### (.+)$/gm,'<strong style="font-size:14px;color:var(--primary)">$1</strong>')
+    .replace(/^## (.+)$/gm,'<strong style="font-size:15px;color:var(--primary)">$1</strong>')
+    .replace(/^- (.+)$/gm,'• $1');
+}
+
+function saveAiKey(){
+  const key=$('aiApiKey').value.trim();
+  const keys=getAiKeys();
+  keys[aiProvider]=key;
+  saveAiKeys(keys);
+  toast(AI_PROVIDERS[aiProvider].name+' API key saved!','success');
+  renderAiAssistant($('pageContent'));
+}
+
+function aiAsk(question){
+  $('aiInput').value=question;
+  aiSend();
+}
+
+async function aiSend(){
+  const input=$('aiInput');
+  const q=(input.value||'').trim();
+  if(!q)return;
+  const keys=getAiKeys();
+  const key=keys[aiProvider];
+  if(!key){toast('API key를 먼저 입력하세요','error');return;}
+  const prov=AI_PROVIDERS[aiProvider];
+  const model=LS.get('aiModel_'+aiProvider)||prov.model;
+
+  aiChat.push({role:'user',content:q});
+  input.value='';
+  renderAiAssistant($('pageContent'));
+
+  const typing=$('aiTyping');
+  const box=$('aiChatBox');
+  const showStatus=(icon,text)=>{if(typing){typing.style.display='block';typing.innerHTML=`<div style="padding:8px 14px;border-radius:16px;background:#f5f5f5;font-size:12px;color:var(--text-light);display:inline-flex;align-items:center;gap:6px"><i class="fas ${icon}" style="color:var(--accent)"></i> ${text} <span class="ai-dot"></span><span class="ai-dot"></span><span class="ai-dot"></span></div>`;}if(box)box.scrollTop=box.scrollHeight;};
+
+  showStatus('fa-database','Loading data from Google Sheets...');
+  await aiFetchAllData();
+
+  // Build initial messages (schema-only system prompt + chat history)
+  const sysPrompt=buildSystemPrompt();
+  let msgs=prov.initMsgs(sysPrompt,aiChat);
+  const tools=[AI_TOOL];
+  console.log('[AI] System prompt:',sysPrompt.length,'chars (~'+Math.round(sysPrompt.length/4)+' tokens)');
+
+  try{
+    let finalText='';
+    // Tool-calling loop: AI queries data → we return results → AI analyzes → repeat
+    for(let i=0;i<8;i++){
+      showStatus('fa-brain',i===0?`${prov.name} is thinking...`:`${prov.name} analyzing data (query ${i})...`);
+      const url=typeof prov.url==='function'?prov.url(key,model):prov.url;
+      let resp,data;
+      for(let retry=0;retry<3;retry++){
+        resp=await fetch(url,{method:'POST',headers:prov.headers(key),body:prov.buildBody(msgs,model,tools)});
+        if(resp.status===429){
+          const wait=retry<2?(retry+1)*15:0;
+          if(wait>0){showStatus('fa-hourglass-half',`Rate limit — waiting ${wait}s...`);await new Promise(r=>setTimeout(r,wait*1000));continue;}
+          const e=await resp.text();throw new Error('RATE_LIMIT:'+e.substring(0,300));
+        }
+        if(!resp.ok){const e=await resp.text();throw new Error(`${resp.status}: ${e.substring(0,300)}`);}
+        break;
+      }
+      data=await resp.json();
+      const parsed=prov.parseResp(data);
+
+      if(parsed.calls&&parsed.calls.length>0){
+        // AI wants to query data — execute locally and feed back
+        const results=parsed.calls.map(c=>{
+          console.log('[AI] query_tbms:',JSON.stringify(c.args));
+          return executeAiQuery(c.args);
+        });
+        const totalRows=results.reduce((s,r)=>s+r.returnedRows,0);
+        showStatus('fa-search',`Found ${totalRows} records, feeding back...`);
+        prov.addToolResults(msgs,parsed.raw,parsed.calls,results);
+      }else{
+        // No more tool calls — got final answer
+        finalText=parsed.text||'';
+        break;
+      }
+    }
+    aiChat.push({role:'assistant',content:finalText||'No response'});
+  }catch(e){
+    console.error('[AI]',e);
+    let errMsg='⚠️ Error: '+e.message;
+    if(e.message.includes('RATE_LIMIT')){
+      errMsg='⚠️ API Rate Limit에 도달했습니다. 1분 후에 다시 시도해주세요.\n\n다른 AI 프로바이더로 전환하거나, 잠시 기다린 후 다시 시도하세요.';
+    }else if(e.message.includes('401')||e.message.includes('403')){
+      errMsg='⚠️ API Key가 유효하지 않습니다. Settings에서 API Key를 확인해주세요.';
+    }else if(e.message.includes('500')||e.message.includes('502')||e.message.includes('503')){
+      errMsg='⚠️ AI 서버에 일시적인 문제가 있습니다. 잠시 후 다시 시도해주세요.';
+    }
+    aiChat.push({role:'assistant',content:errMsg});
+  }
+  renderAiAssistant($('pageContent'));
 }
 
 // ==================== INITIALIZATION ====================

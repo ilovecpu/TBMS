@@ -386,7 +386,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
 // ============================================================
 //  CONFIG
 // ============================================================
-const DEFAULT_API='https://script.google.com/macros/s/AKfycbzEegRzp3A5qE_7Flu2Mi301RnikBpnYdmyuzU7YDNgVR7bZsNhYsr04ylvi7ZyXttc/exec';
+const DEFAULT_API='https://script.google.com/macros/s/AKfycbwH2Rzm8RfZIJ-Ym5JCT95kEBUNjsZMyII-nWWoGT-XB8Y_yQdLrUcJcincZdNPuKoS/exec';
 const API_URL=DEFAULT_API;
 const API_KEY='tBaP2026xKr!mGt9Qz';
 
@@ -1194,29 +1194,26 @@ function removeDeliveryRow(i){collectFormData();diaryEntry.deliveries.splice(i,1
 function renderCooking(menuItems){
   const data=diaryEntry.cookingTemps||[];
   if(menuItems.length===0)return '<div style="text-align:center;padding:20px;color:var(--text-light)"><i class="fas fa-info-circle"></i> No menu items configured. Add them in TBMS → Diary Config.</div>';
-  let html='<div style="font-size:12px;color:var(--text-light);margin-bottom:10px"><i class="fas fa-info-circle"></i> Record temperature when food is cooked. Target: 75°C+</div><div class="fridge-grid"><div class="fridge-row header"><div>Menu Item</div><div style="text-align:center;cursor:pointer;user-select:none;color:var(--accent)" onclick="fillRandomCookTemps()" title="Tap to auto-fill random temps">Temp °C <i class="fas fa-random" style="font-size:10px"></i></div><div></div></div>';
+  let html='<div style="font-size:12px;color:var(--text-light);margin-bottom:10px"><i class="fas fa-info-circle"></i> Record temperature when food is cooked. Target: 75°C+</div><div class="fridge-grid"><div class="fridge-row header"><div>Menu Item</div><div style="text-align:center">Temp °C</div><div></div></div>';
   menuItems.forEach(m=>{
     const rec=data.find(d=>d.item===m.name);
     html+=`<div class="fridge-row"><div class="name"><i class="fas fa-utensils" style="color:${STORE_COLORS[currentStore]}"></i> ${m.name}</div><input type="number" class="temp-input" data-cook="${m.name}" value="${rec?rec.temp:''}" onchange="markDirty()" placeholder="—" inputmode="decimal"><div></div></div>`;
   });
   return html+'</div>';
 }
-function fillRandomCookTemps(){document.querySelectorAll('[data-cook]').forEach(el=>{el.value=Math.floor(Math.random()*9)+89;});markDirty();}
 // ===== 5. Hold Temp =====
 function renderHoldTemp(menuItems){
   const data=diaryEntry.holdTemps||[];
   if(menuItems.length===0)return '<div style="text-align:center;padding:20px;color:var(--text-light)"><i class="fas fa-info-circle"></i> No menu items configured.</div>';
   let html='<div style="font-size:12px;color:var(--text-light);margin-bottom:10px"><i class="fas fa-info-circle"></i> Record food temperature every 2 hours. <strong>N</strong> = Newly cooked. If below +63°C, discard after 2 hours.</div><div class="hold-grid"><table class="hold-table"><thead><tr><th>Item</th>';
-  HOLD_TIMES.forEach(t=>html+=`<th style="cursor:pointer;user-select:none" onclick="fillRandomHoldCol('${t}')" title="Tap to auto-fill">${t} <i class="fas fa-random" style="font-size:8px;color:var(--accent)"></i></th>`);
+  HOLD_TIMES.forEach(t=>html+=`<th>${t}</th>`);
   html+='</tr></thead><tbody>';
   menuItems.forEach(m=>{
     const rec=data.find(d=>d.item===m.name)||{};
     html+=`<tr><td>${m.name}</td>`;
     HOLD_TIMES.forEach(t=>{
       const tKey='t'+t.replace(':','');const nKey='n'+t.replace(':','');
-      let rawVal=rec[tKey]||'';let isN=rec[nKey]?true:false;
-      let val=rawVal;
-      if(typeof rawVal==='string'&&/\d+N$/i.test(rawVal)){val=rawVal.replace(/N$/i,'');isN=true;}
+      const val=rec[tKey]||'';const isN=rec[nKey]?true:false;
       html+=`<td><input type="number" class="hold-input ${isN?'newly':''}" data-hold="${m.name}" data-time="${tKey}" value="${val}" onchange="markDirty()" placeholder="—" inputmode="decimal"><div class="n-check"><input type="checkbox" ${isN?'checked':''} data-hold="${m.name}" data-ntime="${nKey}" onchange="toggleNewly(this);markDirty()"><label>N</label></div></td>`;
     });
     html+='</tr>';
@@ -1224,7 +1221,6 @@ function renderHoldTemp(menuItems){
   return html+'</tbody></table></div>';
 }
 function toggleNewly(cb){const inp=cb.closest('td').querySelector('.hold-input');if(inp){cb.checked?inp.classList.add('newly'):inp.classList.remove('newly');}}
-function fillRandomHoldCol(time){const tKey='t'+time.replace(':','');document.querySelectorAll(`[data-time="${tKey}"]`).forEach(inp=>{const td=inp.closest('td');const cb=td.querySelector(`[data-ntime]`);const isN=Math.random()<0.35;if(cb){cb.checked=isN;if(isN){inp.classList.add('newly');inp.value=Math.floor(Math.random()*9)+89;}else{inp.classList.remove('newly');inp.value=Math.floor(Math.random()*14)+65;}}});markDirty();}
 // ===== 6. Cooling =====
 function renderCooling(){
   const data=diaryEntry.coolingRecords||[{product:'',timeTaken:'',ok:false}];

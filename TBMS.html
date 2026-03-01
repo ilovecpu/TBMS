@@ -2963,7 +2963,8 @@ function renderOrderTable() {
   items.sort((a,b)=>{const ci=catIdx.indexOf(a.category)-catIdx.indexOf(b.category);return ci!==0?ci:(a._so||0)-(b._so||0);});
   $('orderBody').innerHTML=items.length?items.map(s=>{
     const oq=Number(s.orderQty)||0;
-    const orderVal=Math.max(0,oq-Number(s.qty));
+    const qty=Number(s.qty)||0;
+    const orderVal=qty<Number(s.min)?Math.max(0,oq-qty):0;
     return`<tr><td>${escHtml(s.category)}</td><td>${escHtml(s.name)}</td><td>${escHtml(s.unit)}</td><td>${s.min}</td><td><span class="badge ${Number(s.qty)<=0?'badge-danger':'badge-warning'}">${s.qty}</span></td><td><strong style="color:#c62828">${orderVal}</strong></td></tr>`;
   }).join(''):'<tr><td colspan="6" style="text-align:center;color:var(--success)"><i class="fas fa-check-circle"></i> All items are sufficiently stocked!</td></tr>';
 }

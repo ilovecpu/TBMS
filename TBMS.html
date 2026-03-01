@@ -2597,9 +2597,36 @@ function updateStockQty(el) {
   const item=D.StoreStock.find(s=>String(s.storeId)===storeId&&String(s.itemId)===itemId);
   if(item)item.qty=qty;
 }
-function saveStockAll() {
+async function saveStockAll() {
+  const storeId=$('ssStore')?.value;
+  if(!storeId){toast('Select a store','error');return;}
+  // 1. Save StoreStock (live data)
   _bgPost({action:'saveSheet',sheet:'StoreStock',rows:D.StoreStock});
+  // 2. Also save to StockCount for historical record (so data persists when day passes)
+  const today=new Date().toISOString().split('T')[0];
+  const items=[];
+  document.querySelectorAll('.ss-qty').forEach(el=>{
+    if(String(el.dataset.store)===storeId){
+      const qty=parseFloat(el.value);
+      if(!isNaN(qty)){
+        items.push({itemId:el.dataset.item,category:el.dataset.cat,name:el.dataset.name,unit:el.dataset.unit,qty});
+      }
+    }
+  });
+  if(items.length>0){
+    try{
+      await API.post({action:'saveStockCount',storeId,countDate:today,items,submittedBy:currentUser?.id||''});
+      // Update local StockCount cache
+      D.StockCount=D.StockCount.filter(sc=>!(String(sc.storeId)===storeId&&sc.countDate===today));
+      const week=getISOWeek(new Date(today));
+      const ts=new Date().toISOString();
+      items.forEach(item=>{
+        D.StockCount.push({id:'sc'+Date.now()+Math.random().toString(36).substr(2,4),storeId,week,countDate:today,itemId:item.itemId,category:item.category,name:item.name,unit:item.unit,qty:item.qty,submittedBy:currentUser?.id||'',submittedAt:ts});
+      });
+    }catch(e){console.log('StockCount save error:',e);}
+  }
   toast('Stock quantities saved!','success');
+  renderStockCalendar();
   renderStockStatusTable();
 }
 async function resetAllQty(){
@@ -2619,9 +2646,14 @@ async function resetAllQty(){
     // Today: reset StoreStock qty to 0
     D.StoreStock.filter(s=>String(s.storeId)===storeId).forEach(s=>{s.qty=0;});
     if(API.mode==='cloud'){try{await API.post({action:'saveSheet',sheet:'StoreStock',rows:D.StoreStock});}catch(ex){}}
+    // Also delete today's StockCount records so calendar dot disappears
+    const scRows=D.StockCount.filter(sc=>String(sc.storeId)===storeId&&sc.countDate===today);
+    for(const sc of scRows){try{await API.post({action:'deleteRow',sheet:'StockCount',id:sc.id});}catch(ex){}}
+    D.StockCount=D.StockCount.filter(sc=>!(String(sc.storeId)===storeId&&sc.countDate===today));
     renderStockCalendar();
   }
   toast('All QTY reset to 0','info');
+  renderStockStatusTable();
 }
 async function copyStockToDate(){
   const storeId=$('ssStore')?.value;

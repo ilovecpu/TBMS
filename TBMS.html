@@ -242,7 +242,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
   <div class="login-logo">
     <div class="logo-icon"><i class="fas fa-bowl-food"></i></div>
     <h1>TBMS</h1>
-    <p>The Bap Management System <span style="opacity:.5;font-size:11px">Ver1.3</span></p>
+    <p>The Bap Management System <span style="opacity:.5;font-size:11px">Ver1.4</span></p>
   </div>
   <div class="form-group"><label>Username</label><input id="loginUser" placeholder="Enter username"></div>
   <div class="form-group"><label>Password</label><input id="loginPass" type="password" placeholder="Enter password"></div>
@@ -260,7 +260,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
 <!-- MAIN APP -->
 <div id="mainApp" class="hidden">
   <div class="sidebar" id="sidebar">
-    <div class="sidebar-header"><h2>TBMS <span style="font-size:12px;font-weight:400;opacity:.6">Ver1.3</span></h2><p>The Bap Management System</p></div>
+    <div class="sidebar-header"><h2>TBMS <span style="font-size:12px;font-weight:400;opacity:.6">Ver1.4</span></h2><p>The Bap Management System</p></div>
     <div class="sidebar-menu">
       <div class="menu-item active" data-page="dashboard" onclick="navigate('dashboard')"><i class="fas fa-home"></i>Dashboard</div>
       <div class="menu-item" data-page="stores" onclick="navigate('stores')"><i class="fas fa-store"></i>Stores</div>
@@ -307,7 +307,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
   <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
   <div class="main-content">
     <div class="header">
-      <div class="header-left"><button class="menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button><h2 id="pageTitle" style="font-size:18px">Dashboard</h2><span style="font-size:11px;color:var(--text-light);margin-left:8px;font-weight:400;opacity:.7">Ver1.3</span></div>
+      <div class="header-left"><button class="menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button><h2 id="pageTitle" style="font-size:18px">Dashboard</h2><span style="font-size:11px;color:var(--text-light);margin-left:8px;font-weight:400;opacity:.7">Ver1.4</span></div>
       <div class="header-right"><span id="headerDate"></span><span class="sync-status"><span class="dot offline" id="syncDot"></span><span id="syncText">Local</span></span><button class="btn btn-sm btn-outline" onclick="doLogout()"><i class="fas fa-sign-out-alt"></i> Logout</button></div>
     </div>
     <div class="page-content" id="pageContent"></div>
@@ -616,6 +616,21 @@ async function loadAllData() {
             seen.add(r.id);
           });
           if(fixed)console.log(`[TBMS] Fixed ${fixed} duplicate IDs in ${sheet}`);
+        }
+        // Remove content-based duplicates (same name+storeId keep earliest)
+        for(const sheet of ['Staff']){
+          if(!D[sheet]||D[sheet].length<2)continue;
+          const keyMap=new Map();let removed=0;
+          D[sheet].forEach(r=>{
+            const key=(r.name||'').trim().toLowerCase()+'|'+(r.storeId||'');
+            if(keyMap.has(key)){removed++;}else{keyMap.set(key,r.id);}
+          });
+          if(removed){
+            const keepIds=new Set(keyMap.values());
+            D[sheet]=D[sheet].filter(r=>keepIds.has(r.id));
+            console.warn(`[TBMS] Removed ${removed} content duplicates in ${sheet}, saving clean sheet...`);
+            _bgPost({action:'saveSheet',sheet,rows:D[sheet]});
+          }
         }
         // Load catOrder from cloud
         try{const catRes=await API.get('getSetting',{key:'catOrder'});if(catRes&&catRes.value){LS.set('catOrder',catRes.value);console.log('[TBMS] catOrder loaded from cloud:',catRes.value);}}catch(e){}

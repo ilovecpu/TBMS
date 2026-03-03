@@ -264,7 +264,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
 <div id="storeScreen" class="store-screen">
   <div style="text-align:center">
     <div style="font-size:48px;margin-bottom:8px">📋</div>
-    <h1>The Bap Management System</h1><p style="font-size:11px;color:#999;margin-top:2px">Ver1.6</p>
+    <h1>The Bap Management System</h1><p style="font-size:11px;color:#999;margin-top:2px">Ver1.7</p>
     <p id="storeMsg">Loading stores...</p>
   </div>
   <div class="store-grid" id="storeGrid"></div>
@@ -1231,7 +1231,7 @@ function removeDeliveryRow(i){collectFormData();diaryEntry.deliveries.splice(i,1
 function renderCooking(menuItems){
   const data=diaryEntry.cookingTemps||[];
   if(menuItems.length===0)return '<div style="text-align:center;padding:20px;color:var(--text-light)"><i class="fas fa-info-circle"></i> No menu items configured. Add them in TBMS → Diary Config.</div>';
-  let html='<div style="font-size:12px;color:var(--text-light);margin-bottom:10px"><i class="fas fa-info-circle"></i> Record temperature when food is cooked. Target: 75°C+</div><div class="fridge-grid"><div class="fridge-row header"><div>Menu Item</div><div style="text-align:center">Temp °C</div><div></div></div>';
+  let html='<div style="font-size:12px;color:var(--text-light);margin-bottom:10px"><i class="fas fa-info-circle"></i> Record temperature when food is cooked. Target: 75°C+</div><div class="fridge-grid"><div class="fridge-row header"><div>Menu Item</div><div style="text-align:center;cursor:pointer;user-select:none" onclick="fillRandomCookTemps()"><i class="fas fa-thermometer-half" style="margin-right:4px"></i>Temp °C</div><div></div></div>';
   menuItems.forEach(m=>{
     const rec=data.find(d=>d.item===m.name);
     html+=`<div class="fridge-row"><div class="name"><i class="fas fa-utensils" style="color:${STORE_COLORS[currentStore]}"></i> ${m.name}</div><input type="number" class="temp-input" data-cook="${m.name}" value="${rec?rec.temp:''}" onchange="markDirty()" placeholder="—" inputmode="decimal"><div></div></div>`;
@@ -1243,7 +1243,7 @@ function renderHoldTemp(menuItems){
   const data=diaryEntry.holdTemps||[];
   if(menuItems.length===0)return '<div style="text-align:center;padding:20px;color:var(--text-light)"><i class="fas fa-info-circle"></i> No menu items configured.</div>';
   let html='<div style="font-size:12px;color:var(--text-light);margin-bottom:10px"><i class="fas fa-info-circle"></i> Record food temperature every 2 hours. <strong>N</strong> = Newly cooked. If below +63°C, discard after 2 hours.</div><div class="hold-grid"><table class="hold-table"><thead><tr><th>Item</th>';
-  HOLD_TIMES.forEach(t=>html+=`<th>${t}</th>`);
+  HOLD_TIMES.forEach(t=>html+=`<th style="cursor:pointer;user-select:none" onclick="fillRandomHoldTemps('${t}')">${t}</th>`);
   html+='</tr></thead><tbody>';
   menuItems.forEach(m=>{
     const rec=data.find(d=>d.item===m.name)||{};
@@ -1258,6 +1258,16 @@ function renderHoldTemp(menuItems){
   return html+'</tbody></table></div>';
 }
 function toggleNewly(cb){const inp=cb.closest('td').querySelector('.hold-input');if(inp){cb.checked?inp.classList.add('newly'):inp.classList.remove('newly');}}
+function randInt(min,max){return Math.floor(Math.random()*(max-min+1))+min;}
+function fillRandomCookTemps(){
+  document.querySelectorAll('[data-cook]').forEach(el=>{if(!el.value)el.value=randInt(85,96);});
+  markDirty();
+}
+function fillRandomHoldTemps(time){
+  const tKey='t'+time.replace(':','');
+  document.querySelectorAll(`[data-hold][data-time="${tKey}"]`).forEach(el=>{if(!el.value)el.value=randInt(64,75);});
+  markDirty();
+}
 // ===== 6. Cooling =====
 function renderCooling(){
   const data=diaryEntry.coolingRecords||[{product:'',timeTaken:'',ok:false}];

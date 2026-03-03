@@ -242,7 +242,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
   <div class="login-logo">
     <div class="logo-icon"><i class="fas fa-bowl-food"></i></div>
     <h1>TBMS</h1>
-    <p>The Bap Management System <span style="opacity:.5;font-size:11px">Ver1.4</span></p>
+    <p>The Bap Management System <span style="opacity:.5;font-size:11px">Ver1.5</span></p>
   </div>
   <div class="form-group"><label>Username</label><input id="loginUser" placeholder="Enter username"></div>
   <div class="form-group"><label>Password</label><input id="loginPass" type="password" placeholder="Enter password"></div>
@@ -260,10 +260,16 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
 <!-- MAIN APP -->
 <div id="mainApp" class="hidden">
   <div class="sidebar" id="sidebar">
-    <div class="sidebar-header"><h2>TBMS <span style="font-size:12px;font-weight:400;opacity:.6">Ver1.4</span></h2><p>The Bap Management System</p></div>
+    <div class="sidebar-header"><h2>TBMS <span style="font-size:12px;font-weight:400;opacity:.6">Ver1.5</span></h2><p>The Bap Management System</p></div>
     <div class="sidebar-menu">
       <div class="menu-item active" data-page="dashboard" onclick="navigate('dashboard')"><i class="fas fa-home"></i>Dashboard</div>
-      <div class="menu-item" data-page="stores" onclick="navigate('stores')"><i class="fas fa-store"></i>Stores</div>
+      <div class="menu-group">
+        <div class="menu-item menu-parent" onclick="toggleMenuGroup(this)"><i class="fas fa-store"></i>Stores<i class="fas fa-chevron-down menu-arrow"></i></div>
+        <div class="sub-menu">
+          <div class="menu-item sub" data-page="stores" onclick="navigate('stores')"><i class="fas fa-list"></i>Store List</div>
+          <div class="menu-item sub" data-page="store-mgmt" onclick="navigate('store-mgmt')"><i class="fas fa-cogs"></i>Store Management</div>
+        </div>
+      </div>
       <div class="menu-group">
         <div class="menu-item menu-parent" onclick="toggleMenuGroup(this)"><i class="fas fa-boxes-stacked"></i>Stock<i class="fas fa-chevron-down menu-arrow"></i></div>
         <div class="sub-menu">
@@ -307,7 +313,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
   <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
   <div class="main-content">
     <div class="header">
-      <div class="header-left"><button class="menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button><h2 id="pageTitle" style="font-size:18px">Dashboard</h2><span style="font-size:11px;color:var(--text-light);margin-left:8px;font-weight:400;opacity:.7">Ver1.4</span></div>
+      <div class="header-left"><button class="menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button><h2 id="pageTitle" style="font-size:18px">Dashboard</h2><span style="font-size:11px;color:var(--text-light);margin-left:8px;font-weight:400;opacity:.7">Ver1.5</span></div>
       <div class="header-right"><span id="headerDate"></span><span class="sync-status"><span class="dot offline" id="syncDot"></span><span id="syncText">Local</span></span><button class="btn btn-sm btn-outline" onclick="doLogout()"><i class="fas fa-sign-out-alt"></i> Logout</button></div>
     </div>
     <div class="page-content" id="pageContent"></div>
@@ -338,7 +344,8 @@ const ROLES={admin:'Admin',senior_manager:'Senior Manager',manager:'Manager',acc
 const ROLE_LABELS=Object.entries(ROLES);
 const ALL_PAGES=[
   {id:'dashboard',label:'Dashboard',icon:'fa-home'},
-  {id:'stores',label:'Stores',icon:'fa-store'},
+  {id:'stores',label:'Store List',icon:'fa-store'},
+  {id:'store-mgmt',label:'Store Management',icon:'fa-cogs'},
   {id:'staff',label:'Staff List',icon:'fa-list-ul'},
   {id:'attendance',label:'Attendance',icon:'fa-clipboard-check'},
   {id:'payroll',label:'Payroll',icon:'fa-calculator'},
@@ -490,7 +497,7 @@ DEFAULT_DATA.Stores.forEach(store => {
 });
 
 // ==================== DATA LAYER ====================
-const D = { Users:[], Stores:[], Staff:[], Attendance:[], Suppliers:[], StockTemplate:[], StoreStock:[], StockCount:[], WeeklySales:[], StaffMessages:[], EditLog:[], TimeChangeReq:[], DiaryConfig:[], DiaryEntry:[] };
+const D = { Users:[], Stores:[], Staff:[], Attendance:[], Suppliers:[], StockTemplate:[], StoreStock:[], StockCount:[], WeeklySales:[], StaffMessages:[], EditLog:[], TimeChangeReq:[], DiaryConfig:[], DiaryEntry:[], StoreInfo:[] };
 
 // Canonical field names — must match Apps Script SHEETS definition exactly
 const FIELD_SCHEMA = {
@@ -507,7 +514,8 @@ const FIELD_SCHEMA = {
   EditLog:['id','attendanceId','staffId','storeId','date','fieldChanged','oldValue','newValue','editTimestamp','kioskVersion'],
   TimeChangeReq:['id','attendanceId','staffId','storeId','date','field','currentValue','requestedValue','reason','status','kioskVersion','createdAt','reviewedBy','reviewedAt','acknowledgedAt'],
   DiaryConfig:['id','storeId','configType','name','sortOrder','active'],
-  DiaryEntry:['id','storeId','date','openChecks','fridgeTemps','deliveries','cookingTemps','coolingRecords','leftovers','closingChecks','holdTemps','extraChecks','issues','signedBy','submittedBy','submittedAt']
+  DiaryEntry:['id','storeId','date','openChecks','fridgeTemps','deliveries','cookingTemps','coolingRecords','leftovers','closingChecks','holdTemps','extraChecks','issues','signedBy','submittedBy','submittedAt'],
+  StoreInfo:['id','storeId','leaseStart','leaseEnd','monthlyRent','serviceCharge','rentReviewYears','landlordName','landlordPhone','landlordEmail','estateAgent','estateAgentPhone','estateAgentEmail','councilName','councilEmail','councilPhone','businessRateAnnual','hygieneInspDate','hygieneRating','electricCompany','electricContractStart','electricContractEnd','electricKwhRate','electricDailyCharge','phoneCompany','phoneContractStart','phoneContractEnd','waterCompany','cardMachineCompany','cardContractStart','cardContractEnd','cardRate','fridgeCleanDate','fridgeCleanNext','airconCleanDate','airconCleanNext','memo','custom1Label','custom1Value','custom2Label','custom2Value','custom3Label','custom3Value','custom4Label','custom4Value','custom5Label','custom5Value','custom6Label','custom6Value','custom7Label','custom7Value','custom8Label','custom8Value','custom9Label','custom9Value','custom10Label','custom10Value']
 };
 // Normalize row keys: "Nick Name" → "nickName", "Left Date" → "leftDate"
 function normalizeRow(sheetName, row) {
@@ -734,7 +742,7 @@ $('loginUser').addEventListener('keydown',e=>{if(e.key==='Enter')$('loginPass').
 // ==================== NAVIGATION ====================
 function toggleSidebar() { $('sidebar').classList.toggle('open');$('sidebarOverlay').classList.toggle('show'); }
 function toggleMenuGroup(el){el.parentElement.classList.toggle('open');}
-const pageTitles={dashboard:'Dashboard',stores:'Store Management',users:'User Management',staff:'Staff List',attendance:'Attendance Records',payroll:'Payroll',messages:'Staff Messages',stock:'Stock Status','stock-template':'Stock Template','stock-count':'Weekly Stock Count',sales:'Weekly Sales',analytics:'Usage Analytics',orders:'Order List',suppliers:'Supplier Management','diary-config':'Diary Configuration','diary-entries':'Diary Records',settings:'General Settings','ai-assistant':'AI Assistant'};
+const pageTitles={dashboard:'Dashboard',stores:'Store List','store-mgmt':'Store Management',users:'User Management',staff:'Staff List',attendance:'Attendance Records',payroll:'Payroll',messages:'Staff Messages',stock:'Stock Status','stock-template':'Stock Template','stock-count':'Weekly Stock Count',sales:'Weekly Sales',analytics:'Usage Analytics',orders:'Order List',suppliers:'Supplier Management','diary-config':'Diary Configuration','diary-entries':'Diary Records',settings:'General Settings','ai-assistant':'AI Assistant'};
 let currentPage='dashboard';
 function navigate(page) {
   // Permission check
@@ -761,6 +769,7 @@ function renderPage(page) {
   switch(page) {
     case 'dashboard': renderDashboard(c); break;
     case 'stores': renderStores(c); break;
+    case 'store-mgmt': renderStoreMgmt(c); break;
     case 'users': renderUsers(c); break;
     case 'staff': renderStaff(c); break;
     case 'attendance': renderAttendance(c); break;
@@ -977,6 +986,223 @@ async function confirmDelStore(id){
   if(D.StockCount.length!==hadSC)_bgPost({action:'saveSheet',sheet:'StockCount',rows:D.StockCount});
   renderStores($('pageContent'));toast('Store deleted','success');
 }
+
+// ==================== STORE MANAGEMENT ====================
+let smSelectedStore=null;
+const SM_SECTIONS=[
+  {key:'lease',icon:'fa-home',title:'Lease & Property',fields:[
+    {id:'leaseStart',label:'Lease Start',type:'date'},{id:'leaseEnd',label:'Lease End',type:'date'},
+    {id:'monthlyRent',label:'Monthly Rent (£)',type:'number'},{id:'serviceCharge',label:'Service Charge (£)',type:'number'},
+    {id:'rentReviewYears',label:'Rent Review (years)',type:'number'},
+    {id:'landlordName',label:'Landlord Name'},{id:'landlordPhone',label:'Landlord Phone',type:'tel'},{id:'landlordEmail',label:'Landlord Email',type:'email'},
+    {id:'estateAgent',label:'Estate Agent'},{id:'estateAgentPhone',label:'Agent Phone',type:'tel'},{id:'estateAgentEmail',label:'Agent Email',type:'email'}
+  ]},
+  {key:'council',icon:'fa-landmark',title:'Council & Business Rate',fields:[
+    {id:'councilName',label:'Council Name'},{id:'councilEmail',label:'Council Email',type:'email'},{id:'councilPhone',label:'Council Phone',type:'tel'},
+    {id:'businessRateAnnual',label:'Business Rate (£/year)',type:'number'}
+  ]},
+  {key:'hygiene',icon:'fa-shield-alt',title:'Hygiene Inspection',fields:[
+    {id:'hygieneInspDate',label:'Last Inspection Date',type:'date'},{id:'hygieneRating',label:'Hygiene Rating (1-5)',type:'rating'}
+  ]},
+  {key:'electric',icon:'fa-bolt',title:'Electricity',fields:[
+    {id:'electricCompany',label:'Company'},{id:'electricContractStart',label:'Contract Start',type:'date'},{id:'electricContractEnd',label:'Contract End',type:'date'},
+    {id:'electricKwhRate',label:'Rate (p/kWh)',type:'number'},{id:'electricDailyCharge',label:'Daily Charge (£)',type:'number'}
+  ]},
+  {key:'phone',icon:'fa-phone-alt',title:'Telephone',fields:[
+    {id:'phoneCompany',label:'Company'},{id:'phoneContractStart',label:'Contract Start',type:'date'},{id:'phoneContractEnd',label:'Contract End',type:'date'}
+  ]},
+  {key:'water',icon:'fa-tint',title:'Water',fields:[
+    {id:'waterCompany',label:'Company'}
+  ]},
+  {key:'card',icon:'fa-credit-card',title:'Card Machine',fields:[
+    {id:'cardMachineCompany',label:'Company'},{id:'cardContractStart',label:'Contract Start',type:'date'},{id:'cardContractEnd',label:'Contract End',type:'date'},
+    {id:'cardRate',label:'Transaction Rate (%)',type:'number'}
+  ]},
+  {key:'cleaning',icon:'fa-snowflake',title:'Cleaning Records',fields:[
+    {id:'fridgeCleanDate',label:'Last Fridge/Freezer Clean',type:'date'},{id:'fridgeCleanNext',label:'Next Fridge/Freezer Clean',type:'date'},
+    {id:'airconCleanDate',label:'Last Aircon Clean',type:'date'},{id:'airconCleanNext',label:'Next Aircon Clean',type:'date'}
+  ]},
+  {key:'memo',icon:'fa-sticky-note',title:'Memo',fields:[
+    {id:'memo',label:'Notes',type:'textarea'}
+  ]},
+  {key:'custom',icon:'fa-wrench',title:'Custom Fields',fields:[]}
+];
+
+function getStoreInfo(storeId){
+  let info=D.StoreInfo.find(si=>String(si.storeId)===String(storeId));
+  if(!info){info={id:'si_'+storeId,storeId};D.StoreInfo.push(info);}
+  return info;
+}
+
+function renderStoreMgmt(c){
+  const stores=getAccessibleStores().filter(s=>s.active!==false);
+  c.innerHTML=`<div class="card"><div class="card-header"><h3>Store Management</h3></div>
+  <div style="display:flex;flex-wrap:wrap;gap:12px;padding:4px 0;margin-bottom:20px">
+    ${stores.map(s=>`<div class="sm-store-box${smSelectedStore===s.id?' sm-selected':''}" onclick="smSelectStore('${s.id}')" style="cursor:pointer;border:2px solid ${smSelectedStore===s.id?'var(--accent)':'var(--border)'};border-radius:12px;padding:14px 20px;background:${smSelectedStore===s.id?'#e8f5e9':'#fff'};display:flex;align-items:center;gap:10px;transition:all .2s;min-width:160px">
+      <span style="background:${smSelectedStore===s.id?'var(--accent)':'var(--primary)'};color:#fff;padding:6px 10px;border-radius:8px;font-weight:800;font-size:14px">${escHtml(s.code)}</span>
+      <span style="font-weight:600;font-size:15px">${escHtml(s.name)}</span>
+    </div>`).join('')}
+  </div>
+  <div id="smContent">${smSelectedStore?renderSmSections(smSelectedStore):'<div style="text-align:center;padding:60px 20px;color:#999"><i class="fas fa-hand-pointer" style="font-size:48px;margin-bottom:16px;display:block;opacity:.4"></i><p style="font-size:16px">Select a store to manage</p></div>'}</div>
+  </div>`;
+}
+
+function smSelectStore(id){smSelectedStore=id;renderStoreMgmt($('pageContent'));}
+
+function renderSmSections(storeId){
+  const info=getStoreInfo(storeId);
+  const store=D.Stores.find(s=>s.id===storeId);
+  let html='';
+  SM_SECTIONS.forEach((sec,si)=>{
+    const isCustom=sec.key==='custom';
+    let bodyHtml='';
+    if(isCustom){
+      bodyHtml='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 16px">';
+      for(let i=1;i<=10;i++){
+        const lbl=info['custom'+i+'Label']||'';
+        const val=info['custom'+i+'Value']||'';
+        if(lbl||val){
+          bodyHtml+=`<div style="font-size:12px;color:var(--text-light);font-weight:600">${escHtml(lbl||'Custom '+i)}</div><div style="font-size:14px;font-weight:500">${escHtml(val||'—')}</div>`;
+        }
+      }
+      const hasAny=Array.from({length:10},(_,i)=>info['custom'+(i+1)+'Label']||info['custom'+(i+1)+'Value']).some(Boolean);
+      if(!hasAny)bodyHtml+='<div style="grid-column:1/-1;color:#999;font-size:13px;padding:8px 0">No custom fields set</div>';
+      bodyHtml+='</div>';
+    }else{
+      bodyHtml='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 16px">';
+      sec.fields.forEach(f=>{
+        let val=info[f.id]||'';
+        let display='—';
+        if(f.type==='rating'&&val){
+          display='';
+          for(let i=1;i<=5;i++)display+=`<i class="fas fa-star" style="color:${i<=Number(val)?'#f9a825':'#ddd'};font-size:16px"></i>`;
+        }else if(f.type==='date'&&val){
+          display=formatSmDate(val);
+        }else if(f.type==='number'&&val){
+          display=f.label.includes('£')?'£'+Number(val).toLocaleString():f.label.includes('%')?val+'%':f.label.includes('p/')?val+'p':val;
+        }else if(f.type==='textarea'&&val){
+          display=escHtml(val).replace(/\n/g,'<br>');
+        }else if(val){
+          display=escHtml(val);
+        }
+        if(f.type==='textarea'){
+          bodyHtml+=`<div style="grid-column:1/-1"><div style="font-size:12px;color:var(--text-light);font-weight:600;margin-bottom:2px">${f.label}</div><div style="font-size:14px;line-height:1.6">${display}</div></div>`;
+        }else{
+          bodyHtml+=`<div style="font-size:12px;color:var(--text-light);font-weight:600">${f.label}</div><div style="font-size:14px;font-weight:500">${display}</div>`;
+        }
+      });
+      bodyHtml+='</div>';
+    }
+    // Contract expiry warning
+    let warn='';
+    if(sec.key==='electric'||sec.key==='phone'||sec.key==='card'||sec.key==='lease'){
+      const endKey=sec.fields.find(f=>f.id.includes('End')||f.id==='leaseEnd');
+      if(endKey){
+        const endVal=info[endKey.id];
+        if(endVal){
+          const diff=Math.ceil((new Date(endVal)-new Date())/(1000*60*60*24));
+          if(diff<0)warn='<span style="background:#ffebee;color:#c62828;padding:2px 8px;border-radius:8px;font-size:11px;font-weight:700;margin-left:8px">EXPIRED</span>';
+          else if(diff<90)warn=`<span style="background:#fff3e0;color:#e65100;padding:2px 8px;border-radius:8px;font-size:11px;font-weight:700;margin-left:8px">${diff} days left</span>`;
+        }
+      }
+    }
+    // Cleaning overdue warning
+    if(sec.key==='cleaning'){
+      ['fridgeCleanNext','airconCleanNext'].forEach(fk=>{
+        const nv=info[fk];
+        if(nv){
+          const diff=Math.ceil((new Date(nv)-new Date())/(1000*60*60*24));
+          if(diff<0)warn+='<span style="background:#ffebee;color:#c62828;padding:2px 8px;border-radius:8px;font-size:11px;font-weight:700;margin-left:4px">OVERDUE</span>';
+          else if(diff<14)warn+=`<span style="background:#fff3e0;color:#e65100;padding:2px 8px;border-radius:8px;font-size:11px;font-weight:700;margin-left:4px">Due in ${diff}d</span>`;
+        }
+      });
+    }
+    html+=`<div style="border:1px solid var(--border);border-radius:12px;margin-bottom:12px;overflow:hidden">
+      <div onclick="this.parentElement.classList.toggle('sm-open')" style="padding:14px 16px;background:#fafafa;cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none">
+        <div style="display:flex;align-items:center;gap:10px"><i class="fas ${sec.icon}" style="color:var(--accent);width:20px;text-align:center"></i><strong style="font-size:14px">${sec.title}</strong>${warn}</div>
+        <div style="display:flex;align-items:center;gap:8px"><button class="btn btn-sm btn-outline" onclick="event.stopPropagation();editSmSection('${storeId}','${sec.key}')"><i class="fas fa-edit"></i> Edit</button><i class="fas fa-chevron-down" style="color:#999;transition:transform .2s"></i></div>
+      </div>
+      <div class="sm-section-body" style="padding:16px;display:none">${bodyHtml}</div>
+    </div>`;
+  });
+  return html;
+}
+
+function formatSmDate(d){if(!d)return '—';const dt=new Date(d+'T12:00:00');return dt.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});}
+
+function editSmSection(storeId,key){
+  const info=getStoreInfo(storeId);
+  const sec=SM_SECTIONS.find(s=>s.key===key);
+  if(!sec)return;
+  let formHtml='';
+  if(key==='custom'){
+    for(let i=1;i<=10;i++){
+      formHtml+=`<div class="form-row"><div class="form-group"><label>Field ${i} Label</label><input id="smCL${i}" value="${escHtml(info['custom'+i+'Label']||'')}"></div><div class="form-group"><label>Field ${i} Value</label><input id="smCV${i}" value="${escHtml(info['custom'+i+'Value']||'')}"></div></div>`;
+    }
+  }else{
+    const pairs=[];
+    sec.fields.forEach(f=>{
+      if(f.type==='textarea'){
+        pairs.push({full:true,html:`<div class="form-group"><label>${f.label}</label><textarea id="smF_${f.id}" rows="4">${escHtml(info[f.id]||'')}</textarea></div>`});
+      }else if(f.type==='rating'){
+        const v=Number(info[f.id])||0;
+        pairs.push({full:false,html:`<div class="form-group"><label>${f.label}</label><div id="smF_${f.id}" data-val="${v}" style="display:flex;gap:4px;padding:8px 0">${[1,2,3,4,5].map(n=>`<i class="fas fa-star" style="font-size:28px;cursor:pointer;color:${n<=v?'#f9a825':'#ddd'}" onclick="smSetRating('${f.id}',${n})"></i>`).join('')}</div></div>`});
+      }else{
+        const inp=f.type==='date'?`<input type="date" id="smF_${f.id}" value="${info[f.id]||''}">`:
+                  f.type==='number'?`<input type="number" step="any" id="smF_${f.id}" value="${info[f.id]||''}">`:
+                  f.type==='tel'?`<input type="tel" id="smF_${f.id}" value="${escHtml(info[f.id]||'')}">`:
+                  f.type==='email'?`<input type="email" id="smF_${f.id}" value="${escHtml(info[f.id]||'')}">`:
+                  `<input id="smF_${f.id}" value="${escHtml(info[f.id]||'')}">`;
+        pairs.push({full:false,html:`<div class="form-group"><label>${f.label}</label>${inp}</div>`});
+      }
+    });
+    for(let i=0;i<pairs.length;i++){
+      if(pairs[i].full){formHtml+=pairs[i].html;}
+      else if(i+1<pairs.length&&!pairs[i+1].full){formHtml+=`<div class="form-row">${pairs[i].html}${pairs[i+1].html}</div>`;i++;}
+      else{formHtml+=pairs[i].html;}
+    }
+  }
+  openModal(`<i class="fas ${sec.icon}" style="color:var(--accent);margin-right:8px"></i>${sec.title}`,formHtml,
+    `<button class="btn btn-outline" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="saveSmSection('${storeId}','${key}')"><i class="fas fa-save"></i> Save</button>`);
+}
+
+function smSetRating(fieldId,n){
+  const el=$('smF_'+fieldId);if(!el)return;
+  el.dataset.val=n;
+  el.querySelectorAll('.fa-star').forEach((s,i)=>{s.style.color=i<n?'#f9a825':'#ddd';});
+}
+
+function saveSmSection(storeId,key){
+  const info=getStoreInfo(storeId);
+  const sec=SM_SECTIONS.find(s=>s.key===key);
+  if(!sec)return;
+  if(key==='custom'){
+    for(let i=1;i<=10;i++){
+      info['custom'+i+'Label']=$('smCL'+i)?.value?.trim()||'';
+      info['custom'+i+'Value']=$('smCV'+i)?.value?.trim()||'';
+    }
+  }else{
+    sec.fields.forEach(f=>{
+      if(f.type==='rating'){
+        info[f.id]=$('smF_'+f.id)?.dataset?.val||'';
+      }else{
+        info[f.id]=$('smF_'+f.id)?.value?.trim()||'';
+      }
+    });
+  }
+  saveRow('StoreInfo',info);
+  closeModal();
+  // Re-render sections
+  const el=$('smContent');if(el)el.innerHTML=renderSmSections(storeId);
+  toast('Saved','success');
+}
+
+// CSS for accordion open state
+(function(){
+  const style=document.createElement('style');
+  style.textContent=`.sm-open>.sm-section-body{display:block!important}.sm-open>div:first-child .fa-chevron-down{transform:rotate(180deg)}`;
+  document.head.appendChild(style);
+})();
 
 // ==================== USERS ====================
 const ROLE_BADGES={admin:'badge-info',senior_manager:'badge-warning',manager:'badge-success',account:'badge-danger'};

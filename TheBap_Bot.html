@@ -221,6 +221,7 @@ let MODE = 'staff'; // 'staff' or 'manager'
 let isTraining = false;
 let chatHistory = [];
 let kbData = [];
+let tbmsData = { Stores:[], Staff:[], Suppliers:[], StoreInfo:[] };
 let isSending = false;
 let pendingKBEntries = [];
 
@@ -246,8 +247,8 @@ window.addEventListener('DOMContentLoaded', async () => {
     activateStaff();
   }
 
-  // Load KB data
-  await loadKB();
+  // Load KB + TBMS data
+  await Promise.all([loadKB(), loadTBMSData()]);
 });
 
 function activateStaff() {
@@ -308,6 +309,22 @@ async function loadKB() {
     }
   } catch(e) {
     console.log('KB load error:', e);
+  }
+}
+
+async function loadTBMSData() {
+  try {
+    const res = await fetch(`${API_URL}?action=getAll&apikey=${encodeURIComponent(API_KEY)}`, {redirect:'follow'});
+    const json = await res.json();
+    if (json.status === 'ok' && json.data) {
+      if (json.data.Stores) tbmsData.Stores = json.data.Stores;
+      if (json.data.Staff) tbmsData.Staff = json.data.Staff;
+      if (json.data.Suppliers) tbmsData.Suppliers = json.data.Suppliers;
+      if (json.data.StoreInfo) tbmsData.StoreInfo = json.data.StoreInfo;
+      console.log('TBMS data loaded:', Object.keys(json.data).map(k => k + ':' + (json.data[k]?.length || 0)).join(', '));
+    }
+  } catch(e) {
+    console.log('TBMS data load error:', e);
   }
 }
 
@@ -666,7 +683,7 @@ The user may input in Korean or English. Preserve the language of the content.`;
     prompt = `You are "${MODE === 'manager' ? 'The Bap AI Bot' : 'The Bap Staff AI'}", an AI assistant for "The Bap" Korean restaurant chain in the UK.
 
 RULES:
-- Answer accurately based on the Knowledge Base provided below
+- Answer accurately based on the company data and Knowledge Base provided below
 - If you don't have the information, say so honestly
 - Respond in the same language the user uses (Korean or English)
 - Be concise but thorough
@@ -674,6 +691,59 @@ RULES:
 
 `;
 
+    // Inject TBMS company data
+    prompt += '\n=== COMPANY DATA (from TBMS database) ===\n';
+
+    // Stores
+    if (tbmsData.Stores.length > 0) {
+      prompt += '\n## Stores\n';
+      tbmsData.Stores.forEach(s => {
+        prompt += `- ${s.code} "${s.name}" | Company: ${s.company||'-'} | Address: ${s.address||'-'} | Phone: ${s.phone||'-'} | Email: ${s.email||'-'} | Manager: ${s.manager||'-'}${s.active===false?' (INACTIVE)':''}\n`;
+        // Merge StoreInfo if available
+        const info = tbmsData.StoreInfo.find(si => String(si.storeId) === String(s.id));
+        if (info) {
+          if (info.monthlyRent) prompt += `  Rent: £${info.monthlyRent}/month | Lease: ${info.leaseStart||'?'} ~ ${info.leaseEnd||'?'}\n`;
+          if (info.hygieneRating) prompt += `  Hygiene Rating: ${info.hygieneRating} (${info.hygieneInspDate||'?'})\n`;
+          if (info.electricCompany) prompt += `  Electric: ${info.electricCompany}\n`;
+          if (info.cardMachineCompany) prompt += `  Card Machine: ${info.cardMachineCompany} (rate: ${info.cardRate||'?'})\n`;
+        }
+      });
+    }
+
+    // Staff (manager mode: full detail, staff mode: names only)
+    if (tbmsData.Staff.length > 0) {
+      const activeStaff = tbmsData.Staff.filter(s => s.active !== false && s.active !== 'false');
+      prompt += `\n## Staff (${activeStaff.length} active)\n`;
+      if (MODE === 'manager') {
+        activeStaff.forEach(s => {
+          const storeName = tbmsData.Stores.find(st => String(st.id) === String(s.storeId))?.name || s.storeId;
+          prompt += `- ${s.name}${s.nickName?' ('+s.nickName+')':''} | Store: ${storeName} | Mobile: ${s.mobile||'-'} | Email: ${s.email||'-'} | Rate: £${s.rate||'?'}/hr | Start: ${s.startDate||'-'}\n`;
+        });
+      } else {
+        const byStore = {};
+        activeStaff.forEach(s => {
+          const storeName = tbmsData.Stores.find(st => String(st.id) === String(s.storeId))?.name || s.storeId;
+          if (!byStore[storeName]) byStore[storeName] = [];
+          byStore[storeName].push(s.name);
+        });
+        Object.entries(byStore).forEach(([store, names]) => {
+          prompt += `- ${store}: ${names.join(', ')}\n`;
+        });
+      }
+    }
+
+    // Suppliers (manager only)
+    if (MODE === 'manager' && tbmsData.Suppliers.length > 0) {
+      const activeSup = tbmsData.Suppliers.filter(s => s.active !== false && s.active !== 'false');
+      prompt += `\n## Suppliers (${activeSup.length})\n`;
+      activeSup.forEach(s => {
+        prompt += `- ${s.name} | Phone: ${s.phone||'-'} | Email: ${s.email||'-'} | Website: ${s.website||'-'}\n`;
+      });
+    }
+
+    prompt += '\n=== END COMPANY DATA ===\n';
+
+    // Inject Knowledge Base entries
     if (relevantKB.length > 0) {
       prompt += '\n=== KNOWLEDGE BASE (relevant entries) ===\n';
       relevantKB.forEach(kb => {
@@ -681,8 +751,6 @@ RULES:
         if (kb.tags) prompt += `Tags: ${kb.tags}\n`;
       });
       prompt += '\n=== END KNOWLEDGE BASE ===\n';
-    } else {
-      prompt += '\n[No specific knowledge base entries found for this query. Answer based on general restaurant knowledge if appropriate, or let the user know the specific information hasn\'t been added yet.]\n';
     }
   }
 

@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>The Bap Staff AI</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg1:#111827; --bg2:#0b1220; --card:#0f172a; --card2:#111c33;
+      --text:#e5e7eb; --muted:#9ca3af; --accent:#22c55e; --accent2:#60a5fa;
+      --warn:#f59e0b; --danger:#ef4444; --border:rgba(255,255,255,.08);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family:"Noto Sans KR", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background:radial-gradient(1200px 700px at 20% 0%, #1f2937 0%, var(--bg2) 55%, #050814 100%);
+      color:var(--text); min-height:100vh;
+      display:flex; flex-direction:column; align-items:center;
+    }
+    header{
+      width:100%; max-width:980px; padding:18px 18px 12px;
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+    }
+    .brand{
+      display:flex; flex-direction:column; gap:2px;
+    }
+    .brand h1{
+      margin:0; font-size:18px; letter-spacing:.3px; display:flex; align-items:center; gap:10px;
+    }
+    .pill{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:6px 10px; border:1px solid var(--border); border-radius:999px;
+      background:rgba(255,255,255,.04); color:var(--muted); font-size:12px;
+    }
+    .dot{width:9px;height:9px;border-radius:50%;background:var(--warn); box-shadow:0 0 0 3px rgba(245,158,11,.18)}
+    .dot.ok{background:var(--accent); box-shadow:0 0 0 3px rgba(34,197,94,.18)}
+    .dot.bad{background:var(--danger); box-shadow:0 0 0 3px rgba(239,68,68,.18)}
+    .actions{display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:flex-end}
+    button{
+      border:none; cursor:pointer; color:var(--text);
+      background:rgba(255,255,255,.06);
+      border:1px solid var(--border);
+      padding:10px 12px; border-radius:12px; font-weight:700; font-size:13px;
+      transition:transform .06s, filter .12s, background .12s;
+    }
+    button:active{transform:scale(.98)}
+    button.primary{background:linear-gradient(135deg, rgba(34,197,94,.22), rgba(96,165,250,.12)); border-color:rgba(34,197,94,.35)}
+    button.ghost{background:transparent}
+    main{
+      width:100%; max-width:980px; padding:0 18px 20px;
+      display:grid; grid-template-columns: 1.05fr .95fr; gap:14px;
+    }
+    @media (max-width: 960px){ main{grid-template-columns:1fr} }
+    .card{
+      background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.03));
+      border:1px solid var(--border);
+      border-radius:18px;
+      overflow:hidden;
+      box-shadow:0 18px 50px rgba(0,0,0,.35);
+    }
+    .card .hd{
+      padding:14px 14px 12px;
+      border-bottom:1px solid var(--border);
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      background:rgba(0,0,0,.12);
+    }
+    .card .hd h2{margin:0;font-size:14px; color:var(--text)}
+    .sub{color:var(--muted); font-size:12px}
+    .chat{
+      height:62vh; min-height:420px;
+      display:flex; flex-direction:column;
+    }
+    .msgs{
+      padding:14px;
+      overflow:auto;
+      display:flex; flex-direction:column; gap:10px;
+      scroll-behavior:smooth;
+    }
+    .msg{
+      max-width:92%;
+      padding:11px 12px;
+      border-radius:14px;
+      border:1px solid var(--border);
+      background:rgba(255,255,255,.04);
+      line-height:1.35;
+      white-space:pre-wrap;
+    }
+    .msg.user{
+      margin-left:auto;
+      background:rgba(96,165,250,.10);
+      border-color:rgba(96,165,250,.28);
+    }
+    .msg.ai{
+      margin-right:auto;
+      background:rgba(34,197,94,.08);
+      border-color:rgba(34,197,94,.22);
+    }
+    .msg .meta{
+      display:flex; gap:8px; align-items:center;
+      margin-bottom:6px; font-size:11px; color:var(--muted);
+    }
+    .meta .tag{padding:2px 8px;border-radius:999px;border:1px solid var(--border); background:rgba(0,0,0,.15)}
+    .composer{
+      padding:12px; border-top:1px solid var(--border);
+      display:flex; gap:10px; align-items:flex-end;
+      background:rgba(0,0,0,.12);
+    }
+    textarea{
+      width:100%; min-height:44px; max-height:110px;
+      resize:none; padding:11px 12px;
+      border-radius:14px;
+      background:rgba(255,255,255,.04);
+      color:var(--text);
+      border:1px solid var(--border);
+      outline:none;
+      font-size:14px;
+      line-height:1.25;
+    }
+    .side{
+      display:flex; flex-direction:column;
+      gap:14px;
+    }
+    .grid{
+      display:grid; grid-template-columns:1fr 1fr; gap:10px;
+      padding:12px;
+    }
+    .qbtn{
+      text-align:left;
+      padding:12px;
+      border-radius:14px;
+      background:rgba(255,255,255,.04);
+      border:1px solid var(--border);
+      color:var(--text);
+      font-weight:700;
+      font-size:13px;
+    }
+    .qbtn small{display:block; color:var(--muted); font-weight:600; margin-top:4px}
+    .info{
+      padding:12px;
+      font-size:12px;
+      color:var(--muted);
+      line-height:1.45;
+    }
+    .kbd{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size:11px;
+      padding:2px 6px;
+      border-radius:8px;
+      border:1px solid var(--border);
+      background:rgba(0,0,0,.18);
+      color:var(--text);
+    }
+    /* modal */
+    .modal-backdrop{
+      position:fixed; inset:0; background:rgba(0,0,0,.72);
+      display:none; align-items:center; justify-content:center; padding:16px;
+      z-index:9999;
+    }
+    .modal{
+      width:min(720px, 100%);
+      background:linear-gradient(180deg, rgba(17,24,39,.95), rgba(2,6,23,.95));
+      border:1px solid rgba(255,255,255,.10);
+      border-radius:18px;
+      box-shadow:0 30px 90px rgba(0,0,0,.6);
+      overflow:hidden;
+    }
+    .modal .mh{
+      padding:14px 14px 12px;
+      border-bottom:1px solid rgba(255,255,255,.10);
+      display:flex; align-items:center; justify-content:space-between;
+    }
+    .modal .mh h3{margin:0;font-size:14px}
+    .modal .mb{padding:14px; display:grid; grid-template-columns:1fr 1fr; gap:12px}
+    .modal label{display:block; font-size:12px; color:var(--muted); margin-bottom:6px}
+    .modal input{
+      width:100%; padding:10px 10px; border-radius:12px;
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(255,255,255,.04);
+      color:var(--text);
+      outline:none;
+      font-size:13px;
+    }
+    .modal .foot{
+      padding:12px 14px;
+      border-top:1px solid rgba(255,255,255,.10);
+      display:flex; justify-content:flex-end; gap:10px; flex-wrap:wrap;
+    }
+    .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <h1>🍱 The Bap Staff AI <span class="pill"><span id="statusDot" class="dot"></span><span id="statusText">Not connected</span></span></h1>
+      <div class="sub">Staff Q&A for menu, allergens, store info, and daily operations. (No TBMS integration needed)</div>
+    </div>
+    <div class="actions">
+      <button class="ghost" id="btnKorean">KR: ON</button>
+      <button class="ghost" id="btnReload">Reload data</button>
+      <button class="primary" id="btnSettings">Settings</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="card chat">
+      <div class="hd">
+        <div>
+          <h2>Chat</h2>
+          <div class="sub">Ask like: “Is Bibimbap gluten-free?” / “What’s spicy?” / “Bristol opening hours?”</div>
+        </div>
+        <div class="pill mono" title="Data sources loaded in memory">
+          <span id="dbSummary">0 sheets</span>
+        </div>
+      </div>
+      <div class="msgs" id="msgs"></div>
+      <div class="composer">
+        <textarea id="q" placeholder="Type a question… (Enter = send, Shift+Enter = newline)"></textarea>
+        <button class="primary" id="send">Send</button>
+      </div>
+    </section>
+
+    <aside class="side">
+      <section class="card">
+        <div class="hd">
+          <div>
+            <h2>Quick Questions</h2>
+            <div class="sub">Tap to ask common staff questions.</div>
+          </div>
+        </div>
+        <div class="grid">
+          <button class="qbtn" data-q="What is Bibimbap?">Menu explanation <small>What is [menu]?</small></button>
+          <button class="qbtn" data-q="Is Korean Fried Chicken spicy?">Spicy level <small>Is it spicy?</small></button>
+          <button class="qbtn" data-q="Customer is allergic to sesame. What should we recommend?">Allergen help <small>Recommend alternatives</small></button>
+          <button class="qbtn" data-q="What are the allergens in Katsu Curry?">Allergens in menu <small>List allergens</small></button>
+          <button class="qbtn" data-q="What vegetarian options do we have?">Veg options <small>Suggest menu</small></button>
+          <button class="qbtn" data-q="What are The Bap Bristol opening hours and phone number?">Store info <small>Hours & contact</small></button>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="hd">
+          <div>
+            <h2>Safety Rules</h2>
+            <div class="sub">Allergen answers are cautious by design.</div>
+          </div>
+        </div>
+        <div class="info">
+          <div>✅ Uses only your Google Sheets data (SSOT).</div>
+          <div>✅ If info is missing, it answers <b>“Confirm needed”</b> instead of guessing.</div>
+          <div>✅ Allergen answers include <b>cross-contamination</b> warning when applicable.</div>
+          <div style="margin-top:10px;">
+            Tips: Add columns like <span class="kbd">canRemove</span>, <span class="kbd">customerAdvice</span> in your Allergen sheet.
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="hd">
+          <div>
+            <h2>Loaded Data</h2>
+            <div class="sub">From Apps Script endpoint (read-only).</div>
+          </div>
+        </div>
+        <div class="info mono" id="loadedList">No data loaded yet.</div>
+      </section>
+    </aside>
+  </main>
+
+  <!-- Settings modal -->
+  <div class="modal-backdrop" id="modalBg" role="dialog" aria-modal="true">
+    <div class="modal">
+      <div class="mh">
+        <h3>Settings</h3>
+        <button class="ghost" id="btnClose">Close</button>
+      </div>
+      <div class="mb">
+        <div>
+          <label>Apps Script Web App URL (API_URL)</label>
+          <input id="apiUrl" placeholder="https://script.google.com/macros/s/....../exec" />
+        </div>
+        <div>
+          <label>API Key (apikey)</label>
+          <input id="apiKey" placeholder="Your API key" />
+        </div>
+
+        <div>
+          <label>Sheets: Menu (try these in order)</label>
+          <input id="sheetMenu" placeholder="Menu_Canon,Menu,Menus" />
+        </div>
+        <div>
+          <label>Sheets: Allergens</label>
+          <input id="sheetAllergens" placeholder="Allergens,Allergen_Guide" />
+        </div>
+
+        <div>
+          <label>Sheets: Stores</label>
+          <input id="sheetStores" placeholder="Stores" />
+        </div>
+        <div>
+          <label>Sheets: Policies/FAQ</label>
+          <input id="sheetPolicies" placeholder="Policies_FAQ,Staff_QA" />
+        </div>
+
+        <div style="grid-column:1/-1">
+          <label>Cross-contamination warning (shown for allergen answers)</label>
+          <input id="xcontam" placeholder="We cannot guarantee 100% allergen-free due to shared kitchen & cross-contamination risk." />
+        </div>
+      </div>
+      <div class="foot">
+        <button class="ghost" id="btnReset">Reset</button>
+        <button class="primary" id="btnSave">Save & Load</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+/** ================================
+ *  The Bap Staff AI (Standalone)
+ *  - Uses your existing Apps Script endpoint:
+ *      GET ?action=getSheet&sheet=Stores&apikey=...
+ *      GET ?action=getAll&apikey=...
+ *  - If your backend only supports certain actions, edit fetchSheet().
+ *  - Answers are rule-based (safe) and will NOT guess.
+ * ================================= */
+
+const LS_KEY = "thebap_staff_ai_settings_v1";
+
+const DEFAULTS = {
+  apiUrl: "",
+  apiKey: "",
+  sheetMenu: "Menu_Canon,Menu,Menus",
+  sheetAllergens: "Allergens,Allergen_Guide",
+  sheetStores: "Stores",
+  sheetPolicies: "Policies_FAQ,Staff_QA",
+  xcontam: "We cannot guarantee 100% allergen-free due to shared kitchen & possible cross-contamination."
+};
+
+let SETTINGS = {...DEFAULTS};
+let DB = {
+  menu: [],
+  allergens: [],
+  stores: [],
+  policies: []
+};
+
+let koreanOn = true;
+
+const $ = (id)=>document.getElementById(id);
+function setStatus(kind, text){
+  const dot = $("statusDot");
+  dot.classList.remove("ok","bad");
+  if(kind==="ok") dot.classList.add("ok");
+  if(kind==="bad") dot.classList.add("bad");
+  $("statusText").textContent = text;
+}
+
+function addMsg(role, text, tag){
+  const wrap = document.createElement("div");
+  wrap.className = "msg " + role;
+  const meta = document.createElement("div");
+  meta.className = "meta";
+  const t1 = document.createElement("span");
+  t1.className = "tag";
+  t1.textContent = role==="user" ? "STAFF" : "BAP AI";
+  meta.appendChild(t1);
+  if(tag){
+    const t2 = document.createElement("span");
+    t2.className = "tag";
+    t2.textContent = tag;
+    meta.appendChild(t2);
+  }
+  const body = document.createElement("div");
+  body.textContent = text;
+  wrap.appendChild(meta);
+  wrap.appendChild(body);
+  $("msgs").appendChild(wrap);
+  $("msgs").scrollTop = $("msgs").scrollHeight;
+}
+
+function loadSettings(){
+  try{
+    const raw = localStorage.getItem(LS_KEY);
+    if(raw) SETTINGS = {...DEFAULTS, ...JSON.parse(raw)};
+  }catch(e){}
+}
+
+function saveSettings(){
+  localStorage.setItem(LS_KEY, JSON.stringify(SETTINGS));
+}
+
+function openModal(){
+  $("modalBg").style.display = "flex";
+  $("apiUrl").value = SETTINGS.apiUrl || "";
+  $("apiKey").value = SETTINGS.apiKey || "";
+  $("sheetMenu").value = SETTINGS.sheetMenu || DEFAULTS.sheetMenu;
+  $("sheetAllergens").value = SETTINGS.sheetAllergens || DEFAULTS.sheetAllergens;
+  $("sheetStores").value = SETTINGS.sheetStores || DEFAULTS.sheetStores;
+  $("sheetPolicies").value = SETTINGS.sheetPolicies || DEFAULTS.sheetPolicies;
+  $("xcontam").value = SETTINGS.xcontam || DEFAULTS.xcontam;
+}
+
+function closeModal(){
+  $("modalBg").style.display = "none";
+}
+
+function resetSettings(){
+  SETTINGS = {...DEFAULTS};
+  saveSettings();
+  openModal();
+}
+
+function splitNames(csv){
+  return (csv||"").split(",").map(s=>s.trim()).filter(Boolean);
+}
+
+async function fetchJson(url){
+  const res = await fetch(url, {cache:"no-store"});
+  if(!res.ok) throw new Error("HTTP " + res.status);
+  return await res.json();
+}
+
+/**
+ * Expected backend response:
+ * { status: 'ok', data: [...] }
+ * (Matches the TBMS_AppsScript.js getSheetData return shape) 
+ */
+async function fetchSheet(sheetName){
+  const api = SETTINGS.apiUrl?.trim();
+  const key = SETTINGS.apiKey?.trim();
+  if(!api || !key) throw new Error("Missing API_URL or API_KEY");
+  const u = new URL(api);
+  u.searchParams.set("action","getSheet");
+  u.searchParams.set("sheet", sheetName);
+  u.searchParams.set("apikey", key);
+  const j = await fetchJson(u.toString());
+  if(j && j.status === "ok" && Array.isArray(j.data)) return j.data;
+  // Some backends return {data:{...}} or different field names
+  if(j && Array.isArray(j)) return j;
+  throw new Error("Unexpected response for sheet: " + sheetName);
+}
+
+function normalizeKey(s){
+  return String(s||"").toLowerCase().replace(/[\s_-]+/g,"").trim();
+}
+
+function getField(obj, candidates){
+  if(!obj) return "";
+  const keys = Object.keys(obj);
+  const normMap = new Map(keys.map(k=>[normalizeKey(k), k]));
+  for(const c of candidates){
+    const k = normMap.get(normalizeKey(c));
+    if(k !== undefined) return obj[k];
+  }
+  return "";
+}
+
+function toBool(v){
+  if(typeof v === "boolean") return v;
+  const s = String(v||"").toLowerCase().trim();
+  return ["1","true","yes","y","on"].includes(s);
+}
+
+function cleanText(x){
+  return String(x||"").replace(/\s+/g," ").trim();
+}
+
+function findMenuByName(query){
+  const q = cleanText(query).toLowerCase();
+  if(!q) return null;
+
+  // build list of names/aliases if present
+  let best = null, bestScore = 0;
+
+  for(const m of DB.menu){
+    const name = cleanText(getField(m, ["Menu Name","Menu_Name","name","menu","menuName","title"]));
+    if(!name) continue;
+
+    const desc = cleanText(getField(m, ["Description","Core Description","coreDescription","desc"]));
+    const hay = (name + " " + desc).toLowerCase();
+
+    // score: exact contains
+    let score = 0;
+    if(hay.includes(q)) score += 3;
+    if(name.toLowerCase() === q) score += 6;
+
+    // also check token overlap
+    const qt = q.split(" ").filter(Boolean);
+    for(const t of qt){
+      if(name.toLowerCase().includes(t)) score += 1.5;
+      if(desc.toLowerCase().includes(t)) score += 0.5;
+    }
+
+    if(score > bestScore){
+      bestScore = score;
+      best = m;
+    }
+  }
+  return bestScore >= 2 ? best : null;
+}
+
+function listVegOptions(){
+  const out = [];
+  for(const m of DB.menu){
+    const name = cleanText(getField(m, ["Menu Name","Menu_Name","name","menuName"]));
+    if(!name) continue;
+    const veg = getField(m, ["Vegetarian_Option","Vegetarian Option","vegetarian","veg"]);
+    const vegan = getField(m, ["Vegan_Option","Vegan Option","vegan"]);
+    if(toBool(veg) || toBool(vegan) || /yes/i.test(String(veg||"")) || /yes/i.test(String(vegan||""))){
+      out.push(name);
+    }
+  }
+  return out.slice(0, 20);
+}
+
+function allergensForMenu(menuName){
+  const res = [];
+  const q = cleanText(menuName).toLowerCase();
+  for(const a of DB.allergens){
+    const mn = cleanText(getField(a, ["Menu Name","Menu_Name","menuName","menu","Menu"])).toLowerCase();
+    if(!mn) continue;
+    if(mn === q || mn.includes(q) || q.includes(mn)){
+      const type = cleanText(getField(a, ["Allergen_Type","Allergen Type","allergen","type"]));
+      const present = getField(a, ["Present_Yes_No","present","Present","yesNo"]);
+      const canRemove = getField(a, ["Can_Remove","canRemove","Remove","removable"]);
+      const advice = cleanText(getField(a, ["Customer_Advice","customerAdvice","Advice","note"]));
+      res.push({type, present, canRemove, advice});
+    }
+  }
+  // dedupe by type
+  const seen = new Set();
+  return res.filter(x=>{
+    const k = (x.type||"").toLowerCase();
+    if(!k) return false;
+    if(seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
+}
+
+function findStoreInfo(q){
+  const s = cleanText(q).toLowerCase();
+  if(!s) return null;
+  let best=null,score=0;
+  for(const st of DB.stores){
+    const name = cleanText(getField(st, ["name","Store Name","storeName"]));
+    const code = cleanText(getField(st, ["code","storeId","id"]));
+    const addr = cleanText(getField(st, ["address","Address"]));
+    const phone = cleanText(getField(st, ["phone","Phone"]));
+    const email = cleanText(getField(st, ["email","Email"]));
+    const hay = (name+" "+code+" "+addr+" "+phone+" "+email).toLowerCase();
+    let sc = 0;
+    if(hay.includes(s)) sc += 3;
+    const tokens = s.split(" ").filter(Boolean);
+    for(const t of tokens){
+      if(name.toLowerCase().includes(t)) sc += 1.5;
+      if(code.toLowerCase().includes(t)) sc += 1.2;
+      if(addr.toLowerCase().includes(t)) sc += 0.6;
+    }
+    if(sc>score){score=sc; best=st;}
+  }
+  return score>=2 ? best : null;
+}
+
+function policyLookup(q){
+  const s = cleanText(q).toLowerCase();
+  if(!s || DB.policies.length===0) return null;
+  let best=null,score=0;
+  for(const p of DB.policies){
+    const question = cleanText(getField(p, ["Question","question","q","title"]));
+    const answer = cleanText(getField(p, ["Answer","answer","a","content"]));
+    const hay = (question+" "+answer).toLowerCase();
+    let sc = 0;
+    if(hay.includes(s)) sc += 3;
+    for(const t of s.split(" ").filter(Boolean)){
+      if(question.toLowerCase().includes(t)) sc += 1.2;
+      if(answer.toLowerCase().includes(t)) sc += 0.4;
+    }
+    if(sc>score){score=sc; best=p;}
+  }
+  return score>=2 ? best : null;
+}
+
+function buildMenuExplain(m){
+  const name = cleanText(getField(m, ["Menu Name","Menu_Name","name","menuName"])) || "This menu";
+  const desc = cleanText(getField(m, ["Description","Core Description","coreDescription","desc"])) || "";
+  const spicy = cleanText(getField(m, ["Spicy_Level","Spicy Level","spicy","spice"])) || "";
+  const main = cleanText(getField(m, ["Main_Ingredients","Main Ingredients","ingredients","mainIngredients"])) || "";
+
+  let out = `${name}\n`;
+  if(desc) out += `• ${desc}\n`;
+  if(main) out += `• Ingredients: ${main}\n`;
+  if(spicy) out += `• Spicy level: ${spicy}\n`;
+
+  const veg = getField(m, ["Vegetarian_Option","Vegetarian Option","vegetarian","veg"]);
+  const vegan = getField(m, ["Vegan_Option","Vegan Option","vegan"]);
+  if(veg) out += `• Vegetarian option: ${veg}\n`;
+  if(vegan) out += `• Vegan option: ${vegan}\n`;
+  return out.trim();
+}
+
+function buildAllergenAnswer(menuName){
+  const list = allergensForMenu(menuName);
+  const safe = [];
+  for(const a of list){
+    const pres = String(a.present||"").toLowerCase();
+    if(pres && ["yes","y","true","present","1"].includes(pres)){
+      safe.push(a);
+    }else if(!pres){
+      // if present field missing, still list as possible
+      safe.push({...a, present:"(unknown)"});
+    }
+  }
+  let out = `Allergens for ${menuName}\n`;
+  if(safe.length===0){
+    out += `• Confirm needed: allergen data not found in the sheet.\n`;
+    out += `• Please check the allergen sheet or ask a manager.\n`;
+    return out.trim();
+  }
+  for(const a of safe){
+    out += `• ${a.type}`;
+    if(a.canRemove) out += ` (removable: ${a.canRemove})`;
+    out += `\n`;
+    if(a.advice) out += `  - Note: ${a.advice}\n`;
+  }
+  out += `\nSafety: ${SETTINGS.xcontam}`;
+  return out.trim();
+}
+
+function buildAllergenRecommendation(allergen){
+  const a = cleanText(allergen).toLowerCase();
+  const alternatives = [];
+  for(const m of DB.menu){
+    const name = cleanText(getField(m, ["Menu Name","Menu_Name","name","menuName"]));
+    if(!name) continue;
+
+    // if menu has explicit "Contains_*" fields, use them
+    const containsMap = {
+      "gluten": getField(m, ["Contains_Gluten","containsGluten"]),
+      "egg": getField(m, ["Contains_Egg","containsEgg"]),
+      "soy": getField(m, ["Contains_Soy","containsSoy"]),
+      "sesame": getField(m, ["Contains_Sesame","containsSesame"]),
+      "dairy": getField(m, ["Contains_Dairy","containsDairy"]),
+      "nuts": getField(m, ["Contains_Nuts","containsNuts"])
+    };
+    if(containsMap[a] !== undefined && containsMap[a] !== ""){
+      if(!toBool(containsMap[a])) alternatives.push(name);
+      continue;
+    }
+    // fallback: if allergens sheet exists, skip menus that contain allergen
+    const al = allergensForMenu(name).map(x=>String(x.type||"").toLowerCase());
+    if(al.length){
+      if(!al.some(x=>x.includes(a))) alternatives.push(name);
+    }
+  }
+
+  const dedup = [...new Set(alternatives)].slice(0, 8);
+  let out = `Allergy help: ${allergen}\n`;
+  if(dedup.length===0){
+    out += `• Confirm needed: I cannot reliably find safe alternatives from the current data.\n`;
+    out += `• Please check ingredients and allergen sheet or ask a manager.\n`;
+  }else{
+    out += `Possible alternatives (still confirm with allergen sheet):\n`;
+    for(const n of dedup) out += `• ${n}\n`;
+    out += `\nSafety: ${SETTINGS.xcontam}`;
+  }
+  return out.trim();
+}
+
+function maybeKoreanSummary(text){
+  if(!koreanOn) return "";
+  // Simple Korean add-on (not perfect translation; safe concise summary)
+  // Keep minimal to avoid wrong translations of allergens; use English allergen names 그대로.
+  const lines = text.split("\n").slice(0, 6).join("\n");
+  return "\n\n[KR 요약]\n" +
+    "• 필요한 정보만 데이터에서 찾아 안내합니다.\n" +
+    "• 알러지는 ‘확실한 데이터’만 말하고, 애매하면 확인 필요로 안내합니다.\n" +
+    "• 교차오염 가능성 안내 포함.\n" +
+    (lines ? "• 위 답변의 핵심은 위 영어 첫 부분을 참고하세요." : "");
+}
+
+function answer(question){
+  const q = cleanText(question);
+  const ql = q.toLowerCase();
+
+  // 1) store info
+  if(/\b(opening|hours|address|phone|email|contact|where)\b/.test(ql) || ql.includes("bap") || ql.includes("bristol") || ql.includes("reading") || ql.includes("swindon") || ql.includes("farnborough")){
+    const st = findStoreInfo(q);
+    if(st){
+      const name = cleanText(getField(st, ["name","Store Name","storeName"])) || "Store";
+      const addr = cleanText(getField(st, ["address","Address"])) || "(no address data)";
+      const phone = cleanText(getField(st, ["phone","Phone"])) || "(no phone data)";
+      const email = cleanText(getField(st, ["email","Email"])) || "(no email data)";
+      const manager = cleanText(getField(st, ["manager","Manager"])) || "";
+      let out = `${name}\n• Address: ${addr}\n• Phone: ${phone}\n• Email: ${email}`;
+      if(manager) out += `\n• Manager: ${manager}`;
+      out += maybeKoreanSummary(out);
+      return {text: out, tag:"Store"};
+    }
+  }
+
+  // 2) allergen help by keyword
+  if(/\ballerg|allergy|gluten|sesame|nut|dairy|egg|soy\b/i.test(q)){
+    // if user asks "allergic to X" -> recommend
+    const m = q.match(/allergic to ([a-zA-Z]+)/i);
+    if(m){
+      const al = m[1];
+      let out = buildAllergenRecommendation(al);
+      out += maybeKoreanSummary(out);
+      return {text: out, tag:"Allergy"};
+    }
+  }
+
+  // 3) menu mention
+  const menu = findMenuByName(q);
+  if(menu){
+    const name = cleanText(getField(menu, ["Menu Name","Menu_Name","name","menuName"])) || "Menu";
+    // if question asks allergens
+    if(/\ballerg|allergy|gluten|sesame|nut|dairy|egg|soy\b/i.test(q)){
+      let out = buildAllergenAnswer(name);
+      out += maybeKoreanSummary(out);
+      return {text: out, tag:"Allergens"};
+    }
+    // if question asks "spicy"
+    if(/\bspicy|hot|mild\b/i.test(q)){
+      const spicy = cleanText(getField(menu, ["Spicy_Level","Spicy Level","spicy","spice"])) || "Confirm needed";
+      let out = `${name}\n• Spicy level: ${spicy}`;
+      out += `\n\nIf customer is sensitive, confirm and offer milder options.`;
+      out += maybeKoreanSummary(out);
+      return {text: out, tag:"Spicy"};
+    }
+    // default menu explain
+    let out = buildMenuExplain(menu);
+    out += maybeKoreanSummary(out);
+    return {text: out, tag:"Menu"};
+  }
+
+  // 4) vegetarian options
+  if(/\bvegetarian|vegan|veg\b/i.test(ql)){
+    const list = listVegOptions();
+    let out = "Vegetarian / Vegan options\n";
+    if(list.length===0){
+      out += "• Confirm needed: I cannot find veg options from current menu data.\n";
+      out += "• Please check Menu_Canon sheet.\n";
+    }else{
+      for(const n of list) out += `• ${n}\n`;
+      out += "\n(Always confirm allergens & options with the customer.)\n";
+      out += `Safety: ${SETTINGS.xcontam}`;
+    }
+    out += maybeKoreanSummary(out);
+    return {text: out.trim(), tag:"Veg"};
+  }
+
+  // 5) policy lookup
+  const pol = policyLookup(q);
+  if(pol){
+    const question2 = cleanText(getField(pol, ["Question","question","q","title"])) || "Policy";
+    const ans = cleanText(getField(pol, ["Answer","answer","a","content"])) || "Confirm needed";
+    let out = `${question2}\n• ${ans}`;
+    out += maybeKoreanSummary(out);
+    return {text: out, tag:"Policy"};
+  }
+
+  // 6) fallback
+  let out = "Confirm needed.\n• I can’t find an exact answer from the current sheets.\n• Please check Menu_Canon / Allergens / Policies_FAQ or ask a manager.\n\nTip: Try including the menu name (e.g., “Bibimbap allergens”).";
+  out += maybeKoreanSummary(out);
+  return {text: out, tag:"Confirm"};
+}
+
+async function loadData(){
+  $("loadedList").textContent = "Loading…";
+  $("dbSummary").textContent = "Loading…";
+  setStatus("warn","Connecting…");
+  DB = {menu:[], allergens:[], stores:[], policies:[]};
+
+  const loaded = [];
+  const missing = [];
+
+  async function trySheets(names){
+    for(const n of names){
+      try{
+        const rows = await fetchSheet(n);
+        if(Array.isArray(rows) && rows.length>=0){
+          return {name:n, rows};
+        }
+      }catch(e){
+        // continue
+      }
+    }
+    return null;
+  }
+
+  try{
+    // menu
+    const menuTry = await trySheets(splitNames(SETTINGS.sheetMenu));
+    if(menuTry){ DB.menu = menuTry.rows; loaded.push("Menu: "+menuTry.name+" ("+DB.menu.length+")"); }
+    else missing.push("Menu");
+
+    // allergens
+    const allTry = await trySheets(splitNames(SETTINGS.sheetAllergens));
+    if(allTry){ DB.allergens = allTry.rows; loaded.push("Allergens: "+allTry.name+" ("+DB.allergens.length+")"); }
+    else missing.push("Allergens");
+
+    // stores
+    const stTry = await trySheets(splitNames(SETTINGS.sheetStores));
+    if(stTry){ DB.stores = stTry.rows; loaded.push("Stores: "+stTry.name+" ("+DB.stores.length+")"); }
+    else missing.push("Stores");
+
+    // policies
+    const pTry = await trySheets(splitNames(SETTINGS.sheetPolicies));
+    if(pTry){ DB.policies = pTry.rows; loaded.push("Policies: "+pTry.name+" ("+DB.policies.length+")"); }
+    else missing.push("Policies");
+
+    // status
+    if(loaded.length>0){
+      setStatus("ok", missing.length ? ("Loaded (missing: "+missing.join(", ")+")") : "Loaded");
+    }else{
+      setStatus("bad","Failed to load data");
+    }
+
+    $("loadedList").textContent =
+      (loaded.length ? loaded.join("\n") : "No sheets loaded.") +
+      (missing.length ? "\n\nMissing (check sheet names in Settings):\n- " + missing.join("\n- ") : "");
+
+    $("dbSummary").textContent = `${loaded.length} sheets`;
+  }catch(err){
+    setStatus("bad","Error");
+    $("loadedList").textContent = "Error: " + err.message;
+    $("dbSummary").textContent = "0 sheets";
+  }
+}
+
+function wire(){
+  $("btnSettings").addEventListener("click", openModal);
+  $("btnClose").addEventListener("click", closeModal);
+  $("modalBg").addEventListener("click", (e)=>{ if(e.target.id==="modalBg") closeModal(); });
+
+  $("btnSave").addEventListener("click", async ()=>{
+    SETTINGS.apiUrl = $("apiUrl").value.trim();
+    SETTINGS.apiKey = $("apiKey").value.trim();
+    SETTINGS.sheetMenu = $("sheetMenu").value.trim();
+    SETTINGS.sheetAllergens = $("sheetAllergens").value.trim();
+    SETTINGS.sheetStores = $("sheetStores").value.trim();
+    SETTINGS.sheetPolicies = $("sheetPolicies").value.trim();
+    SETTINGS.xcontam = $("xcontam").value.trim() || DEFAULTS.xcontam;
+    saveSettings();
+    closeModal();
+    await loadData();
+    addMsg("ai","Settings saved. Data reloaded.\nTry: “What are the allergens in Bibimbap?”","System");
+  });
+
+  $("btnReset").addEventListener("click", resetSettings);
+
+  $("btnReload").addEventListener("click", async ()=>{ await loadData(); addMsg("ai","Data reloaded.","System"); });
+
+  $("btnKorean").addEventListener("click", ()=>{
+    koreanOn = !koreanOn;
+    $("btnKorean").textContent = koreanOn ? "KR: ON" : "KR: OFF";
+  });
+
+  $("send").addEventListener("click", ()=>send());
+  $("q").addEventListener("keydown", (e)=>{
+    if(e.key==="Enter" && !e.shiftKey){
+      e.preventDefault();
+      send();
+    }
+  });
+
+  document.querySelectorAll(".qbtn").forEach(b=>{
+    b.addEventListener("click", ()=>{
+      $("q").value = b.dataset.q || "";
+      send();
+    });
+  });
+}
+
+function send(){
+  const val = $("q").value.trim();
+  if(!val) return;
+  $("q").value = "";
+  addMsg("user", val);
+  // If no data loaded, still answer cautiously
+  const res = answer(val);
+  addMsg("ai", res.text, res.tag);
+}
+
+(function init(){
+  loadSettings();
+  wire();
+  addMsg("ai",
+`Hi! I'm The Bap Staff AI (standalone).
+1) Tap Settings and paste your Apps Script Web App URL + API key.
+2) Press “Save & Load”.
+Then ask staff questions about menu, allergens, and store info.`,
+"Welcome");
+  if(SETTINGS.apiUrl && SETTINGS.apiKey){
+    loadData();
+  }else{
+    setStatus("warn","Open Settings");
+  }
+})();
+</script>
+</body>
+</html>

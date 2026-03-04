@@ -326,7 +326,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/docx/8.2.3/docx.min.js"></script>
+<script src="https://unpkg.com/docx@8.2.3/build/index.umd.js"></script>
 <script>
 // ==================== UTILITIES ====================
 function $(id){return document.getElementById(id)}
@@ -4578,7 +4578,8 @@ function exportAllExcel(){
 async function exportAllWord(){
   try{
     const el=$('exportResult');if(el)el.textContent='Generating Word...';
-    const{Document,Packer,Paragraph,TextRun,Table,TableRow,TableCell,WidthType,AlignmentType,BorderStyle,HeadingLevel,PageBreak}=docx;
+    const _docx=window.docx||window.Docx||window.DOCX;if(!_docx){toast('docx library not loaded. Please refresh the page.','error');return;}
+    const{Document,Packer,Paragraph,TextRun,Table,TableRow,TableCell,WidthType,AlignmentType,BorderStyle,HeadingLevel,PageBreak}=_docx;
     const children=[];
     const title=(text)=>new Paragraph({children:[new TextRun({text,bold:true,size:32,font:'Arial',color:'e84393'})],spacing:{after:200}});
     const subtitle=(text)=>new Paragraph({children:[new TextRun({text,bold:true,size:24,font:'Arial'})],spacing:{before:300,after:100}});

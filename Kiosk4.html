@@ -1260,30 +1260,27 @@ function renderHoldTemp(menuItems){
 function toggleNewly(cb){const inp=cb.closest('td').querySelector('.hold-input');if(inp){cb.checked?inp.classList.add('newly'):inp.classList.remove('newly');}}
 function randInt(min,max){return Math.floor(Math.random()*(max-min+1))+min;}
 function randFloat(min,max){return Math.round((min+Math.random()*(max-min))*10)/10;}
+function _hasAny(els){return Array.from(els).some(el=>el.value!=='');}
 function fillRandomCookTemps(){
-  document.querySelectorAll('[data-cook]').forEach(el=>{if(!el.value)el.value=randInt(85,96);});
+  const els=document.querySelectorAll('[data-cook]');
+  if(_hasAny(els)){els.forEach(el=>{el.value='';});}
+  else{els.forEach(el=>{el.value=randInt(85,96);});}
   markDirty();
 }
 function fillRandomHoldTemps(time){
-  const tKey='t'+time.replace(':','');
-  const nKey='n'+time.replace(':','');
-  document.querySelectorAll(`[data-hold][data-time="${tKey}"]`).forEach(el=>{
-    if(!el.value){
-      el.value=randInt(64,75);
-      // Randomly set N (newly cooked) ~30% chance
-      const nCb=el.closest('td')?.querySelector(`[data-ntime="${nKey}"]`);
-      if(nCb&&Math.random()<0.3){nCb.checked=true;el.classList.add('newly');}
-    }
-  });
+  const tKey='t'+time.replace(':','');const nKey='n'+time.replace(':','');
+  const els=document.querySelectorAll(`[data-hold][data-time="${tKey}"]`);
+  if(_hasAny(els)){
+    els.forEach(el=>{el.value='';const nCb=el.closest('td')?.querySelector(`[data-ntime="${nKey}"]`);if(nCb){nCb.checked=false;el.classList.remove('newly');}});
+  }else{
+    els.forEach(el=>{el.value=randInt(64,75);const nCb=el.closest('td')?.querySelector(`[data-ntime="${nKey}"]`);if(nCb&&Math.random()<0.3){nCb.checked=true;el.classList.add('newly');}});
+  }
   markDirty();
 }
 function fillRandomFridgeTemps(type,period){
-  document.querySelectorAll(`[data-cs-type="${type}"][data-cs-period="${period}"]`).forEach(el=>{
-    if(!el.value){
-      if(type==='fridge')el.value=randFloat(1.2,4.8);
-      else el.value=randFloat(-20.4,-17.8);
-    }
-  });
+  const els=document.querySelectorAll(`[data-cs-type="${type}"][data-cs-period="${period}"]`);
+  if(_hasAny(els)){els.forEach(el=>{el.value='';});}
+  else{els.forEach(el=>{el.value=type==='fridge'?randFloat(1.2,4.8):randFloat(-20.4,-17.8);});}
   markDirty();
 }
 // ===== 6. Cooling =====

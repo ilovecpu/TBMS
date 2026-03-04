@@ -5793,29 +5793,25 @@ async function _deDeleteRange(storeId){
   toast(`Reset: ${done} days deleted${fail?' ('+fail+' failed)':''}`,fail?'warning':'success');
   _deRenderMonthly();
 }
-// --- Random fill helpers for clickable headers ---
+// --- Random fill TOGGLE helpers for clickable headers ---
 function _deRandInt(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
 function _deRandDec(a,b){return +(Math.random()*(b-a)+a).toFixed(1);}
+function _deHasAny(els){return Array.from(els).some(el=>el.value!=='');}
 function _deRandCS(type,period){
-  document.querySelectorAll(`.deFT[data-cstype="${type}"][data-period="${period}"]`).forEach(el=>{
-    if(!el.value){
-      if(type==='fridge')el.value=_deRandDec(1.2,4.8);
-      else el.value=_deRandDec(-20.4,-17.8);
-    }
-  });
+  const els=document.querySelectorAll(`.deFT[data-cstype="${type}"][data-period="${period}"]`);
+  if(_deHasAny(els)){els.forEach(el=>{el.value='';});}
+  else{els.forEach(el=>{el.value=type==='fridge'?_deRandDec(1.2,4.8):_deRandDec(-20.4,-17.8);});}
 }
 function _deRandCook(){
-  document.querySelectorAll('.deCT').forEach(el=>{if(!el.value)el.value=_deRandInt(85,96);});
+  const els=document.querySelectorAll('.deCT');
+  if(_deHasAny(els)){els.forEach(el=>{el.value='';});}
+  else{els.forEach(el=>{el.value=_deRandInt(85,96);});}
 }
 function _deRandHold(time){
   const tKey='t'+time.replace(':','');
-  document.querySelectorAll(`.deHT[data-time="${tKey}"]`).forEach(el=>{
-    if(!el.value){
-      const isN=Math.random()<0.3;
-      if(isN)el.value=_deRandInt(85,96)+'N';
-      else el.value=_deRandInt(64,75);
-    }
-  });
+  const els=document.querySelectorAll(`.deHT[data-time="${tKey}"]`);
+  if(_deHasAny(els)){els.forEach(el=>{el.value='';});}
+  else{els.forEach(el=>{const isN=Math.random()<0.3;el.value=isN?_deRandInt(85,96)+'N':_deRandInt(64,75);});}
 }
 function _deAutoFill(storeId){
   const ds=$('deFormDate')?.value;if(!ds)return;

@@ -202,7 +202,8 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
 
 <script>
 // ============================================================
-//  The Bap AI Bot — Configuration
+//  The Bap AI Bot — Ver1.1
+//  Programmed by DJ Kim
 // ============================================================
 const API_URL = 'https://script.google.com/macros/s/AKfycbzND88jsQ45x2Fmgtp4PphIUWEFp29VNaOuO3fYkeH_czTcXFjskQdydDQcvh63thxf/exec';
 const API_KEY = 'tBaP2026xKr!mGt9Qz';
@@ -313,19 +314,50 @@ async function loadKB() {
 }
 
 async function loadTBMSData() {
-  try {
-    const res = await fetch(`${API_URL}?action=getAll&apikey=${encodeURIComponent(API_KEY)}`, {redirect:'follow'});
-    const json = await res.json();
-    if (json.status === 'ok' && json.data) {
-      if (json.data.Stores) tbmsData.Stores = json.data.Stores;
-      if (json.data.Staff) tbmsData.Staff = json.data.Staff;
-      if (json.data.Suppliers) tbmsData.Suppliers = json.data.Suppliers;
-      if (json.data.StoreInfo) tbmsData.StoreInfo = json.data.StoreInfo;
-      console.log('TBMS data loaded:', Object.keys(json.data).map(k => k + ':' + (json.data[k]?.length || 0)).join(', '));
+  const sheets = ['Stores', 'Staff', 'Suppliers', 'StoreInfo'];
+  const results = [];
+  for (const sheet of sheets) {
+    try {
+      const url = `${API_URL}?action=getSheet&sheet=${sheet}&apikey=${encodeURIComponent(API_KEY)}`;
+      const res = await fetch(url, {redirect:'follow'});
+      const text = await res.text();
+      let json;
+      try { json = JSON.parse(text); } catch(pe) {
+        console.error(`${sheet} parse error:`, text.substring(0, 200));
+        continue;
+      }
+      if (json.status === 'ok' && json.data) {
+        tbmsData[sheet] = json.data;
+        results.push(`${sheet}:${json.data.length}`);
+      } else {
+        console.warn(`${sheet} response:`, json.error || 'no data');
+      }
+    } catch(e) {
+      console.error(`${sheet} fetch error:`, e.message);
     }
-  } catch(e) {
-    console.log('TBMS data load error:', e);
   }
+  const total = sheets.reduce((n, s) => n + tbmsData[s].length, 0);
+  if (total > 0) {
+    console.log('TBMS data loaded:', results.join(', '));
+    updateStatusBadge('✓ Data loaded', 'ok');
+  } else {
+    console.warn('TBMS data: 0 records loaded');
+    updateStatusBadge('⚠ No company data', 'warn');
+  }
+}
+
+function updateStatusBadge(text, type) {
+  let badge = document.getElementById('dataBadge');
+  if (!badge) {
+    badge = document.createElement('div');
+    badge.id = 'dataBadge';
+    badge.style.cssText = 'position:fixed;top:60px;right:8px;font-size:10px;padding:2px 8px;border-radius:10px;z-index:100;opacity:.8';
+    document.body.appendChild(badge);
+  }
+  badge.textContent = text;
+  badge.style.background = type === 'ok' ? 'var(--success)' : 'var(--danger)';
+  badge.style.color = '#fff';
+  setTimeout(() => { if (badge) badge.style.opacity = '0.4'; }, 5000);
 }
 
 function getRelevantKB(query) {

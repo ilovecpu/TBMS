@@ -242,7 +242,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
   <div class="login-logo">
     <div class="logo-icon"><i class="fas fa-bowl-food"></i></div>
     <h1>TBMS</h1>
-    <p>The Bap Management System <span style="opacity:.5;font-size:11px">Ver1.8</span></p>
+    <p>The Bap Management System <span style="opacity:.5;font-size:11px">Ver1.9</span></p>
   </div>
   <div class="form-group"><label>Username</label><input id="loginUser" placeholder="Enter username"></div>
   <div class="form-group"><label>Password</label><input id="loginPass" type="password" placeholder="Enter password"></div>
@@ -260,7 +260,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
 <!-- MAIN APP -->
 <div id="mainApp" class="hidden">
   <div class="sidebar" id="sidebar">
-    <div class="sidebar-header"><h2>TBMS <span style="font-size:12px;font-weight:400;opacity:.6">Ver1.8</span></h2><p>The Bap Management System</p></div>
+    <div class="sidebar-header"><h2>TBMS <span style="font-size:12px;font-weight:400;opacity:.6">Ver1.9</span></h2><p>The Bap Management System</p></div>
     <div class="sidebar-menu">
       <div class="menu-item active" data-page="dashboard" onclick="navigate('dashboard')"><i class="fas fa-home"></i>Dashboard</div>
       <div class="menu-group">
@@ -305,6 +305,8 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
           <div class="menu-item sub" data-page="users" onclick="navigate('users')"><i class="fas fa-users-cog"></i>Users</div>
           <div class="menu-item sub" data-page="settings" onclick="navigate('settings')"><i class="fas fa-sliders"></i>General</div>
           <div class="menu-item sub" data-page="ai-assistant" onclick="navigate('ai-assistant')"><i class="fas fa-robot"></i>AI Assistant</div>
+          <div class="menu-item sub" data-page="ai-brain" onclick="navigate('ai-brain')"><i class="fas fa-brain"></i>AI Brain</div>
+          <div class="menu-item sub" data-page="bot-settings" onclick="navigate('bot-settings')"><i class="fas fa-qrcode"></i>Bot Settings</div>
         </div>
       </div>
     </div>
@@ -313,7 +315,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
   <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
   <div class="main-content">
     <div class="header">
-      <div class="header-left"><button class="menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button><h2 id="pageTitle" style="font-size:18px">Dashboard</h2><span style="font-size:11px;color:var(--text-light);margin-left:8px;font-weight:400;opacity:.7">Ver1.8</span></div>
+      <div class="header-left"><button class="menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button><h2 id="pageTitle" style="font-size:18px">Dashboard</h2><span style="font-size:11px;color:var(--text-light);margin-left:8px;font-weight:400;opacity:.7">Ver1.9</span></div>
       <div class="header-right"><span id="headerDate"></span><span class="sync-status"><span class="dot offline" id="syncDot"></span><span id="syncText">Local</span></span><button class="btn btn-sm btn-outline" onclick="doLogout()"><i class="fas fa-sign-out-alt"></i> Logout</button></div>
     </div>
     <div class="page-content" id="pageContent"></div>
@@ -326,6 +328,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
 // ==================== UTILITIES ====================
 function $(id){return document.getElementById(id)}
@@ -498,7 +501,7 @@ DEFAULT_DATA.Stores.forEach(store => {
 });
 
 // ==================== DATA LAYER ====================
-const D = { Users:[], Stores:[], Staff:[], Attendance:[], Suppliers:[], StockTemplate:[], StoreStock:[], StockCount:[], WeeklySales:[], StaffMessages:[], EditLog:[], TimeChangeReq:[], DiaryConfig:[], DiaryEntry:[], StoreInfo:[] };
+const D = { Users:[], Stores:[], Staff:[], Attendance:[], Suppliers:[], StockTemplate:[], StoreStock:[], StockCount:[], WeeklySales:[], StaffMessages:[], EditLog:[], TimeChangeReq:[], DiaryConfig:[], DiaryEntry:[], StoreInfo:[], KnowledgeBase:[] };
 
 // Canonical field names — must match Apps Script SHEETS definition exactly
 const FIELD_SCHEMA = {
@@ -516,7 +519,8 @@ const FIELD_SCHEMA = {
   TimeChangeReq:['id','attendanceId','staffId','storeId','date','field','currentValue','requestedValue','reason','status','kioskVersion','createdAt','reviewedBy','reviewedAt','acknowledgedAt'],
   DiaryConfig:['id','storeId','configType','name','sortOrder','active'],
   DiaryEntry:['id','storeId','date','openChecks','fridgeTemps','deliveries','cookingTemps','coolingRecords','leftovers','closingChecks','holdTemps','extraChecks','issues','signedBy','submittedBy','submittedAt'],
-  StoreInfo:['id','storeId','leaseStart','leaseEnd','monthlyRent','serviceCharge','rentReviewYears','landlordName','landlordPhone','landlordEmail','estateAgent','estateAgentPhone','estateAgentEmail','councilName','councilEmail','councilPhone','businessRateAnnual','hygieneInspDate','hygieneRating','electricCompany','electricContractStart','electricContractEnd','electricKwhRate','electricDailyCharge','phoneCompany','phoneContractStart','phoneContractEnd','waterCompany','cardMachineCompany','cardContractStart','cardContractEnd','cardRate','fridgeCleanDate','fridgeCleanNext','airconCleanDate','airconCleanNext','memo','custom1Label','custom1Value','custom2Label','custom2Value','custom3Label','custom3Value','custom4Label','custom4Value','custom5Label','custom5Value','custom6Label','custom6Value','custom7Label','custom7Value','custom8Label','custom8Value','custom9Label','custom9Value','custom10Label','custom10Value']
+  StoreInfo:['id','storeId','leaseStart','leaseEnd','monthlyRent','serviceCharge','rentReviewYears','landlordName','landlordPhone','landlordEmail','estateAgent','estateAgentPhone','estateAgentEmail','councilName','councilEmail','councilPhone','businessRateAnnual','hygieneInspDate','hygieneRating','electricCompany','electricContractStart','electricContractEnd','electricKwhRate','electricDailyCharge','phoneCompany','phoneContractStart','phoneContractEnd','waterCompany','cardMachineCompany','cardContractStart','cardContractEnd','cardRate','fridgeCleanDate','fridgeCleanNext','airconCleanDate','airconCleanNext','memo','custom1Label','custom1Value','custom2Label','custom2Value','custom3Label','custom3Value','custom4Label','custom4Value','custom5Label','custom5Value','custom6Label','custom6Value','custom7Label','custom7Value','custom8Label','custom8Value','custom9Label','custom9Value','custom10Label','custom10Value'],
+  KnowledgeBase:['id','category','title','content','tags','source','createdBy','createdAt','updatedAt','active','version']
 };
 // Normalize row keys: "Nick Name" → "nickName", "Left Date" → "leftDate"
 function normalizeRow(sheetName, row) {
@@ -548,7 +552,7 @@ const LS = {
   set(k, v) { localStorage.setItem('tbms_'+k, JSON.stringify(v)); },
   getConfig() { return this.get('config') || {}; }
 };
-const CLOUD_URL = 'https://script.google.com/macros/s/AKfycbyWN7f8SUpv2jb-S4AaFsLiaHbd4ssG-YdirHYS5drxR4vyPbNj5BZf7ssFVJu69B0v/exec';
+const CLOUD_URL = 'https://script.google.com/macros/s/AKfycbzND88jsQ45x2Fmgtp4PphIUWEFp29VNaOuO3fYkeH_czTcXFjskQdydDQcvh63thxf/exec';
 const API_KEY = 'tBaP2026xKr!mGt9Qz';
 const API = {
   url: CLOUD_URL, mode: 'cloud',
@@ -645,6 +649,8 @@ async function loadAllData() {
         try{const catRes=await API.get('getSetting',{key:'catOrder'});if(catRes&&catRes.value){LS.set('catOrder',catRes.value);console.log('[TBMS] catOrder loaded from cloud:',catRes.value);}}catch(e){}
         // Load timeRounding from cloud
         try{const trRes=await API.get('getSetting',{key:'timeRounding'});if(trRes&&trRes.value!==null){LS.set('timeRounding',trRes.value);console.log('[TBMS] timeRounding loaded from cloud:',trRes.value);}}catch(e){}
+        // Load Knowledge Base data (async, non-blocking)
+        loadKBData().catch(e=>console.log('KB load deferred:',e));
         hideLoading(); updateSyncStatus('online'); return true;
       }
     }
@@ -743,7 +749,7 @@ $('loginUser').addEventListener('keydown',e=>{if(e.key==='Enter')$('loginPass').
 // ==================== NAVIGATION ====================
 function toggleSidebar() { $('sidebar').classList.toggle('open');$('sidebarOverlay').classList.toggle('show'); }
 function toggleMenuGroup(el){el.parentElement.classList.toggle('open');}
-const pageTitles={dashboard:'Dashboard',stores:'Store List','store-mgmt':'Store Management',users:'User Management',staff:'Staff List',attendance:'Attendance Records',payroll:'Payroll',messages:'Staff Messages',stock:'Stock Status','stock-template':'Stock Template','stock-count':'Weekly Stock Count',sales:'Weekly Sales',analytics:'Usage Analytics',orders:'Order List',suppliers:'Supplier Management','diary-config':'Diary Configuration','diary-entries':'Diary Records',settings:'General Settings','ai-assistant':'AI Assistant'};
+const pageTitles={dashboard:'Dashboard',stores:'Store List','store-mgmt':'Store Management',users:'User Management',staff:'Staff List',attendance:'Attendance Records',payroll:'Payroll',messages:'Staff Messages',stock:'Stock Status','stock-template':'Stock Template','stock-count':'Weekly Stock Count',sales:'Weekly Sales',analytics:'Usage Analytics',orders:'Order List',suppliers:'Supplier Management','diary-config':'Diary Configuration','diary-entries':'Diary Records',settings:'General Settings','ai-assistant':'AI Assistant','ai-brain':'AI Brain','bot-settings':'Bot Settings'};
 let currentPage='dashboard';
 function navigate(page) {
   // Permission check
@@ -788,6 +794,8 @@ function renderPage(page) {
     case 'diary-config': renderDiaryConfig(c); break;
     case 'diary-entries': renderDiaryEntries(c); break;
     case 'ai-assistant': renderAiAssistant(c); break;
+    case 'ai-brain': renderAiBrain(c); break;
+    case 'bot-settings': renderBotSettings(c); break;
     default: c.innerHTML='<p>Page not found</p>';
   }
 }
@@ -4675,7 +4683,7 @@ function exportAllWord(){
       ['submittedBy / submittedAt','Who submitted and when']
     ]);
 
-    html+=`<hr style="margin:16px 0"><p style="text-align:center;font-size:8pt;color:#999;font-style:italic">TBMS Ver1.8 \u2014 Programmed by DJ</p>`;
+    html+=`<hr style="margin:16px 0"><p style="text-align:center;font-size:8pt;color:#999;font-style:italic">TBMS Ver1.9 \u2014 Programmed by DJ</p>`;
     html+=`</body></html>`;
 
     const blob=new Blob(['\ufeff'+html],{type:'application/msword'});
@@ -4969,6 +4977,210 @@ async function aiSend(){
     aiChat.push({role:'assistant',content:errMsg});
   }
   renderAiAssistant($('pageContent'));
+}
+
+// ==================== AI BRAIN (Knowledge Base Management) ====================
+const KB_CATEGORIES=['Brand Philosophy','Menu & Recipes','Sauce Recipes','Supplier Info','Staff Training','Kitchen Ops','Store Ops','Marketing','Expansion'];
+let kbCurrentCat='all';
+let kbData=[];
+
+async function loadKBData(){
+  try{
+    const url=`${API.url}?action=getKB&apikey=${API.key}`;
+    const res=await fetch(url);
+    const json=await res.json();
+    if(json.status==='ok'){
+      kbData=json.data||[];
+      D.KnowledgeBase=kbData;
+    }
+  }catch(e){console.error('KB load:',e);}
+}
+
+async function saveKBEntry(entry){
+  try{
+    const res=await fetch(API.url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'saveKB',apikey:API.key,entry})});
+    const json=await res.json();
+    if(json.status==='ok'){await loadKBData();return true;}
+    toast('Save failed','error');return false;
+  }catch(e){toast('Error: '+e.message,'error');return false;}
+}
+
+async function deleteKBEntry(id){
+  if(!confirm('Delete this knowledge entry?'))return;
+  try{
+    const res=await fetch(API.url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'deleteKB',apikey:API.key,id})});
+    const json=await res.json();
+    if(json.status==='ok'){toast('Deleted','success');await loadKBData();renderAiBrain($('pageContent'));}
+  }catch(e){toast('Error: '+e.message,'error');}
+}
+
+function renderAiBrain(c){
+  const filtered=kbCurrentCat==='all'?kbData:kbData.filter(k=>k.category===kbCurrentCat);
+  const stats={};
+  KB_CATEGORIES.forEach(cat=>{stats[cat]=kbData.filter(k=>k.category===cat).length;});
+
+  let html=`<div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:20px">
+    <div class="card" style="flex:1;min-width:200px;text-align:center"><h2 style="font-size:28px;color:var(--accent)">${kbData.length}</h2><div style="font-size:12px;color:var(--text-light)">Total Entries</div></div>
+    <div class="card" style="flex:1;min-width:200px;text-align:center"><h2 style="font-size:28px;color:var(--success)">${KB_CATEGORIES.length}</h2><div style="font-size:12px;color:var(--text-light)">Categories</div></div>
+    <div class="card" style="flex:1;min-width:200px;text-align:center"><h2 style="font-size:28px;color:var(--info)">${kbData.filter(k=>{const d=k.updatedAt||k.createdAt;return d&&d.startsWith(new Date().toISOString().substring(0,10));}).length}</h2><div style="font-size:12px;color:var(--text-light)">Updated Today</div></div>
+  </div>`;
+
+  // Category filter tabs
+  html+=`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+    <button class="btn btn-sm ${kbCurrentCat==='all'?'btn-primary':'btn-ghost'}" onclick="kbCurrentCat='all';renderAiBrain($('pageContent'))">All (${kbData.length})</button>`;
+  KB_CATEGORIES.forEach(cat=>{
+    html+=`<button class="btn btn-sm ${kbCurrentCat===cat?'btn-primary':'btn-ghost'}" onclick="kbCurrentCat='${cat}';renderAiBrain($('pageContent'))">${cat} (${stats[cat]||0})</button>`;
+  });
+  html+=`</div>`;
+
+  // Add new entry button
+  html+=`<div style="margin-bottom:16px"><button class="btn btn-primary btn-sm" onclick="showKBEditModal()"><i class="fas fa-plus"></i> Add Entry</button></div>`;
+
+  // KB entries list
+  if(filtered.length===0){
+    html+=`<div class="card" style="text-align:center;padding:40px"><i class="fas fa-brain" style="font-size:48px;color:var(--text-dim);margin-bottom:16px"></i><p style="color:var(--text-light)">No knowledge entries${kbCurrentCat!=='all'?' in this category':''}. Add some to teach the AI!</p></div>`;
+  }else{
+    html+=`<div class="card"><table class="data-table"><thead><tr><th>Category</th><th>Title</th><th>Tags</th><th>Version</th><th>Updated</th><th style="width:100px">Actions</th></tr></thead><tbody>`;
+    filtered.forEach(kb=>{
+      const updated=(kb.updatedAt||kb.createdAt||'').substring(0,10);
+      html+=`<tr>
+        <td><span style="background:var(--accent);color:#fff;padding:2px 8px;border-radius:10px;font-size:11px;white-space:nowrap">${kb.category}</span></td>
+        <td style="font-weight:600">${kb.title}</td>
+        <td style="font-size:12px;color:var(--text-light)">${kb.tags||''}</td>
+        <td style="text-align:center">v${kb.version||1}</td>
+        <td style="font-size:12px">${updated}</td>
+        <td>
+          <button class="btn btn-ghost btn-sm" onclick="showKBEditModal('${kb.id}')" title="Edit"><i class="fas fa-edit"></i></button>
+          <button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="deleteKBEntry('${kb.id}')" title="Delete"><i class="fas fa-trash"></i></button>
+        </td>
+      </tr>`;
+    });
+    html+=`</tbody></table></div>`;
+  }
+
+  c.innerHTML=html;
+}
+
+function showKBEditModal(id){
+  const entry=id?kbData.find(k=>k.id===id):null;
+  let html=`<div class="modal-overlay active" onclick="if(event.target===this)this.remove()">
+    <div class="modal" style="max-width:600px">
+      <div class="modal-header"><h3>${entry?'Edit':'Add'} Knowledge Entry</h3><button class="modal-close" onclick="this.closest('.modal-overlay').remove()">&times;</button></div>
+      <div class="modal-body">
+        <div class="form-group"><label>Category</label><select id="kbEditCat" class="form-control">
+          ${KB_CATEGORIES.map(cat=>`<option ${entry&&entry.category===cat?'selected':''}>${cat}</option>`).join('')}
+        </select></div>
+        <div class="form-group"><label>Title</label><input id="kbEditTitle" class="form-control" value="${entry?entry.title.replace(/"/g,'&quot;'):''}"></div>
+        <div class="form-group"><label>Content</label><textarea id="kbEditContent" class="form-control" rows="8" style="resize:vertical">${entry?entry.content:''}</textarea></div>
+        <div class="form-group"><label>Tags (comma separated)</label><input id="kbEditTags" class="form-control" value="${entry?(entry.tags||''):''}"></div>
+        <div class="form-group"><label>Source</label><input id="kbEditSource" class="form-control" value="${entry?(entry.source||'manual'):'manual'}" placeholder="manual, file upload, training..."></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="this.closest('.modal-overlay').remove()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveKBFromModal('${id||''}')">Save</button>
+      </div>
+    </div>
+  </div>`;
+  document.body.insertAdjacentHTML('beforeend',html);
+}
+
+async function saveKBFromModal(id){
+  const entry={
+    category:$('kbEditCat').value,
+    title:$('kbEditTitle').value.trim(),
+    content:$('kbEditContent').value.trim(),
+    tags:$('kbEditTags').value.trim(),
+    source:$('kbEditSource').value.trim()||'manual',
+    createdBy:currentUser?.name||'admin'
+  };
+  if(!entry.title||!entry.content){toast('Title and Content are required','error');return;}
+  if(id){entry.id=id;const old=kbData.find(k=>k.id===id);if(old)entry.version=old.version;}
+  const ok=await saveKBEntry(entry);
+  if(ok){
+    document.querySelector('.modal-overlay.active')?.remove();
+    toast('Knowledge entry saved','success');
+    renderAiBrain($('pageContent'));
+  }
+}
+
+// ==================== BOT SETTINGS ====================
+function renderBotSettings(c){
+  const baseUrl=window.location.href.replace(/TBMS\.html.*/,'TheBap_Bot.html');
+  const staffUrl=baseUrl+'?mode=staff';
+  const mgrUrl=baseUrl+'?mode=manager';
+
+  let html=`<div style="display:grid;gap:20px;grid-template-columns:repeat(auto-fit,minmax(320px,1fr))">`;
+
+  // Staff AI QR
+  html+=`<div class="card">
+    <div class="card-header"><h3><i class="fas fa-user" style="color:var(--accent);margin-right:8px"></i>The Bap Staff AI</h3></div>
+    <p style="font-size:13px;color:var(--text-light);margin-bottom:16px">직원용 AI 챗봇. QR코드를 스캔하면 레시피, 운영절차 등을 물어볼 수 있습니다.</p>
+    <div id="qrStaff" style="text-align:center;margin:16px 0;background:#fff;padding:16px;border-radius:8px;display:inline-block"></div>
+    <div style="margin-top:8px"><input class="form-control" value="${staffUrl}" readonly style="font-size:11px" onclick="this.select()"></div>
+    <button class="btn btn-primary btn-sm" style="margin-top:8px" onclick="navigator.clipboard.writeText('${staffUrl}');toast('URL copied','success')"><i class="fas fa-copy"></i> Copy URL</button>
+    <a class="btn btn-ghost btn-sm" style="margin-top:8px" href="${staffUrl}" target="_blank"><i class="fas fa-external-link-alt"></i> Open</a>
+  </div>`;
+
+  // Manager AI QR
+  html+=`<div class="card">
+    <div class="card-header"><h3><i class="fas fa-crown" style="color:var(--accent);margin-right:8px"></i>The Bap AI Bot</h3></div>
+    <p style="font-size:13px;color:var(--text-light);margin-bottom:16px">관리자용 AI 봇. 운영, 마케팅, 전략, Training Mode 사용 가능. PIN 필요.</p>
+    <div id="qrManager" style="text-align:center;margin:16px 0;background:#fff;padding:16px;border-radius:8px;display:inline-block"></div>
+    <div style="margin-top:8px"><input class="form-control" value="${mgrUrl}" readonly style="font-size:11px" onclick="this.select()"></div>
+    <button class="btn btn-primary btn-sm" style="margin-top:8px" onclick="navigator.clipboard.writeText('${mgrUrl}');toast('URL copied','success')"><i class="fas fa-copy"></i> Copy URL</button>
+    <a class="btn btn-ghost btn-sm" style="margin-top:8px" href="${mgrUrl}" target="_blank"><i class="fas fa-external-link-alt"></i> Open</a>
+  </div>`;
+
+  // Manager PIN
+  html+=`<div class="card">
+    <div class="card-header"><h3><i class="fas fa-lock" style="color:var(--accent);margin-right:8px"></i>Manager PIN</h3></div>
+    <p style="font-size:13px;color:var(--text-light);margin-bottom:16px">관리자 봇 접근용 PIN 설정. 첫 접근 시 설정된 PIN이 필요합니다.</p>
+    <div class="form-group"><label>PIN Code</label><input type="text" id="mgrPinInput" class="form-control" maxlength="6" placeholder="4-6자리 PIN" value=""></div>
+    <button class="btn btn-primary btn-sm" onclick="saveMgrPin()"><i class="fas fa-save"></i> Save PIN</button>
+    <p style="font-size:11px;color:var(--text-dim);margin-top:8px">* PIN은 Bot 로컬 저장소에 저장됩니다. 각 기기에서 처음 접근 시 PIN 입력이 필요합니다.</p>
+  </div>`;
+
+  // KB Stats
+  html+=`<div class="card">
+    <div class="card-header"><h3><i class="fas fa-brain" style="color:var(--accent);margin-right:8px"></i>Knowledge Base Stats</h3></div>`;
+  KB_CATEGORIES.forEach(cat=>{
+    const cnt=kbData.filter(k=>k.category===cat).length;
+    html+=`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border)">
+      <span style="font-size:13px">${cat}</span>
+      <span style="font-size:13px;font-weight:600;color:${cnt>0?'var(--success)':'var(--text-dim)'}">${cnt}</span>
+    </div>`;
+  });
+  html+=`<div style="display:flex;justify-content:space-between;padding:8px 0;font-weight:700">
+    <span>Total</span><span style="color:var(--accent)">${kbData.length}</span>
+  </div></div>`;
+
+  html+=`</div>`;
+  c.innerHTML=html;
+
+  // Generate QR codes
+  setTimeout(()=>{
+    const qrStaffEl=document.getElementById('qrStaff');
+    const qrMgrEl=document.getElementById('qrManager');
+    if(qrStaffEl&&typeof QRCode!=='undefined'){
+      qrStaffEl.innerHTML='';
+      new QRCode(qrStaffEl,{text:staffUrl,width:180,height:180,colorDark:'#000',colorLight:'#fff'});
+    }
+    if(qrMgrEl&&typeof QRCode!=='undefined'){
+      qrMgrEl.innerHTML='';
+      new QRCode(qrMgrEl,{text:mgrUrl,width:180,height:180,colorDark:'#000',colorLight:'#fff'});
+    }
+  },100);
+}
+
+function saveMgrPin(){
+  const pin=document.getElementById('mgrPinInput')?.value?.trim();
+  if(!pin||pin.length<4){toast('PIN must be at least 4 digits','error');return;}
+  // Save to PropertiesService via API
+  fetch(API.url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'saveSetting',apikey:API.key,key:'mgrBotPin',value:pin})})
+    .then(r=>r.json()).then(j=>{
+      if(j.status==='ok')toast('Manager PIN saved','success');
+      else toast('Save failed','error');
+    }).catch(e=>toast('Error: '+e.message,'error'));
 }
 
 // ==================== INITIALIZATION ====================

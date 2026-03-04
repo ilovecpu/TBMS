@@ -326,7 +326,6 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://unpkg.com/docx@8.2.3/build/index.umd.js"></script>
 <script>
 // ==================== UTILITIES ====================
 function $(id){return document.getElementById(id)}
@@ -4575,182 +4574,153 @@ function exportAllExcel(){
   }catch(e){toast('Export failed: '+e.message,'error');console.error(e);}
 }
 
-async function exportAllWord(){
+function exportAllWord(){
   try{
     const el=$('exportResult');if(el)el.textContent='Generating Word...';
-    const _docx=window.docx||window.Docx||window.DOCX;if(!_docx){toast('docx library not loaded. Please refresh the page.','error');return;}
-    const{Document,Packer,Paragraph,TextRun,Table,TableRow,TableCell,WidthType,AlignmentType,BorderStyle,HeadingLevel,PageBreak}=_docx;
-    const children=[];
-    const title=(text)=>new Paragraph({children:[new TextRun({text,bold:true,size:32,font:'Arial',color:'e84393'})],spacing:{after:200}});
-    const subtitle=(text)=>new Paragraph({children:[new TextRun({text,bold:true,size:24,font:'Arial'})],spacing:{before:300,after:100}});
-    const para=(text)=>new Paragraph({children:[new TextRun({text,size:20,font:'Arial'})],spacing:{after:80}});
-    const hr=()=>new Paragraph({border:{bottom:{style:BorderStyle.SINGLE,size:1,color:'e8dfe0'}},spacing:{before:200,after:200}});
-    const noBorder={top:{style:BorderStyle.NONE},bottom:{style:BorderStyle.NONE},left:{style:BorderStyle.NONE},right:{style:BorderStyle.NONE}};
-    const tblBorder={top:{style:BorderStyle.SINGLE,size:1,color:'cccccc'},bottom:{style:BorderStyle.SINGLE,size:1,color:'cccccc'},left:{style:BorderStyle.SINGLE,size:1,color:'cccccc'},right:{style:BorderStyle.SINGLE,size:1,color:'cccccc'}};
-    const headerCell=(text,w)=>new TableCell({children:[new Paragraph({children:[new TextRun({text,bold:true,size:18,font:'Arial',color:'ffffff'})],alignment:AlignmentType.CENTER})],width:{size:w||2000,type:WidthType.DXA},shading:{color:'auto',fill:'e84393'},borders:tblBorder,verticalAlign:'center'});
-    const dataCell=(text,w)=>new TableCell({children:[new Paragraph({children:[new TextRun({text:String(text||''),size:18,font:'Arial'})],spacing:{before:40,after:40}})],width:{size:w||2000,type:WidthType.DXA},borders:tblBorder});
-    function makeTable(headers,rows,widths){
-      const hRow=new TableRow({children:headers.map((h,i)=>headerCell(h,widths?widths[i]:undefined)),tableHeader:true});
-      const dRows=rows.map(r=>new TableRow({children:r.map((v,i)=>dataCell(v,widths?widths[i]:undefined))}));
-      return new Table({rows:[hRow,...dRows],width:{size:10000,type:WidthType.DXA}});
+    const e=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    function tbl(headers,rows){
+      let h='<tr>'+headers.map(h=>`<td style="background:#e84393;color:#fff;font-weight:bold;padding:6px 10px;font-size:11pt;border:1px solid #ccc">${e(h)}</td>`).join('')+'</tr>';
+      let b=rows.map(r=>'<tr>'+r.map(v=>`<td style="padding:5px 10px;font-size:10pt;border:1px solid #ddd">${e(v)}</td>`).join('')+'</tr>').join('');
+      return `<table style="border-collapse:collapse;width:100%;margin:8px 0">${h}${b}</table>`;
     }
+    const sec=t=>`<h1 style="color:#e84393;font-size:16pt;margin-top:24px;border-bottom:2px solid #e84393;padding-bottom:4px">${e(t)}</h1>`;
+    const sub=t=>`<h2 style="font-size:13pt;margin-top:16px;color:#333">${e(t)}</h2>`;
+    const p=t=>`<p style="font-size:10pt;margin:4px 0;line-height:1.5">${e(t)}</p>`;
+    const pb='<br clear=all style="page-break-before:always">';
+    let html=`<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
+<head><meta charset="utf-8"><style>body{font-family:Arial,sans-serif;margin:40px}table{page-break-inside:auto}tr{page-break-inside:avoid}</style></head><body>`;
 
     // Cover
-    children.push(new Paragraph({spacing:{before:2000}}));
-    children.push(new Paragraph({children:[new TextRun({text:'TBMS',size:72,bold:true,font:'Arial',color:'e84393'})],alignment:AlignmentType.CENTER}));
-    children.push(new Paragraph({children:[new TextRun({text:'The Bap Management System',size:28,font:'Arial',color:'555555'})],alignment:AlignmentType.CENTER,spacing:{after:200}}));
-    children.push(new Paragraph({children:[new TextRun({text:'Complete Data Export',size:36,bold:true,font:'Arial'})],alignment:AlignmentType.CENTER,spacing:{after:200}}));
-    children.push(new Paragraph({children:[new TextRun({text:`Generated: ${new Date().toLocaleString('en-GB')}`,size:22,font:'Arial',color:'777777'})],alignment:AlignmentType.CENTER,spacing:{after:100}}));
-    children.push(new Paragraph({children:[new TextRun({text:`Exported by: ${currentUser?currentUser.name:'System'}`,size:22,font:'Arial',color:'777777'})],alignment:AlignmentType.CENTER}));
-    children.push(new Paragraph({children:[new PageBreak()]}));
+    html+=`<div style="text-align:center;margin-top:120px">
+      <p style="font-size:36pt;font-weight:bold;color:#e84393;margin:0">TBMS</p>
+      <p style="font-size:14pt;color:#555;margin:8px 0">The Bap Management System</p>
+      <p style="font-size:18pt;font-weight:bold;margin:24px 0">Complete Data Export</p>
+      <p style="font-size:11pt;color:#777">Generated: ${new Date().toLocaleString('en-GB')}</p>
+      <p style="font-size:11pt;color:#777">Exported by: ${e(currentUser?currentUser.name:'System')}</p>
+    </div>${pb}`;
 
     // 1. Stores
-    children.push(title('1. Stores'));
-    children.push(para(`Total: ${D.Stores.length} stores`));
-    if(D.Stores.length){
-      D.Stores.forEach((s,i)=>{
-        children.push(subtitle(`${s.code} — ${s.name}`));
-        const info=[['Company',s.company],['Company No',s.companyNo],['VAT No',s.vatNo],['VAT Quarter',s.vatQuarter],['Address',s.address],['Phone',s.phone],['Email',s.email],['Manager',s.manager],['Status',s.active?'Active':'Inactive']];
-        info.forEach(([k,v])=>{if(v)children.push(para(`  ${k}: ${v}`));});
-        if(s.memo)children.push(para(`  Memo: ${s.memo}`));
-        // StoreInfo
-        const si=D.StoreInfo?D.StoreInfo.find(x=>String(x.storeId)===String(s.id)):null;
-        if(si){
-          children.push(para('  — Property & Contracts —'));
-          const props=[['Lease',`${si.leaseStart||'?'} ~ ${si.leaseEnd||'?'}`],['Monthly Rent',si.monthlyRent],['Service Charge',si.serviceCharge],['Landlord',si.landlordName],['Landlord Phone',si.landlordPhone],['Council',si.councilName],['Business Rate',si.businessRateAnnual],['Hygiene Rating',si.hygieneRating],['Hygiene Insp Date',si.hygieneInspDate],['Electric',si.electricCompany],['Phone Co',si.phoneCompany],['Water Co',si.waterCompany],['Card Machine',si.cardMachineCompany],['Card Rate',si.cardRate]];
-          props.forEach(([k,v])=>{if(v)children.push(para(`    ${k}: ${v}`));});
-          for(let ci=1;ci<=10;ci++){if(si['custom'+ci+'Label'])children.push(para(`    ${si['custom'+ci+'Label']}: ${si['custom'+ci+'Value']||''}`));}
-        }
-        children.push(hr());
-      });
-    }
-    children.push(new Paragraph({children:[new PageBreak()]}));
+    html+=sec('1. Stores');
+    html+=p(`Total: ${D.Stores.length} stores`);
+    D.Stores.forEach(s=>{
+      html+=sub(`${s.code} \u2014 ${s.name}`);
+      [['Company',s.company],['Company No',s.companyNo],['VAT No',s.vatNo],['VAT Quarter',s.vatQuarter],['Address',s.address],['Phone',s.phone],['Email',s.email],['Manager',s.manager],['Status',s.active?'Active':'Inactive']].forEach(([k,v])=>{if(v)html+=p(`${k}: ${v}`);});
+      if(s.memo)html+=p(`Memo: ${s.memo}`);
+      const si=D.StoreInfo?D.StoreInfo.find(x=>String(x.storeId)===String(s.id)):null;
+      if(si){
+        html+=`<p style="font-size:10pt;font-weight:bold;color:#e84393;margin-top:8px">\u2014 Property & Contracts \u2014</p>`;
+        [['Lease',`${si.leaseStart||'?'} ~ ${si.leaseEnd||'?'}`],['Monthly Rent',si.monthlyRent],['Service Charge',si.serviceCharge],['Landlord',si.landlordName],['Landlord Phone',si.landlordPhone],['Council',si.councilName],['Business Rate',si.businessRateAnnual],['Hygiene Rating',si.hygieneRating],['Hygiene Insp Date',si.hygieneInspDate],['Electric',si.electricCompany],['Phone Co',si.phoneCompany],['Water Co',si.waterCompany],['Card Machine',si.cardMachineCompany],['Card Rate',si.cardRate]].forEach(([k,v])=>{if(v)html+=p(`  ${k}: ${v}`);});
+        for(let ci=1;ci<=10;ci++){if(si['custom'+ci+'Label'])html+=p(`  ${si['custom'+ci+'Label']}: ${si['custom'+ci+'Value']||''}`);}
+      }
+      html+=`<hr style="border:none;border-top:1px solid #e8dfe0;margin:12px 0">`;
+    });
+    html+=pb;
 
     // 2. Staff
-    children.push(title('2. Staff'));
-    children.push(para(`Total: ${D.Staff.length} staff members`));
+    html+=sec('2. Staff');
+    html+=p(`Total: ${D.Staff.length} staff members`);
     if(D.Staff.length){
-      const headers=['Store','Name','NickName','Mobile','Start','Rate','Active'];
-      const widths=[1500,1800,1200,1400,1200,800,800];
-      const rows=D.Staff.map(s=>[_storeName(s.storeId),s.name,s.nickName||'',s.mobile||'',s.startDate||'',s.rate||'',s.active?'Yes':'No']);
-      children.push(makeTable(headers,rows,widths));
+      html+=tbl(['Store','Name','NickName','Mobile','Start Date','Rate','Active'],
+        D.Staff.map(s=>[_storeName(s.storeId),s.name,s.nickName||'',s.mobile||'',s.startDate||'',s.rate||'',s.active?'Yes':'No']));
     }
-    children.push(new Paragraph({children:[new PageBreak()]}));
+    html+=pb;
 
     // 3. Suppliers
-    children.push(title('3. Suppliers'));
-    children.push(para(`Total: ${D.Suppliers.length} suppliers`));
+    html+=sec('3. Suppliers');
+    html+=p(`Total: ${D.Suppliers.length} suppliers`);
     if(D.Suppliers.length){
-      const headers=['Name','Phone','Email','Website'];
-      const widths=[2500,2000,2500,3000];
-      const rows=D.Suppliers.map(s=>[s.name,s.phone||'',s.email||'',s.website||'']);
-      children.push(makeTable(headers,rows,widths));
+      html+=tbl(['Name','Phone','Email','Website'],
+        D.Suppliers.map(s=>[s.name,s.phone||'',s.email||'',s.website||'']));
     }
-    children.push(new Paragraph({children:[new PageBreak()]}));
+    html+=pb;
 
     // 4. Stock Template
-    children.push(title('4. Stock Template'));
-    children.push(para(`Total: ${D.StockTemplate.length} items`));
+    html+=sec('4. Stock Template');
+    html+=p(`Total: ${D.StockTemplate.length} items`);
     if(D.StockTemplate.length){
-      const headers=['Category','Name','Unit','Min','Order Qty'];
-      const widths=[2000,3500,1000,1000,1200];
-      const rows=D.StockTemplate.map(t=>[t.category,t.name,t.unit,String(t.min),String(t.orderQty||'')]);
-      children.push(makeTable(headers,rows,widths));
+      html+=tbl(['Category','Name','Unit','Min','Order Qty'],
+        D.StockTemplate.map(t=>[t.category,t.name,t.unit,String(t.min),String(t.orderQty||'')]));
     }
-    children.push(new Paragraph({children:[new PageBreak()]}));
+    html+=pb;
 
-    // 5. Store Stock (current)
-    children.push(title('5. Current Store Stock'));
+    // 5. Store Stock
+    html+=sec('5. Current Store Stock');
     if(D.StoreStock.length){
       const byStore={};D.StoreStock.forEach(ss=>{const sn=_storeName(ss.storeId);if(!byStore[sn])byStore[sn]=[];byStore[sn].push(ss);});
       Object.keys(byStore).forEach(sn=>{
-        children.push(subtitle(sn));
-        const headers=['Category','Item','Unit','Min','Qty'];
-        const widths=[2000,3500,1000,1000,1000];
-        const rows=byStore[sn].map(ss=>[ss.category,ss.name,ss.unit,String(ss.min),String(ss.qty||0)]);
-        children.push(makeTable(headers,rows,widths));
-        children.push(hr());
+        html+=sub(sn);
+        html+=tbl(['Category','Item','Unit','Min','Qty'],
+          byStore[sn].map(ss=>[ss.category,ss.name,ss.unit,String(ss.min),String(ss.qty||0)]));
       });
     }
-    children.push(new Paragraph({children:[new PageBreak()]}));
+    html+=pb;
 
-    // 6. Attendance (last 100)
-    children.push(title('6. Attendance (Recent)'));
+    // 6. Attendance
+    html+=sec('6. Attendance (Recent)');
     const att=(D.Attendance||[]).slice(-100);
-    children.push(para(`Showing last ${att.length} of ${(D.Attendance||[]).length} records`));
+    html+=p(`Showing last ${att.length} of ${(D.Attendance||[]).length} records`);
     if(att.length){
-      const headers=['Date','Store','Staff','Clock In','Clock Out','Source'];
-      const widths=[1500,1800,1800,1200,1200,1000];
-      const rows=att.map(a=>[a.date,_storeName(a.storeId),_staffName(a.staffId),a.clockIn||'',a.clockOut||'',a.source||'']);
-      children.push(makeTable(headers,rows,widths));
+      html+=tbl(['Date','Store','Staff','Clock In','Clock Out','Source'],
+        att.map(a=>[a.date,_storeName(a.storeId),_staffName(a.staffId),a.clockIn||'',a.clockOut||'',a.source||'']));
     }
-    children.push(new Paragraph({children:[new PageBreak()]}));
+    html+=pb;
 
-    // 7. Weekly Sales (last 50)
-    children.push(title('7. Weekly Sales (Recent)'));
-    const ws=(D.WeeklySales||[]).slice(-50);
-    children.push(para(`Showing last ${ws.length} of ${(D.WeeklySales||[]).length} records`));
-    if(ws.length){
-      const headers=['Store','Week','Total Sales','Notes'];
-      const widths=[2000,2000,2000,4000];
-      const rows=ws.map(w=>[_storeName(w.storeId),w.week||'',String(w.totalSales||''),w.notes||'']);
-      children.push(makeTable(headers,rows,widths));
+    // 7. Weekly Sales
+    html+=sec('7. Weekly Sales (Recent)');
+    const wsl=(D.WeeklySales||[]).slice(-50);
+    html+=p(`Showing last ${wsl.length} of ${(D.WeeklySales||[]).length} records`);
+    if(wsl.length){
+      html+=tbl(['Store','Week','Total Sales','Notes'],
+        wsl.map(w=>[_storeName(w.storeId),w.week||'',String(w.totalSales||''),w.notes||'']));
     }
-    children.push(new Paragraph({children:[new PageBreak()]}));
+    html+=pb;
 
-    // 8. Diary Entry (last 50)
-    children.push(title('8. Daily Diary (Recent)'));
+    // 8. Diary Entry
+    html+=sec('8. Daily Diary (Recent)');
     const de=(D.DiaryEntry||[]).slice(-50);
-    children.push(para(`Showing last ${de.length} of ${(D.DiaryEntry||[]).length} records`));
-    if(de.length){
-      de.forEach(d=>{
-        children.push(subtitle(`${_storeName(d.storeId)} — ${d.date}`));
-        children.push(para(`Signed by: ${d.signedBy||'-'}  |  Submitted: ${d.submittedAt||'-'}`));
-        const secs=[['Opening Checks',d.openChecks],['Fridge Temps',d.fridgeTemps],['Deliveries',d.deliveries],['Cooking Temps',d.cookingTemps],['Hold Temps',d.holdTemps],['Cooling Records',d.coolingRecords],['Leftovers',d.leftovers],['Closing Checks',d.closingChecks],['Extra Checks',d.extraChecks],['Issues',d.issues]];
-        secs.forEach(([label,val])=>{
-          if(!val)return;
-          let text=val;
-          try{const parsed=JSON.parse(val);text=typeof parsed==='object'?JSON.stringify(parsed,null,2):String(parsed);}catch(e){text=String(val);}
-          if(text.length>500)text=text.substring(0,500)+'...';
-          children.push(para(`  ${label}: ${text}`));
-        });
-        children.push(hr());
+    html+=p(`Showing last ${de.length} of ${(D.DiaryEntry||[]).length} records`);
+    de.forEach(d=>{
+      html+=sub(`${_storeName(d.storeId)} \u2014 ${d.date}`);
+      html+=p(`Signed by: ${d.signedBy||'-'}  |  Submitted: ${d.submittedAt||'-'}`);
+      [['Opening Checks',d.openChecks],['Fridge Temps',d.fridgeTemps],['Deliveries',d.deliveries],['Cooking Temps',d.cookingTemps],['Hold Temps',d.holdTemps],['Cooling Records',d.coolingRecords],['Leftovers',d.leftovers],['Closing Checks',d.closingChecks],['Extra Checks',d.extraChecks],['Issues',d.issues]].forEach(([label,val])=>{
+        if(!val)return;
+        let text=val;try{const parsed=JSON.parse(val);text=typeof parsed==='object'?JSON.stringify(parsed,null,2):String(parsed);}catch(ex){}
+        if(text.length>500)text=text.substring(0,500)+'...';
+        html+=p(`${label}: ${text}`);
       });
-    }
-    children.push(new Paragraph({children:[new PageBreak()]}));
+      html+=`<hr style="border:none;border-top:1px solid #e8dfe0;margin:8px 0">`;
+    });
+    html+=pb;
 
     // 9. Time Change Requests
-    children.push(title('9. Time Change Requests'));
-    const tcr=(D.TimeChangeReq||[]);
-    children.push(para(`Total: ${tcr.length} requests`));
+    html+=sec('9. Time Change Requests');
+    const tcr=D.TimeChangeReq||[];
+    html+=p(`Total: ${tcr.length} requests`);
     if(tcr.length){
-      const headers=['Date','Store','Staff','Field','Current','Requested','Status'];
-      const widths=[1200,1500,1500,1200,1200,1200,1000];
-      const rows=tcr.slice(-50).map(t=>[t.date,_storeName(t.storeId),_staffName(t.staffId),t.field||'',t.currentValue||'',t.requestedValue||'',t.status||'']);
-      children.push(makeTable(headers,rows,widths));
+      html+=tbl(['Date','Store','Staff','Field','Current','Requested','Status'],
+        tcr.slice(-50).map(t=>[t.date,_storeName(t.storeId),_staffName(t.staffId),t.field||'',t.currentValue||'',t.requestedValue||'',t.status||'']));
     }
+    html+=pb;
 
-    // 10. Summary Stats
-    children.push(new Paragraph({children:[new PageBreak()]}));
-    children.push(title('10. Summary'));
-    children.push(para(`Stores: ${D.Stores.length}`));
-    children.push(para(`Active Staff: ${D.Staff.filter(s=>s.active!==false).length}`));
-    children.push(para(`Suppliers: ${D.Suppliers.filter(s=>s.active!==false).length}`));
-    children.push(para(`Stock Items: ${D.StockTemplate.length}`));
-    children.push(para(`Attendance Records: ${(D.Attendance||[]).length}`));
-    children.push(para(`Weekly Sales Records: ${(D.WeeklySales||[]).length}`));
-    children.push(para(`Diary Entries: ${(D.DiaryEntry||[]).length}`));
-    children.push(para(`Edit Logs: ${(D.EditLog||[]).length}`));
-    children.push(para(`Time Change Requests: ${(D.TimeChangeReq||[]).length}`));
-    children.push(hr());
-    children.push(new Paragraph({children:[new TextRun({text:'Programmed by DJ — TBMS Ver1.7',size:18,font:'Arial',color:'999999',italics:true})],alignment:AlignmentType.CENTER}));
+    // 10. Summary
+    html+=sec('10. Summary');
+    html+=p(`Stores: ${D.Stores.length}`);
+    html+=p(`Active Staff: ${D.Staff.filter(s=>s.active!==false).length}`);
+    html+=p(`Suppliers: ${D.Suppliers.filter(s=>s.active!==false).length}`);
+    html+=p(`Stock Items: ${D.StockTemplate.length}`);
+    html+=p(`Attendance Records: ${(D.Attendance||[]).length}`);
+    html+=p(`Weekly Sales Records: ${(D.WeeklySales||[]).length}`);
+    html+=p(`Diary Entries: ${(D.DiaryEntry||[]).length}`);
+    html+=p(`Edit Logs: ${(D.EditLog||[]).length}`);
+    html+=p(`Time Change Requests: ${(D.TimeChangeReq||[]).length}`);
+    html+=`<hr style="margin:20px 0"><p style="text-align:center;font-size:9pt;color:#999;font-style:italic">Programmed by DJ \u2014 TBMS Ver1.7</p>`;
+    html+=`</body></html>`;
 
-    const doc=new Document({sections:[{children}]});
-    const blob=await Packer.toBlob(doc);
-    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`TBMS_Data_Export_${_today()}.docx`;a.click();
+    const blob=new Blob(['\ufeff'+html],{type:'application/msword'});
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`TBMS_Data_Export_${_today()}.doc`;a.click();
     toast('Word file downloaded!','success');
     if(el)el.innerHTML='<i class="fas fa-check-circle" style="color:var(--success)"></i> Word exported '+_today();
-  }catch(e){toast('Export failed: '+e.message,'error');console.error(e);const el=$('exportResult');if(el)el.textContent='Error: '+e.message;}
+  }catch(ex){toast('Export failed: '+ex.message,'error');console.error(ex);const el=$('exportResult');if(el)el.textContent='Error: '+ex.message;}
 }
 
 // ==================== AI ASSISTANT (Tool-Calling) ====================

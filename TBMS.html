@@ -242,7 +242,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
   <div class="login-logo">
     <div class="logo-icon"><i class="fas fa-bowl-food"></i></div>
     <h1>TBMS</h1>
-    <p>The Bap Management System <span style="opacity:.5;font-size:11px">Ver1.6</span></p>
+    <p>The Bap Management System <span style="opacity:.5;font-size:11px">Ver1.7</span></p>
   </div>
   <div class="form-group"><label>Username</label><input id="loginUser" placeholder="Enter username"></div>
   <div class="form-group"><label>Password</label><input id="loginPass" type="password" placeholder="Enter password"></div>
@@ -260,7 +260,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
 <!-- MAIN APP -->
 <div id="mainApp" class="hidden">
   <div class="sidebar" id="sidebar">
-    <div class="sidebar-header"><h2>TBMS <span style="font-size:12px;font-weight:400;opacity:.6">Ver1.6</span></h2><p>The Bap Management System</p></div>
+    <div class="sidebar-header"><h2>TBMS <span style="font-size:12px;font-weight:400;opacity:.6">Ver1.7</span></h2><p>The Bap Management System</p></div>
     <div class="sidebar-menu">
       <div class="menu-item active" data-page="dashboard" onclick="navigate('dashboard')"><i class="fas fa-home"></i>Dashboard</div>
       <div class="menu-group">
@@ -313,7 +313,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
   <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
   <div class="main-content">
     <div class="header">
-      <div class="header-left"><button class="menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button><h2 id="pageTitle" style="font-size:18px">Dashboard</h2><span style="font-size:11px;color:var(--text-light);margin-left:8px;font-weight:400;opacity:.7">Ver1.6</span></div>
+      <div class="header-left"><button class="menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button><h2 id="pageTitle" style="font-size:18px">Dashboard</h2><span style="font-size:11px;color:var(--text-light);margin-left:8px;font-weight:400;opacity:.7">Ver1.7</span></div>
       <div class="header-right"><span id="headerDate"></span><span class="sync-status"><span class="dot offline" id="syncDot"></span><span id="syncText">Local</span></span><button class="btn btn-sm btn-outline" onclick="doLogout()"><i class="fas fa-sign-out-alt"></i> Logout</button></div>
     </div>
     <div class="page-content" id="pageContent"></div>
@@ -325,6 +325,8 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
 <div class="modal"><div class="modal-header"><h3 id="modalTitle">Modal</h3><button class="btn-icon" onclick="closeModal()"><i class="fas fa-times"></i></button></div><div class="modal-body" id="modalBody"></div><div class="modal-footer" id="modalFooter"></div></div>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/docx/8.2.3/docx.min.js"></script>
 <script>
 // ==================== UTILITIES ====================
 function $(id){return document.getElementById(id)}
@@ -4440,6 +4442,13 @@ function renderSettings(c) {
     <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
       <button class="btn btn-primary btn-sm" onclick="runArchive()"><i class="fas fa-archive"></i> Archive Now</button>
       <span id="archiveResult" style="font-size:13px;color:var(--text-light)"></span>
+    </div></div>
+    <div class="card"><div class="card-header"><h3><i class="fas fa-file-export" style="color:var(--accent);margin-right:8px"></i>Data Export</h3></div>
+    <p style="font-size:13px;color:var(--text-light);margin-bottom:16px">현재 시스템에 저장된 모든 데이터를 Word 또는 Excel 파일로 내보냅니다.<br>Stores, Staff, Suppliers, Stock, Attendance, Diary 등 전체 데이터가 포함됩니다.</p>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+      <button class="btn btn-primary btn-sm" onclick="exportAllWord()"><i class="fas fa-file-word"></i> Download Word</button>
+      <button class="btn btn-success btn-sm" onclick="exportAllExcel()"><i class="fas fa-file-excel"></i> Download Excel</button>
+      <span id="exportResult" style="font-size:13px;color:var(--text-light)"></span>
     </div></div>`;
 }
 async function updateApiUrl(){
@@ -4480,6 +4489,267 @@ async function changePwd(){
   if(!np){toast('Enter new password','error');return;}
   if(np!==cp){toast('Passwords do not match','error');return;}
   currentUser.password=np;await saveRow('Users',currentUser);toast('Password changed!','success');
+}
+
+// ==================== DATA EXPORT ====================
+function _storeName(id){const s=D.Stores.find(x=>String(x.id)===String(id));return s?s.name:id||'';}
+function _staffName(id){const s=D.Staff.find(x=>String(x.id)===String(id));return s?(s.nickName||s.name):id||'';}
+function _today(){return new Date().toISOString().split('T')[0];}
+
+function exportAllExcel(){
+  try{
+    const wb=XLSX.utils.book_new();
+    // 1. Stores
+    if(D.Stores.length){
+      const rows=D.Stores.map(s=>({Code:s.code,Name:s.name,Company:s.company,'Company No':s.companyNo,'VAT No':s.vatNo,'VAT Quarter':s.vatQuarter,Address:s.address,Phone:s.phone,Email:s.email,Manager:s.manager,Memo:s.memo,Active:s.active?'Yes':'No'}));
+      XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),'Stores');
+    }
+    // 2. StoreInfo
+    if(D.StoreInfo&&D.StoreInfo.length){
+      const rows=D.StoreInfo.map(si=>{const obj={Store:_storeName(si.storeId)};
+        const fields=['leaseStart','leaseEnd','monthlyRent','serviceCharge','rentReviewYears','landlordName','landlordPhone','landlordEmail','estateAgent','estateAgentPhone','estateAgentEmail','councilName','councilEmail','councilPhone','businessRateAnnual','hygieneInspDate','hygieneRating','electricCompany','electricContractStart','electricContractEnd','electricKwhRate','electricDailyCharge','phoneCompany','phoneContractStart','phoneContractEnd','waterCompany','cardMachineCompany','cardContractStart','cardContractEnd','cardRate','fridgeCleanDate','fridgeCleanNext','airconCleanDate','airconCleanNext','memo'];
+        fields.forEach(f=>{if(si[f])obj[f.replace(/([A-Z])/g,' $1').trim()]=si[f];});
+        for(let i=1;i<=10;i++){if(si['custom'+i+'Label'])obj[si['custom'+i+'Label']]=si['custom'+i+'Value']||'';}
+        return obj;
+      });
+      XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),'Store Info');
+    }
+    // 3. Staff
+    if(D.Staff.length){
+      const rows=D.Staff.map(s=>({Store:_storeName(s.storeId),Name:s.name,NickName:s.nickName||'','Cloth Size':s.clothSize||'',DOB:s.dob||'',Address:s.address||'','NI No':s.niNo||'','eVisa':s.eVisa||'',Mobile:s.mobile||'','Start Date':s.startDate||'','Left Date':s.leftDate||'',Rate:s.rate||'','Sort Code':s.sortCode||'','Account No':s.accountNo||'',Email:s.email||'','Kiosk Login':s.kioskLogin?'Yes':'No',Memo:s.memo||'',Active:s.active?'Yes':'No'}));
+      XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),'Staff');
+    }
+    // 4. Suppliers
+    if(D.Suppliers.length){
+      const rows=D.Suppliers.map(s=>({Name:s.name,Email:s.email||'',Phone:s.phone||'',Address:s.address||'',Website:s.website||'',Memo:s.memo||'',Active:s.active?'Yes':'No'}));
+      XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),'Suppliers');
+    }
+    // 5. Stock Template
+    if(D.StockTemplate.length){
+      const rows=D.StockTemplate.map(t=>({Category:t.category,Name:t.name,Unit:t.unit,Min:t.min,'Order Qty':t.orderQty||'','Always Order':t.alwaysOrder?'Yes':'No','Supplier 1':t.supplier1||'','Supplier 2':t.supplier2||'','Supplier 3':t.supplier3||'',Memo:t.memo||''}));
+      XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),'Stock Template');
+    }
+    // 6. Store Stock (current qty)
+    if(D.StoreStock.length){
+      const rows=D.StoreStock.map(ss=>({Store:_storeName(ss.storeId),Category:ss.category,Name:ss.name,Unit:ss.unit,Min:ss.min,'Order Qty':ss.orderQty||'','Current Qty':ss.qty||0}));
+      XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),'Store Stock');
+    }
+    // 7. Stock Count
+    if(D.StockCount&&D.StockCount.length){
+      const rows=D.StockCount.map(sc=>({Store:_storeName(sc.storeId),Week:sc.week,'Count Date':sc.countDate,Category:sc.category,Name:sc.name,Unit:sc.unit,Qty:sc.qty,'Submitted By':sc.submittedBy||'','Submitted At':sc.submittedAt||''}));
+      XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),'Stock Count');
+    }
+    // 8. Attendance
+    if(D.Attendance&&D.Attendance.length){
+      const rows=D.Attendance.map(a=>({Store:_storeName(a.storeId),Staff:_staffName(a.staffId),Date:a.date,'Clock In':a.clockIn||'','Clock Out':a.clockOut||'',Source:a.source||''}));
+      XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),'Attendance');
+    }
+    // 9. Weekly Sales
+    if(D.WeeklySales&&D.WeeklySales.length){
+      const rows=D.WeeklySales.map(w=>({Store:_storeName(w.storeId),Week:w.week,'Week Start':w.weekStart||'','Total Sales':w.totalSales||'',Notes:w.notes||'','Submitted By':w.submittedBy||''}));
+      XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),'Weekly Sales');
+    }
+    // 10. Diary Entry
+    if(D.DiaryEntry&&D.DiaryEntry.length){
+      const rows=D.DiaryEntry.map(de=>({Store:_storeName(de.storeId),Date:de.date,'Signed By':de.signedBy||'','Submitted By':de.submittedBy||'','Submitted At':de.submittedAt||'','Open Checks':de.openChecks||'','Fridge Temps':de.fridgeTemps||'','Deliveries':de.deliveries||'','Cooking Temps':de.cookingTemps||'','Hold Temps':de.holdTemps||'','Cooling Records':de.coolingRecords||'','Leftovers':de.leftovers||'','Closing Checks':de.closingChecks||'','Extra Checks':de.extraChecks||'','Issues':de.issues||''}));
+      XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),'Diary Entry');
+    }
+    // 11. Time Change Requests
+    if(D.TimeChangeReq&&D.TimeChangeReq.length){
+      const rows=D.TimeChangeReq.map(t=>({Store:_storeName(t.storeId),Staff:_staffName(t.staffId),Date:t.date,Field:t.field,'Current Value':t.currentValue,'Requested Value':t.requestedValue,Reason:t.reason||'',Status:t.status||'','Created At':t.createdAt||''}));
+      XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),'Time Change Req');
+    }
+    // 12. Edit Log
+    if(D.EditLog&&D.EditLog.length){
+      const rows=D.EditLog.map(e=>({Store:_storeName(e.storeId),Staff:_staffName(e.staffId),Date:e.date,'Field Changed':e.fieldChanged,'Old Value':e.oldValue,'New Value':e.newValue,'Edit Timestamp':e.editTimestamp||''}));
+      XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),'Edit Log');
+    }
+    // 13. Users (no password)
+    if(D.Users&&D.Users.length){
+      const rows=D.Users.map(u=>({Username:u.username,Name:u.name,Role:u.role,Email:u.email||'',Store:_storeName(u.storeId)}));
+      XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),'Users');
+    }
+    XLSX.writeFile(wb,`TBMS_Data_Export_${_today()}.xlsx`);
+    toast('Excel file downloaded!','success');
+    const el=$('exportResult');if(el)el.innerHTML='<i class="fas fa-check-circle" style="color:var(--success)"></i> Excel exported '+_today();
+  }catch(e){toast('Export failed: '+e.message,'error');console.error(e);}
+}
+
+async function exportAllWord(){
+  try{
+    const el=$('exportResult');if(el)el.textContent='Generating Word...';
+    const{Document,Packer,Paragraph,TextRun,Table,TableRow,TableCell,WidthType,AlignmentType,BorderStyle,HeadingLevel,PageBreak}=docx;
+    const children=[];
+    const title=(text)=>new Paragraph({children:[new TextRun({text,bold:true,size:32,font:'Arial',color:'e84393'})],spacing:{after:200}});
+    const subtitle=(text)=>new Paragraph({children:[new TextRun({text,bold:true,size:24,font:'Arial'})],spacing:{before:300,after:100}});
+    const para=(text)=>new Paragraph({children:[new TextRun({text,size:20,font:'Arial'})],spacing:{after:80}});
+    const hr=()=>new Paragraph({border:{bottom:{style:BorderStyle.SINGLE,size:1,color:'e8dfe0'}},spacing:{before:200,after:200}});
+    const noBorder={top:{style:BorderStyle.NONE},bottom:{style:BorderStyle.NONE},left:{style:BorderStyle.NONE},right:{style:BorderStyle.NONE}};
+    const tblBorder={top:{style:BorderStyle.SINGLE,size:1,color:'cccccc'},bottom:{style:BorderStyle.SINGLE,size:1,color:'cccccc'},left:{style:BorderStyle.SINGLE,size:1,color:'cccccc'},right:{style:BorderStyle.SINGLE,size:1,color:'cccccc'}};
+    const headerCell=(text,w)=>new TableCell({children:[new Paragraph({children:[new TextRun({text,bold:true,size:18,font:'Arial',color:'ffffff'})],alignment:AlignmentType.CENTER})],width:{size:w||2000,type:WidthType.DXA},shading:{color:'auto',fill:'e84393'},borders:tblBorder,verticalAlign:'center'});
+    const dataCell=(text,w)=>new TableCell({children:[new Paragraph({children:[new TextRun({text:String(text||''),size:18,font:'Arial'})],spacing:{before:40,after:40}})],width:{size:w||2000,type:WidthType.DXA},borders:tblBorder});
+    function makeTable(headers,rows,widths){
+      const hRow=new TableRow({children:headers.map((h,i)=>headerCell(h,widths?widths[i]:undefined)),tableHeader:true});
+      const dRows=rows.map(r=>new TableRow({children:r.map((v,i)=>dataCell(v,widths?widths[i]:undefined))}));
+      return new Table({rows:[hRow,...dRows],width:{size:10000,type:WidthType.DXA}});
+    }
+
+    // Cover
+    children.push(new Paragraph({spacing:{before:2000}}));
+    children.push(new Paragraph({children:[new TextRun({text:'TBMS',size:72,bold:true,font:'Arial',color:'e84393'})],alignment:AlignmentType.CENTER}));
+    children.push(new Paragraph({children:[new TextRun({text:'The Bap Management System',size:28,font:'Arial',color:'555555'})],alignment:AlignmentType.CENTER,spacing:{after:200}}));
+    children.push(new Paragraph({children:[new TextRun({text:'Complete Data Export',size:36,bold:true,font:'Arial'})],alignment:AlignmentType.CENTER,spacing:{after:200}}));
+    children.push(new Paragraph({children:[new TextRun({text:`Generated: ${new Date().toLocaleString('en-GB')}`,size:22,font:'Arial',color:'777777'})],alignment:AlignmentType.CENTER,spacing:{after:100}}));
+    children.push(new Paragraph({children:[new TextRun({text:`Exported by: ${currentUser?currentUser.name:'System'}`,size:22,font:'Arial',color:'777777'})],alignment:AlignmentType.CENTER}));
+    children.push(new Paragraph({children:[new PageBreak()]}));
+
+    // 1. Stores
+    children.push(title('1. Stores'));
+    children.push(para(`Total: ${D.Stores.length} stores`));
+    if(D.Stores.length){
+      D.Stores.forEach((s,i)=>{
+        children.push(subtitle(`${s.code} — ${s.name}`));
+        const info=[['Company',s.company],['Company No',s.companyNo],['VAT No',s.vatNo],['VAT Quarter',s.vatQuarter],['Address',s.address],['Phone',s.phone],['Email',s.email],['Manager',s.manager],['Status',s.active?'Active':'Inactive']];
+        info.forEach(([k,v])=>{if(v)children.push(para(`  ${k}: ${v}`));});
+        if(s.memo)children.push(para(`  Memo: ${s.memo}`));
+        // StoreInfo
+        const si=D.StoreInfo?D.StoreInfo.find(x=>String(x.storeId)===String(s.id)):null;
+        if(si){
+          children.push(para('  — Property & Contracts —'));
+          const props=[['Lease',`${si.leaseStart||'?'} ~ ${si.leaseEnd||'?'}`],['Monthly Rent',si.monthlyRent],['Service Charge',si.serviceCharge],['Landlord',si.landlordName],['Landlord Phone',si.landlordPhone],['Council',si.councilName],['Business Rate',si.businessRateAnnual],['Hygiene Rating',si.hygieneRating],['Hygiene Insp Date',si.hygieneInspDate],['Electric',si.electricCompany],['Phone Co',si.phoneCompany],['Water Co',si.waterCompany],['Card Machine',si.cardMachineCompany],['Card Rate',si.cardRate]];
+          props.forEach(([k,v])=>{if(v)children.push(para(`    ${k}: ${v}`));});
+          for(let ci=1;ci<=10;ci++){if(si['custom'+ci+'Label'])children.push(para(`    ${si['custom'+ci+'Label']}: ${si['custom'+ci+'Value']||''}`));}
+        }
+        children.push(hr());
+      });
+    }
+    children.push(new Paragraph({children:[new PageBreak()]}));
+
+    // 2. Staff
+    children.push(title('2. Staff'));
+    children.push(para(`Total: ${D.Staff.length} staff members`));
+    if(D.Staff.length){
+      const headers=['Store','Name','NickName','Mobile','Start','Rate','Active'];
+      const widths=[1500,1800,1200,1400,1200,800,800];
+      const rows=D.Staff.map(s=>[_storeName(s.storeId),s.name,s.nickName||'',s.mobile||'',s.startDate||'',s.rate||'',s.active?'Yes':'No']);
+      children.push(makeTable(headers,rows,widths));
+    }
+    children.push(new Paragraph({children:[new PageBreak()]}));
+
+    // 3. Suppliers
+    children.push(title('3. Suppliers'));
+    children.push(para(`Total: ${D.Suppliers.length} suppliers`));
+    if(D.Suppliers.length){
+      const headers=['Name','Phone','Email','Website'];
+      const widths=[2500,2000,2500,3000];
+      const rows=D.Suppliers.map(s=>[s.name,s.phone||'',s.email||'',s.website||'']);
+      children.push(makeTable(headers,rows,widths));
+    }
+    children.push(new Paragraph({children:[new PageBreak()]}));
+
+    // 4. Stock Template
+    children.push(title('4. Stock Template'));
+    children.push(para(`Total: ${D.StockTemplate.length} items`));
+    if(D.StockTemplate.length){
+      const headers=['Category','Name','Unit','Min','Order Qty'];
+      const widths=[2000,3500,1000,1000,1200];
+      const rows=D.StockTemplate.map(t=>[t.category,t.name,t.unit,String(t.min),String(t.orderQty||'')]);
+      children.push(makeTable(headers,rows,widths));
+    }
+    children.push(new Paragraph({children:[new PageBreak()]}));
+
+    // 5. Store Stock (current)
+    children.push(title('5. Current Store Stock'));
+    if(D.StoreStock.length){
+      const byStore={};D.StoreStock.forEach(ss=>{const sn=_storeName(ss.storeId);if(!byStore[sn])byStore[sn]=[];byStore[sn].push(ss);});
+      Object.keys(byStore).forEach(sn=>{
+        children.push(subtitle(sn));
+        const headers=['Category','Item','Unit','Min','Qty'];
+        const widths=[2000,3500,1000,1000,1000];
+        const rows=byStore[sn].map(ss=>[ss.category,ss.name,ss.unit,String(ss.min),String(ss.qty||0)]);
+        children.push(makeTable(headers,rows,widths));
+        children.push(hr());
+      });
+    }
+    children.push(new Paragraph({children:[new PageBreak()]}));
+
+    // 6. Attendance (last 100)
+    children.push(title('6. Attendance (Recent)'));
+    const att=(D.Attendance||[]).slice(-100);
+    children.push(para(`Showing last ${att.length} of ${(D.Attendance||[]).length} records`));
+    if(att.length){
+      const headers=['Date','Store','Staff','Clock In','Clock Out','Source'];
+      const widths=[1500,1800,1800,1200,1200,1000];
+      const rows=att.map(a=>[a.date,_storeName(a.storeId),_staffName(a.staffId),a.clockIn||'',a.clockOut||'',a.source||'']);
+      children.push(makeTable(headers,rows,widths));
+    }
+    children.push(new Paragraph({children:[new PageBreak()]}));
+
+    // 7. Weekly Sales (last 50)
+    children.push(title('7. Weekly Sales (Recent)'));
+    const ws=(D.WeeklySales||[]).slice(-50);
+    children.push(para(`Showing last ${ws.length} of ${(D.WeeklySales||[]).length} records`));
+    if(ws.length){
+      const headers=['Store','Week','Total Sales','Notes'];
+      const widths=[2000,2000,2000,4000];
+      const rows=ws.map(w=>[_storeName(w.storeId),w.week||'',String(w.totalSales||''),w.notes||'']);
+      children.push(makeTable(headers,rows,widths));
+    }
+    children.push(new Paragraph({children:[new PageBreak()]}));
+
+    // 8. Diary Entry (last 50)
+    children.push(title('8. Daily Diary (Recent)'));
+    const de=(D.DiaryEntry||[]).slice(-50);
+    children.push(para(`Showing last ${de.length} of ${(D.DiaryEntry||[]).length} records`));
+    if(de.length){
+      de.forEach(d=>{
+        children.push(subtitle(`${_storeName(d.storeId)} — ${d.date}`));
+        children.push(para(`Signed by: ${d.signedBy||'-'}  |  Submitted: ${d.submittedAt||'-'}`));
+        const secs=[['Opening Checks',d.openChecks],['Fridge Temps',d.fridgeTemps],['Deliveries',d.deliveries],['Cooking Temps',d.cookingTemps],['Hold Temps',d.holdTemps],['Cooling Records',d.coolingRecords],['Leftovers',d.leftovers],['Closing Checks',d.closingChecks],['Extra Checks',d.extraChecks],['Issues',d.issues]];
+        secs.forEach(([label,val])=>{
+          if(!val)return;
+          let text=val;
+          try{const parsed=JSON.parse(val);text=typeof parsed==='object'?JSON.stringify(parsed,null,2):String(parsed);}catch(e){text=String(val);}
+          if(text.length>500)text=text.substring(0,500)+'...';
+          children.push(para(`  ${label}: ${text}`));
+        });
+        children.push(hr());
+      });
+    }
+    children.push(new Paragraph({children:[new PageBreak()]}));
+
+    // 9. Time Change Requests
+    children.push(title('9. Time Change Requests'));
+    const tcr=(D.TimeChangeReq||[]);
+    children.push(para(`Total: ${tcr.length} requests`));
+    if(tcr.length){
+      const headers=['Date','Store','Staff','Field','Current','Requested','Status'];
+      const widths=[1200,1500,1500,1200,1200,1200,1000];
+      const rows=tcr.slice(-50).map(t=>[t.date,_storeName(t.storeId),_staffName(t.staffId),t.field||'',t.currentValue||'',t.requestedValue||'',t.status||'']);
+      children.push(makeTable(headers,rows,widths));
+    }
+
+    // 10. Summary Stats
+    children.push(new Paragraph({children:[new PageBreak()]}));
+    children.push(title('10. Summary'));
+    children.push(para(`Stores: ${D.Stores.length}`));
+    children.push(para(`Active Staff: ${D.Staff.filter(s=>s.active!==false).length}`));
+    children.push(para(`Suppliers: ${D.Suppliers.filter(s=>s.active!==false).length}`));
+    children.push(para(`Stock Items: ${D.StockTemplate.length}`));
+    children.push(para(`Attendance Records: ${(D.Attendance||[]).length}`));
+    children.push(para(`Weekly Sales Records: ${(D.WeeklySales||[]).length}`));
+    children.push(para(`Diary Entries: ${(D.DiaryEntry||[]).length}`));
+    children.push(para(`Edit Logs: ${(D.EditLog||[]).length}`));
+    children.push(para(`Time Change Requests: ${(D.TimeChangeReq||[]).length}`));
+    children.push(hr());
+    children.push(new Paragraph({children:[new TextRun({text:'Programmed by DJ — TBMS Ver1.7',size:18,font:'Arial',color:'999999',italics:true})],alignment:AlignmentType.CENTER}));
+
+    const doc=new Document({sections:[{children}]});
+    const blob=await Packer.toBlob(doc);
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`TBMS_Data_Export_${_today()}.docx`;a.click();
+    toast('Word file downloaded!','success');
+    if(el)el.innerHTML='<i class="fas fa-check-circle" style="color:var(--success)"></i> Word exported '+_today();
+  }catch(e){toast('Export failed: '+e.message,'error');console.error(e);const el=$('exportResult');if(el)el.textContent='Error: '+e.message;}
 }
 
 // ==================== AI ASSISTANT (Tool-Calling) ====================

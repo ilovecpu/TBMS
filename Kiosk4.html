@@ -1190,21 +1190,21 @@ function renderColdStorage(fridges,freezers){
   let html='';
   if(fridges.length>0){
     html+=`<div class="fridge-type-label" style="background:${STORE_COLORS[currentStore]}"><i class="fas fa-temperature-low"></i> Fridges (0°C – 8°C)</div>`;
-    html+='<div class="fridge-grid"><div class="fridge-row header"><div>Name</div><div style="text-align:center">AM °C</div><div style="text-align:center">PM °C</div></div>';
+    html+='<div class="fridge-grid"><div class="fridge-row header"><div>Name</div><div style="text-align:center;cursor:pointer;user-select:none" onclick="fillRandomFridgeTemps(\'fridge\',\'am\')">AM °C</div><div style="text-align:center;cursor:pointer;user-select:none" onclick="fillRandomFridgeTemps(\'fridge\',\'pm\')">PM °C</div></div>';
     fridges.forEach(f=>{
       html+=`<div class="fridge-row"><div class="name"><i class="fas fa-temperature-low" style="color:#2196f3"></i> ${f.name}</div>
-        <input type="number" class="temp-input" data-cs-name="${f.name}" data-cs-period="am" value="${getTemp(f.name,'am')}" onchange="markDirty()" placeholder="—" inputmode="decimal">
-        <input type="number" class="temp-input" data-cs-name="${f.name}" data-cs-period="pm" value="${getTemp(f.name,'pm')}" onchange="markDirty()" placeholder="—" inputmode="decimal"></div>`;
+        <input type="number" class="temp-input" data-cs-name="${f.name}" data-cs-period="am" data-cs-type="fridge" value="${getTemp(f.name,'am')}" onchange="markDirty()" placeholder="—" inputmode="decimal" step="0.1">
+        <input type="number" class="temp-input" data-cs-name="${f.name}" data-cs-period="pm" data-cs-type="fridge" value="${getTemp(f.name,'pm')}" onchange="markDirty()" placeholder="—" inputmode="decimal" step="0.1"></div>`;
     });
     html+='</div>';
   }
   if(freezers.length>0){
     html+=`<div class="fridge-type-label" style="background:#37474f;margin-top:12px"><i class="fas fa-icicles"></i> Freezers (-18°C or below)</div>`;
-    html+='<div class="fridge-grid"><div class="fridge-row header"><div>Name</div><div style="text-align:center">AM °C</div><div style="text-align:center">PM °C</div></div>';
+    html+='<div class="fridge-grid"><div class="fridge-row header"><div>Name</div><div style="text-align:center;cursor:pointer;user-select:none" onclick="fillRandomFridgeTemps(\'freezer\',\'am\')">AM °C</div><div style="text-align:center;cursor:pointer;user-select:none" onclick="fillRandomFridgeTemps(\'freezer\',\'pm\')">PM °C</div></div>';
     freezers.forEach(f=>{
       html+=`<div class="fridge-row"><div class="name"><i class="fas fa-icicles" style="color:#607d8b"></i> ${f.name}</div>
-        <input type="number" class="temp-input" data-cs-name="${f.name}" data-cs-period="am" value="${getTemp(f.name,'am')}" onchange="markDirty()" placeholder="—" inputmode="decimal">
-        <input type="number" class="temp-input" data-cs-name="${f.name}" data-cs-period="pm" value="${getTemp(f.name,'pm')}" onchange="markDirty()" placeholder="—" inputmode="decimal"></div>`;
+        <input type="number" class="temp-input" data-cs-name="${f.name}" data-cs-period="am" data-cs-type="freezer" value="${getTemp(f.name,'am')}" onchange="markDirty()" placeholder="—" inputmode="decimal" step="0.1">
+        <input type="number" class="temp-input" data-cs-name="${f.name}" data-cs-period="pm" data-cs-type="freezer" value="${getTemp(f.name,'pm')}" onchange="markDirty()" placeholder="—" inputmode="decimal" step="0.1"></div>`;
     });
     html+='</div>';
   }
@@ -1259,13 +1259,31 @@ function renderHoldTemp(menuItems){
 }
 function toggleNewly(cb){const inp=cb.closest('td').querySelector('.hold-input');if(inp){cb.checked?inp.classList.add('newly'):inp.classList.remove('newly');}}
 function randInt(min,max){return Math.floor(Math.random()*(max-min+1))+min;}
+function randFloat(min,max){return Math.round((min+Math.random()*(max-min))*10)/10;}
 function fillRandomCookTemps(){
   document.querySelectorAll('[data-cook]').forEach(el=>{if(!el.value)el.value=randInt(85,96);});
   markDirty();
 }
 function fillRandomHoldTemps(time){
   const tKey='t'+time.replace(':','');
-  document.querySelectorAll(`[data-hold][data-time="${tKey}"]`).forEach(el=>{if(!el.value)el.value=randInt(64,75);});
+  const nKey='n'+time.replace(':','');
+  document.querySelectorAll(`[data-hold][data-time="${tKey}"]`).forEach(el=>{
+    if(!el.value){
+      el.value=randInt(64,75);
+      // Randomly set N (newly cooked) ~30% chance
+      const nCb=el.closest('td')?.querySelector(`[data-ntime="${nKey}"]`);
+      if(nCb&&Math.random()<0.3){nCb.checked=true;el.classList.add('newly');}
+    }
+  });
+  markDirty();
+}
+function fillRandomFridgeTemps(type,period){
+  document.querySelectorAll(`[data-cs-type="${type}"][data-cs-period="${period}"]`).forEach(el=>{
+    if(!el.value){
+      if(type==='fridge')el.value=randFloat(1.2,4.8);
+      else el.value=randFloat(-20.4,-17.8);
+    }
+  });
   markDirty();
 }
 // ===== 6. Cooling =====

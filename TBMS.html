@@ -242,7 +242,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
   <div class="login-logo">
     <div class="logo-icon"><i class="fas fa-bowl-food"></i></div>
     <h1>TBMS</h1>
-    <p>The Bap Management System <span style="opacity:.5;font-size:11px">Ver1.5</span></p>
+    <p>The Bap Management System <span style="opacity:.5;font-size:11px">Ver1.6</span></p>
   </div>
   <div class="form-group"><label>Username</label><input id="loginUser" placeholder="Enter username"></div>
   <div class="form-group"><label>Password</label><input id="loginPass" type="password" placeholder="Enter password"></div>
@@ -260,7 +260,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
 <!-- MAIN APP -->
 <div id="mainApp" class="hidden">
   <div class="sidebar" id="sidebar">
-    <div class="sidebar-header"><h2>TBMS <span style="font-size:12px;font-weight:400;opacity:.6">Ver1.5</span></h2><p>The Bap Management System</p></div>
+    <div class="sidebar-header"><h2>TBMS <span style="font-size:12px;font-weight:400;opacity:.6">Ver1.6</span></h2><p>The Bap Management System</p></div>
     <div class="sidebar-menu">
       <div class="menu-item active" data-page="dashboard" onclick="navigate('dashboard')"><i class="fas fa-home"></i>Dashboard</div>
       <div class="menu-group">
@@ -313,7 +313,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
   <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
   <div class="main-content">
     <div class="header">
-      <div class="header-left"><button class="menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button><h2 id="pageTitle" style="font-size:18px">Dashboard</h2><span style="font-size:11px;color:var(--text-light);margin-left:8px;font-weight:400;opacity:.7">Ver1.5</span></div>
+      <div class="header-left"><button class="menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button><h2 id="pageTitle" style="font-size:18px">Dashboard</h2><span style="font-size:11px;color:var(--text-light);margin-left:8px;font-weight:400;opacity:.7">Ver1.6</span></div>
       <div class="header-right"><span id="headerDate"></span><span class="sync-status"><span class="dot offline" id="syncDot"></span><span id="syncText">Local</span></span><button class="btn btn-sm btn-outline" onclick="doLogout()"><i class="fas fa-sign-out-alt"></i> Logout</button></div>
     </div>
     <div class="page-content" id="pageContent"></div>
@@ -5540,9 +5540,14 @@ function _openDiaryForm(storeId,entry,isNewWithDate){
   html+=`</div>`;
 
   // Cold Storage
-  if(allCold.length>0){
-    html+=`<h4 style="color:#1565c0;margin:14px 0 8px"><i class="fas fa-thermometer-half" style="margin-right:6px"></i>Cold Storage</h4><table style="width:100%;border-collapse:collapse;font-size:13px"><tr style="background:#f5f5f5"><th style="padding:6px;text-align:left">Name</th><th style="padding:6px;text-align:center;width:80px">AM °C</th><th style="padding:6px;text-align:center;width:80px">PM °C</th></tr>`;
-    allCold.forEach(c=>{const f=ftMap[c.name]||{};html+=`<tr style="border-bottom:1px solid #eee"><td style="padding:6px">${c.name}</td><td style="padding:4px;text-align:center"><input type="number" step="0.1" class="deFT" data-name="${escHtml(c.name)}" data-period="am" value="${f.am||''}" style="width:60px;padding:4px;border:1px solid #ddd;border-radius:4px;text-align:center;font-size:13px"></td><td style="padding:4px;text-align:center"><input type="number" step="0.1" class="deFT" data-name="${escHtml(c.name)}" data-period="pm" value="${f.pm||''}" style="width:60px;padding:4px;border:1px solid #ddd;border-radius:4px;text-align:center;font-size:13px"></td></tr>`;});
+  if(fridges.length>0){
+    html+=`<h4 style="color:#1565c0;margin:14px 0 8px"><i class="fas fa-thermometer-half" style="margin-right:6px"></i>Fridges (0°C – 8°C)</h4><table style="width:100%;border-collapse:collapse;font-size:13px"><tr style="background:#f5f5f5"><th style="padding:6px;text-align:left">Name</th><th style="padding:6px;text-align:center;width:80px;cursor:pointer;user-select:none" onclick="_deRandCS('fridge','am')">AM °C</th><th style="padding:6px;text-align:center;width:80px;cursor:pointer;user-select:none" onclick="_deRandCS('fridge','pm')">PM °C</th></tr>`;
+    fridges.forEach(c=>{const f=ftMap[c.name]||{};html+=`<tr style="border-bottom:1px solid #eee"><td style="padding:6px">${c.name}</td><td style="padding:4px;text-align:center"><input type="number" step="0.1" class="deFT" data-name="${escHtml(c.name)}" data-period="am" data-cstype="fridge" value="${f.am||''}" style="width:60px;padding:4px;border:1px solid #ddd;border-radius:4px;text-align:center;font-size:13px"></td><td style="padding:4px;text-align:center"><input type="number" step="0.1" class="deFT" data-name="${escHtml(c.name)}" data-period="pm" data-cstype="fridge" value="${f.pm||''}" style="width:60px;padding:4px;border:1px solid #ddd;border-radius:4px;text-align:center;font-size:13px"></td></tr>`;});
+    html+=`</table>`;
+  }
+  if(freezers.length>0){
+    html+=`<h4 style="color:#37474f;margin:14px 0 8px"><i class="fas fa-icicles" style="margin-right:6px"></i>Freezers (-18°C or below)</h4><table style="width:100%;border-collapse:collapse;font-size:13px"><tr style="background:#f5f5f5"><th style="padding:6px;text-align:left">Name</th><th style="padding:6px;text-align:center;width:80px;cursor:pointer;user-select:none" onclick="_deRandCS('freezer','am')">AM °C</th><th style="padding:6px;text-align:center;width:80px;cursor:pointer;user-select:none" onclick="_deRandCS('freezer','pm')">PM °C</th></tr>`;
+    freezers.forEach(c=>{const f=ftMap[c.name]||{};html+=`<tr style="border-bottom:1px solid #eee"><td style="padding:6px">${c.name}</td><td style="padding:4px;text-align:center"><input type="number" step="0.1" class="deFT" data-name="${escHtml(c.name)}" data-period="am" data-cstype="freezer" value="${f.am||''}" style="width:60px;padding:4px;border:1px solid #ddd;border-radius:4px;text-align:center;font-size:13px"></td><td style="padding:4px;text-align:center"><input type="number" step="0.1" class="deFT" data-name="${escHtml(c.name)}" data-period="pm" data-cstype="freezer" value="${f.pm||''}" style="width:60px;padding:4px;border:1px solid #ddd;border-radius:4px;text-align:center;font-size:13px"></td></tr>`;});
     html+=`</table>`;
   }
 
@@ -5555,7 +5560,7 @@ function _openDiaryForm(storeId,entry,isNewWithDate){
 
   // Cooking Temps
   if(menuItems.length>0){
-    html+=`<h4 style="color:#e65100;margin:14px 0 8px"><i class="fas fa-fire" style="margin-right:6px"></i>Cooking Temperature</h4><table style="width:100%;border-collapse:collapse;font-size:13px"><tr style="background:#f5f5f5"><th style="padding:6px;text-align:left">Item</th><th style="padding:6px;text-align:center;width:80px">Temp °C</th></tr>`;
+    html+=`<h4 style="color:#e65100;margin:14px 0 8px"><i class="fas fa-fire" style="margin-right:6px"></i>Cooking Temperature</h4><table style="width:100%;border-collapse:collapse;font-size:13px"><tr style="background:#f5f5f5"><th style="padding:6px;text-align:left">Item</th><th style="padding:6px;text-align:center;width:80px;cursor:pointer;user-select:none" onclick="_deRandCook()">Temp °C</th></tr>`;
     menuItems.forEach(m=>{const c=ctMap[m.name]||{};html+=`<tr style="border-bottom:1px solid #eee"><td style="padding:6px">${m.name}</td><td style="padding:4px;text-align:center"><input type="number" step="0.1" class="deCT" data-item="${escHtml(m.name)}" value="${c.temp||''}" style="width:60px;padding:4px;border:1px solid #ddd;border-radius:4px;text-align:center;font-size:13px"></td></tr>`;});
     html+=`</table>`;
   }
@@ -5563,7 +5568,7 @@ function _openDiaryForm(storeId,entry,isNewWithDate){
   // Hold Temps
   if(menuItems.length>0){
     html+=`<h4 style="color:#c62828;margin:14px 0 8px"><i class="fas fa-clock" style="margin-right:6px"></i>Food Hold Temperature</h4><table style="width:100%;border-collapse:collapse;font-size:13px"><tr style="background:#f5f5f5"><th style="padding:6px;text-align:left">Item</th>`;
-    DE_HOLD_TIMES.forEach(t=>html+=`<th style="padding:6px;text-align:center;width:65px">${t}</th>`);
+    DE_HOLD_TIMES.forEach(t=>html+=`<th style="padding:6px;text-align:center;width:65px;cursor:pointer;user-select:none" onclick="_deRandHold('${t}')">${t}</th>`);
     html+='</tr>';
     menuItems.forEach(m=>{const h=htMap[m.name]||{};html+=`<tr style="border-bottom:1px solid #eee"><td style="padding:6px">${m.name}</td>`;DE_HOLD_TIMES.forEach(t=>{const k='t'+t.replace(':','');const nk='n'+t.replace(':','');let dispVal=h[k]||'';if(dispVal&&dispVal!=='N'&&(h[nk]===true||h[nk]==='true'))dispVal+='N';html+=`<td style="padding:4px;text-align:center"><input type="text" class="deHT" data-item="${escHtml(m.name)}" data-time="${k}" value="${dispVal}" placeholder="°C/N" style="width:50px;padding:3px;border:1px solid #ddd;border-radius:4px;text-align:center;font-size:12px"></td>`;});html+='</tr>';});
     html+=`</table>`;
@@ -5667,25 +5672,28 @@ async function _deAutoFillDirect(storeId,ds,existingId,silent){
   const openChecks={};
   DE_OPENING_CHECKS.forEach(c=>{openChecks[c.key]=true;});
 
-  // 2. Cold Storage
-  const fridgeTemps=allCold.map(c=>({name:c.name,am:String(randDec(1.0,4.9)),pm:String(randDec(1.0,4.9))}));
+  // 2. Cold Storage - fridge 1.2-4.8, freezer -20.4 to -17.8
+  const fridgeTemps=allCold.map(c=>{
+    const isFreezer=c.configType==='freezer';
+    return {name:c.name,am:String(isFreezer?randDec(-20.4,-17.8):randDec(1.2,4.8)),pm:String(isFreezer?randDec(-20.4,-17.8):randDec(1.2,4.8))};
+  });
 
   // 3. Deliveries
   const deliveries=[];
   if(dow===2||dow===5)deliveries.push({product:'Treestone',visualOk:true,tempOk:true,accepted:true});
   if(dow===3)deliveries.push({product:'PanAsia',visualOk:true,tempOk:true,accepted:true});
 
-  // 4. Cooking Temps
-  const cookingTemps=menuItems.map(m=>({item:m.name,temp:String(randInt(89,97))}));
+  // 4. Cooking Temps - 85~96
+  const cookingTemps=menuItems.map(m=>({item:m.name,temp:String(randInt(85,96))}));
 
-  // 5. Hold Temps
+  // 5. Hold Temps - 64~75, N(30%)=85~96
   const holdTemps=menuItems.map(m=>{
     const h={item:m.name};
     DE_HOLD_TIMES.forEach(t=>{
       const k='t'+t.replace(':','');const nk='n'+t.replace(':','');
-      const isN=Math.random()<0.35;
-      if(isN){h[k]=String(randInt(89,97));h[nk]=true;}
-      else{h[k]=String(randInt(65,78));h[nk]=false;}
+      const isN=Math.random()<0.3;
+      if(isN){h[k]=String(randInt(85,96));h[nk]=true;}
+      else{h[k]=String(randInt(64,75));h[nk]=false;}
     });return h;
   });
 
@@ -5785,6 +5793,30 @@ async function _deDeleteRange(storeId){
   toast(`Reset: ${done} days deleted${fail?' ('+fail+' failed)':''}`,fail?'warning':'success');
   _deRenderMonthly();
 }
+// --- Random fill helpers for clickable headers ---
+function _deRandInt(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
+function _deRandDec(a,b){return +(Math.random()*(b-a)+a).toFixed(1);}
+function _deRandCS(type,period){
+  document.querySelectorAll(`.deFT[data-cstype="${type}"][data-period="${period}"]`).forEach(el=>{
+    if(!el.value){
+      if(type==='fridge')el.value=_deRandDec(1.2,4.8);
+      else el.value=_deRandDec(-20.4,-17.8);
+    }
+  });
+}
+function _deRandCook(){
+  document.querySelectorAll('.deCT').forEach(el=>{if(!el.value)el.value=_deRandInt(85,96);});
+}
+function _deRandHold(time){
+  const tKey='t'+time.replace(':','');
+  document.querySelectorAll(`.deHT[data-time="${tKey}"]`).forEach(el=>{
+    if(!el.value){
+      const isN=Math.random()<0.3;
+      if(isN)el.value=_deRandInt(85,96)+'N';
+      else el.value=_deRandInt(64,75);
+    }
+  });
+}
 function _deAutoFill(storeId){
   const ds=$('deFormDate')?.value;if(!ds)return;
   const dt=new Date(ds+'T00:00:00');
@@ -5798,8 +5830,11 @@ function _deAutoFill(storeId){
   // 1. Opening Checks - all checked
   document.querySelectorAll('.deOC').forEach(cb=>{cb.checked=true;});
 
-  // 2. Cold Storage - AM/PM random 1.0-4.9
-  document.querySelectorAll('.deFT').forEach(inp=>{inp.value=randDec(1.0,4.9);});
+  // 2. Cold Storage - Fridge 1.2-4.8, Freezer -20.4 to -17.8
+  document.querySelectorAll('.deFT').forEach(inp=>{
+    if(inp.dataset.cstype==='freezer')inp.value=randDec(-20.4,-17.8);
+    else inp.value=randDec(1.2,4.8);
+  });
 
   // 3. Deliveries - clear existing, add by day
   const dlBox=$('deDeliveryRows');if(dlBox)dlBox.innerHTML='';
@@ -5810,14 +5845,14 @@ function _deAutoFill(storeId){
     dlBox.insertAdjacentHTML('beforeend',_deDeliveryRowHtml(0,{product:'PanAsia',visualOk:true,tempOk:true,accepted:true}));
   }
 
-  // 4. Cooking Temp - 89~97
-  document.querySelectorAll('.deCT').forEach(inp=>{inp.value=randInt(89,97);});
+  // 4. Cooking Temp - 85~96
+  document.querySelectorAll('.deCT').forEach(inp=>{inp.value=randInt(85,96);});
 
-  // 5. Hold Temps - 65~78, random N(35%), N=89~97
+  // 5. Hold Temps - 64~75, random N(30%), N=85~96
   document.querySelectorAll('.deHT').forEach(inp=>{
-    const isN=Math.random()<0.35;
-    if(isN){inp.value=randInt(89,97)+'N';}
-    else{inp.value=randInt(65,78);}
+    const isN=Math.random()<0.3;
+    if(isN){inp.value=randInt(85,96)+'N';}
+    else{inp.value=randInt(64,75);}
   });
 
   // 6. Cooling - Thu/Fri: random 1-2 from list, time 60-80, OK

@@ -301,7 +301,7 @@ function fallbackStaff() {
 // ============================================================
 async function loadKB() {
   try {
-    const res = await fetch(`${API_URL}?action=getKB&apikey=${API_KEY}`);
+    const res = await fetch(`${API_URL}?action=getKB&apikey=${encodeURIComponent(API_KEY)}`, {redirect:'follow'});
     const json = await res.json();
     if (json.status === 'ok') {
       kbData = json.data || [];
@@ -341,12 +341,12 @@ async function saveKBEntry(entry) {
   try {
     const res = await fetch(API_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'saveKB', apikey: API_KEY, entry })
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ action: 'saveKB', apikey: API_KEY, entry }),
+      redirect: 'follow'
     });
     const json = await res.json();
     if (json.status === 'ok') {
-      // Refresh KB
       await loadKB();
       return true;
     }

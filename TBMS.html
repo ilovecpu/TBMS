@@ -4986,10 +4986,8 @@ let kbData=[];
 
 async function loadKBData(){
   try{
-    const url=`${API.url}?action=getKB&apikey=${API.key}`;
-    const res=await fetch(url);
-    const json=await res.json();
-    if(json.status==='ok'){
+    const json=await API.get('getKB');
+    if(json&&json.status==='ok'){
       kbData=json.data||[];
       D.KnowledgeBase=kbData;
     }
@@ -4998,9 +4996,8 @@ async function loadKBData(){
 
 async function saveKBEntry(entry){
   try{
-    const res=await fetch(API.url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'saveKB',apikey:API.key,entry})});
-    const json=await res.json();
-    if(json.status==='ok'){await loadKBData();return true;}
+    const json=await API.post({action:'saveKB',entry});
+    if(json&&json.status==='ok'){await loadKBData();return true;}
     toast('Save failed','error');return false;
   }catch(e){toast('Error: '+e.message,'error');return false;}
 }
@@ -5008,9 +5005,8 @@ async function saveKBEntry(entry){
 async function deleteKBEntry(id){
   if(!confirm('Delete this knowledge entry?'))return;
   try{
-    const res=await fetch(API.url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'deleteKB',apikey:API.key,id})});
-    const json=await res.json();
-    if(json.status==='ok'){toast('Deleted','success');await loadKBData();renderAiBrain($('pageContent'));}
+    const json=await API.post({action:'deleteKB',id});
+    if(json&&json.status==='ok'){toast('Deleted','success');await loadKBData();renderAiBrain($('pageContent'));}
   }catch(e){toast('Error: '+e.message,'error');}
 }
 
@@ -5175,12 +5171,10 @@ function renderBotSettings(c){
 function saveMgrPin(){
   const pin=document.getElementById('mgrPinInput')?.value?.trim();
   if(!pin||pin.length<4){toast('PIN must be at least 4 digits','error');return;}
-  // Save to PropertiesService via API
-  fetch(API.url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'saveSetting',apikey:API.key,key:'mgrBotPin',value:pin})})
-    .then(r=>r.json()).then(j=>{
-      if(j.status==='ok')toast('Manager PIN saved','success');
-      else toast('Save failed','error');
-    }).catch(e=>toast('Error: '+e.message,'error'));
+  API.post({action:'saveSetting',key:'mgrBotPin',value:pin}).then(j=>{
+    if(j&&j.status==='ok')toast('Manager PIN saved','success');
+    else toast('Save failed','error');
+  }).catch(e=>toast('Error: '+e.message,'error'));
 }
 
 // ==================== INITIALIZATION ====================

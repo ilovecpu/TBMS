@@ -242,7 +242,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
   <div class="login-logo">
     <div class="logo-icon"><i class="fas fa-bowl-food"></i></div>
     <h1>TBMS</h1>
-    <p>The Bap Management System <span style="opacity:.5;font-size:11px">Ver1.7</span></p>
+    <p>The Bap Management System <span style="opacity:.5;font-size:11px">Ver1.8</span></p>
   </div>
   <div class="form-group"><label>Username</label><input id="loginUser" placeholder="Enter username"></div>
   <div class="form-group"><label>Password</label><input id="loginPass" type="password" placeholder="Enter password"></div>
@@ -260,7 +260,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
 <!-- MAIN APP -->
 <div id="mainApp" class="hidden">
   <div class="sidebar" id="sidebar">
-    <div class="sidebar-header"><h2>TBMS <span style="font-size:12px;font-weight:400;opacity:.6">Ver1.7</span></h2><p>The Bap Management System</p></div>
+    <div class="sidebar-header"><h2>TBMS <span style="font-size:12px;font-weight:400;opacity:.6">Ver1.8</span></h2><p>The Bap Management System</p></div>
     <div class="sidebar-menu">
       <div class="menu-item active" data-page="dashboard" onclick="navigate('dashboard')"><i class="fas fa-home"></i>Dashboard</div>
       <div class="menu-group">
@@ -313,7 +313,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
   <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
   <div class="main-content">
     <div class="header">
-      <div class="header-left"><button class="menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button><h2 id="pageTitle" style="font-size:18px">Dashboard</h2><span style="font-size:11px;color:var(--text-light);margin-left:8px;font-weight:400;opacity:.7">Ver1.7</span></div>
+      <div class="header-left"><button class="menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button><h2 id="pageTitle" style="font-size:18px">Dashboard</h2><span style="font-size:11px;color:var(--text-light);margin-left:8px;font-weight:400;opacity:.7">Ver1.8</span></div>
       <div class="header-right"><span id="headerDate"></span><span class="sync-status"><span class="dot offline" id="syncDot"></span><span id="syncText">Local</span></span><button class="btn btn-sm btn-outline" onclick="doLogout()"><i class="fas fa-sign-out-alt"></i> Logout</button></div>
     </div>
     <div class="page-content" id="pageContent"></div>
@@ -4490,7 +4490,7 @@ async function changePwd(){
   currentUser.password=np;await saveRow('Users',currentUser);toast('Password changed!','success');
 }
 
-// ==================== DATA EXPORT ====================
+// ==================== DATA EXPORT (AI Reference) ====================
 function _storeName(id){const s=D.Stores.find(x=>String(x.id)===String(id));return s?s.name:id||'';}
 function _staffName(id){const s=D.Staff.find(x=>String(x.id)===String(id));return s?(s.nickName||s.name):id||'';}
 function _today(){return new Date().toISOString().split('T')[0];}
@@ -4498,227 +4498,189 @@ function _today(){return new Date().toISOString().split('T')[0];}
 function exportAllExcel(){
   try{
     const wb=XLSX.utils.book_new();
-    // 1. Stores
+    // 1. Stores (full detail)
     if(D.Stores.length){
-      const rows=D.Stores.map(s=>({Code:s.code,Name:s.name,Company:s.company,'Company No':s.companyNo,'VAT No':s.vatNo,'VAT Quarter':s.vatQuarter,Address:s.address,Phone:s.phone,Email:s.email,Manager:s.manager,Memo:s.memo,Active:s.active?'Yes':'No'}));
-      XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),'Stores');
-    }
-    // 2. StoreInfo
-    if(D.StoreInfo&&D.StoreInfo.length){
-      const rows=D.StoreInfo.map(si=>{const obj={Store:_storeName(si.storeId)};
-        const fields=['leaseStart','leaseEnd','monthlyRent','serviceCharge','rentReviewYears','landlordName','landlordPhone','landlordEmail','estateAgent','estateAgentPhone','estateAgentEmail','councilName','councilEmail','councilPhone','businessRateAnnual','hygieneInspDate','hygieneRating','electricCompany','electricContractStart','electricContractEnd','electricKwhRate','electricDailyCharge','phoneCompany','phoneContractStart','phoneContractEnd','waterCompany','cardMachineCompany','cardContractStart','cardContractEnd','cardRate','fridgeCleanDate','fridgeCleanNext','airconCleanDate','airconCleanNext','memo'];
-        fields.forEach(f=>{if(si[f])obj[f.replace(/([A-Z])/g,' $1').trim()]=si[f];});
-        for(let i=1;i<=10;i++){if(si['custom'+i+'Label'])obj[si['custom'+i+'Label']]=si['custom'+i+'Value']||'';}
+      const rows=D.Stores.map(s=>{
+        const si=(D.StoreInfo||[]).find(x=>String(x.storeId)===String(s.id));
+        const obj={Code:s.code,Name:s.name,Company:s.company,'Company No':s.companyNo,'VAT No':s.vatNo,'VAT Quarter':s.vatQuarter,Address:s.address,Phone:s.phone,Email:s.email,Manager:s.manager,Active:s.active?'Yes':'No',Memo:s.memo||''};
+        if(si){
+          Object.assign(obj,{'Lease Start':si.leaseStart||'','Lease End':si.leaseEnd||'','Monthly Rent':si.monthlyRent||'','Service Charge':si.serviceCharge||'','Landlord':si.landlordName||'','Landlord Phone':si.landlordPhone||'','Council':si.councilName||'','Business Rate':si.businessRateAnnual||'','Hygiene Rating':si.hygieneRating||'','Hygiene Insp':si.hygieneInspDate||'','Electric Co':si.electricCompany||'','Phone Co':si.phoneCompany||'','Water Co':si.waterCompany||'','Card Machine':si.cardMachineCompany||'','Card Rate':si.cardRate||''});
+          for(let i=1;i<=10;i++){if(si['custom'+i+'Label'])obj[si['custom'+i+'Label']]=si['custom'+i+'Value']||'';}
+        }
         return obj;
       });
-      XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),'Store Info');
+      XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),'Stores');
     }
-    // 3. Staff
+    // 2. Staff (full detail)
     if(D.Staff.length){
       const rows=D.Staff.map(s=>({Store:_storeName(s.storeId),Name:s.name,NickName:s.nickName||'','Cloth Size':s.clothSize||'',DOB:s.dob||'',Address:s.address||'','NI No':s.niNo||'','eVisa':s.eVisa||'',Mobile:s.mobile||'','Start Date':s.startDate||'','Left Date':s.leftDate||'',Rate:s.rate||'','Sort Code':s.sortCode||'','Account No':s.accountNo||'',Email:s.email||'','Kiosk Login':s.kioskLogin?'Yes':'No',Memo:s.memo||'',Active:s.active?'Yes':'No'}));
       XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),'Staff');
     }
-    // 4. Suppliers
+    // 3. Suppliers
     if(D.Suppliers.length){
       const rows=D.Suppliers.map(s=>({Name:s.name,Email:s.email||'',Phone:s.phone||'',Address:s.address||'',Website:s.website||'',Memo:s.memo||'',Active:s.active?'Yes':'No'}));
       XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),'Suppliers');
     }
-    // 5. Stock Template
+    // 4. Stock Template (master item list)
     if(D.StockTemplate.length){
-      const rows=D.StockTemplate.map(t=>({Category:t.category,Name:t.name,Unit:t.unit,Min:t.min,'Order Qty':t.orderQty||'','Always Order':t.alwaysOrder?'Yes':'No','Supplier 1':t.supplier1||'','Supplier 2':t.supplier2||'','Supplier 3':t.supplier3||'',Memo:t.memo||''}));
-      XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),'Stock Template');
+      const rows=D.StockTemplate.map(t=>({Category:t.category,Name:t.name,Unit:t.unit,Min:t.min,'Order Qty':t.orderQty||'','Always Order':t.alwaysOrder?'Yes':'No','Supplier 1':t.supplier1||'','Supplier 2':t.supplier2||'','Supplier 3':t.supplier3||''}));
+      XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),'Stock Items');
     }
-    // 6. Store Stock (current qty)
-    if(D.StoreStock.length){
-      const rows=D.StoreStock.map(ss=>({Store:_storeName(ss.storeId),Category:ss.category,Name:ss.name,Unit:ss.unit,Min:ss.min,'Order Qty':ss.orderQty||'','Current Qty':ss.qty||0}));
-      XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),'Store Stock');
-    }
-    // 7. Stock Count
-    if(D.StockCount&&D.StockCount.length){
-      const rows=D.StockCount.map(sc=>({Store:_storeName(sc.storeId),Week:sc.week,'Count Date':sc.countDate,Category:sc.category,Name:sc.name,Unit:sc.unit,Qty:sc.qty,'Submitted By':sc.submittedBy||'','Submitted At':sc.submittedAt||''}));
-      XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),'Stock Count');
-    }
-    // 8. Attendance
-    if(D.Attendance&&D.Attendance.length){
-      const rows=D.Attendance.map(a=>({Store:_storeName(a.storeId),Staff:_staffName(a.staffId),Date:a.date,'Clock In':a.clockIn||'','Clock Out':a.clockOut||'',Source:a.source||''}));
-      XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),'Attendance');
-    }
-    // 9. Weekly Sales
-    if(D.WeeklySales&&D.WeeklySales.length){
-      const rows=D.WeeklySales.map(w=>({Store:_storeName(w.storeId),Week:w.week,'Week Start':w.weekStart||'','Total Sales':w.totalSales||'',Notes:w.notes||'','Submitted By':w.submittedBy||''}));
-      XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),'Weekly Sales');
-    }
-    // 10. Diary Entry
-    if(D.DiaryEntry&&D.DiaryEntry.length){
-      const rows=D.DiaryEntry.map(de=>({Store:_storeName(de.storeId),Date:de.date,'Signed By':de.signedBy||'','Submitted By':de.submittedBy||'','Submitted At':de.submittedAt||'','Open Checks':de.openChecks||'','Fridge Temps':de.fridgeTemps||'','Deliveries':de.deliveries||'','Cooking Temps':de.cookingTemps||'','Hold Temps':de.holdTemps||'','Cooling Records':de.coolingRecords||'','Leftovers':de.leftovers||'','Closing Checks':de.closingChecks||'','Extra Checks':de.extraChecks||'','Issues':de.issues||''}));
-      XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),'Diary Entry');
-    }
-    // 11. Time Change Requests
-    if(D.TimeChangeReq&&D.TimeChangeReq.length){
-      const rows=D.TimeChangeReq.map(t=>({Store:_storeName(t.storeId),Staff:_staffName(t.staffId),Date:t.date,Field:t.field,'Current Value':t.currentValue,'Requested Value':t.requestedValue,Reason:t.reason||'',Status:t.status||'','Created At':t.createdAt||''}));
-      XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),'Time Change Req');
-    }
-    // 12. Edit Log
-    if(D.EditLog&&D.EditLog.length){
-      const rows=D.EditLog.map(e=>({Store:_storeName(e.storeId),Staff:_staffName(e.staffId),Date:e.date,'Field Changed':e.fieldChanged,'Old Value':e.oldValue,'New Value':e.newValue,'Edit Timestamp':e.editTimestamp||''}));
-      XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),'Edit Log');
-    }
-    // 13. Users (no password)
+    // 5. Users (no password)
     if(D.Users&&D.Users.length){
       const rows=D.Users.map(u=>({Username:u.username,Name:u.name,Role:u.role,Email:u.email||'',Store:_storeName(u.storeId)}));
       XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),'Users');
     }
-    XLSX.writeFile(wb,`TBMS_Data_Export_${_today()}.xlsx`);
-    toast('Excel file downloaded!','success');
+    // 6. Data Summary (record counts + date ranges)
+    const summaryRows=[];
+    const dateRange=(arr,field)=>{if(!arr||!arr.length)return'-';const dates=arr.map(r=>r[field]).filter(Boolean).sort();return dates.length?`${dates[0]} ~ ${dates[dates.length-1]}`:'- ';}
+    summaryRows.push({Sheet:'Attendance',Records:(D.Attendance||[]).length,'Date Range':dateRange(D.Attendance,'date')});
+    summaryRows.push({Sheet:'StockCount',Records:(D.StockCount||[]).length,'Date Range':dateRange(D.StockCount,'countDate')});
+    summaryRows.push({Sheet:'WeeklySales',Records:(D.WeeklySales||[]).length,'Date Range':dateRange(D.WeeklySales,'weekStart')});
+    summaryRows.push({Sheet:'DiaryEntry',Records:(D.DiaryEntry||[]).length,'Date Range':dateRange(D.DiaryEntry,'date')});
+    summaryRows.push({Sheet:'TimeChangeReq',Records:(D.TimeChangeReq||[]).length,'Date Range':dateRange(D.TimeChangeReq,'date')});
+    summaryRows.push({Sheet:'EditLog',Records:(D.EditLog||[]).length,'Date Range':'-'});
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(summaryRows),'Data Summary');
+    // 7. DiaryEntry schema info
+    const diarySchema=[
+      {Field:'id',Description:'Unique diary entry ID'},
+      {Field:'storeId',Description:'Store ID (links to Stores)'},
+      {Field:'date',Description:'Date YYYY-MM-DD'},
+      {Field:'openChecks',Description:'JSON - Opening checks (cleaning, sanitiser, handwash, etc.)'},
+      {Field:'fridgeTemps',Description:'JSON - Fridge/Freezer temperature readings (AM/PM)'},
+      {Field:'deliveries',Description:'JSON - Delivery check records (supplier, temp, accepted)'},
+      {Field:'cookingTemps',Description:'JSON - Cooking temperature records (item, temp, time, pass)'},
+      {Field:'holdTemps',Description:'JSON - Food hold temperature records (item, temp, time)'},
+      {Field:'coolingRecords',Description:'JSON - Cooling records (item, start/end temp/time)'},
+      {Field:'leftovers',Description:'JSON - Leftover items (item, action, reheated, temp)'},
+      {Field:'closingChecks',Description:'JSON - Closing checks (cleaning, equipment, waste)'},
+      {Field:'extraChecks',Description:'JSON - Extra custom checks'},
+      {Field:'issues',Description:'Text - Issues or notes for the day'},
+      {Field:'signedBy',Description:'Staff name who signed off'},
+      {Field:'submittedBy',Description:'Staff name who submitted'},
+      {Field:'submittedAt',Description:'Submission timestamp'}
+    ];
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(diarySchema),'DiaryEntry Schema');
+
+    XLSX.writeFile(wb,`TBMS_Company_Data_${_today()}.xlsx`);
+    toast('Excel downloaded!','success');
     const el=$('exportResult');if(el)el.innerHTML='<i class="fas fa-check-circle" style="color:var(--success)"></i> Excel exported '+_today();
   }catch(e){toast('Export failed: '+e.message,'error');console.error(e);}
 }
 
 function exportAllWord(){
   try{
-    const el=$('exportResult');if(el)el.textContent='Generating Word...';
+    const el=$('exportResult');if(el)el.textContent='Generating...';
     const e=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-    function tbl(headers,rows){
-      let h='<tr>'+headers.map(h=>`<td style="background:#e84393;color:#fff;font-weight:bold;padding:6px 10px;font-size:11pt;border:1px solid #ccc">${e(h)}</td>`).join('')+'</tr>';
-      let b=rows.map(r=>'<tr>'+r.map(v=>`<td style="padding:5px 10px;font-size:10pt;border:1px solid #ddd">${e(v)}</td>`).join('')+'</tr>').join('');
-      return `<table style="border-collapse:collapse;width:100%;margin:8px 0">${h}${b}</table>`;
-    }
-    const sec=t=>`<h1 style="color:#e84393;font-size:16pt;margin-top:24px;border-bottom:2px solid #e84393;padding-bottom:4px">${e(t)}</h1>`;
-    const sub=t=>`<h2 style="font-size:13pt;margin-top:16px;color:#333">${e(t)}</h2>`;
-    const p=t=>`<p style="font-size:10pt;margin:4px 0;line-height:1.5">${e(t)}</p>`;
+    const tbl=(headers,rows)=>{
+      let h='<tr>'+headers.map(h=>`<td style="background:#e84393;color:#fff;font-weight:bold;padding:5px 8px;font-size:9pt;border:1px solid #ccc">${e(h)}</td>`).join('')+'</tr>';
+      let b=rows.map(r=>'<tr>'+r.map(v=>`<td style="padding:4px 8px;font-size:9pt;border:1px solid #ddd">${e(v)}</td>`).join('')+'</tr>').join('');
+      return `<table style="border-collapse:collapse;width:100%;margin:6px 0">${h}${b}</table>`;
+    };
+    const sec=t=>`<h2 style="color:#e84393;font-size:14pt;margin:18px 0 6px;border-bottom:2px solid #e84393;padding-bottom:3px">${e(t)}</h2>`;
+    const sub=t=>`<h3 style="font-size:11pt;margin:10px 0 4px;color:#333">${e(t)}</h3>`;
+    const p=t=>`<p style="font-size:9pt;margin:2px 0;line-height:1.4">${e(t)}</p>`;
+    const b=t=>`<p style="font-size:9pt;margin:2px 0;line-height:1.4"><b>${e(t.split(':')[0])}:</b> ${e(t.split(':').slice(1).join(':').trim())}</p>`;
     const pb='<br clear=all style="page-break-before:always">';
-    let html=`<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
-<head><meta charset="utf-8"><style>body{font-family:Arial,sans-serif;margin:40px}table{page-break-inside:auto}tr{page-break-inside:avoid}</style></head><body>`;
 
-    // Cover
-    html+=`<div style="text-align:center;margin-top:120px">
-      <p style="font-size:36pt;font-weight:bold;color:#e84393;margin:0">TBMS</p>
-      <p style="font-size:14pt;color:#555;margin:8px 0">The Bap Management System</p>
-      <p style="font-size:18pt;font-weight:bold;margin:24px 0">Complete Data Export</p>
-      <p style="font-size:11pt;color:#777">Generated: ${new Date().toLocaleString('en-GB')}</p>
-      <p style="font-size:11pt;color:#777">Exported by: ${e(currentUser?currentUser.name:'System')}</p>
+    let html=`<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
+<head><meta charset="utf-8"><style>body{font-family:Arial,sans-serif;margin:30px}table{page-break-inside:auto}tr{page-break-inside:avoid}</style></head><body>`;
+
+    // Header
+    html+=`<div style="text-align:center;margin-top:80px">
+      <p style="font-size:30pt;font-weight:bold;color:#e84393;margin:0">TBMS</p>
+      <p style="font-size:12pt;color:#555">The Bap Management System \u2014 Company Reference Data</p>
+      <p style="font-size:10pt;color:#777;margin-top:16px">Generated: ${new Date().toLocaleString('en-GB')} | By: ${e(currentUser?currentUser.name:'System')}</p>
     </div>${pb}`;
 
-    // 1. Stores
-    html+=sec('1. Stores');
-    html+=p(`Total: ${D.Stores.length} stores`);
+    // 1. Stores (full detail)
+    html+=sec(`1. Stores (${D.Stores.length})`);
     D.Stores.forEach(s=>{
-      html+=sub(`${s.code} \u2014 ${s.name}`);
-      [['Company',s.company],['Company No',s.companyNo],['VAT No',s.vatNo],['VAT Quarter',s.vatQuarter],['Address',s.address],['Phone',s.phone],['Email',s.email],['Manager',s.manager],['Status',s.active?'Active':'Inactive']].forEach(([k,v])=>{if(v)html+=p(`${k}: ${v}`);});
-      if(s.memo)html+=p(`Memo: ${s.memo}`);
-      const si=D.StoreInfo?D.StoreInfo.find(x=>String(x.storeId)===String(s.id)):null;
+      html+=sub(`${s.code} \u2014 ${s.name} ${s.active?'':'(Inactive)'}`);
+      const fields=[['Company',s.company],['Company No',s.companyNo],['VAT No',s.vatNo],['VAT Quarter',s.vatQuarter],['Address',s.address],['Phone',s.phone],['Email',s.email],['Manager',s.manager]];
+      fields.forEach(([k,v])=>{if(v)html+=b(`${k}: ${v}`);});
+      if(s.memo)html+=b(`Memo: ${s.memo}`);
+      const si=(D.StoreInfo||[]).find(x=>String(x.storeId)===String(s.id));
       if(si){
-        html+=`<p style="font-size:10pt;font-weight:bold;color:#e84393;margin-top:8px">\u2014 Property & Contracts \u2014</p>`;
-        [['Lease',`${si.leaseStart||'?'} ~ ${si.leaseEnd||'?'}`],['Monthly Rent',si.monthlyRent],['Service Charge',si.serviceCharge],['Landlord',si.landlordName],['Landlord Phone',si.landlordPhone],['Council',si.councilName],['Business Rate',si.businessRateAnnual],['Hygiene Rating',si.hygieneRating],['Hygiene Insp Date',si.hygieneInspDate],['Electric',si.electricCompany],['Phone Co',si.phoneCompany],['Water Co',si.waterCompany],['Card Machine',si.cardMachineCompany],['Card Rate',si.cardRate]].forEach(([k,v])=>{if(v)html+=p(`  ${k}: ${v}`);});
-        for(let ci=1;ci<=10;ci++){if(si['custom'+ci+'Label'])html+=p(`  ${si['custom'+ci+'Label']}: ${si['custom'+ci+'Value']||''}`);}
+        const props=[['Lease',`${si.leaseStart||'?'} ~ ${si.leaseEnd||'?'}`],['Monthly Rent',si.monthlyRent],['Service Charge',si.serviceCharge],['Rent Review',si.rentReviewYears?si.rentReviewYears+' yrs':''],['Landlord',si.landlordName],['Landlord Phone',si.landlordPhone],['Landlord Email',si.landlordEmail],['Estate Agent',si.estateAgent],['Council',si.councilName],['Council Phone',si.councilPhone],['Business Rate',si.businessRateAnnual],['Hygiene Rating',si.hygieneRating],['Hygiene Insp',si.hygieneInspDate],['Electric',si.electricCompany],['Electric Rate',si.electricKwhRate?si.electricKwhRate+' p/kWh':''],['Phone Co',si.phoneCompany],['Water Co',si.waterCompany],['Card Machine',si.cardMachineCompany],['Card Rate',si.cardRate],['Fridge Clean',si.fridgeCleanDate],['Fridge Next',si.fridgeCleanNext],['Aircon Clean',si.airconCleanDate],['Aircon Next',si.airconCleanNext]];
+        props.forEach(([k,v])=>{if(v)html+=b(`${k}: ${v}`);});
+        for(let ci=1;ci<=10;ci++){if(si['custom'+ci+'Label'])html+=b(`${si['custom'+ci+'Label']}: ${si['custom'+ci+'Value']||''}`);}
       }
-      html+=`<hr style="border:none;border-top:1px solid #e8dfe0;margin:12px 0">`;
+      html+=`<hr style="border:none;border-top:1px solid #eee;margin:8px 0">`;
     });
-    html+=pb;
 
-    // 2. Staff
-    html+=sec('2. Staff');
-    html+=p(`Total: ${D.Staff.length} staff members`);
-    if(D.Staff.length){
-      html+=tbl(['Store','Name','NickName','Mobile','Start Date','Rate','Active'],
-        D.Staff.map(s=>[_storeName(s.storeId),s.name,s.nickName||'',s.mobile||'',s.startDate||'',s.rate||'',s.active?'Yes':'No']));
-    }
-    html+=pb;
+    // 2. Staff (full detail)
+    html+=sec(`2. Staff (${D.Staff.length})`);
+    D.Staff.forEach(s=>{
+      const store=_storeName(s.storeId);
+      html+=sub(`${s.name}${s.nickName?' ('+s.nickName+')':''} \u2014 ${store} ${s.active?'':'[LEFT]'}`);
+      const fields=[['DOB',s.dob],['Address',s.address],['NI No',s.niNo],['eVisa',s.eVisa],['Mobile',s.mobile],['Email',s.email],['Cloth Size',s.clothSize],['Start Date',s.startDate],['Left Date',s.leftDate],['Rate',s.rate?'\u00a3'+s.rate+'/hr':''],['Sort Code',s.sortCode],['Account No',s.accountNo],['Kiosk Login',s.kioskLogin?'Yes':'No']];
+      fields.forEach(([k,v])=>{if(v)html+=b(`${k}: ${v}`);});
+      if(s.memo)html+=b(`Memo: ${s.memo}`);
+    });
 
     // 3. Suppliers
-    html+=sec('3. Suppliers');
-    html+=p(`Total: ${D.Suppliers.length} suppliers`);
+    html+=sec(`3. Suppliers (${D.Suppliers.length})`);
     if(D.Suppliers.length){
-      html+=tbl(['Name','Phone','Email','Website'],
-        D.Suppliers.map(s=>[s.name,s.phone||'',s.email||'',s.website||'']));
+      html+=tbl(['Name','Phone','Email','Website','Active'],
+        D.Suppliers.map(s=>[s.name,s.phone||'',s.email||'',s.website||'',s.active?'Yes':'No']));
     }
-    html+=pb;
 
-    // 4. Stock Template
-    html+=sec('4. Stock Template');
-    html+=p(`Total: ${D.StockTemplate.length} items`);
+    // 4. Stock Items (master list)
+    html+=sec(`4. Stock Items (${D.StockTemplate.length})`);
     if(D.StockTemplate.length){
-      html+=tbl(['Category','Name','Unit','Min','Order Qty'],
-        D.StockTemplate.map(t=>[t.category,t.name,t.unit,String(t.min),String(t.orderQty||'')]));
-    }
-    html+=pb;
-
-    // 5. Store Stock
-    html+=sec('5. Current Store Stock');
-    if(D.StoreStock.length){
-      const byStore={};D.StoreStock.forEach(ss=>{const sn=_storeName(ss.storeId);if(!byStore[sn])byStore[sn]=[];byStore[sn].push(ss);});
-      Object.keys(byStore).forEach(sn=>{
-        html+=sub(sn);
-        html+=tbl(['Category','Item','Unit','Min','Qty'],
-          byStore[sn].map(ss=>[ss.category,ss.name,ss.unit,String(ss.min),String(ss.qty||0)]));
+      const cats=[...new Set(D.StockTemplate.map(t=>t.category))];
+      cats.forEach(cat=>{
+        const items=D.StockTemplate.filter(t=>t.category===cat);
+        html+=sub(`${cat} (${items.length} items)`);
+        html+=tbl(['Name','Unit','Min','Order Qty'],
+          items.map(t=>[t.name,t.unit,String(t.min),String(t.orderQty||'')]));
       });
     }
-    html+=pb;
 
-    // 6. Attendance
-    html+=sec('6. Attendance (Recent)');
-    const att=(D.Attendance||[]).slice(-100);
-    html+=p(`Showing last ${att.length} of ${(D.Attendance||[]).length} records`);
-    if(att.length){
-      html+=tbl(['Date','Store','Staff','Clock In','Clock Out','Source'],
-        att.map(a=>[a.date,_storeName(a.storeId),_staffName(a.staffId),a.clockIn||'',a.clockOut||'',a.source||'']));
+    // 5. Users
+    html+=sec('5. System Users');
+    if(D.Users&&D.Users.length){
+      html+=tbl(['Username','Name','Role','Store'],
+        D.Users.map(u=>[u.username,u.name,u.role,_storeName(u.storeId)]));
     }
-    html+=pb;
 
-    // 7. Weekly Sales
-    html+=sec('7. Weekly Sales (Recent)');
-    const wsl=(D.WeeklySales||[]).slice(-50);
-    html+=p(`Showing last ${wsl.length} of ${(D.WeeklySales||[]).length} records`);
-    if(wsl.length){
-      html+=tbl(['Store','Week','Total Sales','Notes'],
-        wsl.map(w=>[_storeName(w.storeId),w.week||'',String(w.totalSales||''),w.notes||'']));
-    }
-    html+=pb;
+    // 6. Data Summary
+    html+=sec('6. Data Summary');
+    const dateRange=(arr,f)=>{if(!arr||!arr.length)return'-';const d=arr.map(r=>r[f]).filter(Boolean).sort();return d.length?d[0]+' ~ '+d[d.length-1]:'-';};
+    html+=tbl(['Data','Records','Date Range'],[
+      ['Attendance',String((D.Attendance||[]).length),dateRange(D.Attendance,'date')],
+      ['Stock Count',String((D.StockCount||[]).length),dateRange(D.StockCount,'countDate')],
+      ['Weekly Sales',String((D.WeeklySales||[]).length),dateRange(D.WeeklySales,'weekStart')],
+      ['Daily Diary',String((D.DiaryEntry||[]).length),dateRange(D.DiaryEntry,'date')],
+      ['Time Change Req',String((D.TimeChangeReq||[]).length),dateRange(D.TimeChangeReq,'date')],
+      ['Edit Log',String((D.EditLog||[]).length),'-']
+    ]);
 
-    // 8. Diary Entry
-    html+=sec('8. Daily Diary (Recent)');
-    const de=(D.DiaryEntry||[]).slice(-50);
-    html+=p(`Showing last ${de.length} of ${(D.DiaryEntry||[]).length} records`);
-    de.forEach(d=>{
-      html+=sub(`${_storeName(d.storeId)} \u2014 ${d.date}`);
-      html+=p(`Signed by: ${d.signedBy||'-'}  |  Submitted: ${d.submittedAt||'-'}`);
-      [['Opening Checks',d.openChecks],['Fridge Temps',d.fridgeTemps],['Deliveries',d.deliveries],['Cooking Temps',d.cookingTemps],['Hold Temps',d.holdTemps],['Cooling Records',d.coolingRecords],['Leftovers',d.leftovers],['Closing Checks',d.closingChecks],['Extra Checks',d.extraChecks],['Issues',d.issues]].forEach(([label,val])=>{
-        if(!val)return;
-        let text=val;try{const parsed=JSON.parse(val);text=typeof parsed==='object'?JSON.stringify(parsed,null,2):String(parsed);}catch(ex){}
-        if(text.length>500)text=text.substring(0,500)+'...';
-        html+=p(`${label}: ${text}`);
-      });
-      html+=`<hr style="border:none;border-top:1px solid #e8dfe0;margin:8px 0">`;
-    });
-    html+=pb;
+    // 7. Daily Diary Schema
+    html+=sec('7. Daily Diary \u2014 Field Reference');
+    html+=p('Each DiaryEntry record contains JSON data for the following sections:');
+    html+=tbl(['Field','Description'],[
+      ['openChecks','Opening checks: cleaning, sanitiser, handwash stations, pest control'],
+      ['fridgeTemps','Fridge/Freezer temps: AM & PM readings for each unit (range: Fridge 1.2\u20134.8\u00b0C, Freezer -20.4 to -17.8\u00b0C)'],
+      ['deliveries','Delivery checks: supplier, item, temperature on arrival, accepted/rejected'],
+      ['cookingTemps','Cooking temperatures: item, temp, time, pass/fail (target: 85\u201396\u00b0C)'],
+      ['holdTemps','Food hold temps: item, temp, time (target: 64\u201375\u00b0C)'],
+      ['coolingRecords','Cooling records: item, start/end temp & time'],
+      ['leftovers','Leftover management: item, action taken, reheated temp if applicable'],
+      ['closingChecks','Closing checks: equipment off, cleaning done, waste disposed'],
+      ['extraChecks','Custom additional checks per store'],
+      ['issues','Free text: issues, incidents, or notes for the day'],
+      ['signedBy','Staff who signed off the diary'],
+      ['submittedBy / submittedAt','Who submitted and when']
+    ]);
 
-    // 9. Time Change Requests
-    html+=sec('9. Time Change Requests');
-    const tcr=D.TimeChangeReq||[];
-    html+=p(`Total: ${tcr.length} requests`);
-    if(tcr.length){
-      html+=tbl(['Date','Store','Staff','Field','Current','Requested','Status'],
-        tcr.slice(-50).map(t=>[t.date,_storeName(t.storeId),_staffName(t.staffId),t.field||'',t.currentValue||'',t.requestedValue||'',t.status||'']));
-    }
-    html+=pb;
-
-    // 10. Summary
-    html+=sec('10. Summary');
-    html+=p(`Stores: ${D.Stores.length}`);
-    html+=p(`Active Staff: ${D.Staff.filter(s=>s.active!==false).length}`);
-    html+=p(`Suppliers: ${D.Suppliers.filter(s=>s.active!==false).length}`);
-    html+=p(`Stock Items: ${D.StockTemplate.length}`);
-    html+=p(`Attendance Records: ${(D.Attendance||[]).length}`);
-    html+=p(`Weekly Sales Records: ${(D.WeeklySales||[]).length}`);
-    html+=p(`Diary Entries: ${(D.DiaryEntry||[]).length}`);
-    html+=p(`Edit Logs: ${(D.EditLog||[]).length}`);
-    html+=p(`Time Change Requests: ${(D.TimeChangeReq||[]).length}`);
-    html+=`<hr style="margin:20px 0"><p style="text-align:center;font-size:9pt;color:#999;font-style:italic">Programmed by DJ \u2014 TBMS Ver1.7</p>`;
+    html+=`<hr style="margin:16px 0"><p style="text-align:center;font-size:8pt;color:#999;font-style:italic">TBMS Ver1.8 \u2014 Programmed by DJ</p>`;
     html+=`</body></html>`;
 
     const blob=new Blob(['\ufeff'+html],{type:'application/msword'});
-    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`TBMS_Data_Export_${_today()}.doc`;a.click();
-    toast('Word file downloaded!','success');
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`TBMS_Company_Data_${_today()}.doc`;a.click();
+    toast('Word downloaded!','success');
     if(el)el.innerHTML='<i class="fas fa-check-circle" style="color:var(--success)"></i> Word exported '+_today();
   }catch(ex){toast('Export failed: '+ex.message,'error');console.error(ex);const el=$('exportResult');if(el)el.textContent='Error: '+ex.message;}
 }

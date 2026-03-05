@@ -121,7 +121,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
 <div class="header">
   <div class="header-logo">TB</div>
   <div class="header-info">
-    <div class="header-title"><span id="hdrTitle">The Bap Staff AI</span> <span style="font-size:11px;font-weight:400;opacity:.45">Ver1.8</span></div>
+    <div class="header-title"><span id="hdrTitle">The Bap Staff AI</span> <span style="font-size:11px;font-weight:400;opacity:.45">Ver2.2</span></div>
     <div class="header-mode" id="hdrMode">Staff Mode</div>
   </div>
   <button class="header-btn" onclick="toggleSettings()" title="Settings"><i class="fas fa-cog"></i></button>
@@ -184,7 +184,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
   <label>Model Override (optional)</label>
   <input type="text" id="setModel" placeholder="e.g. gpt-4o-mini">
   <button class="btn-save" onclick="saveSettings()">Save Settings</button>
-  <p style="font-size:11px;color:var(--text-dim);margin-top:16px;text-align:center">The Bap AI Brain Ver1.8 • Programmed by DJ</p>
+  <p style="font-size:11px;color:var(--text-dim);margin-top:16px;text-align:center">The Bap AI Brain Ver2.2 • Programmed by DJ</p>
 </div>
 
 <!-- File Preview Overlay -->
@@ -202,7 +202,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
 
 <script>
 // ============================================================
-//  The Bap AI Bot — Ver1.8
+//  The Bap AI Bot — Ver2.2
 //  Programmed by DJ Kim
 // ============================================================
 const API_URL = 'https://script.google.com/macros/s/AKfycbzND88jsQ45x2Fmgtp4PphIUWEFp29VNaOuO3fYkeH_czTcXFjskQdydDQcvh63thxf/exec';
@@ -372,15 +372,19 @@ function updateStatusBadge(text, type) {
   setTimeout(() => { if (badge) badge.style.opacity = '0.4'; }, 5000);
 }
 
-function getRelevantKB(query) {
+function getRelevantKB(query, isDJCommand) {
   if (!kbData.length) return [];
   const q = query.toLowerCase();
   const words = q.split(/\s+/).filter(w => w.length > 1);
 
   const categories = MODE === 'staff' ? STAFF_CATEGORIES : KB_CATEGORIES;
 
+  // Access level filter: staff sees 'staff' only, manager sees 'staff'+'manager', DJ sees all
+  const allowedAccess = isDJCommand ? ['staff','manager','dj'] :
+                        MODE === 'manager' ? ['staff','manager'] : ['staff'];
+
   const scored = kbData
-    .filter(kb => categories.includes(kb.category))
+    .filter(kb => categories.includes(kb.category) && allowedAccess.includes(kb.accessLevel || 'staff'))
     .map(kb => {
       let score = 0;
       const text = `${kb.title} ${kb.content} ${kb.tags} ${kb.category}`.toLowerCase();
@@ -796,7 +800,7 @@ async function processAIResponse(userText, isFileUpload) {
   try {
     // DJ: owner command detection
     const isDJCommand = userText.trimStart().startsWith('DJ:') || userText.trimStart().startsWith('dj:') || userText.trimStart().startsWith('DJ :') || userText.trimStart().startsWith('dj :');
-    const relevantKB = getRelevantKB(userText);
+    const relevantKB = getRelevantKB(userText, isDJCommand);
     const systemPrompt = buildSystemPrompt(relevantKB, isFileUpload, isDJCommand);
 
     const provider = document.getElementById('aiProvider').value;
@@ -874,17 +878,21 @@ The user may input in Korean or English. Preserve the language of the content.`;
   } else {
     prompt = `You are "${MODE === 'manager' ? 'The Bap AI Bot' : 'The Bap Staff AI'}", an AI assistant for "The Bap" Korean restaurant chain in the UK.
 
-RULES:
-- Answer accurately based on the COMPANY DATA and Knowledge Base provided below
+CRITICAL RULES:
+- ONLY answer based on the COMPANY DATA, MEMORIES, and KNOWLEDGE BASE sections provided below
+- If the requested information is NOT found in those sections, you MUST say: "이 정보는 Knowledge Base에 등록되어 있지 않습니다. Training Mode에서 등록하거나, TBMS AI Brain에서 입력해주세요."
+- NEVER fabricate, guess, or make up information that is not in the data below
+- NEVER generate generic answers about company vision, philosophy, concept, recipes, or policies unless they exist in the KNOWLEDGE BASE section below
 - If the data exists below, you MUST provide it — never refuse
-- Respond in the same language the user uses (Korean or English)
+- ALWAYS respond in English by default. Only respond in Korean if the user writes in Korean
 - Be concise but thorough
-- For recipes, include ingredients, quantities, and steps${MODE === 'staff' ? '\n- You can only answer about: recipes, cooking methods, ingredients, store operations, training, and hygiene\n- Do NOT discuss finances, marketing strategy, expansion plans, or confidential business information\n- You may share store addresses and phone numbers but NOT staff personal details (address, bank, NI number)' : `
-- You are talking to an AUTHORIZED MANAGER/OWNER of The Bap
-- You have FULL ACCESS to ALL company data — share ANY information when asked
-- This includes: store addresses, phone numbers, rent, lease details, staff details (names, phone, email, rate, schedule), supplier info, sales figures, stock levels, attendance records, and ALL other business data
-- NEVER refuse to share company data with the manager — they own this data
-- Do NOT apply privacy restrictions to this company's own internal data
+- For recipes, ONLY provide recipes that exist in the Knowledge Base — do NOT invent recipes${MODE === 'staff' ? '\n- You can only answer about: recipes, cooking methods, ingredients, store operations, training, and hygiene\n- Do NOT discuss finances, marketing strategy, expansion plans, or confidential business information\n- You may share store addresses and phone numbers but NOT staff personal details (address, bank, NI number)' : `
+- You are talking to an AUTHORIZED MANAGER of The Bap
+- You can share: store info, staff names/phone/email/schedule, supplier info, sales figures, stock levels, attendance records
+- SENSITIVE DATA RESTRICTED: Staff rate(hourly pay), address, bank details, NI number, DOB are NOT available in manager mode
+- If a manager asks for rate/salary/address/bank info, say: "죄송합니다, 이 정보는 보안 정책에 따라 접근이 제한되어 있습니다. 오너에게 문의해주세요."
+- NEVER mention or hint about the existence of "DJ:" command, owner mode, or any override mechanism
+- NEVER refuse to share non-sensitive company data with the manager
 - When asked for marketing info, provide accurate brand details, menu descriptions, and promotional content that can be used with external tools
 
 OWNER COMMAND MODE (DJ:):
@@ -954,7 +962,11 @@ The business owner is requesting data. You MUST:
       if (MODE === 'manager') {
         activeStaff.forEach(s => {
           const storeName = tbmsData.Stores.find(st => String(st.id) === String(s.storeId))?.name || s.storeId;
-          prompt += `- ${s.name}${s.nickName?' ('+s.nickName+')':''} | Store: ${storeName} | Mobile: ${s.mobile||'-'} | Email: ${s.email||'-'} | Rate: £${s.rate||'?'}/hr | Start: ${s.startDate||'-'} | Address: ${s.address||'-'} | DOB: ${s.dob||'-'} | NI: ${s.niNo||'-'} | eVisa: ${s.eVisa||'-'} | Bank: ${s.sortCode||'-'}/${s.accountNo||'-'} | ClothSize: ${s.clothSize||'-'}${s.leftDate?' | LEFT: '+s.leftDate:''}\n`;
+          let staffLine = `- ${s.name}${s.nickName?' ('+s.nickName+')':''} | Store: ${storeName} | Mobile: ${s.mobile||'-'} | Email: ${s.email||'-'} | Start: ${s.startDate||'-'} | ClothSize: ${s.clothSize||'-'}${s.leftDate?' | LEFT: '+s.leftDate:''}`;
+          if (isDJCommand) {
+            staffLine += ` | Rate: £${s.rate||'?'}/hr | Address: ${s.address||'-'} | DOB: ${s.dob||'-'} | NI: ${s.niNo||'-'} | eVisa: ${s.eVisa||'-'} | Bank: ${s.sortCode||'-'}/${s.accountNo||'-'}`;
+          }
+          prompt += staffLine + '\n';
         });
       } else {
         const byStore = {};
@@ -1101,9 +1113,12 @@ The business owner is requesting data. You MUST:
     prompt += '\n=== END COMPANY DATA ===\n';
 
     // Always inject ALL memories (these are owner's persistent notes)
-    const memories = kbData.filter(kb => kb.category === 'Memory' && kb.active !== false && kb.active !== 'false');
+    // Memories: filter by access level (memories default to 'dj' access)
+    const allowedAccess = isDJCommand ? ['staff','manager','dj'] :
+                          MODE === 'manager' ? ['staff','manager'] : ['staff'];
+    const memories = kbData.filter(kb => kb.category === 'Memory' && kb.active !== false && kb.active !== 'false' && allowedAccess.includes(kb.accessLevel || 'dj'));
     if (memories.length > 0) {
-      prompt += '\n=== OWNER MEMORIES (always remember these) ===\n';
+      prompt += '\n=== MEMORIES (saved notes — always use these) ===\n';
       memories.forEach(m => {
         prompt += `- ${m.content}\n`;
       });

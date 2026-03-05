@@ -121,7 +121,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
 <div class="header">
   <div class="header-logo">TB</div>
   <div class="header-info">
-    <div class="header-title"><span id="hdrTitle">The Bap Staff AI</span> <span style="font-size:11px;font-weight:400;opacity:.45">Ver1.7</span></div>
+    <div class="header-title"><span id="hdrTitle">The Bap Staff AI</span> <span style="font-size:11px;font-weight:400;opacity:.45">Ver1.8</span></div>
     <div class="header-mode" id="hdrMode">Staff Mode</div>
   </div>
   <button class="header-btn" onclick="toggleSettings()" title="Settings"><i class="fas fa-cog"></i></button>
@@ -184,7 +184,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
   <label>Model Override (optional)</label>
   <input type="text" id="setModel" placeholder="e.g. gpt-4o-mini">
   <button class="btn-save" onclick="saveSettings()">Save Settings</button>
-  <p style="font-size:11px;color:var(--text-dim);margin-top:16px;text-align:center">The Bap AI Brain Ver1.7 • Programmed by DJ</p>
+  <p style="font-size:11px;color:var(--text-dim);margin-top:16px;text-align:center">The Bap AI Brain Ver1.8 • Programmed by DJ</p>
 </div>
 
 <!-- File Preview Overlay -->
@@ -202,7 +202,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
 
 <script>
 // ============================================================
-//  The Bap AI Bot — Ver1.7
+//  The Bap AI Bot — Ver1.8
 //  Programmed by DJ Kim
 // ============================================================
 const API_URL = 'https://script.google.com/macros/s/AKfycbzND88jsQ45x2Fmgtp4PphIUWEFp29VNaOuO3fYkeH_czTcXFjskQdydDQcvh63thxf/exec';
@@ -831,13 +831,7 @@ async function processAIResponse(userText, isFileUpload) {
     ];
 
     let response;
-    if (provider === 'chatgpt') {
-      response = await callChatGPT(apiKey, model, messages);
-    } else if (provider === 'gemini') {
-      response = await callGemini(apiKey, model, messages);
-    } else {
-      response = await callClaude(apiKey, model, messages);
-    }
+    response = await callAIWithFallback(provider, apiKey, model, messages);
 
     hideTyping();
 
@@ -1187,7 +1181,12 @@ async function callChatGPT(apiKey, model, messages) {
     headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + apiKey },
     body: JSON.stringify({ model, messages, max_tokens: 4096, temperature: 0.7 })
   });
-  if (!res.ok) throw new Error('ChatGPT API error: ' + res.status);
+  if (!res.ok) {
+    const err = new Error('ChatGPT API error: ' + res.status);
+    err.status = res.status;
+    err.provider = 'chatgpt';
+    throw err;
+  }
   const data = await res.json();
   return data.choices[0].message.content;
 }
@@ -1207,7 +1206,12 @@ async function callGemini(apiKey, model, messages) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body)
   });
-  if (!res.ok) throw new Error('Gemini API error: ' + res.status);
+  if (!res.ok) {
+    const err = new Error('Gemini API error: ' + res.status);
+    err.status = res.status;
+    err.provider = 'gemini';
+    throw err;
+  }
   const data = await res.json();
   return data.candidates[0].content.parts[0].text;
 }
@@ -1230,9 +1234,75 @@ async function callClaude(apiKey, model, messages) {
       messages: msgs
     })
   });
-  if (!res.ok) throw new Error('Claude API error: ' + res.status);
+  if (!res.ok) {
+    const err = new Error('Claude API error: ' + res.status);
+    err.status = res.status;
+    err.provider = 'claude';
+    throw err;
+  }
   const data = await res.json();
   return data.content[0].text;
+}
+
+// Smart AI caller: auto-retry + auto-fallback to other providers
+const PROVIDER_ORDER = ['chatgpt', 'gemini', 'claude'];
+
+async function callAIWithFallback(primaryProvider, primaryKey, primaryModel, messages) {
+  // 1) Try primary provider with retry
+  try {
+    return await callProviderWithRetry(primaryProvider, primaryKey, primaryModel, messages);
+  } catch(e) {
+    console.warn(`Primary (${primaryProvider}) failed:`, e.message);
+  }
+
+  // 2) Auto-fallback to other providers
+  const fallbacks = PROVIDER_ORDER.filter(p => p !== primaryProvider);
+  for (const fb of fallbacks) {
+    const fbKey = localStorage.getItem('tbap_api_key_' + fb);
+    if (!fbKey) continue; // no API key for this provider
+
+    const fbModel = localStorage.getItem('tbap_model_' + fb) || getDefaultModel(fb);
+    try {
+      addSystemNote(`⚡ ${primaryProvider} 응답 불가 → ${fb}로 자동 전환`);
+      const result = await callProviderWithRetry(fb, fbKey, fbModel, messages);
+      return result;
+    } catch(e2) {
+      console.warn(`Fallback (${fb}) also failed:`, e2.message);
+    }
+  }
+
+  // 3) All providers failed
+  throw new Error('모든 AI 서비스가 응답하지 않습니다. 잠시 후 다시 시도해주세요.\n\n💡 Settings에서 여러 AI의 API Key를 등록하면 자동 전환됩니다.');
+}
+
+async function callProviderWithRetry(provider, apiKey, model, messages, maxRetries = 2) {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      if (provider === 'chatgpt') return await callChatGPT(apiKey, model, messages);
+      if (provider === 'gemini') return await callGemini(apiKey, model, messages);
+      return await callClaude(apiKey, model, messages);
+    } catch(e) {
+      const isRateLimit = e.status === 429;
+      const isServerError = e.status >= 500;
+      if ((isRateLimit || isServerError) && attempt < maxRetries) {
+        const wait = (attempt + 1) * 3000; // 3s, 6s
+        addSystemNote(`⏳ ${provider} 일시적 오류 (${e.status}) — ${wait/1000}초 후 재시도...`);
+        await new Promise(r => setTimeout(r, wait));
+        continue;
+      }
+      throw e;
+    }
+  }
+}
+
+function addSystemNote(text) {
+  const chatArea = document.getElementById('chatArea');
+  const div = document.createElement('div');
+  div.className = 'msg msg-system';
+  div.style.cssText = 'font-size:11px;color:var(--accent);opacity:.8;padding:4px 12px';
+  div.textContent = text;
+  chatArea.appendChild(div);
+  chatArea.scrollTop = chatArea.scrollHeight;
 }
 
 // ============================================================

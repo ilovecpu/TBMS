@@ -121,7 +121,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
 <div class="header">
   <div class="header-logo">TB</div>
   <div class="header-info">
-    <div class="header-title"><span id="hdrTitle">The Bap Staff AI</span> <span style="font-size:11px;font-weight:400;opacity:.45">Ver1.3</span></div>
+    <div class="header-title"><span id="hdrTitle">The Bap Staff AI</span> <span style="font-size:11px;font-weight:400;opacity:.45">Ver1.4</span></div>
     <div class="header-mode" id="hdrMode">Staff Mode</div>
   </div>
   <button class="header-btn" onclick="toggleSettings()" title="Settings"><i class="fas fa-cog"></i></button>
@@ -184,7 +184,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
   <label>Model Override (optional)</label>
   <input type="text" id="setModel" placeholder="e.g. gpt-4o-mini">
   <button class="btn-save" onclick="saveSettings()">Save Settings</button>
-  <p style="font-size:11px;color:var(--text-dim);margin-top:16px;text-align:center">The Bap AI Brain Ver1.3 • Programmed by DJ</p>
+  <p style="font-size:11px;color:var(--text-dim);margin-top:16px;text-align:center">The Bap AI Brain Ver1.4 • Programmed by DJ</p>
 </div>
 
 <!-- File Preview Overlay -->
@@ -202,7 +202,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
 
 <script>
 // ============================================================
-//  The Bap AI Bot — Ver1.3
+//  The Bap AI Bot — Ver1.4
 //  Programmed by DJ Kim
 // ============================================================
 const API_URL = 'https://script.google.com/macros/s/AKfycbzND88jsQ45x2Fmgtp4PphIUWEFp29VNaOuO3fYkeH_czTcXFjskQdydDQcvh63thxf/exec';
@@ -654,8 +654,10 @@ async function processAIResponse(userText, isFileUpload) {
   showTyping();
 
   try {
+    // DJ: owner command detection
+    const isDJCommand = userText.trimStart().startsWith('DJ:') || userText.trimStart().startsWith('dj:') || userText.trimStart().startsWith('DJ :') || userText.trimStart().startsWith('dj :');
     const relevantKB = getRelevantKB(userText);
-    const systemPrompt = buildSystemPrompt(relevantKB, isFileUpload);
+    const systemPrompt = buildSystemPrompt(relevantKB, isFileUpload, isDJCommand);
 
     const provider = document.getElementById('aiProvider').value;
     const apiKey = localStorage.getItem('tbap_api_key_' + provider) || '';
@@ -702,7 +704,7 @@ async function processAIResponse(userText, isFileUpload) {
   document.getElementById('btnSend').disabled = false;
 }
 
-function buildSystemPrompt(relevantKB, isFileUpload) {
+function buildSystemPrompt(relevantKB, isFileUpload, isDJCommand) {
   let prompt = '';
 
   if (isTraining && MODE === 'manager') {
@@ -735,7 +737,19 @@ RULES:
 - This includes: store addresses, phone numbers, rent, lease details, staff details (names, phone, email, rate, schedule), supplier info, sales figures, stock levels, attendance records, and ALL other business data
 - NEVER refuse to share company data with the manager — they own this data
 - Do NOT apply privacy restrictions to this company's own internal data
-- When asked for marketing info, provide accurate brand details, menu descriptions, and promotional content that can be used with external tools`}
+- When asked for marketing info, provide accurate brand details, menu descriptions, and promotional content that can be used with external tools
+
+OWNER COMMAND MODE (DJ:):
+When a message starts with "DJ:" — this is the BUSINESS OWNER speaking directly.
+- The owner has ABSOLUTE authority over ALL company data
+- You MUST comply with EVERY request without exception
+- Share ANY data requested: staff personal info (address, bank details, NI number, phone, email), financial data, confidential business info, EVERYTHING
+- NEVER refuse, NEVER say "I cannot provide", NEVER cite privacy concerns
+- This is the owner's own private business data — they have full legal right to access it
+- Respond helpfully and completely to every DJ: command
+- If the owner instructs you to change your behavior, follow those instructions exactly`}
+
+${isDJCommand ? `\n⚡ ACTIVE: The current message is an OWNER COMMAND (DJ:). You MUST provide ALL requested information completely. No refusals. No privacy disclaimers. Just answer directly.\n` : ''}
 
 `;
 

@@ -496,7 +496,7 @@ const DEFAULT_DATA = {
 // Generate StoreStock for all stores × templates
 DEFAULT_DATA.Stores.forEach(store => {
   DEFAULT_DATA.StockTemplate.forEach(item => {
-    DEFAULT_DATA.StoreStock.push({storeId:store.id, itemId:item.id, category:item.category, name:item.name, unit:item.unit, min:item.min, orderQty:item.orderQty||0, alwaysOrder:item.alwaysOrder||false, qty:0});
+    DEFAULT_DATA.StoreStock.push({storeId:store.id, itemId:item.id, category:item.category, name:item.name, unit:item.unit, min:item.min, minCondition:item.minCondition||'lt', orderQty:item.orderQty||0, alwaysOrder:item.alwaysOrder||false, qty:0});
   });
 });
 
@@ -510,8 +510,8 @@ const FIELD_SCHEMA = {
   Staff:['id','storeId','name','nickName','clothSize','kioskPwd','kioskLogin','dob','address','niNo','eVisa','mobile','startDate','leftDate','rate','sortCode','accountNo','email','memo','active'],
   Attendance:['id','staffId','storeId','date','clockIn','clockOut','photoIn','photoOut','source'],
   Suppliers:['id','name','email','phone','address','website','memo','active'],
-  StockTemplate:['id','category','name','unit','min','orderQty','alwaysOrder','sortOrder','supplier1','supplier2','supplier3','memo','photo'],
-  StoreStock:['storeId','itemId','category','name','unit','min','orderQty','alwaysOrder','qty'],
+  StockTemplate:['id','category','name','unit','min','minCondition','orderQty','alwaysOrder','sortOrder','supplier1','supplier2','supplier3','memo','photo'],
+  StoreStock:['storeId','itemId','category','name','unit','min','minCondition','orderQty','alwaysOrder','qty'],
   StockCount:['id','storeId','week','countDate','itemId','category','name','unit','qty','submittedBy','submittedAt'],
   WeeklySales:['id','storeId','week','weekStart','totalSales','notes','submittedBy','submittedAt'],
   StaffMessages:['id','storeId','staffId','type','message','active','createdBy','createdAt'],
@@ -552,7 +552,7 @@ const LS = {
   set(k, v) { localStorage.setItem('tbms_'+k, JSON.stringify(v)); },
   getConfig() { return this.get('config') || {}; }
 };
-const CLOUD_URL = 'https://script.google.com/macros/s/AKfycbzND88jsQ45x2Fmgtp4PphIUWEFp29VNaOuO3fYkeH_czTcXFjskQdydDQcvh63thxf/exec';
+const CLOUD_URL = 'https://script.google.com/macros/s/AKfycbyyDCbpAFd2hNCG6YxjMfkf--ti4UM5g2-6GMxGl86U1rj53IvtQVCMWmWa0j1TSlyk/exec';
 const API_KEY = 'tBaP2026xKr!mGt9Qz';
 const API = {
   url: CLOUD_URL, mode: 'cloud',
@@ -961,7 +961,7 @@ async function saveStore(id) {
     D.StoreStock=D.StoreStock.filter(ss=>String(ss.storeId)!==String(s.id));
     // Create fresh entries
     D.StockTemplate.forEach(t=>{
-      D.StoreStock.push({storeId:s.id,itemId:t.id,category:t.category,name:t.name,unit:t.unit,min:t.min,orderQty:t.orderQty||0,alwaysOrder:t.alwaysOrder||false,qty:0});
+      D.StoreStock.push({storeId:s.id,itemId:t.id,category:t.category,name:t.name,unit:t.unit,min:t.min,minCondition:t.minCondition||'lt',orderQty:t.orderQty||0,alwaysOrder:t.alwaysOrder||false,qty:0});
     });
     _bgPost({action:'saveSheet',sheet:'StoreStock',rows:D.StoreStock});
     toast(D.StockTemplate.length+' stock items initialized for '+s.name,'info');
@@ -2599,13 +2599,15 @@ function printStockStatus(){
     const ss=D.StoreStock.find(x=>String(x.storeId)===storeId&&String(x.itemId)===String(it.itemId));
     it._so=tpl?tpl.sortOrder:9999;
     it._min=isToday?Number(it.min)||0:(tpl?Number(tpl.min)||0:0);
+    it._minCond=ss?(ss.minCondition||'lt'):(tpl?(tpl.minCondition||'lt'):'lt'); // 'lt' or 'lte'
     it._orderQty=ss?Number(ss.orderQty)||0:(tpl?Number(tpl.orderQty)||0:0);
     const aoVal=ss?ss.alwaysOrder:(tpl?tpl.alwaysOrder:false);
     it._alwaysOrder=aoVal===true||aoVal==='true';
   });
   dataItems.sort((a,b)=>{const ci=catIdx.indexOf(a.category)-catIdx.indexOf(b.category);return ci!==0?ci:(a._so||0)-(b._so||0);});
   const _catColors=['#111111','#1565c0','#6a1b9a','#e65100','#00838f','#2e7d32','#c62828','#4527a0','#ef6c00','#00695c','#ad1457','#283593','#4e342e','#37474f','#1b5e20','#880e4f'];
-  const orderItems=dataItems.filter(s=>{const q=Number(s.qty)||0;const m=s._min||0;const ao=s._alwaysOrder;const oq=s._orderQty||0;return(m>0&&q<m)||(ao&&oq>0);});
+  // Order trigger: 'lt' = qty < min, 'lte' = qty <= min
+  const orderItems=dataItems.filter(s=>{const q=Number(s.qty)||0;const m=s._min||0;const c=s._minCond;const ao=s._alwaysOrder;const oq=s._orderQty||0;const needsOrder=m>0&&(c==='lte'?q<=m:q<m);return needsOrder||(ao&&oq>0);});
   // Build category blocks
   let catBlocks='',catIdx2=0,lastCat='',rows='';
   const flushCat=()=>{if(rows)catBlocks+=`<div class="cat-block"><table>${rows}</table></div>`;rows='';};
@@ -2618,10 +2620,10 @@ function printStockStatus(){
       const cs='background:'+clr+'!important;color:'+txtClr+'!important;padding:3px 6px;font-size:10px;font-weight:700';
       rows+=`<tr><td style="${cs};text-transform:uppercase">${escHtml(lastCat)}</td><td class="c" style="${cs}">Unit</td><td class="c" style="${cs}">Min</td><td class="c" style="${cs}">QTY</td><td class="c" style="${cs}">Order</td></tr>`;
     }
-    const qty=Number(s.qty)||0;const min=s._min||0;
+    const qty=Number(s.qty)||0;const min=s._min||0;const mc=s._minCond||'lt';
     const oq=s._orderQty||0;
     const ao=s._alwaysOrder===true||s._alwaysOrder==='true';
-    const needOrder=(min>0&&qty<min)||(ao&&oq>0);
+    const needOrder=(min>0&&(mc==='lte'?qty<=min:qty<min))||(ao&&oq>0);
     const orderVal=needOrder?Math.max(0,oq-qty):0;
     const nameHtml=needOrder?`<b>${escHtml(s.name)}</b>`:escHtml(s.name);
     const qtyStyle=needOrder?'font-weight:700;color:#c62828':'';
@@ -2727,7 +2729,7 @@ async function renderStockStatusTable(){
     const missing=D.StockTemplate.filter(t=>!existingIds.has(String(t.id)));
     if(missing.length>0){
       missing.forEach(t=>{
-        D.StoreStock.push({storeId,itemId:t.id,category:t.category,name:t.name,unit:t.unit,min:t.min,orderQty:t.orderQty||0,alwaysOrder:t.alwaysOrder||false,qty:0});
+        D.StoreStock.push({storeId,itemId:t.id,category:t.category,name:t.name,unit:t.unit,min:t.min,minCondition:t.minCondition||'lt',orderQty:t.orderQty||0,alwaysOrder:t.alwaysOrder||false,qty:0});
       });
       _bgPost({action:'saveSheet',sheet:'StoreStock',rows:D.StoreStock});
       items=D.StoreStock.filter(s=>String(s.storeId)===storeId);
@@ -2753,11 +2755,11 @@ async function renderStockStatusTable(){
       const rec=existingRecs.find(r=>String(r.itemId)===String(s.itemId));
       qty=rec?Number(rec.qty):0;
     }
-    const min=Number(s.min)||0;
+    const min=Number(s.min)||0;const mc2=s.minCondition||'lt';
     const oq=Number(s.orderQty)||0;
     const ao=s.alwaysOrder===true||s.alwaysOrder==='true';
     const counted=isToday?todayCounted:hasExisting;
-    const needOrder=counted&&((min>0&&qty<min)||(ao&&oq>0));
+    const needOrder=counted&&((min>0&&(mc2==='lte'?qty<=min:qty<min))||(ao&&oq>0));
     const orderVal=needOrder?Math.max(0,oq-qty):0;
     const status=!counted?'badge-secondary':qty<=0?'badge-danger':qty<=min?'badge-warning':'badge-success';
     const statusText=!counted?'—':qty<=0?'Out':qty<=min?'Low':'OK';
@@ -2841,9 +2843,10 @@ function renderStoreQtyTable(){
   const _ci1=getSortedCategories();
   items.sort((a,b)=>{const ci=_ci1.indexOf(a.category)-_ci1.indexOf(b.category);return ci!==0?ci:a._so-b._so;});
   $('storeQtyBody').innerHTML=items.map(s=>{
-    const qty=Number(s.qty)||0;const min=Number(s.min)||0;
-    const status=qty<=0?'badge-danger':qty<=min?'badge-warning':'badge-success';
-    const statusText=qty<=0?'Out of Stock':qty<=min?'Low':'OK';
+    const qty=Number(s.qty)||0;const min=Number(s.min)||0;const mc5=s.minCondition||'lt';
+    const isLow=min>0&&(mc5==='lte'?qty<=min:qty<min);
+    const status=qty<=0?'badge-danger':isLow?'badge-warning':'badge-success';
+    const statusText=qty<=0?'Out of Stock':isLow?'Low':'OK';
     return`<tr><td style="font-size:12px;color:var(--text-light)">${escHtml(s.category)}</td><td>${escHtml(s.name)}</td><td>${escHtml(s.unit)}</td><td>${min}</td>
     <td><input type="number" min="0" value="${qty}" style="width:80px;padding:6px;border:2px solid var(--border);border-radius:6px;font-weight:600;text-align:center" data-store="${storeId}" data-item="${s.itemId}" onchange="updateStockQty(this)"></td>
     <td><span class="badge ${status}">${statusText}</span></td></tr>`;
@@ -3010,7 +3013,15 @@ function openStockItemModal(editId){
     </div>
     <div class="form-row">
       <div class="form-group"><label>Minimum Stock</label>
-        <input type="number" id="siMin" min="0" value="${existing?existing.min:1}" style="padding:10px;border:2px solid var(--border);border-radius:8px"></div>
+        <div style="display:flex;gap:4px;align-items:center">
+          <input type="number" id="siMin" min="0" value="${existing?existing.min:1}" style="flex:1;padding:10px;border:2px solid var(--border);border-radius:8px">
+          <select id="siMinCond" style="padding:10px;border:2px solid var(--border);border-radius:8px;font-size:12px;font-weight:700;color:#c0392b;min-width:56px" title="Order when qty is Less Than (&lt;) or Less Than or Equal (≤) to Min">
+            <option value="lt" ${!existing||existing.minCondition!=='lte'?'selected':''}>＜</option>
+            <option value="lte" ${existing&&existing.minCondition==='lte'?'selected':''}>≤</option>
+          </select>
+        </div>
+        <span style="font-size:10px;color:var(--text-light);margin-top:2px;display:block">＜ Min 미만 시 주문 | ≤ Min 이하 시 주문</span>
+      </div>
       <div class="form-group"><label>Order Qty</label>
         <input type="number" id="siOrderQty" min="0" value="${existing?(existing.orderQty||0):0}" style="padding:10px;border:2px solid var(--border);border-radius:8px" title="Fixed quantity to order when below minimum"></div>
       <div class="form-group"><label>Sort Order</label>
@@ -3049,15 +3060,20 @@ function openStockItemModal(editId){
     </div>
     <div style="border-top:1px solid var(--border);margin:16px 0 12px;padding-top:14px">
       <label style="font-size:13px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:6px;margin-bottom:10px"><i class="fas fa-store" style="color:var(--accent)"></i>Per-Store Min / Order Qty</label>
-      <div style="display:flex;gap:8px;padding:4px 10px;margin-bottom:4px"><span style="flex:1;font-size:11px;font-weight:700;color:var(--text-light)">Store</span><span style="width:70px;text-align:center;font-size:11px;font-weight:700;color:var(--text-light)">Min</span><span style="width:70px;text-align:center;font-size:11px;font-weight:700;color:var(--text-light)">Order Qty</span></div>
+      <div style="display:flex;gap:4px;padding:4px 10px;margin-bottom:4px"><span style="flex:1;font-size:11px;font-weight:700;color:var(--text-light)">Store</span><span style="width:55px;text-align:center;font-size:11px;font-weight:700;color:var(--text-light)">Min</span><span style="width:42px;text-align:center;font-size:10px;font-weight:700;color:#c0392b">조건</span><span style="width:55px;text-align:center;font-size:11px;font-weight:700;color:var(--text-light)">Order</span></div>
       <div style="display:flex;flex-direction:column;gap:6px">${D.Stores.filter(s=>s.active!==false).map(s=>{
         const ss=D.StoreStock.find(x=>String(x.storeId)===String(s.id)&&String(x.itemId)===editId);
         const sMin=ss?ss.min:existing.min;
+        const sCond=ss?(ss.minCondition||'lt'):(existing.minCondition||'lt');
         const sOQ=ss?(ss.orderQty||0):(existing.orderQty||0);
-        return `<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:#f8f9fa;border-radius:8px">
+        return `<div style="display:flex;align-items:center;gap:4px;padding:6px 10px;background:#f8f9fa;border-radius:8px">
           <span style="flex:1;font-size:13px;font-weight:600">${escHtml(s.name)}</span>
-          <input type="number" min="0" value="${sMin}" data-store-min="${s.id}" style="width:70px;padding:6px;border:2px solid var(--border);border-radius:6px;text-align:center;font-weight:600">
-          <input type="number" min="0" value="${sOQ}" data-store-oq="${s.id}" style="width:70px;padding:6px;border:2px solid var(--border);border-radius:6px;text-align:center;font-weight:600;color:#1565c0">
+          <input type="number" min="0" value="${sMin}" data-store-min="${s.id}" style="width:55px;padding:6px;border:2px solid var(--border);border-radius:6px;text-align:center;font-weight:600">
+          <select data-store-cond="${s.id}" style="width:42px;padding:4px 2px;border:2px solid var(--border);border-radius:6px;text-align:center;font-weight:700;font-size:12px;color:#c0392b">
+            <option value="lt" ${sCond!=='lte'?'selected':''}>＜</option>
+            <option value="lte" ${sCond==='lte'?'selected':''}>≤</option>
+          </select>
+          <input type="number" min="0" value="${sOQ}" data-store-oq="${s.id}" style="width:55px;padding:6px;border:2px solid var(--border);border-radius:6px;text-align:center;font-weight:600;color:#1565c0">
         </div>`;
       }).join('')}</div>
     </div>`:''}
@@ -3077,6 +3093,7 @@ async function saveStockItem(editId){
   const name=($('siName').value||'').trim();
   const unit=$('siUnit').value;
   const min=parseInt($('siMin').value)||0;
+  const minCondition=$('siMinCond')?.value||'lt'; // 'lt' = less than, 'lte' = less than or equal
   const orderQty=parseInt($('siOrderQty')?.value)||0;
   const sortOrder=parseInt($('siSort').value)||0;
   const supplier1=($('siSup1')?.value||'').trim();
@@ -3093,21 +3110,23 @@ async function saveStockItem(editId){
     const tpl=D.StockTemplate.find(t=>t.id===editId);
     if(!tpl){toast('Item not found','error');return;}
     const alwaysOrder=$('siAlwaysOrder')?.checked||false;
-    tpl.category=category;tpl.name=name;tpl.unit=unit;tpl.min=min;tpl.orderQty=orderQty;tpl.alwaysOrder=alwaysOrder;tpl.sortOrder=sortOrder;
+    tpl.category=category;tpl.name=name;tpl.unit=unit;tpl.min=min;tpl.minCondition=minCondition;tpl.orderQty=orderQty;tpl.alwaysOrder=alwaysOrder;tpl.sortOrder=sortOrder;
     tpl.supplier1=supplier1;tpl.supplier2=supplier2;tpl.supplier3=supplier3;tpl.memo=memo;
-    // Update per-store min + orderQty from modal inputs
+    // Update per-store min + minCondition + orderQty from modal inputs
     document.querySelectorAll('[data-store-min]').forEach(el=>{
       const storeId=el.dataset.storeMin;
       const storeMin=parseInt(el.value)||0;
+      const condEl=document.querySelector(`[data-store-cond="${storeId}"]`);
+      const storeCond=condEl?condEl.value:'lt';
       const oqEl=document.querySelector(`[data-store-oq="${storeId}"]`);
       const storeOQ=oqEl?parseInt(oqEl.value)||0:orderQty;
       const ss=D.StoreStock.find(x=>String(x.storeId)===storeId&&String(x.itemId)===editId);
-      if(ss){ss.category=category;ss.name=name;ss.unit=unit;ss.min=storeMin;ss.orderQty=storeOQ;ss.alwaysOrder=alwaysOrder;}
+      if(ss){ss.category=category;ss.name=name;ss.unit=unit;ss.min=storeMin;ss.minCondition=storeCond;ss.orderQty=storeOQ;ss.alwaysOrder=alwaysOrder;}
     });
     // Also update any StoreStock not shown (inactive stores)
     D.StoreStock.forEach(ss=>{
       if(String(ss.itemId)===editId){
-        ss.category=category;ss.name=name;ss.unit=unit;ss.alwaysOrder=alwaysOrder;
+        ss.category=category;ss.name=name;ss.unit=unit;ss.minCondition=minCondition;ss.alwaysOrder=alwaysOrder;
       }
     });
     // Photo upload if file selected
@@ -3124,11 +3143,11 @@ async function saveStockItem(editId){
     // ---- ADD new ----
     const newId=genId('t');
     const alwaysOrder=$('siAlwaysOrder')?.checked||false;
-    const tpl={id:newId,category,name,unit,min,orderQty,alwaysOrder,sortOrder,supplier1,supplier2,supplier3,memo,photo:''};
+    const tpl={id:newId,category,name,unit,min,minCondition,orderQty,alwaysOrder,sortOrder,supplier1,supplier2,supplier3,memo,photo:''};
     D.StockTemplate.push(tpl);
     // Add to StoreStock for EVERY store
     D.Stores.forEach(store=>{
-      D.StoreStock.push({storeId:store.id,itemId:newId,category,name,unit,min,orderQty,alwaysOrder,qty:0});
+      D.StoreStock.push({storeId:store.id,itemId:newId,category,name,unit,min,minCondition,orderQty,alwaysOrder,qty:0});
     });
     // Photo upload for new item
     const photoFileNew=$('siPhotoFile');
@@ -3261,9 +3280,9 @@ function renderOrderTable() {
   if(!storeId){$('orderBody').innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--text-light)">Please select a store</td></tr>';return;}
   const items=D.StoreStock.filter(s=>{
     if(String(s.storeId)!==storeId)return false;
-    const qty=Number(s.qty)||0,min=Number(s.min)||0,oq=Number(s.orderQty)||0;
+    const qty=Number(s.qty)||0,min=Number(s.min)||0,mc3=s.minCondition||'lt',oq=Number(s.orderQty)||0;
     const ao=s.alwaysOrder===true||s.alwaysOrder==='true';
-    return(min>0&&qty<min)||(ao&&oq>0);
+    return(min>0&&(mc3==='lte'?qty<=min:qty<min))||(ao&&oq>0);
   });
   const catIdx=getSortedCategories();
   items.forEach(it=>{const tpl=D.StockTemplate.find(t=>String(t.id)===String(it.itemId));it._so=tpl?tpl.sortOrder:9999;});
@@ -3272,7 +3291,8 @@ function renderOrderTable() {
     const oq=Number(s.orderQty)||0;
     const qty=Number(s.qty)||0;
     const ao=s.alwaysOrder===true||s.alwaysOrder==='true';
-    const needOrder=(Number(s.min)>0&&qty<Number(s.min))||(ao&&oq>0);
+    const mc4=s.minCondition||'lt';
+    const needOrder=(Number(s.min)>0&&(mc4==='lte'?qty<=Number(s.min):qty<Number(s.min)))||(ao&&oq>0);
     const orderVal=needOrder?Math.max(0,oq-qty):0;
     const aoIcon=ao?'<i class="fas fa-cart-plus" style="color:#1565c0;font-size:10px;margin-left:4px" title="Always Order"></i>':'';
     return`<tr><td>${escHtml(s.category)}</td><td>${escHtml(s.name)}${aoIcon}</td><td>${escHtml(s.unit)}</td><td>${s.min}</td><td><span class="badge ${Number(s.qty)<=0?'badge-danger':qty<Number(s.min)?'badge-warning':'badge-success'}">${s.qty}</span></td><td><strong style="color:#c62828">${orderVal}</strong></td></tr>`;
@@ -4531,7 +4551,7 @@ function exportAllExcel(){
     }
     // 4. Stock Template (master item list)
     if(D.StockTemplate.length){
-      const rows=D.StockTemplate.map(t=>({Category:t.category,Name:t.name,Unit:t.unit,Min:t.min,'Order Qty':t.orderQty||'','Always Order':t.alwaysOrder?'Yes':'No','Supplier 1':t.supplier1||'','Supplier 2':t.supplier2||'','Supplier 3':t.supplier3||''}));
+      const rows=D.StockTemplate.map(t=>({Category:t.category,Name:t.name,Unit:t.unit,Min:t.min,Condition:(t.minCondition||'lt')==='lte'?'≤':'<','Order Qty':t.orderQty||'','Always Order':t.alwaysOrder?'Yes':'No','Supplier 1':t.supplier1||'','Supplier 2':t.supplier2||'','Supplier 3':t.supplier3||''}));
       XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),'Stock Items');
     }
     // 5. Users (no password)

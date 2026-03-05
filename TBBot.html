@@ -254,7 +254,7 @@ window.addEventListener('DOMContentLoaded', async () => {
 
 function activateStaff() {
   MODE = 'staff';
-  document.getElementById('hdrTitle').textContent = 'The Bap Staff AI';
+  document.getElementById('hdrTitle').innerHTML = 'The Bap Staff AI <span style="font-size:11px;font-weight:400;opacity:.45">Ver1.4</span>';
   document.getElementById('hdrMode').textContent = 'Staff Mode';
   document.getElementById('trainingToggle').style.display = 'none';
   document.getElementById('btnAttach').style.display = 'none';
@@ -264,7 +264,7 @@ function activateStaff() {
 
 function activateManager() {
   MODE = 'manager';
-  document.getElementById('hdrTitle').textContent = 'The Bap AI Bot';
+  document.getElementById('hdrTitle').innerHTML = 'The Bap AI Bot <span style="font-size:11px;font-weight:400;opacity:.45">Ver1.4</span>';
   document.getElementById('hdrMode').textContent = 'Manager Mode';
   document.getElementById('trainingToggle').style.display = 'flex';
   document.getElementById('btnAttach').style.display = 'flex';

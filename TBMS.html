@@ -242,7 +242,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
   <div class="login-logo">
     <div class="logo-icon"><i class="fas fa-bowl-food"></i></div>
     <h1>TBMS</h1>
-    <p>The Bap Management System <span style="opacity:.5;font-size:11px">Ver2.4</span></p>
+    <p>The Bap Management System <span style="opacity:.5;font-size:11px">Ver2.6</span></p>
   </div>
   <div class="form-group"><label>Username</label><input id="loginUser" placeholder="Enter username"></div>
   <div class="form-group"><label>Password</label><input id="loginPass" type="password" placeholder="Enter password"></div>
@@ -260,7 +260,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
 <!-- MAIN APP -->
 <div id="mainApp" class="hidden">
   <div class="sidebar" id="sidebar">
-    <div class="sidebar-header"><h2>TBMS <span style="font-size:12px;font-weight:400;opacity:.6">Ver2.4</span></h2><p>The Bap Management System</p></div>
+    <div class="sidebar-header"><h2>TBMS <span style="font-size:12px;font-weight:400;opacity:.6">Ver2.6</span></h2><p>The Bap Management System</p></div>
     <div class="sidebar-menu">
       <div class="menu-item active" data-page="dashboard" onclick="navigate('dashboard')"><i class="fas fa-home"></i>Dashboard</div>
       <div class="menu-group">
@@ -315,7 +315,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
   <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
   <div class="main-content">
     <div class="header">
-      <div class="header-left"><button class="menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button><h2 id="pageTitle" style="font-size:18px">Dashboard</h2><span style="font-size:11px;color:var(--text-light);margin-left:8px;font-weight:400;opacity:.7">Ver2.4</span></div>
+      <div class="header-left"><button class="menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button><h2 id="pageTitle" style="font-size:18px">Dashboard</h2><span style="font-size:11px;color:var(--text-light);margin-left:8px;font-weight:400;opacity:.7">Ver2.6</span></div>
       <div class="header-right"><span id="headerDate"></span><span class="sync-status"><span class="dot offline" id="syncDot"></span><span id="syncText">Local</span></span><button class="btn btn-sm btn-outline" onclick="doLogout()"><i class="fas fa-sign-out-alt"></i> Logout</button></div>
     </div>
     <div class="page-content" id="pageContent"></div>
@@ -552,7 +552,7 @@ const LS = {
   set(k, v) { localStorage.setItem('tbms_'+k, JSON.stringify(v)); },
   getConfig() { return this.get('config') || {}; }
 };
-const CLOUD_URL = 'https://script.google.com/macros/s/AKfycbwkgQWml4_RZmtwpLo_ws9xyEBCLLuyTbbp3Aq2Ob1V5N4nMUQlGnBCOy66ctIygqxI/exec';
+const CLOUD_URL = 'https://script.google.com/macros/s/AKfycbybzyd_yHJbzgQeqtPK6EuBturucDGRg7Gl3yX_9KsBg7zMY-MoYLMMCloBHv2QTNJQ/exec';
 const API_KEY = 'tBaP2026xKr!mGt9Qz';
 const API = {
   url: CLOUD_URL, mode: 'cloud',
@@ -2994,94 +2994,79 @@ function openStockItemModal(editId){
   const title=isNew?'Add New Stock Item':'Edit Stock Item';
   const maxSort=Math.max(0,...D.StockTemplate.map(t=>t.sortOrder||0));
   const body=`
-    <div class="form-group"><label>Category</label>
-      <div style="display:flex;gap:8px">
-        <select id="siCat" style="flex:1;padding:10px;border:2px solid var(--border);border-radius:8px" onchange="toggleNewCat()">
+    <div class="form-row" style="margin-bottom:6px">
+      <div class="form-group" style="flex:2;margin-bottom:0"><label style="font-size:11px">Category</label>
+        <select id="siCat" style="padding:7px;border:1.5px solid var(--border);border-radius:6px;font-size:13px" onchange="toggleNewCat()">
           ${cats.map(c=>`<option value="${c}"${existing&&existing.category===c?' selected':''}>${escHtml(c)}</option>`).join('')}
           <option value="__new__">+ New Category</option>
         </select>
-        <input type="text" id="siNewCat" class="hidden" placeholder="New category name" style="flex:1;padding:10px;border:2px solid var(--border);border-radius:8px">
+        <input type="text" id="siNewCat" class="hidden" placeholder="New category name" style="padding:7px;border:1.5px solid var(--border);border-radius:6px;font-size:13px;margin-top:4px">
       </div>
-    </div>
-    <div class="form-row">
-      <div class="form-group"><label>Item Name *</label>
-        <input type="text" id="siName" value="${existing?escHtml(existing.name):''}" placeholder="e.g. Soy Sauce 15L" style="padding:10px;border:2px solid var(--border);border-radius:8px"></div>
-      <div class="form-group"><label>Unit *</label>
-        <select id="siUnit" style="padding:10px;border:2px solid var(--border);border-radius:8px">
+      <div class="form-group" style="flex:1;margin-bottom:0"><label style="font-size:11px">Unit *</label>
+        <select id="siUnit" style="padding:7px;border:1.5px solid var(--border);border-radius:6px;font-size:13px">
           ${['Bag','Box','Pack','Pcs','Kg','Ctn','L','Bottle'].map(u=>`<option${existing&&existing.unit===u?' selected':''}>${u}</option>`).join('')}
         </select></div>
     </div>
-    <div class="form-row">
-      <div class="form-group"><label>Minimum Stock</label>
-        <div style="display:flex;gap:4px;align-items:center">
-          <input type="number" id="siMin" min="0" value="${existing?existing.min:1}" style="flex:1;padding:10px;border:2px solid var(--border);border-radius:8px">
-          <select id="siMinCond" style="padding:10px;border:2px solid var(--border);border-radius:8px;font-size:12px;font-weight:700;color:#c0392b;min-width:56px" title="Order when qty is Less Than (&lt;) or Less Than or Equal (≤) to Min">
-            <option value="lt" ${!existing||existing.minCondition!=='lte'?'selected':''}>＜</option>
-            <option value="lte" ${existing&&existing.minCondition==='lte'?'selected':''}>≤</option>
-          </select>
-        </div>
-        <span style="font-size:10px;color:var(--text-light);margin-top:2px;display:block">＜ Min 미만 시 주문 | ≤ Min 이하 시 주문</span>
-      </div>
-      <div class="form-group"><label>Order Qty</label>
-        <input type="number" id="siOrderQty" min="0" value="${existing?(existing.orderQty||0):0}" style="padding:10px;border:2px solid var(--border);border-radius:8px" title="Fixed quantity to order when below minimum"></div>
-      <div class="form-group"><label>주문단위</label>
-        <select id="siOrderUnit" style="padding:10px;border:2px solid var(--border);border-radius:8px;color:#1565c0;font-weight:600">
-          ${['Bag','Box','Pack','Pcs','Kg','Ctn','L','Bottle'].map(u=>{const sel=existing?(existing.orderUnit||existing.unit)===u:u==='Box';return`<option${sel?' selected':''}>${u}</option>`;}).join('')}
+    <div class="form-row" style="margin-bottom:6px">
+      <div class="form-group" style="flex:3;margin-bottom:0"><label style="font-size:11px">Item Name *</label>
+        <input type="text" id="siName" value="${existing?escHtml(existing.name):''}" placeholder="e.g. Soy Sauce 15L" style="padding:7px;border:1.5px solid var(--border);border-radius:6px;font-size:13px"></div>
+      <div class="form-group" style="flex:1;margin-bottom:0"><label style="font-size:11px">Order Unit</label>
+        <select id="siOrderUnit" style="padding:7px;border:1.5px solid var(--border);border-radius:6px;font-size:13px;color:#1565c0;font-weight:600">
+          ${['Bag','Box','Pack','Pcs','Kg','Ctn','L','Bottle'].map(u=>{const sel=existing?(existing.orderUnit||existing.unit)===u:u==='Box';return\`<option\${sel?' selected':''}>\${u}</option>\`;}).join('')}
         </select></div>
-      <div class="form-group"><label>Sort Order</label>
-        <input type="number" id="siSort" min="0" value="${existing?existing.sortOrder:(maxSort+1)}" style="padding:10px;border:2px solid var(--border);border-radius:8px"></div>
+      <div class="form-group" style="width:60px;margin-bottom:0"><label style="font-size:11px">Sort</label>
+        <input type="number" id="siSort" min="0" value="${existing?existing.sortOrder:(maxSort+1)}" style="padding:7px;border:1.5px solid var(--border);border-radius:6px;font-size:13px;text-align:center"></div>
     </div>
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;padding:10px 14px;background:${existing&&existing.alwaysOrder?'#e3f2fd':'#f8f9fa'};border-radius:8px;border:2px solid ${existing&&existing.alwaysOrder?'#1565c0':'var(--border)'}">
-      <input type="checkbox" id="siAlwaysOrder" ${existing&&existing.alwaysOrder?'checked':''} style="width:18px;height:18px;cursor:pointer">
-      <label for="siAlwaysOrder" style="cursor:pointer;font-size:13px;font-weight:600;color:${existing&&existing.alwaysOrder?'#1565c0':'var(--text)'}"><i class="fas fa-cart-plus" style="margin-right:6px"></i>Always Order — QTY가 Min 이상이어도 항상 주문</label>
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;padding:6px 10px;background:${existing&&existing.alwaysOrder?'#e3f2fd':'#f8f9fa'};border-radius:6px;border:1.5px solid ${existing&&existing.alwaysOrder?'#1565c0':'var(--border)'}">
+      <input type="checkbox" id="siAlwaysOrder" ${existing&&existing.alwaysOrder?'checked':''} style="width:16px;height:16px;cursor:pointer">
+      <label for="siAlwaysOrder" style="cursor:pointer;font-size:12px;font-weight:600;color:${existing&&existing.alwaysOrder?'#1565c0':'var(--text)'}"><i class="fas fa-cart-plus" style="margin-right:4px"></i>Always Order</label>
     </div>
-    <div style="border-top:1px solid var(--border);margin:16px 0 12px;padding-top:14px">
-      <label style="font-size:13px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:6px;margin-bottom:10px"><i class="fas fa-truck" style="color:var(--accent)"></i>Suppliers</label>
-      <div class="form-group" style="margin-bottom:10px"><label>Supplier 1 (Primary)</label>
-        <select id="siSup1" style="padding:10px;border:2px solid var(--border);border-radius:8px;width:100%">
-          <option value="">— None —</option>${D.Suppliers.map(s=>`<option value="${escHtml(s.id)}"${existing&&(existing.supplier1===s.id||existing.supplier1===s.name)?' selected':''}>${escHtml(s.name)}</option>`).join('')}
-        </select></div>
-      <div class="form-row">
-        <div class="form-group"><label>Supplier 2</label>
-          <select id="siSup2" style="padding:10px;border:2px solid var(--border);border-radius:8px;width:100%">
+    <div style="border-top:1px solid var(--border);margin:6px 0;padding-top:8px">
+      <label style="font-size:12px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:5px;margin-bottom:6px"><i class="fas fa-truck" style="color:var(--accent);font-size:11px"></i>Suppliers</label>
+      <div class="form-row" style="margin-bottom:4px">
+        <div class="form-group" style="margin-bottom:0"><label style="font-size:10px">Primary</label>
+          <select id="siSup1" style="padding:6px;border:1.5px solid var(--border);border-radius:6px;font-size:12px">
+            <option value="">— None —</option>${D.Suppliers.map(s=>`<option value="${escHtml(s.id)}"${existing&&(existing.supplier1===s.id||existing.supplier1===s.name)?' selected':''}>${escHtml(s.name)}</option>`).join('')}
+          </select></div>
+        <div class="form-group" style="margin-bottom:0"><label style="font-size:10px">Supplier 2</label>
+          <select id="siSup2" style="padding:6px;border:1.5px solid var(--border);border-radius:6px;font-size:12px">
             <option value="">— None —</option>${D.Suppliers.map(s=>`<option value="${escHtml(s.id)}"${existing&&(existing.supplier2===s.id||existing.supplier2===s.name)?' selected':''}>${escHtml(s.name)}</option>`).join('')}
           </select></div>
-        <div class="form-group"><label>Supplier 3</label>
-          <select id="siSup3" style="padding:10px;border:2px solid var(--border);border-radius:8px;width:100%">
+        <div class="form-group" style="margin-bottom:0"><label style="font-size:10px">Supplier 3</label>
+          <select id="siSup3" style="padding:6px;border:1.5px solid var(--border);border-radius:6px;font-size:12px">
             <option value="">— None —</option>${D.Suppliers.map(s=>`<option value="${escHtml(s.id)}"${existing&&(existing.supplier3===s.id||existing.supplier3===s.name)?' selected':''}>${escHtml(s.name)}</option>`).join('')}
           </select></div>
       </div>
     </div>
-    <div class="form-group"><label>Memo / Notes</label>
-      <textarea id="siMemo" rows="2" placeholder="e.g. Order on Mondays, 2-day lead time..." style="padding:10px;border:2px solid var(--border);border-radius:8px;resize:vertical">${existing?escHtml(existing.memo||''):''}</textarea></div>
-    ${existing?`<div style="border-top:1px solid var(--border);margin:16px 0 12px;padding-top:14px">
-      <label style="font-size:13px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:6px;margin-bottom:10px"><i class="fas fa-camera" style="color:var(--accent)"></i>Item Photo</label>
-      <div style="display:flex;align-items:center;gap:12px">
-        <div id="siPhotoPreview" style="width:80px;height:80px;border-radius:10px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;font-size:32px">${existing.photo?'<img src="https://drive.google.com/thumbnail?id='+existing.photo+'&sz=w160" style="width:100%;height:100%;object-fit:cover">':'📦'}</div>
-        <div style="flex:1"><input type="file" id="siPhotoFile" accept="image/*" capture="environment" style="font-size:13px" onchange="handleStockPhoto(this)">
-        <p style="font-size:11px;color:var(--text-light);margin-top:4px">Take photo or choose file. Saved to Google Drive.</p></div>
-      </div>
+    <div class="form-row" style="margin-bottom:4px;align-items:flex-start">
+      <div class="form-group" style="flex:1;margin-bottom:0"><label style="font-size:11px">Memo / Notes</label>
+        <textarea id="siMemo" rows="1" placeholder="e.g. Box/£22, Order on Mon..." style="padding:6px;border:1.5px solid var(--border);border-radius:6px;font-size:12px;resize:vertical">${existing?escHtml(existing.memo||''):''}</textarea></div>
+      ${existing?`<div class="form-group" style="width:90px;margin-bottom:0"><label style="font-size:11px">Photo</label>
+        <div style="display:flex;align-items:center;gap:6px">
+          <div id="siPhotoPreview" style="width:36px;height:36px;border-radius:6px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;font-size:18px">${existing.photo?'<img src="https://drive.google.com/thumbnail?id='+existing.photo+'&sz=w80" style="width:100%;height:100%;object-fit:cover">':'📦'}</div>
+          <input type="file" id="siPhotoFile" accept="image/*" capture="environment" style="font-size:10px;width:50px" onchange="handleStockPhoto(this)">
+        </div></div>`:''}
     </div>
-    <div style="border-top:1px solid var(--border);margin:16px 0 12px;padding-top:14px">
-      <label style="font-size:13px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:6px;margin-bottom:10px"><i class="fas fa-store" style="color:var(--accent)"></i>Per-Store Min / Order Qty</label>
-      <div style="display:flex;gap:4px;padding:4px 10px;margin-bottom:4px"><span style="flex:1;font-size:11px;font-weight:700;color:var(--text-light)">Store</span><span style="width:55px;text-align:center;font-size:11px;font-weight:700;color:var(--text-light)">Min</span><span style="width:42px;text-align:center;font-size:10px;font-weight:700;color:#c0392b">조건</span><span style="width:55px;text-align:center;font-size:11px;font-weight:700;color:var(--text-light)">Order</span></div>
-      <div style="display:flex;flex-direction:column;gap:6px">${D.Stores.filter(s=>s.active!==false).map(s=>{
+    ${existing?`<div style="border-top:1px solid var(--border);margin:6px 0;padding-top:8px">
+      <label style="font-size:12px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:5px;margin-bottom:6px"><i class="fas fa-store" style="color:var(--accent);font-size:11px"></i>Per-Store Min / Order Qty</label>
+      <div style="display:flex;gap:3px;padding:2px 8px;margin-bottom:3px"><span style="flex:1;font-size:10px;font-weight:700;color:var(--text-light)">Store</span><span style="width:50px;text-align:center;font-size:10px;font-weight:700;color:var(--text-light)">Min</span><span style="width:38px;text-align:center;font-size:9px;font-weight:700;color:#c0392b">조건</span><span style="width:50px;text-align:center;font-size:10px;font-weight:700;color:var(--text-light)">Order</span></div>
+      <div style="display:flex;flex-direction:column;gap:3px">${D.Stores.filter(s=>s.active!==false).map(s=>{
         const ss=D.StoreStock.find(x=>String(x.storeId)===String(s.id)&&String(x.itemId)===editId);
         const sMin=ss?ss.min:existing.min;
         const sCond=ss?(ss.minCondition||'lt'):(existing.minCondition||'lt');
         const sOQ=ss?(ss.orderQty||0):(existing.orderQty||0);
-        return `<div style="display:flex;align-items:center;gap:4px;padding:6px 10px;background:#f8f9fa;border-radius:8px">
-          <span style="flex:1;font-size:13px;font-weight:600">${escHtml(s.name)}</span>
-          <input type="number" min="0" value="${sMin}" data-store-min="${s.id}" style="width:55px;padding:6px;border:2px solid var(--border);border-radius:6px;text-align:center;font-weight:600">
-          <select data-store-cond="${s.id}" style="width:42px;padding:4px 2px;border:2px solid var(--border);border-radius:6px;text-align:center;font-weight:700;font-size:12px;color:#c0392b">
+        return `<div style="display:flex;align-items:center;gap:3px;padding:4px 8px;background:#f8f9fa;border-radius:6px">
+          <span style="flex:1;font-size:12px;font-weight:600">${escHtml(s.name)}</span>
+          <input type="number" min="0" value="${sMin}" data-store-min="${s.id}" style="width:50px;padding:4px;border:1.5px solid var(--border);border-radius:5px;text-align:center;font-weight:600;font-size:12px">
+          <select data-store-cond="${s.id}" style="width:38px;padding:2px 1px;border:1.5px solid var(--border);border-radius:5px;text-align:center;font-weight:700;font-size:11px;color:#c0392b">
             <option value="lt" ${sCond!=='lte'?'selected':''}>＜</option>
             <option value="lte" ${sCond==='lte'?'selected':''}>≤</option>
           </select>
-          <input type="number" min="0" value="${sOQ}" data-store-oq="${s.id}" style="width:55px;padding:6px;border:2px solid var(--border);border-radius:6px;text-align:center;font-weight:600;color:#1565c0">
+          <input type="number" min="0" value="${sOQ}" data-store-oq="${s.id}" style="width:50px;padding:4px;border:1.5px solid var(--border);border-radius:5px;text-align:center;font-weight:600;font-size:12px;color:#1565c0">
         </div>`;
       }).join('')}</div>
     </div>`:''}
-    ${isNew?'<p style="font-size:12px;color:var(--text-light);margin-top:8px"><i class="fas fa-info-circle"></i> This item will be added to all stores automatically.</p>':'<p style="font-size:12px;color:var(--text-light);margin-top:8px"><i class="fas fa-info-circle"></i> Changes will be synced to all stores.</p>'}`;
+    ${isNew?'<p style="font-size:11px;color:var(--text-light);margin-top:4px"><i class="fas fa-info-circle"></i> This item will be added to all stores automatically.</p>':'<p style="font-size:11px;color:var(--text-light);margin-top:4px"><i class="fas fa-info-circle"></i> Changes will be synced to all stores.</p>'}`;
   const footer=`<button class="btn btn-outline" onclick="closeModal()">Cancel</button>
     <button class="btn btn-primary" onclick="saveStockItem('${editId||''}')">${isNew?'<i class="fas fa-plus"></i> Add Item':'<i class="fas fa-save"></i> Save Changes'}</button>`;
   openModal(title,body,footer);
@@ -3096,9 +3081,11 @@ async function saveStockItem(editId){
   if(category==='__new__'){category=($('siNewCat').value||'').trim();if(!category){toast('Enter category name','error');return;}}
   const name=($('siName').value||'').trim();
   const unit=$('siUnit').value;
-  const min=parseInt($('siMin').value)||0;
-  const minCondition=$('siMinCond')?.value||'lt'; // 'lt' = less than, 'lte' = less than or equal
-  const orderQty=parseInt($('siOrderQty')?.value)||0;
+  // Template-level min/orderQty는 Per-Store에서 관리 — 기존값 유지 또는 디폴트 0
+  const existingTpl=editId?D.StockTemplate.find(t=>t.id===editId):null;
+  const min=existingTpl?existingTpl.min:0;
+  const minCondition=existingTpl?(existingTpl.minCondition||'lt'):'lt';
+  const orderQty=existingTpl?(existingTpl.orderQty||0):0;
   const orderUnit=$('siOrderUnit')?.value||unit; // 주문단위 (기본값: 재고단위)
   const sortOrder=parseInt($('siSort').value)||0;
   const supplier1=($('siSup1')?.value||'').trim();
@@ -4711,7 +4698,7 @@ function exportAllWord(){
       ['submittedBy / submittedAt','Who submitted and when']
     ]);
 
-    html+=`<hr style="margin:16px 0"><p style="text-align:center;font-size:8pt;color:#999;font-style:italic">TBMS Ver2.4 \u2014 Programmed by DJ</p>`;
+    html+=`<hr style="margin:16px 0"><p style="text-align:center;font-size:8pt;color:#999;font-style:italic">TBMS Ver2.6 \u2014 Programmed by DJ</p>`;
     html+=`</body></html>`;
 
     const blob=new Blob(['\ufeff'+html],{type:'application/msword'});

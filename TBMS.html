@@ -2,14 +2,12 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
+<!-- 캐시 허용으로 로딩 속도 향상 -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%232e7d32'/%3E%3Cg transform='translate(8,10) scale(0.09375)'%3E%3Cpath fill='%23fff' d='M0 192c0-35.3 28.7-64 64-64c.5 0 1.1 0 1.6 0C73 91.5 105.3 64 144 64c15 0 29 4.1 40.9 11.2C198.2 49.6 225.1 32 256 32s57.8 17.6 71.1 43.2C339 68.1 353 64 368 64c38.7 0 71 27.5 78.4 64c.5 0 1.1 0 1.6 0c35.3 0 64 28.7 64 64c0 11.7-3.1 22.6-8.6 32H8.6C3.1 214.6 0 203.7 0 192zm0 91.4C0 268.3 12.3 256 27.4 256H484.6c15.1 0 27.4 12.3 27.4 27.4c0 70.5-44.4 130.7-106.7 154.1L403.5 452c-2 16-15.6 28-31.8 28H140.2c-16.1 0-29.8-12-31.8-28l-1.8-14.4C44.4 414.1 0 353.9 0 283.4z'/%3E%3C/g%3E%3C/svg%3E">
 <title>TBMS - The Bap Management System</title>
-<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" media="print" onload="this.media='all'">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{--primary:#111111;--primary-light:#222222;--accent:#e84393;--accent-light:#fce4ec;--bg:#faf5f6;--card:#fff;--text:#222;--text-light:#777;--border:#e8dfe0;--success:#43a047;--warning:#fb8c00;--danger:#e53935;--sidebar-w:260px;--header-h:60px;--pink:#e84393;--pink-soft:#f8c8d8;--pink-bg:#fff0f3}
@@ -242,7 +240,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
   <div class="login-logo">
     <div class="logo-icon"><i class="fas fa-bowl-food"></i></div>
     <h1>TBMS</h1>
-    <p>The Bap Management System <span style="opacity:.5;font-size:11px">Ver2.6</span></p>
+    <p>The Bap Management System <span style="opacity:.5;font-size:11px">Ver2.8</span></p>
   </div>
   <div class="form-group"><label>Username</label><input id="loginUser" placeholder="Enter username"></div>
   <div class="form-group"><label>Password</label><input id="loginPass" type="password" placeholder="Enter password"></div>
@@ -260,7 +258,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
 <!-- MAIN APP -->
 <div id="mainApp" class="hidden">
   <div class="sidebar" id="sidebar">
-    <div class="sidebar-header"><h2>TBMS <span style="font-size:12px;font-weight:400;opacity:.6">Ver2.6</span></h2><p>The Bap Management System</p></div>
+    <div class="sidebar-header"><h2>TBMS <span style="font-size:12px;font-weight:400;opacity:.6">Ver2.8</span></h2><p>The Bap Management System</p></div>
     <div class="sidebar-menu">
       <div class="menu-item active" data-page="dashboard" onclick="navigate('dashboard')"><i class="fas fa-home"></i>Dashboard</div>
       <div class="menu-group">
@@ -315,7 +313,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
   <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
   <div class="main-content">
     <div class="header">
-      <div class="header-left"><button class="menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button><h2 id="pageTitle" style="font-size:18px">Dashboard</h2><span style="font-size:11px;color:var(--text-light);margin-left:8px;font-weight:400;opacity:.7">Ver2.6</span></div>
+      <div class="header-left"><button class="menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button><h2 id="pageTitle" style="font-size:18px">Dashboard</h2><span style="font-size:11px;color:var(--text-light);margin-left:8px;font-weight:400;opacity:.7">Ver2.8</span></div>
       <div class="header-right"><span id="headerDate"></span><span class="sync-status"><span class="dot offline" id="syncDot"></span><span id="syncText">Local</span></span><button class="btn btn-sm btn-outline" onclick="doLogout()"><i class="fas fa-sign-out-alt"></i> Logout</button></div>
     </div>
     <div class="page-content" id="pageContent"></div>
@@ -601,6 +599,20 @@ function deleteData(sheet, id) {
 
 async function loadAllData() {
   showLoading('Loading data...');
+  // 캐시 우선 로딩: 캐시된 데이터가 있으면 먼저 표시 (빠른 첫 화면)
+  const cached=LS.get('dataCache');
+  if(cached&&typeof cached==='object'){
+    let cacheUsed=false;
+    for(let sheet in cached){
+      if(Array.isArray(cached[sheet])&&cached[sheet].length>0){
+        D[sheet]=cached[sheet];cacheUsed=true;
+      }
+    }
+    if(cacheUsed){
+      console.log('[TBMS] Cache loaded — fetching latest from cloud...');
+      showLoading('Updating...');
+    }
+  }
   if (API.mode === 'cloud') {
     const result = await API.get('getAll');
     if (result && result.error) console.error('[TBMS] Server error:', result.error);
@@ -645,12 +657,21 @@ async function loadAllData() {
             _bgPost({action:'saveSheet',sheet,rows:D[sheet]});
           }
         }
-        // Load catOrder from cloud
-        try{const catRes=await API.get('getSetting',{key:'catOrder'});if(catRes&&catRes.value){LS.set('catOrder',catRes.value);console.log('[TBMS] catOrder loaded from cloud:',catRes.value);}}catch(e){}
-        // Load timeRounding from cloud
-        try{const trRes=await API.get('getSetting',{key:'timeRounding'});if(trRes&&trRes.value!==null){LS.set('timeRounding',trRes.value);console.log('[TBMS] timeRounding loaded from cloud:',trRes.value);}}catch(e){}
-        // Load Knowledge Base data (async, non-blocking)
-        loadKBData().catch(e=>console.log('KB load deferred:',e));
+        // 클라우드 데이터를 localStorage에 캐시 (다음 로딩 시 빠르게 표시)
+        try{
+          const cacheObj={};
+          for(let s of ['Staff','Stores','Suppliers','StockTemplate','StoreStock','Attendance','EditLog','TimeChangeReq']){
+            if(D[s]&&D[s].length)cacheObj[s]=D[s];
+          }
+          LS.set('dataCache',cacheObj);
+          console.log('[TBMS] Data cached to localStorage');
+        }catch(e){console.log('[TBMS] Cache save failed (storage full?)');}
+        // catOrder, timeRounding, KB 데이터를 병렬로 로딩 (속도 최적화)
+        Promise.all([
+          API.get('getSetting',{key:'catOrder'}).then(r=>{if(r&&r.value){LS.set('catOrder',r.value);console.log('[TBMS] catOrder loaded');}}).catch(()=>{}),
+          API.get('getSetting',{key:'timeRounding'}).then(r=>{if(r&&r.value!==null){LS.set('timeRounding',r.value);console.log('[TBMS] timeRounding loaded');}}).catch(()=>{}),
+          loadKBData().catch(e=>console.log('KB load deferred:',e))
+        ]);
         hideLoading(); updateSyncStatus('online'); return true;
       }
     }
@@ -2994,57 +3015,58 @@ function openStockItemModal(editId){
   const title=isNew?'Add New Stock Item':'Edit Stock Item';
   const maxSort=Math.max(0,...D.StockTemplate.map(t=>t.sortOrder||0));
   const body=`
-    <div class="form-row" style="margin-bottom:6px">
+    <div class="form-row" style="margin-bottom:3px">
       <div class="form-group" style="flex:2;margin-bottom:0"><label style="font-size:11px">Category</label>
-        <select id="siCat" style="padding:7px;border:1.5px solid var(--border);border-radius:6px;font-size:13px" onchange="toggleNewCat()">
+        <select id="siCat" style="padding:5px;border:1.5px solid var(--border);border-radius:6px;font-size:13px" onchange="toggleNewCat()">
           ${cats.map(c=>`<option value="${c}"${existing&&existing.category===c?' selected':''}>${escHtml(c)}</option>`).join('')}
           <option value="__new__">+ New Category</option>
         </select>
-        <input type="text" id="siNewCat" class="hidden" placeholder="New category name" style="padding:7px;border:1.5px solid var(--border);border-radius:6px;font-size:13px;margin-top:4px">
+        <input type="text" id="siNewCat" class="hidden" placeholder="New category name" style="padding:5px;border:1.5px solid var(--border);border-radius:6px;font-size:13px;margin-top:2px">
       </div>
       <div class="form-group" style="flex:1;margin-bottom:0"><label style="font-size:11px">Unit *</label>
-        <select id="siUnit" style="padding:7px;border:1.5px solid var(--border);border-radius:6px;font-size:13px">
+        <select id="siUnit" style="padding:5px;border:1.5px solid var(--border);border-radius:6px;font-size:13px">
           ${['Bag','Box','Pack','Pcs','Kg','Ctn','L','Bottle'].map(u=>`<option${existing&&existing.unit===u?' selected':''}>${u}</option>`).join('')}
         </select></div>
     </div>
-    <div class="form-row" style="margin-bottom:6px">
+    <div class="form-row" style="margin-bottom:3px">
       <div class="form-group" style="flex:3;margin-bottom:0"><label style="font-size:11px">Item Name *</label>
-        <input type="text" id="siName" value="${existing?escHtml(existing.name):''}" placeholder="e.g. Soy Sauce 15L" style="padding:7px;border:1.5px solid var(--border);border-radius:6px;font-size:13px"></div>
+        <input type="text" id="siName" value="${existing?escHtml(existing.name):''}" placeholder="e.g. Soy Sauce 15L" style="padding:5px;border:1.5px solid var(--border);border-radius:6px;font-size:13px"></div>
       <div class="form-group" style="flex:1;margin-bottom:0"><label style="font-size:11px">Order Unit</label>
-        <select id="siOrderUnit" style="padding:7px;border:1.5px solid var(--border);border-radius:6px;font-size:13px;color:#1565c0;font-weight:600">
+        <select id="siOrderUnit" style="padding:5px;border:1.5px solid var(--border);border-radius:6px;font-size:13px;color:#1565c0;font-weight:600">
           ${['Bag','Box','Pack','Pcs','Kg','Ctn','L','Bottle'].map(u=>{const sel=existing?(existing.orderUnit||existing.unit)===u:u==='Box';return'<option'+(sel?' selected':'')+'>'+u+'</option>';}).join('')}
         </select></div>
       <div class="form-group" style="width:60px;margin-bottom:0"><label style="font-size:11px">Sort</label>
-        <input type="number" id="siSort" min="0" value="${existing?existing.sortOrder:(maxSort+1)}" style="padding:7px;border:1.5px solid var(--border);border-radius:6px;font-size:13px;text-align:center"></div>
+        <input type="number" id="siSort" min="0" value="${existing?existing.sortOrder:(maxSort+1)}" style="padding:5px;border:1.5px solid var(--border);border-radius:6px;font-size:13px;text-align:center"></div>
     </div>
-    <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;padding:6px 10px;background:${existing&&existing.alwaysOrder?'#e3f2fd':'#f8f9fa'};border-radius:6px;border:1.5px solid ${existing&&existing.alwaysOrder?'#1565c0':'var(--border)'}">
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;padding:4px 10px;background:${existing&&existing.alwaysOrder?'#e3f2fd':'#f8f9fa'};border-radius:6px;border:1.5px solid ${existing&&existing.alwaysOrder?'#1565c0':'var(--border)'}">
       <input type="checkbox" id="siAlwaysOrder" ${existing&&existing.alwaysOrder?'checked':''} style="width:16px;height:16px;cursor:pointer">
       <label for="siAlwaysOrder" style="cursor:pointer;font-size:12px;font-weight:600;color:${existing&&existing.alwaysOrder?'#1565c0':'var(--text)'}"><i class="fas fa-cart-plus" style="margin-right:4px"></i>Always Order</label>
     </div>
-    <div style="border-top:1px solid var(--border);margin:6px 0;padding-top:8px">
-      <label style="font-size:12px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:5px;margin-bottom:6px"><i class="fas fa-truck" style="color:var(--accent);font-size:11px"></i>Suppliers</label>
-      <div class="form-row" style="margin-bottom:4px">
+    <div style="border-top:1px solid var(--border);margin:3px 0;padding-top:5px">
+      <label style="font-size:12px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:5px;margin-bottom:3px"><i class="fas fa-truck" style="color:var(--accent);font-size:11px"></i>Suppliers</label>
+      <div class="form-row" style="margin-bottom:3px">
         <div class="form-group" style="margin-bottom:0"><label style="font-size:10px">Primary</label>
-          <select id="siSup1" style="padding:6px;border:1.5px solid var(--border);border-radius:6px;font-size:12px">
+          <select id="siSup1" style="padding:4px;border:1.5px solid var(--border);border-radius:6px;font-size:12px">
             <option value="">— None —</option>${D.Suppliers.map(s=>`<option value="${escHtml(s.id)}"${existing&&(existing.supplier1===s.id||existing.supplier1===s.name)?' selected':''}>${escHtml(s.name)}</option>`).join('')}
           </select></div>
         <div class="form-group" style="margin-bottom:0"><label style="font-size:10px">Supplier 2</label>
-          <select id="siSup2" style="padding:6px;border:1.5px solid var(--border);border-radius:6px;font-size:12px">
+          <select id="siSup2" style="padding:4px;border:1.5px solid var(--border);border-radius:6px;font-size:12px">
             <option value="">— None —</option>${D.Suppliers.map(s=>`<option value="${escHtml(s.id)}"${existing&&(existing.supplier2===s.id||existing.supplier2===s.name)?' selected':''}>${escHtml(s.name)}</option>`).join('')}
           </select></div>
         <div class="form-group" style="margin-bottom:0"><label style="font-size:10px">Supplier 3</label>
-          <select id="siSup3" style="padding:6px;border:1.5px solid var(--border);border-radius:6px;font-size:12px">
+          <select id="siSup3" style="padding:4px;border:1.5px solid var(--border);border-radius:6px;font-size:12px">
             <option value="">— None —</option>${D.Suppliers.map(s=>`<option value="${escHtml(s.id)}"${existing&&(existing.supplier3===s.id||existing.supplier3===s.name)?' selected':''}>${escHtml(s.name)}</option>`).join('')}
           </select></div>
       </div>
     </div>
-    <div class="form-row" style="margin-bottom:4px;align-items:flex-start">
+    <div class="form-row" style="margin-bottom:3px;align-items:flex-start">
       <div class="form-group" style="flex:1;margin-bottom:0"><label style="font-size:11px">Memo / Notes</label>
-        <textarea id="siMemo" rows="1" placeholder="e.g. Box/£22, Order on Mon..." style="padding:6px;border:1.5px solid var(--border);border-radius:6px;font-size:12px;resize:vertical">${existing?escHtml(existing.memo||''):''}</textarea></div>
-      ${existing?`<div class="form-group" style="width:90px;margin-bottom:0"><label style="font-size:11px">Photo</label>
-        <div style="display:flex;align-items:center;gap:6px">
-          <div id="siPhotoPreview" style="width:36px;height:36px;border-radius:6px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;font-size:18px">${existing.photo?'<img src="https://drive.google.com/thumbnail?id='+existing.photo+'&sz=w80" style="width:100%;height:100%;object-fit:cover">':'📦'}</div>
-          <input type="file" id="siPhotoFile" accept="image/*" capture="environment" style="font-size:10px;width:50px" onchange="handleStockPhoto(this)">
+        <textarea id="siMemo" rows="1" placeholder="e.g. Box/£22, Order on Mon..." style="padding:5px;border:1.5px solid var(--border);border-radius:6px;font-size:12px;resize:vertical">${existing?escHtml(existing.memo||''):''}</textarea></div>
+      ${existing?`<div class="form-group" style="width:140px;margin-bottom:0"><label style="font-size:11px"><i class="fas fa-camera" style="margin-right:3px;color:var(--accent)"></i>Photo</label>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div id="siPhotoPreview" style="width:56px;height:56px;border-radius:8px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;font-size:24px;border:1.5px solid var(--border)">${existing.photo?'<img src="https://drive.google.com/thumbnail?id='+existing.photo+'&sz=w120" style="width:100%;height:100%;object-fit:cover">':'📦'}</div>
+          <label for="siPhotoFile" style="display:inline-flex;align-items:center;gap:4px;padding:6px 10px;background:var(--accent);color:#fff;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap"><i class="fas fa-upload"></i>Upload</label>
+          <input type="file" id="siPhotoFile" accept="image/*" capture="environment" style="display:none" onchange="handleStockPhoto(this)">
         </div></div>`:''}
     </div>
     ${existing?`<div style="border-top:1px solid var(--border);margin:6px 0;padding-top:8px">
@@ -4698,7 +4720,7 @@ function exportAllWord(){
       ['submittedBy / submittedAt','Who submitted and when']
     ]);
 
-    html+=`<hr style="margin:16px 0"><p style="text-align:center;font-size:8pt;color:#999;font-style:italic">TBMS Ver2.6 \u2014 Programmed by DJ</p>`;
+    html+=`<hr style="margin:16px 0"><p style="text-align:center;font-size:8pt;color:#999;font-style:italic">TBMS Ver2.8 \u2014 Programmed by DJ</p>`;
     html+=`</body></html>`;
 
     const blob=new Blob(['\ufeff'+html],{type:'application/msword'});
@@ -5226,13 +5248,21 @@ async function init() {
   API.mode = 'cloud';
   API.url = CLOUD_URL;
   LS.set('config', {apiUrl: CLOUD_URL, mode: 'cloud'});
-  // Load data from cloud
+  // 캐시가 있으면 로그인 화면을 먼저 표시 (체감 속도 향상)
+  const hasCache=LS.get('dataCache');
+  if(hasCache){
+    $('loginPage').classList.remove('hidden');
+    $('headerDate').textContent=new Date().toLocaleDateString('en-GB',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  }
+  // Load data from cloud (캐시 있으면 캐시 먼저 로드 후 클라우드 업데이트)
   await loadAllData();
   // If no users loaded, initialize defaults
   if (!D.Users || D.Users.length === 0) { await initDefaultData(); }
-  // Show login
-  $('loginPage').classList.remove('hidden');
-  $('headerDate').textContent = new Date().toLocaleDateString('en-GB', {weekday:'long', year:'numeric', month:'long', day:'numeric'});
+  // Show login (캐시 없었을 때)
+  if(!hasCache){
+    $('loginPage').classList.remove('hidden');
+    $('headerDate').textContent=new Date().toLocaleDateString('en-GB',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  }
   window.addEventListener('resize', () => { if (window.innerWidth > 1024) { $('sidebar').classList.remove('open'); $('sidebarOverlay').classList.remove('show'); } });
 }
 // ==================== DIARY DATA (ON-DEMAND LOAD) ====================

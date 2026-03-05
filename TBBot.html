@@ -121,7 +121,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
 <div class="header">
   <div class="header-logo">TB</div>
   <div class="header-info">
-    <div class="header-title"><span id="hdrTitle">The Bap Staff AI</span> <span style="font-size:11px;font-weight:400;opacity:.45">Ver2.2</span></div>
+    <div class="header-title"><span id="hdrTitle">The Bap Staff AI</span> <span style="font-size:11px;font-weight:400;opacity:.45">Ver2.3</span></div>
     <div class="header-mode" id="hdrMode">Staff Mode</div>
   </div>
   <button class="header-btn" onclick="toggleSettings()" title="Settings"><i class="fas fa-cog"></i></button>
@@ -184,7 +184,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
   <label>Model Override (optional)</label>
   <input type="text" id="setModel" placeholder="e.g. gpt-4o-mini">
   <button class="btn-save" onclick="saveSettings()">Save Settings</button>
-  <p style="font-size:11px;color:var(--text-dim);margin-top:16px;text-align:center">The Bap AI Brain Ver2.2 • Programmed by DJ</p>
+  <p style="font-size:11px;color:var(--text-dim);margin-top:16px;text-align:center">The Bap AI Brain Ver2.3 • Programmed by DJ</p>
 </div>
 
 <!-- File Preview Overlay -->
@@ -202,7 +202,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
 
 <script>
 // ============================================================
-//  The Bap AI Bot — Ver2.2
+//  The Bap AI Bot — Ver2.3
 //  Programmed by DJ Kim
 // ============================================================
 const API_URL = 'https://script.google.com/macros/s/AKfycbzND88jsQ45x2Fmgtp4PphIUWEFp29VNaOuO3fYkeH_czTcXFjskQdydDQcvh63thxf/exec';
@@ -214,7 +214,7 @@ const KB_CATEGORIES = [
 ];
 
 const STAFF_CATEGORIES = [
-  'Menu & Recipes','Sauce Recipes','Staff Training','Kitchen Ops','Store Ops'
+  'Brand Philosophy','Menu & Recipes','Sauce Recipes','Staff Training','Kitchen Ops','Store Ops'
 ];
 
 // State
@@ -250,6 +250,12 @@ window.addEventListener('DOMContentLoaded', async () => {
 
   // Load KB + TBMS data
   await Promise.all([loadKB(), loadTBMSData()]);
+  // Update badge with final counts (KB might have loaded after TBMS)
+  const totalTables = Object.values(tbmsData).filter(arr => arr.length > 0).length;
+  const kbCount = kbData.length;
+  if (totalTables > 0 || kbCount > 0) {
+    updateStatusBadge(`✓ ${totalTables} tables, ${kbCount} KB loaded`, 'ok');
+  }
 });
 
 function activateStaff() {
@@ -308,10 +314,13 @@ async function loadKB() {
     const res = await fetch(`${API_URL}?action=getKB&apikey=${encodeURIComponent(API_KEY)}`, {redirect:'follow'});
     const json = await res.json();
     if (json.status === 'ok') {
-      kbData = json.data || [];
+      kbData = (json.data || []).filter(kb => kb.active !== false && kb.active !== 'false');
+      console.log('KB loaded:', kbData.length, 'active entries');
+    } else {
+      console.warn('KB load failed:', json);
     }
   } catch(e) {
-    console.log('KB load error:', e);
+    console.warn('KB load error:', e);
   }
 }
 
@@ -349,12 +358,13 @@ async function loadTBMSData() {
   }
 
   const total = Object.values(tbmsData).reduce((n, arr) => n + arr.length, 0);
-  if (total > 0) {
-    console.log('TBMS data loaded:', results.join(', '));
-    updateStatusBadge(`✓ ${results.length} tables loaded`, 'ok');
+  const kbCount = kbData.length;
+  if (total > 0 || kbCount > 0) {
+    console.log('TBMS data loaded:', results.join(', '), '| KB entries:', kbCount);
+    updateStatusBadge(`✓ ${results.length} tables, ${kbCount} KB loaded`, 'ok');
   } else {
-    console.warn('TBMS data: 0 records loaded');
-    updateStatusBadge('⚠ No company data', 'warn');
+    console.warn('TBMS data: 0 records loaded, KB: 0');
+    updateStatusBadge('⚠ No data loaded', 'warn');
   }
 }
 
@@ -372,32 +382,89 @@ function updateStatusBadge(text, type) {
   setTimeout(() => { if (badge) badge.style.opacity = '0.4'; }, 5000);
 }
 
+// Korean↔English synonym map for better search matching
+const KB_SYNONYMS = {
+  '비전': ['vision','philosophy','철학','미션','mission'],
+  'vision': ['비전','철학','philosophy','미션','mission'],
+  '철학': ['philosophy','비전','vision','미션','mission'],
+  'philosophy': ['철학','비전','vision','mission','미션'],
+  '컨셉': ['concept','컨셉트','개념'],
+  'concept': ['컨셉','컨셉트','개념'],
+  '레시피': ['recipe','조리법','요리법','만드는법'],
+  'recipe': ['레시피','조리법','요리법'],
+  '소스': ['sauce','양념','드레싱'],
+  'sauce': ['소스','양념','드레싱'],
+  '메뉴': ['menu','음식','요리','food'],
+  'menu': ['메뉴','음식','요리'],
+  '교육': ['training','트레이닝','매뉴얼','manual'],
+  'training': ['교육','트레이닝','매뉴얼'],
+  '위생': ['hygiene','청소','cleaning','sanitation'],
+  'hygiene': ['위생','청소','cleaning'],
+  '운영': ['operations','ops','관리','management'],
+  '마케팅': ['marketing','홍보','브랜딩','branding'],
+  'marketing': ['마케팅','홍보','브랜딩'],
+  '확장': ['expansion','신규','새매장','new store'],
+  'expansion': ['확장','신규','새매장'],
+  '공급': ['supplier','업체','발주','supply'],
+  'supplier': ['공급','업체','발주'],
+  '브랜드': ['brand','the bap','더밥'],
+  'brand': ['브랜드','the bap','더밥'],
+  '회사': ['company','brand','브랜드','the bap'],
+  'company': ['회사','브랜드','brand'],
+  '매장': ['store','shop','가게','지점'],
+  'store': ['매장','shop','가게','지점'],
+  '직원': ['staff','employee','팀원'],
+  'staff': ['직원','employee','팀원']
+};
+
+function expandQueryWords(words) {
+  const expanded = new Set(words);
+  words.forEach(w => {
+    const syns = KB_SYNONYMS[w];
+    if (syns) syns.forEach(s => expanded.add(s.toLowerCase()));
+  });
+  return [...expanded];
+}
+
 function getRelevantKB(query, isDJCommand) {
   if (!kbData.length) return [];
-  const q = query.toLowerCase();
-  const words = q.split(/\s+/).filter(w => w.length > 1);
 
   const categories = MODE === 'staff' ? STAFF_CATEGORIES : KB_CATEGORIES;
-
-  // Access level filter: staff sees 'staff' only, manager sees 'staff'+'manager', DJ sees all
   const allowedAccess = isDJCommand ? ['staff','manager','dj'] :
                         MODE === 'manager' ? ['staff','manager'] : ['staff'];
 
-  const scored = kbData
-    .filter(kb => categories.includes(kb.category) && allowedAccess.includes(kb.accessLevel || 'staff'))
+  // Filter allowed entries
+  const allowed = kbData.filter(kb =>
+    kb.active !== false && kb.active !== 'false' &&
+    categories.includes(kb.category) &&
+    allowedAccess.includes(kb.accessLevel || 'staff')
+  );
+
+  // If small KB (≤20 entries), pass ALL to AI — AI is better at semantic matching
+  if (allowed.length <= 20) {
+    return allowed;
+  }
+
+  // For larger KB, use improved keyword matching with synonym expansion
+  const q = query.toLowerCase();
+  const baseWords = q.split(/\s+/).filter(w => w.length > 1);
+  const words = expandQueryWords(baseWords);
+
+  const scored = allowed
     .map(kb => {
       let score = 0;
       const text = `${kb.title} ${kb.content} ${kb.tags} ${kb.category}`.toLowerCase();
       words.forEach(w => {
         if (text.includes(w)) score += 1;
-        if (kb.title.toLowerCase().includes(w)) score += 2;
+        if (kb.title && kb.title.toLowerCase().includes(w)) score += 2;
         if (kb.tags && kb.tags.toLowerCase().includes(w)) score += 1.5;
+        if (kb.category && kb.category.toLowerCase().includes(w)) score += 1;
       });
       return { ...kb, score };
     })
     .filter(kb => kb.score > 0)
     .sort((a, b) => b.score - a.score)
-    .slice(0, 8);
+    .slice(0, 10);
 
   return scored;
 }

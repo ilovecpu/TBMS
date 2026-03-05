@@ -121,7 +121,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
 <div class="header">
   <div class="header-logo">TB</div>
   <div class="header-info">
-    <div class="header-title"><span id="hdrTitle">The Bap Staff AI</span> <span style="font-size:11px;font-weight:400;opacity:.45">Ver2.3</span></div>
+    <div class="header-title"><span id="hdrTitle">The Bap Staff AI</span> <span style="font-size:11px;font-weight:400;opacity:.45">Ver2.4</span></div>
     <div class="header-mode" id="hdrMode">Staff Mode</div>
   </div>
   <button class="header-btn" onclick="toggleSettings()" title="Settings"><i class="fas fa-cog"></i></button>
@@ -184,7 +184,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
   <label>Model Override (optional)</label>
   <input type="text" id="setModel" placeholder="e.g. gpt-4o-mini">
   <button class="btn-save" onclick="saveSettings()">Save Settings</button>
-  <p style="font-size:11px;color:var(--text-dim);margin-top:16px;text-align:center">The Bap AI Brain Ver2.3 • Programmed by DJ</p>
+  <p style="font-size:11px;color:var(--text-dim);margin-top:16px;text-align:center">The Bap AI Brain Ver2.4 • Programmed by DJ</p>
 </div>
 
 <!-- File Preview Overlay -->
@@ -202,7 +202,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
 
 <script>
 // ============================================================
-//  The Bap AI Bot — Ver2.3
+//  The Bap AI Bot — Ver2.4
 //  Programmed by DJ Kim
 // ============================================================
 const API_URL = 'https://script.google.com/macros/s/AKfycbzND88jsQ45x2Fmgtp4PphIUWEFp29VNaOuO3fYkeH_czTcXFjskQdydDQcvh63thxf/exec';
@@ -430,8 +430,9 @@ function getRelevantKB(query, isDJCommand) {
   if (!kbData.length) return [];
 
   const categories = MODE === 'staff' ? STAFF_CATEGORIES : KB_CATEGORIES;
-  const allowedAccess = isDJCommand ? ['staff','manager','dj'] :
-                        MODE === 'manager' ? ['staff','manager'] : ['staff'];
+  // Access hierarchy: customer < staff < manager < dj (higher levels see all lower)
+  const allowedAccess = isDJCommand ? ['customer','staff','manager','dj'] :
+                        MODE === 'manager' ? ['customer','staff','manager'] : ['customer','staff'];
 
   // Filter allowed entries
   const allowed = kbData.filter(kb =>
@@ -835,8 +836,11 @@ async function sendMessage() {
   const text = input.value.trim();
   if (!text || isSending) return;
 
+  // 모바일 한글 키보드 IME 버그 방지: blur로 조합 종료 후 clear
+  input.blur();
   input.value = '';
   input.style.height = 'auto';
+  setTimeout(() => input.focus(), 50);
   addUserMessage(text);
 
   // Check for memory commands first
@@ -1181,9 +1185,9 @@ The business owner is requesting data. You MUST:
 
     // Always inject ALL memories (these are owner's persistent notes)
     // Memories: filter by access level (memories default to 'dj' access)
-    const allowedAccess = isDJCommand ? ['staff','manager','dj'] :
-                          MODE === 'manager' ? ['staff','manager'] : ['staff'];
-    const memories = kbData.filter(kb => kb.category === 'Memory' && kb.active !== false && kb.active !== 'false' && allowedAccess.includes(kb.accessLevel || 'dj'));
+    const allowedMemAccess = isDJCommand ? ['customer','staff','manager','dj'] :
+                          MODE === 'manager' ? ['customer','staff','manager'] : ['customer','staff'];
+    const memories = kbData.filter(kb => kb.category === 'Memory' && kb.active !== false && kb.active !== 'false' && allowedMemAccess.includes(kb.accessLevel || 'dj'));
     if (memories.length > 0) {
       prompt += '\n=== MEMORIES (saved notes — always use these) ===\n';
       memories.forEach(m => {

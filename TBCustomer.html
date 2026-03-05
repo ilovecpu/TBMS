@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>The Bap Menu AI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+/* ============================================================
+   The Bap Customer AI — Ver1.0
+   손님용 메뉴 안내 챗봇
+   Programmed by DJ
+   ============================================================ */
+:root {
+  --bg: #0f0f0f;
+  --bg-card: #1a1a1a;
+  --bg-input: #222;
+  --accent: #e67e22;
+  --accent2: #27ae60;
+  --text: #f0f0f0;
+  --text-dim: #888;
+  --border: #333;
+  --success: #27ae60;
+  --info: #3498db;
+  --danger: #e74c3c;
+  --user-bg: #e67e22;
+  --bot-bg: #1e2a1e;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+/* Header */
+.header {
+  background: linear-gradient(135deg, #1a5e2a 0%, #0d3318 100%);
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 2px 12px rgba(0,0,0,.3);
+  z-index: 10;
+}
+.header-left { display: flex; align-items: center; gap: 10px; }
+.header-logo {
+  width: 36px; height: 36px;
+  background: var(--accent);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; font-weight: 700; color: #fff;
+}
+.header-title { font-size: 16px; font-weight: 700; color: #fff; }
+.header-sub { font-size: 11px; color: rgba(255,255,255,.6); }
+.header-right { display: flex; gap: 8px; }
+.lang-btn {
+  background: rgba(255,255,255,.15);
+  border: none;
+  color: #fff;
+  padding: 6px 10px;
+  border-radius: 16px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.lang-btn.active { background: var(--accent); }
+
+/* Chat Area */
+.chat-area {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  -webkit-overflow-scrolling: touch;
+}
+.msg {
+  max-width: 85%;
+  padding: 12px 16px;
+  border-radius: 16px;
+  font-size: 14px;
+  line-height: 1.6;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+}
+.msg-user {
+  align-self: flex-end;
+  background: var(--user-bg);
+  color: #fff;
+  border-bottom-right-radius: 4px;
+}
+.msg-bot {
+  align-self: flex-start;
+  background: var(--bot-bg);
+  color: var(--text);
+  border: 1px solid #2a3e2a;
+  border-bottom-left-radius: 4px;
+}
+.msg-bot strong { color: var(--accent); }
+.typing-indicator {
+  align-self: flex-start;
+  background: var(--bot-bg);
+  border: 1px solid #2a3e2a;
+  padding: 12px 20px;
+  border-radius: 16px;
+  display: none;
+}
+.typing-indicator span {
+  display: inline-block;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--accent2);
+  animation: bounce .6s infinite alternate;
+  margin: 0 2px;
+}
+.typing-indicator span:nth-child(2) { animation-delay: .2s; }
+.typing-indicator span:nth-child(3) { animation-delay: .4s; }
+@keyframes bounce { to { transform: translateY(-6px); opacity: .4; } }
+
+/* Quick Buttons */
+.quick-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 16px;
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+}
+.quick-btn {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 8px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all .2s;
+}
+.quick-btn:active, .quick-btn:hover {
+  background: var(--accent2);
+  color: #fff;
+  border-color: var(--accent2);
+}
+
+/* Input Area */
+.input-area {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--bg-card);
+  border-top: 1px solid var(--border);
+}
+.input-area textarea {
+  flex: 1;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 20px;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: none;
+  outline: none;
+  max-height: 100px;
+  line-height: 1.4;
+}
+.btn-send {
+  width: 42px; height: 42px;
+  border-radius: 50%;
+  background: var(--accent2);
+  border: none;
+  color: #fff;
+  font-size: 16px;
+  cursor: pointer;
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+.btn-send:disabled { background: #444; color: #666; }
+
+/* Settings */
+.settings-overlay {
+  display: none;
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,.7);
+  z-index: 100;
+}
+.settings-panel {
+  position: fixed; right: 0; top: 0; bottom: 0;
+  width: 300px; max-width: 85vw;
+  background: var(--bg-card);
+  padding: 20px;
+  overflow-y: auto;
+  z-index: 101;
+  border-left: 1px solid var(--border);
+}
+.settings-panel h3 { margin-bottom: 16px; color: var(--accent); }
+.settings-panel label { display: block; font-size: 12px; color: var(--text-dim); margin: 12px 0 4px; }
+.settings-panel select, .settings-panel input {
+  width: 100%; padding: 8px 12px; background: var(--bg-input); border: 1px solid var(--border);
+  color: var(--text); border-radius: 8px; font-size: 13px;
+}
+.settings-panel button {
+  margin-top: 16px; width: 100%; padding: 10px; background: var(--accent2);
+  border: none; color: #fff; border-radius: 8px; font-weight: 600; cursor: pointer;
+}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-left">
+    <div class="header-logo">B</div>
+    <div>
+      <div class="header-title">The Bap <span style="font-size:11px;font-weight:400;opacity:.5">Menu AI</span></div>
+      <div class="header-sub" id="hdrSub">Ask about our menu!</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <button class="lang-btn active" id="btnEn" onclick="setLang('en')">EN</button>
+    <button class="lang-btn" id="btnKo" onclick="setLang('ko')">한국어</button>
+    <button style="background:none;border:none;color:#fff;font-size:18px;cursor:pointer;padding:4px" onclick="toggleSettings()"><i class="fas fa-cog"></i></button>
+  </div>
+</div>
+
+<!-- Chat Area -->
+<div class="chat-area" id="chatArea">
+  <div class="typing-indicator" id="typingIndicator"><span></span><span></span><span></span></div>
+</div>
+
+<!-- Quick Buttons -->
+<div class="quick-buttons" id="quickBtns"></div>
+
+<!-- Input Area -->
+<div class="input-area">
+  <textarea id="msgInput" rows="1" placeholder="Ask about our menu..." onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+  <button class="btn-send" id="btnSend" onclick="sendMessage()"><i class="fas fa-paper-plane"></i></button>
+</div>
+
+<!-- Settings Overlay -->
+<div class="settings-overlay" id="settingsOverlay" onclick="toggleSettings()"></div>
+<div class="settings-panel" id="settingsPanel" style="display:none">
+  <h3><i class="fas fa-cog"></i> Settings</h3>
+  <label>AI Provider</label>
+  <select id="setProvider">
+    <option value="chatgpt">ChatGPT</option>
+    <option value="gemini">Gemini</option>
+    <option value="claude">Claude</option>
+  </select>
+  <label>API Key</label>
+  <input type="password" id="setApiKey" placeholder="Enter API Key">
+  <label>Model (optional)</label>
+  <input type="text" id="setModel" placeholder="default model">
+  <button onclick="saveSettings()"><i class="fas fa-save"></i> Save</button>
+  <p style="font-size:11px;color:var(--text-dim);margin-top:16px;text-align:center">The Bap Menu AI Ver1.0 • Programmed by DJ</p>
+</div>
+
+<script>
+// ============================================================
+//  The Bap Customer AI — Ver1.0
+//  손님용 메뉴/가격/알레르기/영양/소스 안내 챗봇
+// ============================================================
+
+const API_URL = 'https://script.google.com/macros/s/AKfycbzND88jsQ45x2Fmgtp4PphIUWEFp29VNaOuO3fYkeH_czTcXFjskQdydDQcvh63thxf/exec';
+const API_KEY = 'tBaP2026xKr!mGt9Qz';
+
+// 손님에게 보여줄 KB 카테고리 (customer + staff level 중 고객 관련만)
+const CUSTOMER_CATEGORIES = [
+  'Brand Philosophy', 'Menu & Recipes', 'Sauce Recipes'
+];
+
+let kbData = [];
+let chatHistory = [];
+let isSending = false;
+let currentLang = 'en'; // 'en' or 'ko'
+
+// Quick button sets
+const QUICK_EN = [
+  { text: '📋 Full Menu', msg: 'Show me the full menu with prices' },
+  { text: '⚠️ Allergens', msg: 'What allergens are in your food?' },
+  { text: '🌶️ Sauces', msg: 'Tell me about your sauces and spice levels' },
+  { text: '🥗 Vegetarian', msg: 'What vegetarian options do you have?' },
+  { text: '📊 Calories', msg: 'What are the calorie counts for your menu?' },
+  { text: '🔥 Spicy Guide', msg: 'Which items are spicy? What is the spice level order?' }
+];
+const QUICK_KO = [
+  { text: '📋 전체 메뉴', msg: '전체 메뉴와 가격을 알려주세요' },
+  { text: '⚠️ 알레르기', msg: '알레르기 정보를 알려주세요' },
+  { text: '🌶️ 소스 안내', msg: '소스 종류와 매운 정도를 알려주세요' },
+  { text: '🥗 채식 메뉴', msg: '채식 메뉴가 뭐가 있나요?' },
+  { text: '📊 칼로리', msg: '메뉴별 칼로리 정보를 알려주세요' },
+  { text: '🔥 매운맛 가이드', msg: '매운 메뉴는 어떤 게 있나요?' }
+];
+
+// ============================================================
+//  Init
+// ============================================================
+document.addEventListener('DOMContentLoaded', async () => {
+  loadSettings();
+  renderQuickButtons();
+  showWelcome();
+  await loadKB();
+  updateBadge();
+});
+
+function showWelcome() {
+  const en = `Welcome to **The Bap**! 🍚
+
+I'm your menu assistant. I can help you with:
+• **Menu & Prices** — What we serve and how much
+• **Allergen Info** — Check for any dietary concerns
+• **Sauce Guide** — 8 sauces from mild to 🔥 Crazy Hot
+• **Nutrition Info** — Calories, protein, carbs & more
+• **Vegetarian/Vegan** — Plant-based options
+
+Just ask or tap a button below!`;
+
+  const ko = `**The Bap (더밥)**에 오신 것을 환영합니다! 🍚
+
+메뉴 안내 AI입니다. 아래 내용을 도와드립니다:
+• **메뉴 & 가격** — 전체 메뉴 안내
+• **알레르기 정보** — 14가지 알레르겐 확인
+• **소스 가이드** — 8가지 소스 (순한맛~극매운맛)
+• **영양 정보** — 칼로리, 단백질, 탄수화물 등
+• **채식/비건 옵션** — 채식 가능 메뉴
+
+질문하거나 아래 버튼을 눌러주세요!`;
+
+  addBotMessage(currentLang === 'ko' ? ko : en);
+}
+
+// ============================================================
+//  KB Load
+// ============================================================
+async function loadKB() {
+  try {
+    const res = await fetch(`${API_URL}?action=getKB&apikey=${encodeURIComponent(API_KEY)}`, { redirect: 'follow' });
+    const json = await res.json();
+    if (json.status === 'ok') {
+      // 손님용: customer + staff 레벨의 고객 관련 카테고리만
+      kbData = (json.data || []).filter(kb =>
+        kb.active !== false && kb.active !== 'false' &&
+        CUSTOMER_CATEGORIES.includes(kb.category) &&
+        ['customer', 'staff'].includes(kb.accessLevel || 'staff')
+      );
+      console.log('Customer KB loaded:', kbData.length, 'entries');
+    }
+  } catch (e) {
+    console.warn('KB load error:', e);
+  }
+}
+
+function updateBadge() {
+  let badge = document.getElementById('dataBadge');
+  if (!badge) {
+    badge = document.createElement('div');
+    badge.id = 'dataBadge';
+    badge.style.cssText = 'position:fixed;top:56px;right:8px;font-size:10px;padding:2px 8px;border-radius:10px;z-index:50;opacity:.7;color:#fff';
+    document.body.appendChild(badge);
+  }
+  if (kbData.length > 0) {
+    badge.textContent = `✓ ${kbData.length} items loaded`;
+    badge.style.background = 'var(--success)';
+  } else {
+    badge.textContent = '⚠ No menu data';
+    badge.style.background = 'var(--danger)';
+  }
+  setTimeout(() => { if (badge) badge.style.opacity = '0.3'; }, 4000);
+}
+
+// ============================================================
+//  Language
+// ============================================================
+function setLang(lang) {
+  currentLang = lang;
+  document.getElementById('btnEn').className = 'lang-btn' + (lang === 'en' ? ' active' : '');
+  document.getElementById('btnKo').className = 'lang-btn' + (lang === 'ko' ? ' active' : '');
+  document.getElementById('msgInput').placeholder = lang === 'ko' ? '메뉴에 대해 물어보세요...' : 'Ask about our menu...';
+  document.getElementById('hdrSub').textContent = lang === 'ko' ? '메뉴에 대해 물어보세요!' : 'Ask about our menu!';
+  renderQuickButtons();
+}
+
+function renderQuickButtons() {
+  const btns = currentLang === 'ko' ? QUICK_KO : QUICK_EN;
+  const container = document.getElementById('quickBtns');
+  container.innerHTML = btns.map(b =>
+    `<div class="quick-btn" onclick="quickSend('${b.msg.replace(/'/g, "\\'")}')">${b.text}</div>`
+  ).join('');
+}
+
+function quickSend(msg) {
+  document.getElementById('msgInput').value = msg;
+  sendMessage();
+}
+
+// ============================================================
+//  Chat UI
+// ============================================================
+function addBotMessage(text) {
+  const div = document.createElement('div');
+  div.className = 'msg msg-bot';
+  div.innerHTML = formatMsg(text);
+  document.getElementById('chatArea').appendChild(div);
+  scrollToBottom();
+}
+
+function addUserMessage(text) {
+  const div = document.createElement('div');
+  div.className = 'msg msg-user';
+  div.textContent = text;
+  document.getElementById('chatArea').appendChild(div);
+  scrollToBottom();
+}
+
+function formatMsg(text) {
+  return text
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    .replace(/^### (.+)/gm, '<strong style="font-size:15px;color:var(--accent)">$1</strong>')
+    .replace(/^## (.+)/gm, '<strong style="font-size:16px;color:var(--accent)">$1</strong>')
+    .replace(/^# (.+)/gm, '<strong style="font-size:17px;color:var(--accent)">$1</strong>')
+    .replace(/\n/g, '<br>');
+}
+
+function showTyping() { document.getElementById('typingIndicator').style.display = 'block'; scrollToBottom(); }
+function hideTyping() { document.getElementById('typingIndicator').style.display = 'none'; }
+function scrollToBottom() {
+  const c = document.getElementById('chatArea');
+  setTimeout(() => { c.scrollTop = c.scrollHeight; }, 50);
+}
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 100) + 'px';
+}
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+}
+
+// ============================================================
+//  Send Message
+// ============================================================
+async function sendMessage() {
+  const input = document.getElementById('msgInput');
+  const text = input.value.trim();
+  if (!text || isSending) return;
+
+  // 모바일 한글 키보드 IME 버그 방지
+  input.blur();
+  input.value = '';
+  input.style.height = 'auto';
+  setTimeout(() => input.focus(), 50);
+
+  addUserMessage(text);
+  chatHistory.push({ role: 'user', content: text });
+
+  await processResponse(text);
+}
+
+async function processResponse(userText) {
+  isSending = true;
+  document.getElementById('btnSend').disabled = true;
+  showTyping();
+
+  try {
+    const systemPrompt = buildSystemPrompt();
+    const provider = localStorage.getItem('tbcust_provider') || 'chatgpt';
+    const apiKey = localStorage.getItem('tbcust_api_key_' + provider) || '';
+
+    if (!apiKey) {
+      hideTyping();
+      addBotMessage(currentLang === 'ko'
+        ? '⚠️ API Key가 설정되지 않았습니다. 오른쪽 상단 ⚙️ 설정에서 API Key를 입력해주세요.'
+        : '⚠️ No API Key set. Please tap ⚙️ Settings and enter your API Key.');
+      isSending = false;
+      document.getElementById('btnSend').disabled = false;
+      return;
+    }
+
+    const model = localStorage.getItem('tbcust_model_' + provider) || getDefaultModel(provider);
+    const messages = [
+      { role: 'system', content: systemPrompt },
+      ...chatHistory.slice(-16)
+    ];
+
+    const response = await callAIWithFallback(provider, apiKey, model, messages);
+    hideTyping();
+    addBotMessage(response);
+    chatHistory.push({ role: 'assistant', content: response });
+  } catch (err) {
+    hideTyping();
+    addBotMessage('⚠️ Error: ' + err.message);
+  }
+
+  isSending = false;
+  document.getElementById('btnSend').disabled = false;
+}
+
+// ============================================================
+//  System Prompt — 손님용 (메뉴, 가격, 알레르기, 영양, 소스만)
+// ============================================================
+function buildSystemPrompt() {
+  // 언어 감지
+  const langHint = currentLang === 'ko'
+    ? 'The user prefers Korean. Respond in Korean.'
+    : 'Respond in English by default. If the user writes in Korean, respond in Korean.';
+
+  let prompt = `You are "The Bap Menu AI", a friendly customer-facing assistant for "The Bap" Korean restaurant in the UK.
+
+ROLE: Help customers with menu items, prices, allergen information, nutrition facts, sauce descriptions, and dietary options.
+
+CRITICAL RULES:
+- ONLY answer based on the MENU DATA provided below
+- If information is NOT in the data below, say you don't have that information and suggest the customer ask the staff
+- Be friendly, welcoming, and helpful
+- Keep answers concise but thorough
+- Use emojis sparingly to make answers engaging
+- ${langHint}
+- When listing allergens, ALWAYS include all relevant items (both CONTAINS and MAY CONTAIN)
+- When recommending sauces, mention the spice level clearly
+- When asked about vegetarian/vegan options, list all relevant items
+- NEVER discuss staff information, business operations, financials, or internal company matters
+- NEVER make up prices, allergen info, or nutrition data — accuracy is critical for food safety
+- If a customer has a specific allergy, be extra careful and recommend they verify with staff
+
+PERSONALITY:
+- Warm and inviting, like a friendly restaurant guide
+- Knowledgeable about Korean food culture
+- Offer helpful suggestions (e.g., "If you like mild flavours, try our White sauce!")
+- Use food descriptions that make dishes sound appealing
+
+`;
+
+  // Inject all customer KB entries (these contain menu, allergen, nutrition, sauce data)
+  if (kbData.length > 0) {
+    prompt += '\n=== MENU DATA (from The Bap Knowledge Base) ===\n';
+    kbData.forEach(kb => {
+      prompt += `\n--- [${kb.category}] ${kb.title} ---\n${kb.content}\n`;
+    });
+    prompt += '\n=== END MENU DATA ===\n';
+  } else {
+    prompt += '\n[NOTE: Menu data is not loaded. Tell the customer that menu information is temporarily unavailable and suggest they ask the staff directly.]\n';
+  }
+
+  return prompt;
+}
+
+// ============================================================
+//  AI Providers
+// ============================================================
+function getDefaultModel(provider) {
+  switch (provider) {
+    case 'chatgpt': return 'gpt-4o';
+    case 'gemini': return 'gemini-2.0-flash';
+    case 'claude': return 'claude-sonnet-4-20250514';
+    default: return '';
+  }
+}
+
+async function callAIWithFallback(provider, apiKey, model, messages) {
+  const providers = ['chatgpt', 'gemini', 'claude'];
+
+  // Try primary provider with retry
+  try {
+    return await callProviderWithRetry(provider, apiKey, model, messages, 2);
+  } catch (err) {
+    console.warn(`Primary provider ${provider} failed:`, err.message);
+  }
+
+  // Fallback to other providers
+  for (const alt of providers) {
+    if (alt === provider) continue;
+    const altKey = localStorage.getItem('tbcust_api_key_' + alt);
+    if (!altKey) continue;
+    const altModel = localStorage.getItem('tbcust_model_' + alt) || getDefaultModel(alt);
+    try {
+      const result = await callProviderWithRetry(alt, altKey, altModel, messages, 1);
+      addSystemNote(`(Switched to ${alt})`);
+      return result;
+    } catch (e) {
+      continue;
+    }
+  }
+
+  throw new Error('All AI providers failed. Please try again later.');
+}
+
+async function callProviderWithRetry(provider, apiKey, model, messages, maxRetries) {
+  let lastError;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await callProvider(provider, apiKey, model, messages);
+    } catch (err) {
+      lastError = err;
+      if (err.message.includes('429') || err.message.includes('500')) {
+        const delay = (attempt + 1) * 3000;
+        await new Promise(r => setTimeout(r, delay));
+        continue;
+      }
+      throw err;
+    }
+  }
+  throw lastError;
+}
+
+async function callProvider(provider, apiKey, model, messages) {
+  switch (provider) {
+    case 'chatgpt': return await callChatGPT(apiKey, model, messages);
+    case 'gemini': return await callGemini(apiKey, model, messages);
+    case 'claude': return await callClaude(apiKey, model, messages);
+    default: throw new Error('Unknown provider');
+  }
+}
+
+async function callChatGPT(apiKey, model, messages) {
+  const res = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+    body: JSON.stringify({ model, messages, temperature: 0.7, max_tokens: 1500 })
+  });
+  if (!res.ok) throw new Error(`ChatGPT ${res.status}`);
+  const json = await res.json();
+  return json.choices[0].message.content;
+}
+
+async function callGemini(apiKey, model, messages) {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+  const systemMsg = messages.find(m => m.role === 'system');
+  const chatMsgs = messages.filter(m => m.role !== 'system');
+  const contents = chatMsgs.map(m => ({
+    role: m.role === 'assistant' ? 'model' : 'user',
+    parts: [{ text: m.content }]
+  }));
+  const body = { contents };
+  if (systemMsg) body.systemInstruction = { parts: [{ text: systemMsg.content }] };
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) throw new Error(`Gemini ${res.status}`);
+  const json = await res.json();
+  return json.candidates[0].content.parts[0].text;
+}
+
+async function callClaude(apiKey, model, messages) {
+  const systemMsg = messages.find(m => m.role === 'system');
+  const chatMsgs = messages.filter(m => m.role !== 'system');
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model,
+      max_tokens: 1500,
+      system: systemMsg ? systemMsg.content : '',
+      messages: chatMsgs
+    })
+  });
+  if (!res.ok) throw new Error(`Claude ${res.status}`);
+  const json = await res.json();
+  return json.content[0].text;
+}
+
+function addSystemNote(text) {
+  const div = document.createElement('div');
+  div.style.cssText = 'text-align:center;font-size:11px;color:var(--text-dim);padding:4px';
+  div.textContent = text;
+  document.getElementById('chatArea').appendChild(div);
+}
+
+// ============================================================
+//  Settings
+// ============================================================
+function toggleSettings() {
+  const overlay = document.getElementById('settingsOverlay');
+  const panel = document.getElementById('settingsPanel');
+  const show = panel.style.display === 'none';
+  overlay.style.display = show ? 'block' : 'none';
+  panel.style.display = show ? 'block' : 'none';
+}
+
+function loadSettings() {
+  const provider = localStorage.getItem('tbcust_provider') || 'chatgpt';
+  const key = localStorage.getItem('tbcust_api_key_' + provider) || '';
+  const model = localStorage.getItem('tbcust_model_' + provider) || '';
+  document.getElementById('setProvider').value = provider;
+  document.getElementById('setApiKey').value = key;
+  document.getElementById('setModel').value = model;
+}
+
+function saveSettings() {
+  const provider = document.getElementById('setProvider').value;
+  const apiKey = document.getElementById('setApiKey').value.trim();
+  const model = document.getElementById('setModel').value.trim();
+  localStorage.setItem('tbcust_provider', provider);
+  if (apiKey) localStorage.setItem('tbcust_api_key_' + provider, apiKey);
+  if (model) localStorage.setItem('tbcust_model_' + provider, model);
+  toggleSettings();
+}
+</script>
+</body>
+</html>

@@ -5039,8 +5039,8 @@ function renderAiBrain(c){
     html+=`<div class="card"><table class="data-table"><thead><tr><th>Category</th><th>Title</th><th>Access</th><th>Tags</th><th>Ver</th><th>Updated</th><th style="width:100px">Actions</th></tr></thead><tbody>`;
     filtered.forEach(kb=>{
       const updated=(kb.updatedAt||kb.createdAt||'').substring(0,10);
-      const accLbl={'staff':'👥 All','manager':'🔑 Mgr','dj':'👑 DJ'};
-      const accColor={'staff':'var(--info)','manager':'var(--warning,#f39c12)','dj':'var(--danger)'};
+      const accLbl={'customer':'🌐 Public','staff':'👥 All','manager':'🔑 Mgr','dj':'👑 DJ'};
+      const accColor={'customer':'var(--success,#27ae60)','staff':'var(--info)','manager':'var(--warning,#f39c12)','dj':'var(--danger)'};
       const al=kb.accessLevel||'staff';
       html+=`<tr>
         <td><span style="background:var(--accent);color:#fff;padding:2px 8px;border-radius:10px;font-size:11px;white-space:nowrap">${kb.category}</span></td>
@@ -5075,6 +5075,7 @@ function showKBEditModal(id){
         <div class="form-group"><label>Tags (comma separated)</label><input id="kbEditTags" class="form-control" value="${entry?(entry.tags||''):''}"></div>
         <div class="form-group"><label>Source</label><input id="kbEditSource" class="form-control" value="${entry?(entry.source||'manual'):'manual'}" placeholder="manual, file upload, training..."></div>
         <div class="form-group"><label>Access Level</label><select id="kbEditAccess" class="form-control">
+          <option value="customer" ${entry&&entry.accessLevel==='customer'?'selected':''}>Customer — 손님 챗봇에도 공개</option>
           <option value="staff" ${!entry||entry.accessLevel==='staff'?'selected':''}>All Staff — 모든 직원 열람 가능</option>
           <option value="manager" ${entry&&entry.accessLevel==='manager'?'selected':''}>Manager Only — 매니저만 열람</option>
           <option value="dj" ${entry&&entry.accessLevel==='dj'?'selected':''}>DJ Only — 오너(DJ:)만 열람</option>
@@ -5112,10 +5113,22 @@ async function saveKBFromModal(id){
 // ==================== BOT SETTINGS ====================
 function renderBotSettings(c){
   const baseUrl=window.location.href.replace(/TBMS\.html.*/,'TBBot.html');
+  const customerBaseUrl=window.location.href.replace(/TBMS\.html.*/,'TBCustomer.html');
   const staffUrl=baseUrl+'?mode=staff';
   const mgrUrl=baseUrl+'?mode=manager';
+  const customerUrl=customerBaseUrl;
 
   let html=`<div style="display:grid;gap:20px;grid-template-columns:repeat(auto-fit,minmax(320px,1fr))">`;
+
+  // Customer AI QR
+  html+=`<div class="card">
+    <div class="card-header"><h3><i class="fas fa-utensils" style="color:#27ae60;margin-right:8px"></i>The Bap Menu AI (Customer)</h3></div>
+    <p style="font-size:13px;color:var(--text-light);margin-bottom:16px">손님용 AI 챗봇. 메뉴, 가격, 알레르기, 영양정보, 소스 등을 물어볼 수 있습니다.</p>
+    <div id="qrCustomer" style="text-align:center;margin:16px 0;background:#fff;padding:16px;border-radius:8px;display:inline-block"></div>
+    <div style="margin-top:8px"><input class="form-control" value="${customerUrl}" readonly style="font-size:11px" onclick="this.select()"></div>
+    <button class="btn btn-primary btn-sm" style="margin-top:8px" onclick="navigator.clipboard.writeText('${customerUrl}');toast('URL copied','success')"><i class="fas fa-copy"></i> Copy URL</button>
+    <a class="btn btn-ghost btn-sm" style="margin-top:8px" href="${customerUrl}" target="_blank"><i class="fas fa-external-link-alt"></i> Open</a>
+  </div>`;
 
   // Staff AI QR
   html+=`<div class="card">
@@ -5165,8 +5178,13 @@ function renderBotSettings(c){
 
   // Generate QR codes
   setTimeout(()=>{
+    const qrCustEl=document.getElementById('qrCustomer');
     const qrStaffEl=document.getElementById('qrStaff');
     const qrMgrEl=document.getElementById('qrManager');
+    if(qrCustEl&&typeof QRCode!=='undefined'){
+      qrCustEl.innerHTML='';
+      new QRCode(qrCustEl,{text:customerUrl,width:180,height:180,colorDark:'#1a5e2a',colorLight:'#fff'});
+    }
     if(qrStaffEl&&typeof QRCode!=='undefined'){
       qrStaffEl.innerHTML='';
       new QRCode(qrStaffEl,{text:staffUrl,width:180,height:180,colorDark:'#000',colorLight:'#fff'});

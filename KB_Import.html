@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>KB Data Import Tool</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', sans-serif; background: #0f172a; color: #e2e8f0; padding: 20px; }
+h1 { text-align: center; margin-bottom: 20px; color: #f59e0b; }
+.log { background: #1e293b; border-radius: 12px; padding: 16px; max-height: 70vh; overflow-y: auto; font-family: monospace; font-size: 13px; line-height: 1.8; }
+.log .ok { color: #22c55e; }
+.log .err { color: #ef4444; }
+.log .info { color: #60a5fa; }
+.log .warn { color: #f59e0b; }
+button { display: block; margin: 20px auto; padding: 12px 40px; background: #f59e0b; color: #0f172a; border: none; border-radius: 8px; font-size: 16px; font-weight: 700; cursor: pointer; }
+button:disabled { background: #475569; color: #94a3b8; cursor: not-allowed; }
+.summary { text-align: center; margin-top: 16px; font-size: 18px; font-weight: 600; }
+</style>
+</head>
+<body>
+<h1>📚 The Bap KB Import Tool</h1>
+<button id="btnStart" onclick="startImport()">▶ Start Import (5 entries)</button>
+<div class="log" id="log"></div>
+<div class="summary" id="summary"></div>
+
+<script>
+const API_URL = 'https://script.google.com/macros/s/AKfycbzND88jsQ45x2Fmgtp4PphIUWEFp29VNaOuO3fYkeH_czTcXFjskQdydDQcvh63thxf/exec';
+const API_KEY = 'tBaP2026xKr!mGt9Qz';
+
+const entries = [
+  {
+    category: "Menu & Recipes",
+    title: "The Bap Full Menu with Prices",
+    content: `The Bap (더밥) - Complete Menu & Prices
+
+모든 Bap 메뉴는 Rice(밥), Cabbage mix(양배추 믹스), Sweet potato noodle(잡채)와 함께 1000ml Bowl에 제공됩니다.
+
+=== K-Food on the Bap ===
+0. Combo Bap - £9.55 (토핑 2가지 선택)
+1. Tofu Bap - £7.45 (V) - Fried Tofu (튀긴 두부)
+2. Man Du Bap - £7.45 - Fried Chicken Dumpling 4pcs (치킨 만두 튀김 4개)
+3. Jap Che Bap - £6.95 (V) - Sweet Potato Noodles (잡채)
+
+=== K-Chicken on the Bap ===
+4. KFC Bap - £8.25 - Korean Fried Chicken / Yang Nyum Chicken (양념치킨)
+5. Katsu Bap - £8.25 - Fried Chicken Katsu with Curry sauce (치킨 카츠 + 카레소스)
+6. Kang Jung Bap - £8.25 - Fried Chicken with Sweet & Sour Sauce (강정)
+7. Sweet Soy Bap - £8.25 - Fried Chicken with Sweet & Soy Sauce (간장 소스)
+
+=== Bulgogi BBQ on the Bap ===
+(Bulgogi 불고기: Cooked meat with fire or stir fried with Korean sauce)
+8. Beef Bap - £8.75 - Korean Beef Bulgogi BBQ (소불고기)
+9. Pork Bap - £8.75 - Korean Spicy Pork Bulgogi BBQ (매운 돼지불고기)
+10. Chicken Bap - £8.75 - Korean Chicken Bulgogi BBQ (닭불고기)
+
+=== Bibim Bap ===
+11. Vegetable Bibim Bap - £8.45 (VG, Vegan) - Rice with seasoned vegetable, mix with Go Chu Jang (비빔밥 + 고추장)
+12. Bibim Bap with Topping - £9.95 - Vegetable Bibim Bap with choice of one Topping
+
+=== Noodle in Soup (Fish soup base + thick noodle - 국수/우동) ===
+13. Katsu Guk Su - £8.00 - Noodle soup with Katsu Topping
+14. Man Du Guk Su - £8.00 - Noodle soup with Chicken Man Du Topping
+15. Tofu Guk Su - £7.95 - Noodle soup with Fried Tofu
+
+=== Sides ===
+16. Man Du Set - £2.95 - Korean Chicken Dumpling 4 PCS with sauce
+17. Kim Mari Set - £3.25 (V) - Fried sweet potato noodle wrapped in Seaweed 4PCS (김말이)
+18. Ttok-Bok-Ki - £4.45 (V) - Korean Rice cake with Spicy Sauce (떡볶이)
+19. Kim Chi - £2.95 (VG) - Korean Kim chi (김치)
+
+=== Korean Chicken Box ===
+20. Korean Chicken Box - £17.95 - KFC + Kang Jung + Sweet Soy Chicken in a Box (3종 치킨 박스, 밥 미포함)
+
+=== Dietary Labels ===
+V (Vegetarian): Tofu Bap, Jap Che Bap, Kim Mari Set, Ttok-Bok-Ki
+VG (Vegan): Vegetable Bibim Bap, Kim Chi
+Spicy marked: Pork Bap
+
+=== Notes ===
+- Combo Bap(#0): 토핑 메뉴 중 2가지 선택 가능
+- Bibim Bap with Topping(#12): 토핑 1가지 선택, 토핑에 따라 알레르겐 달라짐
+- Katsu Bap(#5): 알레르겐은 카레소스 제외 기준, Curry Sauce 별도 알레르겐 있음
+- Noodle in Soup: Fish soup base (생선 육수)
+- Korean Chicken Box(#20): 치킨만 들어있음 (밥/양배추/잡채 미포함)`,
+    tags: "menu, price, 메뉴, 가격, food, bap, chicken, beef, pork, tofu, bibimbap, noodle, side, combo, vegetarian, vegan",
+    source: "manual",
+    createdBy: "DJ",
+    accessLevel: "customer"
+  },
+  {
+    category: "Menu & Recipes",
+    title: "The Bap Allergen Information by Menu Item",
+    content: `The Bap Allergen Info - 14 Allergens (UK Standard)
+
+알레르겐 표기: O = Contains, M.C = May Contain, blank = Free
+14 Allergens: Celery, Cereals(gluten), Crustaceans, Eggs, Fish, Lupin, Milk, Mollusc, Mustard, Nuts, Peanuts, Sesame, Soya, Sulphur Dioxide
+
+=== K-Food on the Bap ===
+Tofu Bap (Without Sauce): CONTAINS - Cereals(gluten), Soya
+Man Du Bap: CONTAINS - Cereals(gluten), Peanuts, Sesame, Sulphur Dioxide | MAY CONTAIN - Crustaceans, Eggs, Fish, Mollusc
+Jap Che Bap: CONTAINS - Cereals(gluten), Soya
+
+=== K-Chicken on the Bap ===
+KFC Bap: CONTAINS - Cereals(gluten), Eggs, Peanuts, Sesame, Sulphur Dioxide
+Katsu Bap (Without Curry): CONTAINS - Cereals(gluten), Eggs
+Kang Jung Bap: CONTAINS - Cereals(gluten), Eggs, Peanuts, Sesame, Sulphur Dioxide
+Sweet Soy Bap: CONTAINS - Cereals(gluten), Eggs, Peanuts, Sesame, Sulphur Dioxide
+
+=== Bulgogi BBQ ===
+Beef Bap: CONTAINS - Cereals(gluten), Peanuts, Sesame, Sulphur Dioxide
+Pork Bap: CONTAINS - Cereals(gluten), Peanuts, Sesame, Sulphur Dioxide
+Chicken Bap: CONTAINS - Cereals(gluten), Sesame, Soya, Sulphur Dioxide
+
+=== Bibim Bap ===
+Vegetable Bibim Bap: CONTAINS - Cereals(gluten), Sesame, Soya, Sulphur Dioxide
+Bibim Bap + Topping: CONTAINS - Cereals(gluten), Sesame, Soya, Sulphur Dioxide (+ check topping allergens)
+
+=== Noodle in Soup ===
+Katsu Guk Su: CONTAINS - Cereals(gluten), Eggs, Fish, Soya
+Man Du Guk Su: CONTAINS - Cereals(gluten), Fish, Soya | MAY CONTAIN - Crustaceans, Eggs, Mollusc
+Tofu Guk Su: CONTAINS - Cereals(gluten), Fish, Soya
+
+=== Sides ===
+Man Du Set: CONTAINS - Cereals(gluten), Peanuts, Sesame, Sulphur Dioxide | MAY CONTAIN - Crustaceans, Eggs, Fish, Mollusc
+Kim Mari Set: CONTAINS - Cereals(gluten)
+Curry Sauce: CONTAINS - Cereals(gluten), Soya
+Rice: No allergens
+Jap Che Noodle: No allergens
+Kim Chi: No allergens
+
+=== Snacks & Drinks ===
+Soft Cheese Cake: CONTAINS - Cereals(gluten), Eggs, Milk
+Tteok: CONTAINS - Soya
+Aloe Drink: No allergens
+Demi Soda: MAY CONTAIN - Milk, Soya
+Korean Tea: No allergens
+Milkis: CONTAINS - Milk, Soya
+Shrimp Cracker: CONTAINS - Cereals(gluten), Crustaceans, Fish, Soya | MAY CONTAIN - Eggs, Milk, Peanuts
+Potato Snack: CONTAINS - Cereals(gluten), Mustard, Soya, Nuts(Coconut)
+Sweet Potato Snack: CONTAINS - Cereals(gluten), Soya
+Onion Rings: CONTAINS - Cereals(gluten) | MAY CONTAIN - Crustaceans, Eggs, Milk, Mollusc, Peanuts, Sesame
+Choco Pie: CONTAINS - Cereals(gluten), Eggs, Milk, Soya | MAY CONTAIN - Fish
+Crushed Pear Juice: No allergens
+Rice Nectar: CONTAINS - Cereals(gluten)
+TteokBokKi: CONTAINS - Cereals(gluten), Sesame, Soya, Sulphur Dioxide
+
+IMPORTANT: 소스 선택에 따라 추가 알레르겐이 있으므로, 소스 알레르겐도 반드시 함께 안내해야 합니다.`,
+    tags: "allergen, allergy, 알레르기, 알레르겐, gluten, eggs, fish, milk, soya, peanuts, sesame, nuts, vegetarian, vegan, dietary",
+    source: "manual",
+    createdBy: "DJ",
+    accessLevel: "customer"
+  },
+  {
+    category: "Sauce Recipes",
+    title: "The Bap 8 Sauces - Description, Spice Level and Allergens",
+    content: `The Bap Sauce Guide - 8 Sauces (Mild to Hottest)
+
+=== Spice Level Order (mild to hot) ===
+White < Bulgogi < Baby Hot < Bibim Bap < Spicy < Extra Spicy < Hot < Crazy Hot
+
+1. White (화이트) - NOT SPICY
+Sweet and tangy creamy sauce with refreshing citrus hint. Inspired by Korean street toast, drizzled over shredded cabbage on rice. Perfect for mild/sweet preference.
+ALLERGENS: Eggs, Mustard
+
+2. Bulgogi (불고기) - NOT SPICY
+Savoury soy-based Korean sauce with gentle sweetness. Great with Tofu, Man Du. Completely non-spicy.
+ALLERGENS: Cereals(gluten), Sesame
+
+3. Baby Hot (베이비핫) - MILDEST SPICY
+Creamy chili mayo with just right touch of heat and sweetness. Our mildest spicy sauce - smooth, balanced, super popular. Great for spice beginners.
+ALLERGENS: Eggs, Mustard
+
+4. Bibim Bap (비빔밥) - MEDIUM SPICY (similar to average Indian curry)
+Korean classic - sweet, tangy, and spicy. Rich and flavourful, works beautifully with rice, veggies, and meat.
+ALLERGENS: Cereals(gluten), Sesame, Soya
+
+5. Spicy (스파이시) - SPICY
+Velvety spicy sauce with smooth build-up and bold finish. Creamy heat with clean lingering kick.
+ALLERGENS: Cereals(gluten), Eggs, Mustard, Sesame, Soya
+
+6. Extra Spicy (엑스트라 스파이시) - VERY SPICY
+Sharp tangy sauce with fiery edge. Fast clean punch of heat. Intense but still tasty.
+ALLERGENS: None
+
+7. Hot (핫) - VERY HOT
+Bold vibrant sauce with strong tangy spice. Straight-to-the-point heat with satisfying depth.
+ALLERGENS: Cereals(gluten), Sesame, Soya
+
+8. Crazy Hot (크레이지핫) - HOTTEST (a few drops is all it takes!)
+Our hottest sauce. Intense, powerful, not for casual spice fans. WARNING: Please taste before ordering.
+ALLERGENS: None
+
+NOTE: 소스는 8가지 중 선택 가능. 각 소스별 알레르겐이 다르므로 소스 선택 시 알레르겐 안내 필수.`,
+    tags: "sauce, 소스, spicy, 매운, hot, mild, white, bulgogi, baby hot, bibimbap, extra spicy, crazy hot, allergen, spice level",
+    source: "manual",
+    createdBy: "DJ",
+    accessLevel: "customer"
+  },
+  {
+    category: "Menu & Recipes",
+    title: "The Bap Nutrition Information - Calories, Carbs, Protein, Fat",
+    content: `The Bap Nutrition Info - per serving
+Format: Carbs(g) | Protein(g) | Fat(g) | Sugar(g) | Calories(kcal)
+
+=== K-Food on the Bap ===
+Tofu Bap (4 PCS): 108 | 21 | 20 | 6 | 690 kcal
+Man Du Bap: 115 | 18 | 22 | 6 | 720 kcal
+Jap Che Bap: 128 | 12 | 17 | 14 | 700 kcal
+
+=== K-Chicken on the Bap ===
+KFC Bap: 122 | 29 | 26 | 20 | 930 kcal
+Katsu Bap: 118 | 31 | 27 | 6 | 920 kcal
+Kang Jung Bap: 134 | 28 | 23 | 25 | 950 kcal
+Sweet Soy Bap: 126 | 29 | 22 | 15 | 900 kcal
+
+=== K-BBQ on the Bap ===
+Beef Bap: 100 | 44 | 28 | 16 | 810 kcal
+Pork Bap: 100 | 42 | 32 | 18 | 830 kcal
+Chicken Bap: 96 | 48 | 20 | 12 | 750 kcal
+
+=== Bibim Bap ===
+Vegetable Bibim Bap: 102 | 9 | 6.5 | 19 | 489 kcal
+Bibim Bap + Fried Tofu: 114 | 22 | 22.5 | 21 | 749 kcal
+Bibim Bap + KFC: 137 | 31 | 28.5 | 37 | 989 kcal
+Bibim Bap + Katsu: 137 | 35 | 32.5 | 25 | 985 kcal
+Bibim Bap + Kang Jung: 152 | 31 | 26.5 | 30 | 990 kcal
+Bibim Bap + Sweet Soy: 144 | 31 | 24.5 | 31 | 969 kcal
+
+=== Noodle in Soup ===
+Katsu Guk Su: 76 | 18.4 | 12.4 | 4.4 | 520 kcal
+Chicken Man Du Guk Su: 78 | 13 | 11 | 4 | 470 kcal
+Tofu Guk Su: 68 | 14.5 | 10 | 3 | 440 kcal
+
+=== Sides & Components ===
+Chicken Man Du Set (4PCS): 10 | 32 | 18 | 4 | 320 kcal
+Kim Mari Set (4PCS): 4 | 34 | 14 | 2 | 280 kcal
+Tteok-Bok-Ki: 79.4 | 6 | 3 | 15.9 | 357 kcal
+Kim Chi: 6.8 | 3.4 | 0 | 3.4 | 43 kcal
+Rice only: 42 | 4.1 | 0.5 | 0 | 195 kcal
+Jap Chae only: 48 | 3 | 4.5 | 9 | 255 kcal
+Katsu Curry Sauce: 21.3 | 2.1 | 6.4 | 8.5 | 149 kcal
+
+=== Lowest Calorie Options ===
+1. Tofu Guk Su - 440 kcal
+2. Man Du Guk Su - 470 kcal
+3. Vegetable Bibim Bap - 489 kcal`,
+    tags: "nutrition, calories, 칼로리, 영양, carbs, protein, fat, sugar, diet, healthy, low calorie, 탄수화물, 단백질",
+    source: "manual",
+    createdBy: "DJ",
+    accessLevel: "customer"
+  },
+  {
+    category: "Brand Philosophy",
+    title: "The Bap Store Concept and Brand Identity",
+    content: `The Bap (더밥) - Brand Identity and Concept
+
+가게 이름: The Bap (더밥)
+슬로건: 밥이보약 더밥 / K-Food on the Bap
+컨셉: "Bap"(밥)은 한국어로 "cooked rice" 또는 "meal"을 뜻합니다.
+
+핵심 가치: 모든 음식은 매일 처음부터 직접 조리합니다. (Prepared daily from scratch)
+
+메뉴 구성: 한국 전통 음식을 영국 테이크아웃 형식에 맞게 재구성
+- Bap (밥 위에 토핑) / Bibim Bap (비빔밥) / Guk Su (국수) / Sides / Korean Chicken Box
+- 8가지 시그니처 소스 (White부터 Crazy Hot까지)
+- 채식(V) 및 비건(VG) 옵션 제공
+
+음식 특징: K-Food, K-Chicken, Bulgogi BBQ, Bibim Bap, Korean Noodle Soup
+대상 시장: UK takeaway and fast casual dining`,
+    tags: "brand, concept, 컨셉, 비전, vision, philosophy, 철학, identity, the bap, 더밥, korean food, K-food, takeaway, 브랜드, slogan, mission",
+    source: "manual",
+    createdBy: "DJ",
+    accessLevel: "customer"
+  }
+];
+
+function log(msg, cls) {
+  const el = document.getElementById('log');
+  const line = document.createElement('div');
+  line.className = cls || '';
+  line.textContent = msg;
+  el.appendChild(line);
+  el.scrollTop = el.scrollHeight;
+}
+
+async function saveEntry(entry) {
+  const res = await fetch(API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify({ action: 'saveKB', apikey: API_KEY, entry }),
+    redirect: 'follow'
+  });
+  return await res.json();
+}
+
+async function startImport() {
+  const btn = document.getElementById('btnStart');
+  btn.disabled = true;
+  btn.textContent = '⏳ Importing...';
+
+  let ok = 0, fail = 0;
+
+  for (let i = 0; i < entries.length; i++) {
+    const e = entries[i];
+    log(`[${i+1}/5] Saving: ${e.title}...`, 'info');
+
+    try {
+      const result = await saveEntry(e);
+      if (result && result.status === 'ok') {
+        log(`  ✓ Saved! ID: ${result.entry?.id || '?'}`, 'ok');
+        ok++;
+      } else {
+        log(`  ✗ Failed: ${JSON.stringify(result)}`, 'err');
+        fail++;
+      }
+    } catch(err) {
+      log(`  ✗ Error: ${err.message}`, 'err');
+      fail++;
+    }
+
+    // Wait 1.5s between saves
+    if (i < entries.length - 1) {
+      await new Promise(r => setTimeout(r, 1500));
+    }
+  }
+
+  log('', '');
+  log(`=== Import Complete: ${ok} saved, ${fail} failed ===`, ok === 5 ? 'ok' : 'warn');
+  document.getElementById('summary').innerHTML = `✅ ${ok}/5 entries saved` + (fail > 0 ? ` | ❌ ${fail} failed` : '');
+
+  btn.textContent = '✅ Done!';
+  if (fail > 0) {
+    btn.textContent = '🔄 Retry';
+    btn.disabled = false;
+  }
+}
+</script>
+</body>
+</html>

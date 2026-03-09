@@ -236,7 +236,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
   <div class="login-logo">
     <div class="logo-icon"><i class="fas fa-bowl-food"></i></div>
     <h1>TBMS</h1>
-    <p>The Bap Management System <span style="opacity:.5;font-size:11px">Ver3.0</span></p>
+    <p>The Bap Management System <span style="opacity:.5;font-size:11px">Ver3.1</span></p>
   </div>
   <div class="form-group"><label>Username</label><input id="loginUser" placeholder="Enter username"></div>
   <div class="form-group"><label>Password</label><input id="loginPass" type="password" placeholder="Enter password"></div>
@@ -254,7 +254,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
 <!-- MAIN APP -->
 <div id="mainApp" class="hidden">
   <div class="sidebar" id="sidebar">
-    <div class="sidebar-header"><h2>TBMS <span style="font-size:12px;font-weight:400;opacity:.6">Ver3.0</span></h2><p>The Bap Management System</p></div>
+    <div class="sidebar-header"><h2>TBMS <span style="font-size:12px;font-weight:400;opacity:.6">Ver3.1</span></h2><p>The Bap Management System</p></div>
     <div class="sidebar-menu">
       <div class="menu-item active" data-page="dashboard" onclick="navigate('dashboard')"><i class="fas fa-home"></i>Dashboard</div>
       <div class="menu-group">
@@ -309,7 +309,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
   <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
   <div class="main-content">
     <div class="header">
-      <div class="header-left"><button class="menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button><h2 id="pageTitle" style="font-size:18px">Dashboard</h2><span style="font-size:11px;color:var(--text-light);margin-left:8px;font-weight:400;opacity:.7">Ver3.0</span></div>
+      <div class="header-left"><button class="menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button><h2 id="pageTitle" style="font-size:18px">Dashboard</h2><span style="font-size:11px;color:var(--text-light);margin-left:8px;font-weight:400;opacity:.7">Ver3.1</span></div>
       <div class="header-right"><span id="headerDate"></span><span class="sync-status"><span class="dot offline" id="syncDot"></span><span id="syncText">Local</span></span><button class="btn btn-sm btn-outline" onclick="doLogout()"><i class="fas fa-sign-out-alt"></i> Logout</button></div>
     </div>
     <div class="page-content" id="pageContent"></div>
@@ -2458,15 +2458,11 @@ function renderStockCalendar(){
   const countDates=new Set();
   const _scByDate={};
   _scMonth.forEach(sc=>{if(!_scByDate[sc.countDate])_scByDate[sc.countDate]=[];_scByDate[sc.countDate].push(sc);});
+  // 모든 날짜(오늘 포함)를 StockCount 기준으로만 녹색 표시
+  // StoreStock은 마지막 업데이트 값이 남아있어 실제 카운트 안 한 날도 표시될 수 있음
   Object.keys(_scByDate).forEach(dt=>{
-    if(dt===today){return;}// skip today — handled below via StoreStock
     if(_scByDate[dt].some(r=>(Number(r.qty)||0)>0))countDates.add(dt);
   });
-  // Today: check StoreStock live data
-  if(ym===today.substring(0,7)){
-    const todayStock=D.StoreStock.filter(s=>String(s.storeId)===storeId);
-    if(todayStock.some(s=>(Number(s.qty)||0)>0))countDates.add(today);
-  }
   // Build calendar grid
   const firstDay=new Date(_ssCalYear,_ssCalMonth,1).getDay();// 0=Sun
   const daysInMonth=new Date(_ssCalYear,_ssCalMonth+1,0).getDate();
@@ -4716,7 +4712,7 @@ function exportAllWord(){
       ['submittedBy / submittedAt','Who submitted and when']
     ]);
 
-    html+=`<hr style="margin:16px 0"><p style="text-align:center;font-size:8pt;color:#999;font-style:italic">TBMS Ver3.0 \u2014 Programmed by DJ</p>`;
+    html+=`<hr style="margin:16px 0"><p style="text-align:center;font-size:8pt;color:#999;font-style:italic">TBMS Ver3.1 \u2014 Programmed by DJ</p>`;
     html+=`</body></html>`;
 
     const blob=new Blob(['\ufeff'+html],{type:'application/msword'});

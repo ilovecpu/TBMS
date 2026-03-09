@@ -236,7 +236,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
   <div class="login-logo">
     <div class="logo-icon"><i class="fas fa-bowl-food"></i></div>
     <h1>TBMS</h1>
-    <p>The Bap Management System <span style="opacity:.5;font-size:11px">Ver3.1</span></p>
+    <p>The Bap Management System <span style="opacity:.5;font-size:11px">Ver3.2</span></p>
   </div>
   <div class="form-group"><label>Username</label><input id="loginUser" placeholder="Enter username"></div>
   <div class="form-group"><label>Password</label><input id="loginPass" type="password" placeholder="Enter password"></div>
@@ -254,7 +254,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
 <!-- MAIN APP -->
 <div id="mainApp" class="hidden">
   <div class="sidebar" id="sidebar">
-    <div class="sidebar-header"><h2>TBMS <span style="font-size:12px;font-weight:400;opacity:.6">Ver3.1</span></h2><p>The Bap Management System</p></div>
+    <div class="sidebar-header"><h2>TBMS <span style="font-size:12px;font-weight:400;opacity:.6">Ver3.2</span></h2><p>The Bap Management System</p></div>
     <div class="sidebar-menu">
       <div class="menu-item active" data-page="dashboard" onclick="navigate('dashboard')"><i class="fas fa-home"></i>Dashboard</div>
       <div class="menu-group">
@@ -309,7 +309,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
   <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
   <div class="main-content">
     <div class="header">
-      <div class="header-left"><button class="menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button><h2 id="pageTitle" style="font-size:18px">Dashboard</h2><span style="font-size:11px;color:var(--text-light);margin-left:8px;font-weight:400;opacity:.7">Ver3.1</span></div>
+      <div class="header-left"><button class="menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button><h2 id="pageTitle" style="font-size:18px">Dashboard</h2><span style="font-size:11px;color:var(--text-light);margin-left:8px;font-weight:400;opacity:.7">Ver3.2</span></div>
       <div class="header-right"><span id="headerDate"></span><span class="sync-status"><span class="dot offline" id="syncDot"></span><span id="syncText">Local</span></span><button class="btn btn-sm btn-outline" onclick="doLogout()"><i class="fas fa-sign-out-alt"></i> Logout</button></div>
     </div>
     <div class="page-content" id="pageContent"></div>
@@ -419,32 +419,32 @@ const DEFAULT_DATA = {
     {id:'TBB',code:'TBB',name:'The Bap Bristol',company:'The Bap Bristol Ltd',companyNo:'',address:'21 Queens Road, Clifton, Bristol, BS8 1QE',phone:'',email:'',manager:'',memo:'',active:true}
   ],
   Staff: [
-    {id:'s1',storeId:'TBS',name:'Mr. Youngseon Yun',nickName:'',clothSize:'XL',kioskPwd:'4321',dob:'1992-03-02',address:'4 Horsham Road, Swindon, SN3 2BN',niNo:'SW 01 34 28 A',eVisa:'',mobile:'07308 354 998',startDate:'2022-05-07',leftDate:'',rate:15,sortCode:'52-21-30',accountNo:'31585833',email:'roller1918@naver.com',memo:'',active:true},
-    {id:'s2',storeId:'TBS',name:'Mr. Niraj Gurung',nickName:'',clothSize:'M',kioskPwd:'1234',dob:'1978-11-15',address:'32 Horsham Road, Swindon, SN3 2BN',niNo:'SZ 29 40 74 C',eVisa:'',mobile:'07466 513 913',startDate:'2023-05-08',leftDate:'',rate:13.5,sortCode:'77-04-38',accountNo:'63983960',email:'gurungniraj2006@yahoo.com',memo:'',active:true},
-    {id:'s3',storeId:'TBS',name:'Ms. Sraswati Rana',nickName:'',clothSize:'M',kioskPwd:'2928',dob:'1986-11-19',address:'17 March Close, Swindon, SN5 4GJ',niNo:'RY 09 04 02 C',eVisa:'',mobile:'',startDate:'',leftDate:'',rate:12.5,sortCode:'',accountNo:'',email:'',memo:'',active:true},
-    {id:'s4',storeId:'TBS',name:'Mrs. Pataramon Jones',nickName:'',clothSize:'S',kioskPwd:'1212',dob:'1985-06-10',address:'22 King William Street, Swindon, SN1 3LB',niNo:'NJ 54 83 07 D',eVisa:'',mobile:'07384 308 243',startDate:'2022-10-19',leftDate:'',rate:12.5,sortCode:'30-13-35',accountNo:'75625368',email:'am_ammymy@hotmail.com',memo:'',active:true},
-    {id:'s5',storeId:'TBS',name:'Ms. Alina Bakhshyar',nickName:'',clothSize:'S',kioskPwd:'2321',dob:'2007-04-15',address:'59 Upham Road, Swindon, SN3 1DN',niNo:'SK 09 73 10 C',eVisa:'',mobile:'',startDate:'2023-08-01',leftDate:'',rate:10.5,sortCode:'',accountNo:'39747682',email:'alinabakhshyar1@gmail.com',memo:'',active:true},
-    {id:'s6',storeId:'TBS',name:'Ms. Sara Khan',nickName:'',clothSize:'S',kioskPwd:'2232',dob:'2006-11-18',address:'66 County Road, Swindon, SN1 2EW',niNo:'PL 70 48 21 B',eVisa:'',mobile:'',startDate:'2023-03-29',leftDate:'',rate:10.5,sortCode:'23-05-80',accountNo:'26650784',email:'sarakhanstandard@gmail.com',memo:'',active:true},
-    {id:'s7',storeId:'TBS',name:'Ms. Zahra Bakhshyar',nickName:'',clothSize:'M',kioskPwd:'4554',dob:'2005-04-10',address:'59 Upham Road, Swindon, SN3 1DN',niNo:'SK 09 73 05 B',eVisa:'',mobile:'07491 948 790',startDate:'2022-05-14',leftDate:'',rate:11.5,sortCode:'07-08-06',accountNo:'23952006',email:'zahrabakhshyar@gmail.com',memo:'',active:true},
-    {id:'s8',storeId:'TBS',name:'Mrs. Susan Rai',nickName:'',clothSize:'S',kioskPwd:'7665',dob:'1983-07-21',address:'30 Avening Street, Swindon, SN2 8BZ',niNo:'TJ 54 48 73 B',eVisa:'',mobile:'07472 953 406',startDate:'2023-10-05',leftDate:'',rate:13,sortCode:'30-98-41',accountNo:'34089362',email:'susanuma1983@gmail.com',memo:'',active:true},
-    {id:'s9',storeId:'TBS',name:'Mrs. Devi Maya Pun',nickName:'',clothSize:'M',kioskPwd:'5644',dob:'1972-12-15',address:'11 Fraser Close, Nythe, Swindon, SN3 3RP',niNo:'SK 01 85 37 B',eVisa:'',mobile:'07414 966 478',startDate:'2023-03-13',leftDate:'',rate:12.5,sortCode:'40-04-15',accountNo:'41717316',email:'kne@hotmail.co.uk',memo:'',active:true},
-    {id:'s10',storeId:'PAB',name:'Thir Bahadur B.K.',nickName:'',clothSize:'L',kioskPwd:'1234',dob:'1977-03-19',address:'14 Glenwood Court, Farnborough, GU14 7TB',niNo:'SW 61 55 50 C',eVisa:'',mobile:'',startDate:'2020-12-15',leftDate:'',rate:13.5,sortCode:'',accountNo:'',email:'',memo:'',active:true},
-    {id:'s11',storeId:'PAB',name:'Jems B.K.',nickName:'',clothSize:'L',kioskPwd:'4311',dob:'1999-09-27',address:'14 Glenwood Court, Farnborough, GU14 7TB',niNo:'NJ 15 54 87 D',eVisa:'',mobile:'',startDate:'2021-06-30',leftDate:'',rate:13,sortCode:'',accountNo:'',email:'',memo:'',active:true},
-    {id:'s12',storeId:'PAB',name:'Lila Kumari Rana',nickName:'',clothSize:'S',kioskPwd:'1111',dob:'1987-04-28',address:'42 Lulworth Close, Farnborough, GU14 8TR',niNo:'SY 34 56 11 D',eVisa:'',mobile:'',startDate:'2021-07-08',leftDate:'',rate:12.5,sortCode:'',accountNo:'',email:'',memo:'',active:true},
-    {id:'s13',storeId:'PAB',name:'Dipson B.K.',nickName:'',clothSize:'L',kioskPwd:'2222',dob:'2004-04-11',address:'14 Glenwood Court, Farnborough, GU14 7TB',niNo:'TK 30 34 61 B',eVisa:'',mobile:'',startDate:'2024-03-01',leftDate:'',rate:12.5,sortCode:'77-49-22',accountNo:'26518968',email:'',memo:'',active:true},
-    {id:'s14',storeId:'TBR',name:'Mr. Avinaya Rai',nickName:'',clothSize:'M',kioskPwd:'1212',dob:'1999-06-30',address:'34 Dwyer Road, Reading, RG30 3PN',niNo:'TL812621B',eVisa:'',mobile:'07440 714 416',startDate:'2023-08-01',leftDate:'',rate:13,sortCode:'20-71-03',accountNo:'63332438',email:'iamavinaya69@gmail.com',memo:'',active:true},
-    {id:'s15',storeId:'TBR',name:'Ms. Diksha Rai',nickName:'',clothSize:'S',kioskPwd:'1212',dob:'2005-06-01',address:'38 Beresford Road, Reading, RG30 1BX',niNo:'TK740551D',eVisa:'',mobile:'07778 417 997',startDate:'2023-08-13',leftDate:'',rate:12,sortCode:'77-66-73',accountNo:'00130894',email:'dikshabantawa2345@gmail.com',memo:'',active:true},
-    {id:'s16',storeId:'TBR',name:'Ms. Shuva Chapagai',nickName:'',clothSize:'S',kioskPwd:'1223',dob:'1996-08-02',address:'17 Walnut Way, Tilehurst, RG30 4TD',niNo:'NJ565252A',eVisa:'',mobile:'0777 682 2993',startDate:'2023-08-01',leftDate:'',rate:13,sortCode:'30-67-99',accountNo:'75460668',email:'shuvachapagai@gmail.com',memo:'',active:true},
-    {id:'s17',storeId:'TBR',name:'Mr. Ashok Bhandari',nickName:'',clothSize:'XL',kioskPwd:'2322',dob:'1995-01-13',address:'93 Liverpool Road, Reading, RG1 3PN',niNo:'TK557314C',eVisa:'',mobile:'07769 010 211',startDate:'2023-08-22',leftDate:'',rate:13,sortCode:'30-90-43',accountNo:'63726068',email:'ashook1995@gmail.com',memo:'',active:true},
-    {id:'s18',storeId:'TBR',name:'Mrs. Naina Kala Ghale',nickName:'',clothSize:'S',kioskPwd:'2322',dob:'1986-05-12',address:'55 Mason Street, Reading, RG1 7PD',niNo:'NJ544552A',eVisa:'SPM M24 5N3',mobile:'07465856894',startDate:'2023-10-14',leftDate:'',rate:12.5,sortCode:'04-00-04',accountNo:'72331444',email:'nainaghale12@gmail.com',memo:'',active:true},
-    {id:'s19',storeId:'TBR',name:'Ms. Teena Ale',nickName:'',clothSize:'S',kioskPwd:'2344',dob:'2005-12-05',address:'55 Mason Street, Reading, RG1 7PD',niNo:'TJ818150C',eVisa:'WYW 434 54E',mobile:'07984236439',startDate:'2023-11-26',leftDate:'',rate:10.5,sortCode:'',accountNo:'51917707',email:'teenaale2@gmail.com',memo:'',active:true},
-    {id:'s20',storeId:'TBR',name:'Mr. Saroj Ale',nickName:'',clothSize:'L',kioskPwd:'4433',dob:'2008-01-17',address:'77 Norfolk Road, Reading, RG30 2EG',niNo:'RZ082840A',eVisa:'WMF A6C 5BN',mobile:'07853750380',startDate:'2025-01-03',leftDate:'',rate:12,sortCode:'04-00-03',accountNo:'86776795',email:'sarojale@gmail.com',memo:'',active:true},
-    {id:'s21',storeId:'TBB',name:'Mr. Mukesh Lamsal',nickName:'',clothSize:'XL',kioskPwd:'1234',dob:'1992-09-24',address:'93 Liverpool Road, Reading, RG1 3PN',niNo:'TJ366399D',eVisa:'',mobile:'07503 382 305',startDate:'2025-07-18',leftDate:'',rate:13,sortCode:'30-67-99',accountNo:'87414660',email:'mukeshlamsal111@gmail.com',memo:'',active:true},
-    {id:'s22',storeId:'TBB',name:'Mrs. Jayanti Bhatta',nickName:'',clothSize:'M',kioskPwd:'3232',dob:'1994-10-23',address:'6 Bouverie Street, Easton, Bristol, BS5 0RS',niNo:'TJ642875D',eVisa:'WHC K64 6C9',mobile:'07459 028 504',startDate:'2025-07-18',leftDate:'',rate:12.5,sortCode:'77-77-52',accountNo:'67762928',email:'jayantibhatta75@gmail.com',memo:'',active:true},
-    {id:'s23',storeId:'TBB',name:'Mr. Soe Thiha Maung',nickName:'',clothSize:'M',kioskPwd:'2323',dob:'2000-04-04',address:'14 Orchard Gardens, Bristol, BS15 9UA',niNo:'RZ474071D',eVisa:'',mobile:'07553 381 469',startDate:'2025-08-05',leftDate:'',rate:12.5,sortCode:'',accountNo:'5016851',email:'SoeThiaMaung13@gmail.com',memo:'',active:true},
-    {id:'s24',storeId:'TBB',name:'Miss. Thi Ri May',nickName:'',clothSize:'S',kioskPwd:'2323',dob:'2003-11-14',address:'14 Orchard Gardens, Bristol, BS15 9UA',niNo:'TJ083444A',eVisa:'WW8 L8Z 58J',mobile:'07501 726 872',startDate:'2025-07-18',leftDate:'',rate:12.5,sortCode:'30-62-96',accountNo:'48833663',email:'thirimaythonethone@gmail.com',memo:'',active:true},
-    {id:'s25',storeId:'TBB',name:'Miss. Kai Qi Koh',nickName:'',clothSize:'S',kioskPwd:'2323',dob:'2003-05-19',address:'Studio 16, Stonebridge House, Colston Ave, Bristol BS1 4TN',niNo:'D6785568',eVisa:'SF3 T9W 5NZ',mobile:'07535 616 619',startDate:'2025-07-18',leftDate:'',rate:12.5,sortCode:'40-14-03',accountNo:'83893456',email:'charlottekoh03@gmail.com',memo:'',active:true},
-    {id:'s26',storeId:'TBB',name:'Mr. Timothy Chung',nickName:'',clothSize:'M',kioskPwd:'4432',dob:'2006-07-08',address:'13 Osborne Villas, Bristol, BS2 8BP',niNo:'TH444989B',eVisa:'W3K TL7 6CT',mobile:'07300 894 746',startDate:'2025-07-18',leftDate:'',rate:11,sortCode:'04-00-03',accountNo:'75584464',email:'',memo:'',active:true}
+    {id:'s1',storeId:'TBS',name:'Mr. Youngseon Yun',nickName:'',clothSize:'XL',kioskPwd:'4321',dob:'1992-03-02',address:'4 Horsham Road, Swindon, SN3 2BN',niNo:'SW 01 34 28 A',eVisa:'',mobile:'07308 354 998',startDate:'2022-05-07',leftDate:'',rate:15,taxCode:'',sortCode:'52-21-30',accountNo:'31585833',email:'roller1918@naver.com',memo:'',active:true},
+    {id:'s2',storeId:'TBS',name:'Mr. Niraj Gurung',nickName:'',clothSize:'M',kioskPwd:'1234',dob:'1978-11-15',address:'32 Horsham Road, Swindon, SN3 2BN',niNo:'SZ 29 40 74 C',eVisa:'',mobile:'07466 513 913',startDate:'2023-05-08',leftDate:'',rate:13.5,taxCode:'',sortCode:'77-04-38',accountNo:'63983960',email:'gurungniraj2006@yahoo.com',memo:'',active:true},
+    {id:'s3',storeId:'TBS',name:'Ms. Sraswati Rana',nickName:'',clothSize:'M',kioskPwd:'2928',dob:'1986-11-19',address:'17 March Close, Swindon, SN5 4GJ',niNo:'RY 09 04 02 C',eVisa:'',mobile:'',startDate:'',leftDate:'',rate:12.5,taxCode:'',sortCode:'',accountNo:'',email:'',memo:'',active:true},
+    {id:'s4',storeId:'TBS',name:'Mrs. Pataramon Jones',nickName:'',clothSize:'S',kioskPwd:'1212',dob:'1985-06-10',address:'22 King William Street, Swindon, SN1 3LB',niNo:'NJ 54 83 07 D',eVisa:'',mobile:'07384 308 243',startDate:'2022-10-19',leftDate:'',rate:12.5,taxCode:'',sortCode:'30-13-35',accountNo:'75625368',email:'am_ammymy@hotmail.com',memo:'',active:true},
+    {id:'s5',storeId:'TBS',name:'Ms. Alina Bakhshyar',nickName:'',clothSize:'S',kioskPwd:'2321',dob:'2007-04-15',address:'59 Upham Road, Swindon, SN3 1DN',niNo:'SK 09 73 10 C',eVisa:'',mobile:'',startDate:'2023-08-01',leftDate:'',rate:10.5,taxCode:'',sortCode:'',accountNo:'39747682',email:'alinabakhshyar1@gmail.com',memo:'',active:true},
+    {id:'s6',storeId:'TBS',name:'Ms. Sara Khan',nickName:'',clothSize:'S',kioskPwd:'2232',dob:'2006-11-18',address:'66 County Road, Swindon, SN1 2EW',niNo:'PL 70 48 21 B',eVisa:'',mobile:'',startDate:'2023-03-29',leftDate:'',rate:10.5,taxCode:'',sortCode:'23-05-80',accountNo:'26650784',email:'sarakhanstandard@gmail.com',memo:'',active:true},
+    {id:'s7',storeId:'TBS',name:'Ms. Zahra Bakhshyar',nickName:'',clothSize:'M',kioskPwd:'4554',dob:'2005-04-10',address:'59 Upham Road, Swindon, SN3 1DN',niNo:'SK 09 73 05 B',eVisa:'',mobile:'07491 948 790',startDate:'2022-05-14',leftDate:'',rate:11.5,taxCode:'',sortCode:'07-08-06',accountNo:'23952006',email:'zahrabakhshyar@gmail.com',memo:'',active:true},
+    {id:'s8',storeId:'TBS',name:'Mrs. Susan Rai',nickName:'',clothSize:'S',kioskPwd:'7665',dob:'1983-07-21',address:'30 Avening Street, Swindon, SN2 8BZ',niNo:'TJ 54 48 73 B',eVisa:'',mobile:'07472 953 406',startDate:'2023-10-05',leftDate:'',rate:13,taxCode:'',sortCode:'30-98-41',accountNo:'34089362',email:'susanuma1983@gmail.com',memo:'',active:true},
+    {id:'s9',storeId:'TBS',name:'Mrs. Devi Maya Pun',nickName:'',clothSize:'M',kioskPwd:'5644',dob:'1972-12-15',address:'11 Fraser Close, Nythe, Swindon, SN3 3RP',niNo:'SK 01 85 37 B',eVisa:'',mobile:'07414 966 478',startDate:'2023-03-13',leftDate:'',rate:12.5,taxCode:'',sortCode:'40-04-15',accountNo:'41717316',email:'kne@hotmail.co.uk',memo:'',active:true},
+    {id:'s10',storeId:'PAB',name:'Thir Bahadur B.K.',nickName:'',clothSize:'L',kioskPwd:'1234',dob:'1977-03-19',address:'14 Glenwood Court, Farnborough, GU14 7TB',niNo:'SW 61 55 50 C',eVisa:'',mobile:'',startDate:'2020-12-15',leftDate:'',rate:13.5,taxCode:'',sortCode:'',accountNo:'',email:'',memo:'',active:true},
+    {id:'s11',storeId:'PAB',name:'Jems B.K.',nickName:'',clothSize:'L',kioskPwd:'4311',dob:'1999-09-27',address:'14 Glenwood Court, Farnborough, GU14 7TB',niNo:'NJ 15 54 87 D',eVisa:'',mobile:'',startDate:'2021-06-30',leftDate:'',rate:13,taxCode:'',sortCode:'',accountNo:'',email:'',memo:'',active:true},
+    {id:'s12',storeId:'PAB',name:'Lila Kumari Rana',nickName:'',clothSize:'S',kioskPwd:'1111',dob:'1987-04-28',address:'42 Lulworth Close, Farnborough, GU14 8TR',niNo:'SY 34 56 11 D',eVisa:'',mobile:'',startDate:'2021-07-08',leftDate:'',rate:12.5,taxCode:'',sortCode:'',accountNo:'',email:'',memo:'',active:true},
+    {id:'s13',storeId:'PAB',name:'Dipson B.K.',nickName:'',clothSize:'L',kioskPwd:'2222',dob:'2004-04-11',address:'14 Glenwood Court, Farnborough, GU14 7TB',niNo:'TK 30 34 61 B',eVisa:'',mobile:'',startDate:'2024-03-01',leftDate:'',rate:12.5,taxCode:'',sortCode:'77-49-22',accountNo:'26518968',email:'',memo:'',active:true},
+    {id:'s14',storeId:'TBR',name:'Mr. Avinaya Rai',nickName:'',clothSize:'M',kioskPwd:'1212',dob:'1999-06-30',address:'34 Dwyer Road, Reading, RG30 3PN',niNo:'TL812621B',eVisa:'',mobile:'07440 714 416',startDate:'2023-08-01',leftDate:'',rate:13,taxCode:'',sortCode:'20-71-03',accountNo:'63332438',email:'iamavinaya69@gmail.com',memo:'',active:true},
+    {id:'s15',storeId:'TBR',name:'Ms. Diksha Rai',nickName:'',clothSize:'S',kioskPwd:'1212',dob:'2005-06-01',address:'38 Beresford Road, Reading, RG30 1BX',niNo:'TK740551D',eVisa:'',mobile:'07778 417 997',startDate:'2023-08-13',leftDate:'',rate:12,taxCode:'',sortCode:'77-66-73',accountNo:'00130894',email:'dikshabantawa2345@gmail.com',memo:'',active:true},
+    {id:'s16',storeId:'TBR',name:'Ms. Shuva Chapagai',nickName:'',clothSize:'S',kioskPwd:'1223',dob:'1996-08-02',address:'17 Walnut Way, Tilehurst, RG30 4TD',niNo:'NJ565252A',eVisa:'',mobile:'0777 682 2993',startDate:'2023-08-01',leftDate:'',rate:13,taxCode:'',sortCode:'30-67-99',accountNo:'75460668',email:'shuvachapagai@gmail.com',memo:'',active:true},
+    {id:'s17',storeId:'TBR',name:'Mr. Ashok Bhandari',nickName:'',clothSize:'XL',kioskPwd:'2322',dob:'1995-01-13',address:'93 Liverpool Road, Reading, RG1 3PN',niNo:'TK557314C',eVisa:'',mobile:'07769 010 211',startDate:'2023-08-22',leftDate:'',rate:13,taxCode:'',sortCode:'30-90-43',accountNo:'63726068',email:'ashook1995@gmail.com',memo:'',active:true},
+    {id:'s18',storeId:'TBR',name:'Mrs. Naina Kala Ghale',nickName:'',clothSize:'S',kioskPwd:'2322',dob:'1986-05-12',address:'55 Mason Street, Reading, RG1 7PD',niNo:'NJ544552A',eVisa:'SPM M24 5N3',mobile:'07465856894',startDate:'2023-10-14',leftDate:'',rate:12.5,taxCode:'',sortCode:'04-00-04',accountNo:'72331444',email:'nainaghale12@gmail.com',memo:'',active:true},
+    {id:'s19',storeId:'TBR',name:'Ms. Teena Ale',nickName:'',clothSize:'S',kioskPwd:'2344',dob:'2005-12-05',address:'55 Mason Street, Reading, RG1 7PD',niNo:'TJ818150C',eVisa:'WYW 434 54E',mobile:'07984236439',startDate:'2023-11-26',leftDate:'',rate:10.5,taxCode:'',sortCode:'',accountNo:'51917707',email:'teenaale2@gmail.com',memo:'',active:true},
+    {id:'s20',storeId:'TBR',name:'Mr. Saroj Ale',nickName:'',clothSize:'L',kioskPwd:'4433',dob:'2008-01-17',address:'77 Norfolk Road, Reading, RG30 2EG',niNo:'RZ082840A',eVisa:'WMF A6C 5BN',mobile:'07853750380',startDate:'2025-01-03',leftDate:'',rate:12,taxCode:'',sortCode:'04-00-03',accountNo:'86776795',email:'sarojale@gmail.com',memo:'',active:true},
+    {id:'s21',storeId:'TBB',name:'Mr. Mukesh Lamsal',nickName:'',clothSize:'XL',kioskPwd:'1234',dob:'1992-09-24',address:'93 Liverpool Road, Reading, RG1 3PN',niNo:'TJ366399D',eVisa:'',mobile:'07503 382 305',startDate:'2025-07-18',leftDate:'',rate:13,taxCode:'',sortCode:'30-67-99',accountNo:'87414660',email:'mukeshlamsal111@gmail.com',memo:'',active:true},
+    {id:'s22',storeId:'TBB',name:'Mrs. Jayanti Bhatta',nickName:'',clothSize:'M',kioskPwd:'3232',dob:'1994-10-23',address:'6 Bouverie Street, Easton, Bristol, BS5 0RS',niNo:'TJ642875D',eVisa:'WHC K64 6C9',mobile:'07459 028 504',startDate:'2025-07-18',leftDate:'',rate:12.5,taxCode:'',sortCode:'77-77-52',accountNo:'67762928',email:'jayantibhatta75@gmail.com',memo:'',active:true},
+    {id:'s23',storeId:'TBB',name:'Mr. Soe Thiha Maung',nickName:'',clothSize:'M',kioskPwd:'2323',dob:'2000-04-04',address:'14 Orchard Gardens, Bristol, BS15 9UA',niNo:'RZ474071D',eVisa:'',mobile:'07553 381 469',startDate:'2025-08-05',leftDate:'',rate:12.5,taxCode:'',sortCode:'',accountNo:'5016851',email:'SoeThiaMaung13@gmail.com',memo:'',active:true},
+    {id:'s24',storeId:'TBB',name:'Miss. Thi Ri May',nickName:'',clothSize:'S',kioskPwd:'2323',dob:'2003-11-14',address:'14 Orchard Gardens, Bristol, BS15 9UA',niNo:'TJ083444A',eVisa:'WW8 L8Z 58J',mobile:'07501 726 872',startDate:'2025-07-18',leftDate:'',rate:12.5,taxCode:'',sortCode:'30-62-96',accountNo:'48833663',email:'thirimaythonethone@gmail.com',memo:'',active:true},
+    {id:'s25',storeId:'TBB',name:'Miss. Kai Qi Koh',nickName:'',clothSize:'S',kioskPwd:'2323',dob:'2003-05-19',address:'Studio 16, Stonebridge House, Colston Ave, Bristol BS1 4TN',niNo:'D6785568',eVisa:'SF3 T9W 5NZ',mobile:'07535 616 619',startDate:'2025-07-18',leftDate:'',rate:12.5,taxCode:'',sortCode:'40-14-03',accountNo:'83893456',email:'charlottekoh03@gmail.com',memo:'',active:true},
+    {id:'s26',storeId:'TBB',name:'Mr. Timothy Chung',nickName:'',clothSize:'M',kioskPwd:'4432',dob:'2006-07-08',address:'13 Osborne Villas, Bristol, BS2 8BP',niNo:'TH444989B',eVisa:'W3K TL7 6CT',mobile:'07300 894 746',startDate:'2025-07-18',leftDate:'',rate:11,taxCode:'',sortCode:'04-00-03',accountNo:'75584464',email:'',memo:'',active:true}
   ],
   Attendance: [],
   Suppliers: [
@@ -501,7 +501,7 @@ const D = { Users:[], Stores:[], Staff:[], Attendance:[], Suppliers:[], StockTem
 const FIELD_SCHEMA = {
   Users:['id','username','password','name','role','email','storeId','permissions'],
   Stores:['id','code','name','company','companyNo','vatNo','vatQuarter','address','phone','email','manager','memo','active'],
-  Staff:['id','storeId','name','nickName','clothSize','kioskPwd','kioskLogin','dob','address','niNo','eVisa','mobile','startDate','leftDate','rate','sortCode','accountNo','email','memo','active'],
+  Staff:['id','storeId','name','nickName','clothSize','kioskPwd','kioskLogin','dob','address','niNo','eVisa','mobile','startDate','leftDate','rate','taxCode','sortCode','accountNo','email','memo','active'],
   Attendance:['id','staffId','storeId','date','clockIn','clockOut','photoIn','photoOut','source'],
   Suppliers:['id','name','email','phone','address','website','memo','active'],
   StockTemplate:['id','category','name','unit','min','minCondition','orderQty','orderUnit','alwaysOrder','sortOrder','supplier1','supplier2','supplier3','memo','photo'],
@@ -1362,13 +1362,15 @@ function viewStaff(id) {
     ${showRate&&userCanViewRate()?`<div class="info-item"><i class="fas fa-pound-sign"></i><div><div class="label">Rate</div><div class="value">£${Number(s.rate).toFixed(2)}/hr</div></div></div>`:''}
     <div class="info-item"><i class="fas fa-calendar-plus"></i><div><div class="label">Start Date</div><div class="value">${fmtDate(s.startDate)}</div></div></div>
     ${isLeft?`<div class="info-item"><i class="fas fa-calendar-minus"></i><div><div class="label">Left Date</div><div class="value">${fmtDate(s.leftDate)}</div></div></div>`:''}
+    <div class="info-item"><i class="fas fa-file-invoice"></i><div><div class="label">Tax Code</div><div class="value">${escHtml(s.taxCode||'-')}</div></div></div>
     <div class="info-item"><i class="fas fa-university"></i><div><div class="label">Sort Code</div><div class="value">${escHtml(s.sortCode||'-')}</div></div></div>
     <div class="info-item"><i class="fas fa-credit-card"></i><div><div class="label">Account No</div><div class="value">${escHtml(s.accountNo||'-')}</div></div></div>
     <div class="info-item"><i class="fas fa-envelope"></i><div><div class="label">Email</div><div class="value">${escHtml(s.email||'-')}</div></div></div>
   </div>`,`<button class="btn btn-outline" onclick="closeModal()">Close</button>`);
 }
 function editStaff(id) {
-  const s=id?D.Staff.find(x=>x.id===id):{id:'',storeId:sF.storeId||'',name:'',nickName:'',clothSize:'',kioskPwd:'',dob:'',address:'',niNo:'',eVisa:'',mobile:'',startDate:'',leftDate:'',rate:12,sortCode:'',accountNo:'',email:'',memo:'',active:true,kioskLogin:true};
+  const s=id?D.Staff.find(x=>x.id===id):{id:'',storeId:sF.storeId||'',name:'',nickName:'',clothSize:'',kioskPwd:'',dob:'',address:'',niNo:'',eVisa:'',mobile:'',startDate:'',leftDate:'',rate:12,taxCode:'',sortCode:'',accountNo:'',email:'',memo:'',active:true,kioskLogin:true};
+  if(!s.taxCode)s.taxCode='';
   const isLeft=s.active===false;
   openModal(id?'Edit Staff':'Add Staff',`
     <div class="form-row"><div class="form-group"><label>Name</label><input id="mFN" value="${escHtml(s.name)}"></div><div class="form-group"><label>Nick Name</label><input id="mFNN" value="${escHtml(s.nickName||'')}" placeholder="Kiosk display name"></div></div>
@@ -1379,7 +1381,8 @@ function editStaff(id) {
     <div class="form-group"><label>Address</label><input id="mFA" value="${escHtml(s.address)}"></div>
     <div class="form-row"><div class="form-group"><label>NI No</label><input id="mFNI" value="${escHtml(s.niNo)}"></div><div class="form-group"><label>eVisa</label><input id="mFEV" value="${escHtml(s.eVisa)}"></div></div>
     <div class="form-row"><div class="form-group"><label>Mobile</label><input id="mFM" value="${escHtml(s.mobile)}"></div><div class="form-group"><label>Email</label><input id="mFEM" value="${escHtml(s.email)}"></div></div>
-    <div class="form-row"><div class="form-group"><label>Sort Code</label><input id="mFSC" value="${escHtml(s.sortCode)}"></div><div class="form-group"><label>Account No</label><input id="mFAN" value="${escHtml(s.accountNo)}"></div></div>
+    <div class="form-row"><div class="form-group"><label>Tax Code</label><input id="mFTC" value="${escHtml(s.taxCode)}" placeholder="e.g. 1257L"></div><div class="form-group"><label>Sort Code</label><input id="mFSC" value="${escHtml(s.sortCode)}"></div></div>
+    <div class="form-row"><div class="form-group"><label>Account No</label><input id="mFAN" value="${escHtml(s.accountNo)}"></div><div class="form-group"></div></div>
     <div class="form-group"><label>Memo</label><textarea id="mFME">${escHtml(s.memo)}</textarea></div>
     <div style="padding:12px 16px;background:${isLeft?'#ffebee':'#f1f8e9'};border-radius:10px;display:flex;justify-content:space-between;align-items:center">
       <div><strong style="font-size:14px">${isLeft?'This staff has left':'Currently working'}</strong><br><span style="font-size:12px;color:var(--text-light)">${isLeft?'Set to Active to re-enable kiosk access':'Mark as Left to disable kiosk access'}</span></div>
@@ -1414,7 +1417,7 @@ async function saveStaff(id) {
   const kioskLogin=$('mFKL').checked;
   const existingStaff=id?D.Staff.find(x=>x.id===id):null;
   const rate=userCanViewRate()?(parseFloat($('mFR')?.value)||12):(existingStaff?existingStaff.rate:12);
-  const s={id:id||genId('s'),storeId:$('mFS').value,name:$('mFN').value.trim(),nickName:$('mFNN').value.trim(),clothSize:$('mFC').value,kioskPwd:$('mFP').value,dob:$('mFD').value,address:$('mFA').value.trim(),niNo:$('mFNI').value.trim(),eVisa:$('mFEV').value.trim(),mobile:$('mFM').value.trim(),startDate:$('mFSD').value,leftDate,rate,sortCode:$('mFSC').value.trim(),accountNo:$('mFAN').value.trim(),email:$('mFEM').value.trim(),memo:$('mFME').value.trim(),active,kioskLogin};
+  const s={id:id||genId('s'),storeId:$('mFS').value,name:$('mFN').value.trim(),nickName:$('mFNN').value.trim(),clothSize:$('mFC').value,kioskPwd:$('mFP').value,dob:$('mFD').value,address:$('mFA').value.trim(),niNo:$('mFNI').value.trim(),eVisa:$('mFEV').value.trim(),mobile:$('mFM').value.trim(),startDate:$('mFSD').value,leftDate,rate,taxCode:($('mFTC')?.value||'').trim(),sortCode:$('mFSC').value.trim(),accountNo:$('mFAN').value.trim(),email:$('mFEM').value.trim(),memo:$('mFME').value.trim(),active,kioskLogin};
   if(!s.name){toast('Name required','error');return;}
   await saveRow('Staff',s); closeModal(); renderStaff($('pageContent')); toast('Staff saved','success');
 }
@@ -4550,7 +4553,7 @@ function exportAllExcel(){
     }
     // 2. Staff (full detail)
     if(D.Staff.length){
-      const rows=D.Staff.map(s=>({Store:_storeName(s.storeId),Name:s.name,NickName:s.nickName||'','Cloth Size':s.clothSize||'',DOB:s.dob||'',Address:s.address||'','NI No':s.niNo||'','eVisa':s.eVisa||'',Mobile:s.mobile||'','Start Date':s.startDate||'','Left Date':s.leftDate||'',Rate:s.rate||'','Sort Code':s.sortCode||'','Account No':s.accountNo||'',Email:s.email||'','Kiosk Login':s.kioskLogin?'Yes':'No',Memo:s.memo||'',Active:s.active?'Yes':'No'}));
+      const rows=D.Staff.map(s=>({Store:_storeName(s.storeId),Name:s.name,NickName:s.nickName||'','Cloth Size':s.clothSize||'',DOB:s.dob||'',Address:s.address||'','NI No':s.niNo||'','eVisa':s.eVisa||'',Mobile:s.mobile||'','Start Date':s.startDate||'','Left Date':s.leftDate||'',Rate:s.rate||'','Tax Code':s.taxCode||'','Sort Code':s.sortCode||'','Account No':s.accountNo||'',Email:s.email||'','Kiosk Login':s.kioskLogin?'Yes':'No',Memo:s.memo||'',Active:s.active?'Yes':'No'}));
       XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),'Staff');
     }
     // 3. Suppliers
@@ -4651,7 +4654,7 @@ function exportAllWord(){
     D.Staff.forEach(s=>{
       const store=_storeName(s.storeId);
       html+=sub(`${s.name}${s.nickName?' ('+s.nickName+')':''} \u2014 ${store} ${s.active?'':'[LEFT]'}`);
-      const fields=[['DOB',s.dob],['Address',s.address],['NI No',s.niNo],['eVisa',s.eVisa],['Mobile',s.mobile],['Email',s.email],['Cloth Size',s.clothSize],['Start Date',s.startDate],['Left Date',s.leftDate],['Rate',s.rate?'\u00a3'+s.rate+'/hr':''],['Sort Code',s.sortCode],['Account No',s.accountNo],['Kiosk Login',s.kioskLogin?'Yes':'No']];
+      const fields=[['DOB',s.dob],['Address',s.address],['NI No',s.niNo],['eVisa',s.eVisa],['Mobile',s.mobile],['Email',s.email],['Cloth Size',s.clothSize],['Start Date',s.startDate],['Left Date',s.leftDate],['Rate',s.rate?'\u00a3'+s.rate+'/hr':''],['Tax Code',s.taxCode||''],['Sort Code',s.sortCode],['Account No',s.accountNo],['Kiosk Login',s.kioskLogin?'Yes':'No']];
       fields.forEach(([k,v])=>{if(v)html+=b(`${k}: ${v}`);});
       if(s.memo)html+=b(`Memo: ${s.memo}`);
     });
@@ -4712,7 +4715,7 @@ function exportAllWord(){
       ['submittedBy / submittedAt','Who submitted and when']
     ]);
 
-    html+=`<hr style="margin:16px 0"><p style="text-align:center;font-size:8pt;color:#999;font-style:italic">TBMS Ver3.1 \u2014 Programmed by DJ</p>`;
+    html+=`<hr style="margin:16px 0"><p style="text-align:center;font-size:8pt;color:#999;font-style:italic">TBMS Ver3.2 \u2014 Programmed by DJ</p>`;
     html+=`</body></html>`;
 
     const blob=new Blob(['\ufeff'+html],{type:'application/msword'});

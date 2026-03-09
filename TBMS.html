@@ -236,7 +236,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
   <div class="login-logo">
     <div class="logo-icon"><i class="fas fa-bowl-food"></i></div>
     <h1>TBMS</h1>
-    <p>The Bap Management System <span style="opacity:.5;font-size:11px">Ver3.4</span></p>
+    <p>The Bap Management System <span style="opacity:.5;font-size:11px">Ver3.5</span></p>
   </div>
   <div class="form-group"><label>Username</label><input id="loginUser" placeholder="Enter username"></div>
   <div class="form-group"><label>Password</label><input id="loginPass" type="password" placeholder="Enter password"></div>
@@ -254,7 +254,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
 <!-- MAIN APP -->
 <div id="mainApp" class="hidden">
   <div class="sidebar" id="sidebar">
-    <div class="sidebar-header"><h2>TBMS <span style="font-size:12px;font-weight:400;opacity:.6">Ver3.4</span></h2><p>The Bap Management System</p></div>
+    <div class="sidebar-header"><h2>TBMS <span style="font-size:12px;font-weight:400;opacity:.6">Ver3.5</span></h2><p>The Bap Management System</p></div>
     <div class="sidebar-menu">
       <div class="menu-item active" data-page="dashboard" onclick="navigate('dashboard')"><i class="fas fa-home"></i>Dashboard</div>
       <div class="menu-group">
@@ -309,7 +309,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
   <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
   <div class="main-content">
     <div class="header">
-      <div class="header-left"><button class="menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button><h2 id="pageTitle" style="font-size:18px">Dashboard</h2><span style="font-size:11px;color:var(--text-light);margin-left:8px;font-weight:400;opacity:.7">Ver3.4</span></div>
+      <div class="header-left"><button class="menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button><h2 id="pageTitle" style="font-size:18px">Dashboard</h2><span style="font-size:11px;color:var(--text-light);margin-left:8px;font-weight:400;opacity:.7">Ver3.5</span></div>
       <div class="header-right"><span id="headerDate"></span><span class="sync-status"><span class="dot offline" id="syncDot"></span><span id="syncText">Local</span></span><button class="btn btn-sm btn-outline" onclick="doLogout()"><i class="fas fa-sign-out-alt"></i> Logout</button></div>
     </div>
     <div class="page-content" id="pageContent"></div>
@@ -331,7 +331,7 @@ function fmtQty(n){n=Number(n)||0;if(n===0)return'0';const w=Math.floor(n);const
 function toast(msg,type='info'){const t=document.createElement('div');t.className='toast '+type;t.innerHTML='<i class="fas fa-'+(type==='error'?'exclamation-circle':type==='success'?'check-circle':'info-circle')+'"></i>'+escHtml(msg);$('toastContainer').appendChild(t);setTimeout(()=>t.remove(),3000);}
 function showLoading(t='Loading...'){$('loadingText').textContent=t;$('loadingOverlay').classList.remove('hidden');}
 function hideLoading(){$('loadingOverlay').classList.add('hidden');}
-function openModal(title,body,footer='',style=''){$('modalTitle').innerHTML=title;$('modalBody').innerHTML=body;$('modalFooter').innerHTML=footer;const mc=document.querySelector('.modal-content');if(mc)mc.style.cssText=style||'';$('modalOverlay').classList.remove('hidden');}
+function openModal(title,body,footer='',opts={}){$('modalTitle').innerHTML=title;$('modalBody').innerHTML=body;$('modalFooter').innerHTML=footer;const m=document.querySelector('#modalOverlay .modal');if(m)m.style.maxWidth=opts.wide?'860px':'600px';$('modalOverlay').classList.remove('hidden');}
 function closeModal(){$('modalOverlay').classList.add('hidden');}
 function genId(prefix){return prefix+'_'+Date.now()+'_'+Math.random().toString(36).substr(2,5);}
 function updateSyncStatus(s){const dot=$('syncDot'),txt=$('syncText');dot.className='dot '+s;txt.textContent=s==='online'?'Cloud':s==='syncing'?'Syncing...':'Local';}
@@ -3067,8 +3067,8 @@ function openStockItemModal(editId){
     ${existing?`<div style="border-top:1px solid var(--border);margin:6px 0;padding-top:8px">
       <label style="font-size:12px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:5px;margin-bottom:6px"><i class="fas fa-store" style="color:var(--accent);font-size:11px"></i>Per-Store Min / Order Qty / Suppliers</label>
       <div style="overflow-x:auto">
-      <div style="display:flex;gap:3px;padding:2px 8px;margin-bottom:3px;min-width:620px"><span style="flex:1;font-size:10px;font-weight:700;color:var(--text-light)">Store</span><span style="width:46px;text-align:center;font-size:10px;font-weight:700;color:var(--text-light)">Min</span><span style="width:34px;text-align:center;font-size:9px;font-weight:700;color:#c0392b">조건</span><span style="width:46px;text-align:center;font-size:10px;font-weight:700;color:var(--text-light)">Order</span><span style="width:90px;text-align:center;font-size:10px;font-weight:700;color:#6a1b9a">Sup1</span><span style="width:90px;text-align:center;font-size:10px;font-weight:700;color:#6a1b9a">Sup2</span><span style="width:90px;text-align:center;font-size:10px;font-weight:700;color:#6a1b9a">Sup3</span></div>
-      <div style="display:flex;flex-direction:column;gap:3px;min-width:620px">${D.Stores.filter(s=>s.active!==false).map(s=>{
+      <div style="display:flex;gap:3px;padding:2px 8px;margin-bottom:3px;min-width:710px"><span style="flex:1;font-size:10px;font-weight:700;color:var(--text-light)">Store</span><span style="width:46px;text-align:center;font-size:10px;font-weight:700;color:var(--text-light)">Min</span><span style="width:34px;text-align:center;font-size:9px;font-weight:700;color:#c0392b">조건</span><span style="width:46px;text-align:center;font-size:10px;font-weight:700;color:var(--text-light)">Order</span><span style="width:120px;text-align:center;font-size:10px;font-weight:700;color:#6a1b9a">Sup1</span><span style="width:120px;text-align:center;font-size:10px;font-weight:700;color:#6a1b9a">Sup2</span><span style="width:120px;text-align:center;font-size:10px;font-weight:700;color:#6a1b9a">Sup3</span></div>
+      <div style="display:flex;flex-direction:column;gap:3px;min-width:710px">${D.Stores.filter(s=>s.active!==false).map(s=>{
         const ss=D.StoreStock.find(x=>String(x.storeId)===String(s.id)&&String(x.itemId)===editId);
         const sMin=ss?ss.min:existing.min;
         const sCond=ss?(ss.minCondition||'lt'):(existing.minCondition||'lt');
@@ -3077,8 +3077,7 @@ function openStockItemModal(editId){
         const sSup1=ss&&ss.supplier1?ss.supplier1:(existing.supplier1||'');
         const sSup2=ss&&ss.supplier2?ss.supplier2:(existing.supplier2||'');
         const sSup3=ss&&ss.supplier3?ss.supplier3:(existing.supplier3||'');
-        const supOpts=D.Suppliers.map(sp=>'<option value="'+escHtml(sp.id)+'">'+escHtml(sp.id)+'</option>').join('');
-        const mkSel=(val,attr)=>'<select data-store-'+attr+'="'+s.id+'" style="width:90px;padding:2px;border:1.5px solid var(--border);border-radius:5px;font-size:11px"><option value="">—</option>'+D.Suppliers.map(sp=>'<option value="'+escHtml(sp.id)+'"'+(val===sp.id||val===sp.name?' selected':'')+'>'+escHtml(sp.id)+'</option>').join('')+'</select>';
+        const mkSel=(val,attr)=>'<select data-store-'+attr+'="'+s.id+'" style="width:120px;padding:2px;border:1.5px solid var(--border);border-radius:5px;font-size:11px"><option value="">—</option>'+D.Suppliers.map(sp=>'<option value="'+escHtml(sp.id)+'"'+(val===sp.id||val===sp.name?' selected':'')+'>'+escHtml(sp.name)+'</option>').join('')+'</select>';
         return `<div style="display:flex;align-items:center;gap:3px;padding:4px 8px;background:#f8f9fa;border-radius:6px">
           <span style="flex:1;font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(s.name)}</span>
           <input type="number" min="0" value="${sMin}" data-store-min="${s.id}" style="width:46px;padding:4px;border:1.5px solid var(--border);border-radius:5px;text-align:center;font-weight:600;font-size:12px">
@@ -3095,7 +3094,7 @@ function openStockItemModal(editId){
     ${isNew?'<p style="font-size:11px;color:var(--text-light);margin-top:4px"><i class="fas fa-info-circle"></i> This item will be added to all stores automatically.</p>':'<p style="font-size:11px;color:var(--text-light);margin-top:4px"><i class="fas fa-info-circle"></i> Changes will be synced to all stores.</p>'}`;
   const footer=`<button class="btn btn-outline" onclick="closeModal()">Cancel</button>
     <button class="btn btn-primary" onclick="saveStockItem('${editId||''}')">${isNew?'<i class="fas fa-plus"></i> Add Item':'<i class="fas fa-save"></i> Save Changes'}</button>`;
-  openModal(title,body,footer);
+  openModal(title,body,footer,{wide:true});
 }
 function toggleNewCat(){
   const sel=$('siCat');const newInput=$('siNewCat');
@@ -4745,7 +4744,7 @@ function exportAllWord(){
       ['submittedBy / submittedAt','Who submitted and when']
     ]);
 
-    html+=`<hr style="margin:16px 0"><p style="text-align:center;font-size:8pt;color:#999;font-style:italic">TBMS Ver3.4 \u2014 Programmed by DJ</p>`;
+    html+=`<hr style="margin:16px 0"><p style="text-align:center;font-size:8pt;color:#999;font-style:italic">TBMS Ver3.5 \u2014 Programmed by DJ</p>`;
     html+=`</body></html>`;
 
     const blob=new Blob(['\ufeff'+html],{type:'application/msword'});

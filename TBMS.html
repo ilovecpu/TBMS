@@ -236,7 +236,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
   <div class="login-logo">
     <div class="logo-icon"><i class="fas fa-bowl-food"></i></div>
     <h1>TBMS</h1>
-    <p>The Bap Management System <span style="opacity:.5;font-size:11px">Ver3.3</span></p>
+    <p>The Bap Management System <span style="opacity:.5;font-size:11px">Ver3.4</span></p>
   </div>
   <div class="form-group"><label>Username</label><input id="loginUser" placeholder="Enter username"></div>
   <div class="form-group"><label>Password</label><input id="loginPass" type="password" placeholder="Enter password"></div>
@@ -254,7 +254,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
 <!-- MAIN APP -->
 <div id="mainApp" class="hidden">
   <div class="sidebar" id="sidebar">
-    <div class="sidebar-header"><h2>TBMS <span style="font-size:12px;font-weight:400;opacity:.6">Ver3.3</span></h2><p>The Bap Management System</p></div>
+    <div class="sidebar-header"><h2>TBMS <span style="font-size:12px;font-weight:400;opacity:.6">Ver3.4</span></h2><p>The Bap Management System</p></div>
     <div class="sidebar-menu">
       <div class="menu-item active" data-page="dashboard" onclick="navigate('dashboard')"><i class="fas fa-home"></i>Dashboard</div>
       <div class="menu-group">
@@ -309,7 +309,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
   <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
   <div class="main-content">
     <div class="header">
-      <div class="header-left"><button class="menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button><h2 id="pageTitle" style="font-size:18px">Dashboard</h2><span style="font-size:11px;color:var(--text-light);margin-left:8px;font-weight:400;opacity:.7">Ver3.3</span></div>
+      <div class="header-left"><button class="menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button><h2 id="pageTitle" style="font-size:18px">Dashboard</h2><span style="font-size:11px;color:var(--text-light);margin-left:8px;font-weight:400;opacity:.7">Ver3.4</span></div>
       <div class="header-right"><span id="headerDate"></span><span class="sync-status"><span class="dot offline" id="syncDot"></span><span id="syncText">Local</span></span><button class="btn btn-sm btn-outline" onclick="doLogout()"><i class="fas fa-sign-out-alt"></i> Logout</button></div>
     </div>
     <div class="page-content" id="pageContent"></div>
@@ -490,7 +490,7 @@ const DEFAULT_DATA = {
 // Generate StoreStock for all stores × templates
 DEFAULT_DATA.Stores.forEach(store => {
   DEFAULT_DATA.StockTemplate.forEach(item => {
-    DEFAULT_DATA.StoreStock.push({storeId:store.id, itemId:item.id, category:item.category, name:item.name, unit:item.unit, min:item.min, minCondition:item.minCondition||'lt', orderQty:item.orderQty||0, orderUnit:item.orderUnit||item.unit, alwaysOrder:item.alwaysOrder||false, qty:0});
+    DEFAULT_DATA.StoreStock.push({storeId:store.id, itemId:item.id, category:item.category, name:item.name, unit:item.unit, min:item.min, minCondition:item.minCondition||'lt', orderQty:item.orderQty||0, orderUnit:item.orderUnit||item.unit, alwaysOrder:item.alwaysOrder||false, qty:0, supplier1:item.supplier1||'', supplier2:item.supplier2||'', supplier3:item.supplier3||''});
   });
 });
 
@@ -505,7 +505,7 @@ const FIELD_SCHEMA = {
   Attendance:['id','staffId','storeId','date','clockIn','clockOut','photoIn','photoOut','source'],
   Suppliers:['id','name','email','phone','address','website','memo','active'],
   StockTemplate:['id','category','name','unit','min','minCondition','orderQty','orderUnit','alwaysOrder','sortOrder','supplier1','supplier2','supplier3','memo','photo'],
-  StoreStock:['storeId','itemId','category','name','unit','min','minCondition','orderQty','orderUnit','alwaysOrder','qty'],
+  StoreStock:['storeId','itemId','category','name','unit','min','minCondition','orderQty','orderUnit','alwaysOrder','qty','supplier1','supplier2','supplier3'],
   StockCount:['id','storeId','week','countDate','itemId','category','name','unit','qty','submittedBy','submittedAt'],
   WeeklySales:['id','storeId','week','weekStart','totalSales','notes','submittedBy','submittedAt'],
   StaffMessages:['id','storeId','staffId','type','message','active','createdBy','createdAt'],
@@ -546,7 +546,7 @@ const LS = {
   set(k, v) { localStorage.setItem('tbms_'+k, JSON.stringify(v)); },
   getConfig() { return this.get('config') || {}; }
 };
-const CLOUD_URL = 'https://script.google.com/macros/s/AKfycbybzyd_yHJbzgQeqtPK6EuBturucDGRg7Gl3yX_9KsBg7zMY-MoYLMMCloBHv2QTNJQ/exec';
+const CLOUD_URL = 'https://script.google.com/macros/s/AKfycbwaC6b6WTo4Gw_UpgbpbrVDj52ooG-qqcqPeR4Tgne_bWbzDomXw14SlD0q6QiszZw5/exec';
 const API_KEY = 'tBaP2026xKr!mGt9Qz';
 const API = {
   url: CLOUD_URL, mode: 'cloud',
@@ -978,7 +978,7 @@ async function saveStore(id) {
     D.StoreStock=D.StoreStock.filter(ss=>String(ss.storeId)!==String(s.id));
     // Create fresh entries
     D.StockTemplate.forEach(t=>{
-      D.StoreStock.push({storeId:s.id,itemId:t.id,category:t.category,name:t.name,unit:t.unit,min:t.min,minCondition:t.minCondition||'lt',orderQty:t.orderQty||0,orderUnit:t.orderUnit||t.unit,alwaysOrder:t.alwaysOrder||false,qty:0});
+      D.StoreStock.push({storeId:s.id,itemId:t.id,category:t.category,name:t.name,unit:t.unit,min:t.min,minCondition:t.minCondition||'lt',orderQty:t.orderQty||0,orderUnit:t.orderUnit||t.unit,alwaysOrder:t.alwaysOrder||false,qty:0,supplier1:t.supplier1||'',supplier2:t.supplier2||'',supplier3:t.supplier3||''});
     });
     _bgPost({action:'saveSheet',sheet:'StoreStock',rows:D.StoreStock});
     toast(D.StockTemplate.length+' stock items initialized for '+s.name,'info');
@@ -3065,23 +3065,32 @@ function openStockItemModal(editId){
         </div></div>`:''}
     </div>
     ${existing?`<div style="border-top:1px solid var(--border);margin:6px 0;padding-top:8px">
-      <label style="font-size:12px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:5px;margin-bottom:6px"><i class="fas fa-store" style="color:var(--accent);font-size:11px"></i>Per-Store Min / Order Qty</label>
-      <div style="display:flex;gap:3px;padding:2px 8px;margin-bottom:3px"><span style="flex:1;font-size:10px;font-weight:700;color:var(--text-light)">Store</span><span style="width:50px;text-align:center;font-size:10px;font-weight:700;color:var(--text-light)">Min</span><span style="width:38px;text-align:center;font-size:9px;font-weight:700;color:#c0392b">조건</span><span style="width:50px;text-align:center;font-size:10px;font-weight:700;color:var(--text-light)">Order</span></div>
-      <div style="display:flex;flex-direction:column;gap:3px">${D.Stores.filter(s=>s.active!==false).map(s=>{
+      <label style="font-size:12px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:5px;margin-bottom:6px"><i class="fas fa-store" style="color:var(--accent);font-size:11px"></i>Per-Store Min / Order Qty / Suppliers</label>
+      <div style="overflow-x:auto">
+      <div style="display:flex;gap:3px;padding:2px 8px;margin-bottom:3px;min-width:620px"><span style="flex:1;font-size:10px;font-weight:700;color:var(--text-light)">Store</span><span style="width:46px;text-align:center;font-size:10px;font-weight:700;color:var(--text-light)">Min</span><span style="width:34px;text-align:center;font-size:9px;font-weight:700;color:#c0392b">조건</span><span style="width:46px;text-align:center;font-size:10px;font-weight:700;color:var(--text-light)">Order</span><span style="width:90px;text-align:center;font-size:10px;font-weight:700;color:#6a1b9a">Sup1</span><span style="width:90px;text-align:center;font-size:10px;font-weight:700;color:#6a1b9a">Sup2</span><span style="width:90px;text-align:center;font-size:10px;font-weight:700;color:#6a1b9a">Sup3</span></div>
+      <div style="display:flex;flex-direction:column;gap:3px;min-width:620px">${D.Stores.filter(s=>s.active!==false).map(s=>{
         const ss=D.StoreStock.find(x=>String(x.storeId)===String(s.id)&&String(x.itemId)===editId);
         const sMin=ss?ss.min:existing.min;
         const sCond=ss?(ss.minCondition||'lt'):(existing.minCondition||'lt');
         const sOQ=ss?(ss.orderQty||0):(existing.orderQty||0);
+        // 지점별 서플라이어: StoreStock 값 우선, 없으면 StockTemplate 기본값
+        const sSup1=ss&&ss.supplier1?ss.supplier1:(existing.supplier1||'');
+        const sSup2=ss&&ss.supplier2?ss.supplier2:(existing.supplier2||'');
+        const sSup3=ss&&ss.supplier3?ss.supplier3:(existing.supplier3||'');
+        const supOpts=D.Suppliers.map(sp=>'<option value="'+escHtml(sp.id)+'">'+escHtml(sp.id)+'</option>').join('');
+        const mkSel=(val,attr)=>'<select data-store-'+attr+'="'+s.id+'" style="width:90px;padding:2px;border:1.5px solid var(--border);border-radius:5px;font-size:11px"><option value="">—</option>'+D.Suppliers.map(sp=>'<option value="'+escHtml(sp.id)+'"'+(val===sp.id||val===sp.name?' selected':'')+'>'+escHtml(sp.id)+'</option>').join('')+'</select>';
         return `<div style="display:flex;align-items:center;gap:3px;padding:4px 8px;background:#f8f9fa;border-radius:6px">
-          <span style="flex:1;font-size:12px;font-weight:600">${escHtml(s.name)}</span>
-          <input type="number" min="0" value="${sMin}" data-store-min="${s.id}" style="width:50px;padding:4px;border:1.5px solid var(--border);border-radius:5px;text-align:center;font-weight:600;font-size:12px">
-          <select data-store-cond="${s.id}" style="width:38px;padding:2px 1px;border:1.5px solid var(--border);border-radius:5px;text-align:center;font-weight:700;font-size:11px;color:#c0392b">
+          <span style="flex:1;font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(s.name)}</span>
+          <input type="number" min="0" value="${sMin}" data-store-min="${s.id}" style="width:46px;padding:4px;border:1.5px solid var(--border);border-radius:5px;text-align:center;font-weight:600;font-size:12px">
+          <select data-store-cond="${s.id}" style="width:34px;padding:2px 1px;border:1.5px solid var(--border);border-radius:5px;text-align:center;font-weight:700;font-size:11px;color:#c0392b">
             <option value="lt" ${sCond!=='lte'?'selected':''}>＜</option>
             <option value="lte" ${sCond==='lte'?'selected':''}>≤</option>
           </select>
-          <input type="number" min="0" value="${sOQ}" data-store-oq="${s.id}" style="width:50px;padding:4px;border:1.5px solid var(--border);border-radius:5px;text-align:center;font-weight:600;font-size:12px;color:#1565c0">
+          <input type="number" min="0" value="${sOQ}" data-store-oq="${s.id}" style="width:46px;padding:4px;border:1.5px solid var(--border);border-radius:5px;text-align:center;font-weight:600;font-size:12px;color:#1565c0">
+          ${mkSel(sSup1,'sup1')} ${mkSel(sSup2,'sup2')} ${mkSel(sSup3,'sup3')}
         </div>`;
       }).join('')}</div>
+      </div>
     </div>`:''}
     ${isNew?'<p style="font-size:11px;color:var(--text-light);margin-top:4px"><i class="fas fa-info-circle"></i> This item will be added to all stores automatically.</p>':'<p style="font-size:11px;color:var(--text-light);margin-top:4px"><i class="fas fa-info-circle"></i> Changes will be synced to all stores.</p>'}`;
   const footer=`<button class="btn btn-outline" onclick="closeModal()">Cancel</button>
@@ -3131,10 +3140,17 @@ async function saveStockItem(editId){
       const storeCond=condEl?condEl.value:'lt';
       const oqEl=document.querySelector(`[data-store-oq="${storeId}"]`);
       const storeOQ=oqEl?parseInt(oqEl.value)||0:orderQty;
+      // 지점별 서플라이어 수집
+      const sup1El=document.querySelector(`[data-store-sup1="${storeId}"]`);
+      const sup2El=document.querySelector(`[data-store-sup2="${storeId}"]`);
+      const sup3El=document.querySelector(`[data-store-sup3="${storeId}"]`);
+      const storeSup1=sup1El?sup1El.value:'';
+      const storeSup2=sup2El?sup2El.value:'';
+      const storeSup3=sup3El?sup3El.value:'';
       const ss=D.StoreStock.find(x=>String(x.storeId)===storeId&&String(x.itemId)===editId);
-      if(ss){ss.category=category;ss.name=name;ss.unit=unit;ss.min=storeMin;ss.minCondition=storeCond;ss.orderQty=storeOQ;ss.orderUnit=orderUnit;ss.alwaysOrder=alwaysOrder;}
+      if(ss){ss.category=category;ss.name=name;ss.unit=unit;ss.min=storeMin;ss.minCondition=storeCond;ss.orderQty=storeOQ;ss.orderUnit=orderUnit;ss.alwaysOrder=alwaysOrder;ss.supplier1=storeSup1;ss.supplier2=storeSup2;ss.supplier3=storeSup3;}
     });
-    // 비활성 매장만 업데이트 (모달에 없는 매장 — per-store 값 덮어쓰기 방지)
+    // 비활성 매장만 업데이트 (모달에 없는 매장 — per-store 값 덮어쓰기 방지, supplier 유지)
     D.StoreStock.forEach(ss=>{
       if(String(ss.itemId)===editId&&!updatedStoreIds.has(String(ss.storeId))){
         ss.category=category;ss.name=name;ss.unit=unit;ss.minCondition=minCondition;ss.orderUnit=orderUnit;ss.alwaysOrder=alwaysOrder;
@@ -3156,9 +3172,9 @@ async function saveStockItem(editId){
     const alwaysOrder=$('siAlwaysOrder')?.checked||false;
     const tpl={id:newId,category,name,unit,min,minCondition,orderQty,orderUnit,alwaysOrder,sortOrder,supplier1,supplier2,supplier3,memo,photo:''};
     D.StockTemplate.push(tpl);
-    // Add to StoreStock for EVERY store
+    // Add to StoreStock for EVERY store (template supplier를 기본값으로)
     D.Stores.forEach(store=>{
-      D.StoreStock.push({storeId:store.id,itemId:newId,category,name,unit,min,minCondition,orderQty,orderUnit,alwaysOrder,qty:0});
+      D.StoreStock.push({storeId:store.id,itemId:newId,category,name,unit,min,minCondition,orderQty,orderUnit,alwaysOrder,qty:0,supplier1,supplier2,supplier3});
     });
     // Photo upload for new item
     const photoFileNew=$('siPhotoFile');
@@ -3284,11 +3300,11 @@ function renderOrders(c) {
     <select id="orderStore" onchange="renderOrderTable()"><option value="">Select Store</option>${getAccessibleStores().map(s=>`<option value="${s.id}">${s.name}</option>`).join('')}</select>
     <button class="btn btn-sm btn-success" onclick="exportOrder()"><i class="fas fa-download"></i> Export CSV</button>
     <button class="btn btn-sm btn-primary" onclick="printOrder()"><i class="fas fa-print"></i> Print</button>
-  </div><div class="card"><div class="table-wrap"><table><thead><tr><th>Category</th><th>Item</th><th>Unit</th><th>Min</th><th>Current</th><th>Order QTY</th><th>주문단위</th></tr></thead><tbody id="orderBody"></tbody></table></div></div>`;
+  </div><div class="card"><div class="table-wrap"><table><thead><tr><th>Category</th><th>Item</th><th>Unit</th><th>Min</th><th>Current</th><th>Order QTY</th><th>주문단위</th><th>Supplier</th></tr></thead><tbody id="orderBody"></tbody></table></div></div>`;
 }
 function renderOrderTable() {
   const storeId=$('orderStore')?.value;
-  if(!storeId){$('orderBody').innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--text-light)">Please select a store</td></tr>';return;}
+  if(!storeId){$('orderBody').innerHTML='<tr><td colspan="8" style="text-align:center;color:var(--text-light)">Please select a store</td></tr>';return;}
   const items=D.StoreStock.filter(s=>{
     if(String(s.storeId)!==storeId)return false;
     const qty=Number(s.qty)||0,min=Number(s.min)||0,mc3=s.minCondition||'lt',oq=Number(s.orderQty)||0;
@@ -3307,13 +3323,17 @@ function renderOrderTable() {
     const orderVal=needOrder?Math.max(0,oq-qty):0;
     const aoIcon=ao?'<i class="fas fa-cart-plus" style="color:#1565c0;font-size:10px;margin-left:4px" title="Always Order"></i>':'';
     const ou=s.orderUnit||s.unit;
-    return`<tr><td>${escHtml(s.category)}</td><td>${escHtml(s.name)}${aoIcon}</td><td>${escHtml(s.unit)}</td><td>${s.min}</td><td><span class="badge ${Number(s.qty)<=0?'badge-danger':qty<Number(s.min)?'badge-warning':'badge-success'}">${s.qty}</span></td><td><strong style="color:#c62828">${orderVal}</strong></td><td style="color:#1565c0;font-weight:600">${escHtml(ou)}</td></tr>`;
-  }).join(''):'<tr><td colspan="7" style="text-align:center;color:var(--success)"><i class="fas fa-check-circle"></i> All items are sufficiently stocked!</td></tr>';
+    // 지점별 서플라이어 표시 (supplier1 우선)
+    const _supId=s.supplier1||'';
+    const _supObj=_supId?D.Suppliers.find(x=>x.id===_supId||x.name===_supId):null;
+    const _supName=_supObj?_supObj.name:(_supId||'—');
+    return`<tr><td>${escHtml(s.category)}</td><td>${escHtml(s.name)}${aoIcon}</td><td>${escHtml(s.unit)}</td><td>${s.min}</td><td><span class="badge ${Number(s.qty)<=0?'badge-danger':qty<Number(s.min)?'badge-warning':'badge-success'}">${s.qty}</span></td><td><strong style="color:#c62828">${orderVal}</strong></td><td style="color:#1565c0;font-weight:600">${escHtml(ou)}</td><td style="font-size:12px">${escHtml(_supName)}</td></tr>`;
+  }).join(''):'<tr><td colspan="8" style="text-align:center;color:var(--success)"><i class="fas fa-check-circle"></i> All items are sufficiently stocked!</td></tr>';
 }
 function exportOrder() {
   const rows=document.querySelectorAll('#orderBody tr');
-  let csv='Category,Item,Unit,Min,Current,Order QTY,Order Unit\n';
-  rows.forEach(r=>{const cells=r.querySelectorAll('td');if(cells.length>=7)csv+=Array.from(cells).map(c=>'"'+c.textContent.trim()+'"').join(',')+'\n';});
+  let csv='Category,Item,Unit,Min,Current,Order QTY,Order Unit,Supplier\n';
+  rows.forEach(r=>{const cells=r.querySelectorAll('td');if(cells.length>=8)csv+=Array.from(cells).map(c=>'"'+c.textContent.trim()+'"').join(',')+'\n';});
   const store=D.Stores.find(s=>s.id===$('orderStore')?.value);
   const blob=new Blob([csv],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`order_${store?store.code:'all'}_${new Date().toISOString().split('T')[0]}.csv`;a.click();toast('Order CSV exported','success');
 }
@@ -4725,7 +4745,7 @@ function exportAllWord(){
       ['submittedBy / submittedAt','Who submitted and when']
     ]);
 
-    html+=`<hr style="margin:16px 0"><p style="text-align:center;font-size:8pt;color:#999;font-style:italic">TBMS Ver3.3 \u2014 Programmed by DJ</p>`;
+    html+=`<hr style="margin:16px 0"><p style="text-align:center;font-size:8pt;color:#999;font-style:italic">TBMS Ver3.4 \u2014 Programmed by DJ</p>`;
     html+=`</body></html>`;
 
     const blob=new Blob(['\ufeff'+html],{type:'application/msword'});

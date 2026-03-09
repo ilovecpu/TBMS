@@ -236,7 +236,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
   <div class="login-logo">
     <div class="logo-icon"><i class="fas fa-bowl-food"></i></div>
     <h1>TBMS</h1>
-    <p>The Bap Management System <span style="opacity:.5;font-size:11px">Ver3.2</span></p>
+    <p>The Bap Management System <span style="opacity:.5;font-size:11px">Ver3.3</span></p>
   </div>
   <div class="form-group"><label>Username</label><input id="loginUser" placeholder="Enter username"></div>
   <div class="form-group"><label>Password</label><input id="loginPass" type="password" placeholder="Enter password"></div>
@@ -254,7 +254,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
 <!-- MAIN APP -->
 <div id="mainApp" class="hidden">
   <div class="sidebar" id="sidebar">
-    <div class="sidebar-header"><h2>TBMS <span style="font-size:12px;font-weight:400;opacity:.6">Ver3.2</span></h2><p>The Bap Management System</p></div>
+    <div class="sidebar-header"><h2>TBMS <span style="font-size:12px;font-weight:400;opacity:.6">Ver3.3</span></h2><p>The Bap Management System</p></div>
     <div class="sidebar-menu">
       <div class="menu-item active" data-page="dashboard" onclick="navigate('dashboard')"><i class="fas fa-home"></i>Dashboard</div>
       <div class="menu-group">
@@ -309,7 +309,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
   <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
   <div class="main-content">
     <div class="header">
-      <div class="header-left"><button class="menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button><h2 id="pageTitle" style="font-size:18px">Dashboard</h2><span style="font-size:11px;color:var(--text-light);margin-left:8px;font-weight:400;opacity:.7">Ver3.2</span></div>
+      <div class="header-left"><button class="menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button><h2 id="pageTitle" style="font-size:18px">Dashboard</h2><span style="font-size:11px;color:var(--text-light);margin-left:8px;font-weight:400;opacity:.7">Ver3.3</span></div>
       <div class="header-right"><span id="headerDate"></span><span class="sync-status"><span class="dot offline" id="syncDot"></span><span id="syncText">Local</span></span><button class="btn btn-sm btn-outline" onclick="doLogout()"><i class="fas fa-sign-out-alt"></i> Logout</button></div>
     </div>
     <div class="page-content" id="pageContent"></div>
@@ -3395,10 +3395,14 @@ function openSupplierModal(editId){
   const existing=editId?D.Suppliers.find(s=>s.id===editId):null;
   const isNew=!existing;
   const title=isNew?'Add Supplier':'Edit Supplier';
-  const v=existing||{name:'',email:'',phone:'',address:'',website:'',memo:''};
+  const v=existing||{id:'',name:'',email:'',phone:'',address:'',website:'',memo:''};
   const body=`
-    <div class="form-group"><label>Company Name *</label>
-      <input type="text" id="supName" value="${escHtml(v.name)}" placeholder="e.g. Pan Asia" style="padding:10px;border:2px solid var(--border);border-radius:8px"></div>
+    <div class="form-row">
+      <div class="form-group" style="flex:0 0 100px"><label>ID *</label>
+        <input type="text" id="supId" value="${escHtml(v.id)}" placeholder="e.g. AZ" ${existing?'readonly style="padding:10px;border:2px solid var(--border);border-radius:8px;background:#f5f5f5;color:#888"':'style="padding:10px;border:2px solid var(--border);border-radius:8px"'}></div>
+      <div class="form-group"><label>Company Name *</label>
+        <input type="text" id="supName" value="${escHtml(v.name)}" placeholder="e.g. Pan Asia" style="padding:10px;border:2px solid var(--border);border-radius:8px"></div>
+    </div>
     <div class="form-row">
       <div class="form-group"><label>Email</label>
         <input type="email" id="supEmail" value="${escHtml(v.email)}" placeholder="orders@supplier.com" style="padding:10px;border:2px solid var(--border);border-radius:8px"></div>
@@ -3418,10 +3422,16 @@ function openSupplierModal(editId){
 async function saveSupplier(editId){
   const name=($('supName')?.value||'').trim();
   if(!name){toast('Company name is required','error');return;}
-  const dup=D.Suppliers.find(s=>s.name.toLowerCase()===name.toLowerCase()&&s.id!==editId);
+  // ID: 수정시 기존 ID 유지, 신규시 사용자 입력 ID 사용
+  const inputId=($('supId')?.value||'').trim();
+  if(!editId&&!inputId){toast('ID is required','error');return;}
+  const supId=editId||inputId;
+  // 중복 체크
+  if(!editId){const dupId=D.Suppliers.find(s=>s.id===supId);if(dupId){toast(`ID "${supId}" already exists`,'error');return;}}
+  const dup=D.Suppliers.find(s=>s.name.toLowerCase()===name.toLowerCase()&&s.id!==supId);
   if(dup){toast(`"${name}" already exists`,'error');return;}
   const row={
-    id:editId||genId('sup'), name,
+    id:supId, name,
     email:($('supEmail')?.value||'').trim(),
     phone:($('supPhone')?.value||'').trim(),
     address:($('supAddr')?.value||'').trim(),
@@ -4715,7 +4725,7 @@ function exportAllWord(){
       ['submittedBy / submittedAt','Who submitted and when']
     ]);
 
-    html+=`<hr style="margin:16px 0"><p style="text-align:center;font-size:8pt;color:#999;font-style:italic">TBMS Ver3.2 \u2014 Programmed by DJ</p>`;
+    html+=`<hr style="margin:16px 0"><p style="text-align:center;font-size:8pt;color:#999;font-style:italic">TBMS Ver3.3 \u2014 Programmed by DJ</p>`;
     html+=`</body></html>`;
 
     const blob=new Blob(['\ufeff'+html],{type:'application/msword'});

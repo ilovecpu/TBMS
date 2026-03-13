@@ -1,8 +1,8 @@
 // ============================================================
-//  TBMS - The Bap Management System v3.1
+//  TBMS - The Bap Management System v3.4
 //  Google Apps Script Backend (Code.gs)
 //  Deployed: 2026-03-13
-//  URL: https://script.google.com/macros/s/AKfycbwaLRx-O8T2-2PoxOfM2Kv1QAhru3Ou9x6reeBgWlpBUowzvCvYeCc3EqT3WilnecCy/exec
+//  URL: https://script.google.com/macros/s/AKfycbycwxP1jF_ZyY8F2ICm1j_d80Nh9Vyjf8boRwhFJLFSoPdCVG1c7txPp8awGnTuhFfa/exec
 // ============================================================
 //  SETUP:
 //  1. Google Drive > New > Google Sheets > Name "TBMS Database"
@@ -82,7 +82,7 @@ function doGet(e) {
       case 'searchKB':   result = searchKB(e.parameter.q); break;
       // ★ POS Sales Data — read endpoints for TBMS dashboard
       case 'getSalesReport': result = getSalesReport(e.parameter.branch, e.parameter.from, e.parameter.to); break;
-      case 'getLiveSales':   result = getLiveSales(); break;
+      case 'getLiveSales':   result = getLiveSales(e.parameter.date); break;
       case 'getEndSalesLog': result = getEndSalesLog(e.parameter.branch, e.parameter.from, e.parameter.to); break;
       default:         result = {error:'Unknown action: '+action};
     }
@@ -1108,6 +1108,8 @@ function pushDailySales(data) {
 // ─── pushLiveSales: 매시간 라이브 푸시 (upsert by date+branch) ───
 function pushLiveSales(data) {
   if (!data.date || !data.branch) return {error: 'date and branch required'};
+  // ★ 자동 리셋: 오늘이 아닌 이전 날짜 데이터 삭제
+  _cleanOldLiveSales(data.date);
   var row = {
     date:            data.date,
     branch:          data.branch,
@@ -1122,6 +1124,35 @@ function pushLiveSales(data) {
     lastUpdated:     new Date().toISOString()
   };
   return _upsertSalesRow('LiveSales', ['date', 'branch'], row);
+}
+
+// ★ LiveSales 자동 리셋 — 오늘 날짜가 아닌 행 삭제
+function _cleanOldLiveSales(todayStr) {
+  try {
+    var sheetName = 'LiveSales';
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sh = ss.getSheetByName(sheetName);
+    if (!sh) return;
+    var lastRow = sh.getLastRow();
+    if (lastRow <= 1) return; // header only
+    var dates = sh.getRange(2, 1, lastRow - 1, 1).getValues(); // column A = date
+    var rowsToDelete = [];
+    for (var i = 0; i < dates.length; i++) {
+      var cellDate = String(dates[i][0]).trim();
+      if (cellDate && cellDate !== todayStr) {
+        rowsToDelete.push(i + 2); // sheet row (1-indexed, skip header)
+      }
+    }
+    // 역순으로 삭제 (아래→위, 인덱스 변동 방지)
+    for (var j = rowsToDelete.length - 1; j >= 0; j--) {
+      sh.deleteRow(rowsToDelete[j]);
+    }
+    if (rowsToDelete.length > 0) {
+      Logger.log('[LiveSales] Cleaned ' + rowsToDelete.length + ' old rows (not ' + todayStr + ')');
+    }
+  } catch (e) {
+    Logger.log('[LiveSales] Clean error: ' + e.message);
+  }
 }
 
 // ─── pushEndSales: END Sales 이벤트 푸시 (append) ───
@@ -1165,12 +1196,45 @@ function getSalesReport(branch, from, to) {
   return {status: 'ok', data: rows, total: rows.length};
 }
 
-// ─── getLiveSales: 오늘 라이브 세일즈 전체 지점 (TBMS 대시보드) ───
-function getLiveSales() {
-  var rows = readSheet('LiveSales');
+// ─── getLiveSales: 라이브 세일즈 전체 지점 (TBMS 대시보드) ───
+// date 파라미터 없으면 오늘, 있으면 해당 날짜 조회
+// 오늘 = LiveSales 시트, 과거 = DailySales 시트에서 조회
+function getLiveSales(date) {
   var today = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd');
-  rows = rows.filter(function(r) { return r.date === today; });
-  return {status: 'ok', data: rows, today: today};
+  var targetDate = date || today;
+  var isToday = (targetDate === today);
+
+  if (isToday) {
+    // 오늘: LiveSales 시트에서 실시간 데이터
+    var rows = readSheet('LiveSales');
+    rows = rows.filter(function(r) { return r.date === targetDate; });
+    return {status: 'ok', data: rows, date: targetDate, isToday: true};
+  } else {
+    // 과거: DailySales 시트에서 조회 → LiveSales 형식으로 변환
+    var dailyRows = readSheet('DailySales');
+    dailyRows = dailyRows.filter(function(r) { return r.date === targetDate; });
+    var mapped = dailyRows.map(function(r) {
+      return {
+        date:            r.date,
+        branch:          r.branch,
+        branchName:      r.branchName || r.branch,
+        main_grandTotal: r.main_grandTotal || 0,
+        main_vatTotal:   r.main_vatTotal || 0,
+        sub_grandTotal:  r.sub_grandTotal || 0,
+        sub_vatTotal:    r.sub_vatTotal || 0,
+        totalOrders:     r.totalOrders || 0,
+        cashCount:       r.cashCount || 0,
+        cardCount:       r.cardCount || 0,
+        lastUpdated:     r.pushedAt || '',
+        // DailySales 추가 정보
+        main_cashTotal:  r.main_cashTotal || 0,
+        main_cardTotal:  r.main_cardTotal || 0,
+        sub_cashTotal:   r.sub_cashTotal || 0,
+        sub_cardTotal:   r.sub_cardTotal || 0
+      };
+    });
+    return {status: 'ok', data: mapped, date: targetDate, isToday: false};
+  }
 }
 
 // ─── getEndSalesLog: END Sales 기록 조회 ───

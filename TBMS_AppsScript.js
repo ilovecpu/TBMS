@@ -1,8 +1,8 @@
 // ============================================================
-//  TBMS - The Bap Management System v3.6
+//  TBMS - The Bap Management System v3.8
 //  Google Apps Script Backend (Code.gs)
 //  Deployed: 2026-03-13
-//  URL: https://script.google.com/macros/s/AKfycbzMR806aPCeI8yB2Fk6ZZflH9BHo-B9kaukRoIjxHGomV8jOEbtAsjU2N0GZH4FqcGE/exec
+//  URL: https://script.google.com/macros/s/AKfycbxYPwOPkJqoGbI3OQ0ITG7_OXuchjOD0_HBuNRsrqtaMbMmFtPqVZbSEBN-xNjKwQA-/exec
 // ============================================================
 //  SETUP:
 //  1. Google Drive > New > Google Sheets > Name "TBMS Database"
@@ -33,7 +33,7 @@ const SHEETS = {
   KnowledgeBase:  ['id','category','title','content','tags','source','createdBy','createdAt','updatedAt','active','version','accessLevel'],
   // ★ POS Sales Data — pushed from branch servers
   DailySales:     ['date','branch','branchName','totalOrders','main_cashTotal','main_cardTotal','main_grandTotal','main_vatTotal','main_vatBreakdown','sub_cashPct','sub_cashTotal','sub_cardTotal','sub_grandTotal','sub_vatTotal','sub_vatBreakdown','cashCount','cardCount','itemBreakdown','pushedAt'],
-  LiveSales:      ['date','branch','branchName','main_grandTotal','main_vatTotal','sub_grandTotal','sub_vatTotal','totalOrders','cashCount','cardCount','lastUpdated'],
+  LiveSales:      ['date','branch','branchName','main_grandTotal','main_vatTotal','main_cashTotal','main_cardTotal','sub_grandTotal','sub_vatTotal','sub_cashTotal','sub_cardTotal','totalOrders','cashCount','cardCount','lastUpdated'],
   EndSales:       ['id','branch','branchName','periodFrom','periodTo','totalOrders','main_cashTotal','main_cardTotal','main_grandTotal','main_vatTotal','sub_cashPct','sub_grandTotal','sub_vatTotal','itemBreakdown','staff','pushedAt']
 };
 
@@ -1049,6 +1049,14 @@ function _upsertSalesRow(sheetName, keyFields, rowData) {
   var headers = SHEETS[sheetName];
   if (!headers) return {error: 'Unknown sheet: ' + sheetName};
 
+  // ★ Auto-sync headers if schema has new columns
+  var existingHeaders = sheet.getRange(1, 1, 1, sheet.getLastColumn() || 1).getValues()[0];
+  if (existingHeaders.length < headers.length || headers.some(function(h, i) { return existingHeaders[i] !== h; })) {
+    sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+    sheet.getRange(1, 1, 1, headers.length).setFontWeight('bold');
+    Logger.log('[' + sheetName + '] Headers auto-synced: ' + headers.join(','));
+  }
+
   // Build row array from rowData
   var newRow = headers.map(function(h) {
     var val = rowData[h];
@@ -1127,8 +1135,12 @@ function pushLiveSales(data) {
     branchName:      data.branchName || data.branch,
     main_grandTotal: data.main_grandTotal || 0,
     main_vatTotal:   data.main_vatTotal || 0,
+    main_cashTotal:  data.main_cashTotal || 0,
+    main_cardTotal:  data.main_cardTotal || 0,
     sub_grandTotal:  data.sub_grandTotal || 0,
     sub_vatTotal:    data.sub_vatTotal || 0,
+    sub_cashTotal:   data.sub_cashTotal || 0,
+    sub_cardTotal:   data.sub_cardTotal || 0,
     totalOrders:     data.totalOrders || 0,
     cashCount:       data.cashCount || 0,
     cardCount:       data.cardCount || 0,

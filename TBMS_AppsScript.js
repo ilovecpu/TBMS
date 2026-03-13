@@ -1,8 +1,8 @@
 // ============================================================
-//  TBMS - The Bap Management System v3.4
+//  TBMS - The Bap Management System v3.6
 //  Google Apps Script Backend (Code.gs)
 //  Deployed: 2026-03-13
-//  URL: https://script.google.com/macros/s/AKfycbycwxP1jF_ZyY8F2ICm1j_d80Nh9Vyjf8boRwhFJLFSoPdCVG1c7txPp8awGnTuhFfa/exec
+//  URL: https://script.google.com/macros/s/AKfycbzMR806aPCeI8yB2Fk6ZZflH9BHo-B9kaukRoIjxHGomV8jOEbtAsjU2N0GZH4FqcGE/exec
 // ============================================================
 //  SETUP:
 //  1. Google Drive > New > Google Sheets > Name "TBMS Database"
@@ -1053,19 +1053,22 @@ function _upsertSalesRow(sheetName, keyFields, rowData) {
   var newRow = headers.map(function(h) {
     var val = rowData[h];
     // JSON stringify objects/arrays
-    if (val !== null && val !== undefined && typeof val === 'object') return JSON.stringify(val);
+    if (val !== null && val !== undefined && typeof val === 'object' && !(val instanceof Date)) return JSON.stringify(val);
     return val !== null && val !== undefined ? val : '';
   });
 
   // Find existing row by key fields
   var data = sheet.getDataRange().getValues();
+  var tz = Session.getScriptTimeZone();
   for (var i = 1; i < data.length; i++) {
     var match = true;
     for (var k = 0; k < keyFields.length; k++) {
       var colIdx = headers.indexOf(keyFields[k]);
-      if (colIdx < 0 || String(data[i][colIdx]) !== String(rowData[keyFields[k]])) {
-        match = false; break;
-      }
+      if (colIdx < 0) { match = false; break; }
+      // ★ Google Sheets Date 객체 안전 변환
+      var cellVal = _cellToString(data[i][colIdx], tz);
+      var keyVal = String(rowData[keyFields[k]]);
+      if (cellVal !== keyVal) { match = false; break; }
     }
     if (match) {
       // Update existing row
@@ -1076,6 +1079,14 @@ function _upsertSalesRow(sheetName, keyFields, rowData) {
   // Append new row
   sheet.appendRow(newRow);
   return {status: 'ok', action: 'inserted', row: sheet.getLastRow()};
+}
+
+// ★ Google Sheets 셀 값을 안전하게 문자열로 변환 (Date 객체 → yyyy-MM-dd)
+function _cellToString(val, tz) {
+  if (val instanceof Date) {
+    return Utilities.formatDate(val, tz || Session.getScriptTimeZone(), 'yyyy-MM-dd');
+  }
+  return String(val).trim();
 }
 
 // ─── pushDailySales: 자정 자동 푸시 (upsert by date+branch) ───
@@ -1136,9 +1147,11 @@ function _cleanOldLiveSales(todayStr) {
     var lastRow = sh.getLastRow();
     if (lastRow <= 1) return; // header only
     var dates = sh.getRange(2, 1, lastRow - 1, 1).getValues(); // column A = date
+    var tz = Session.getScriptTimeZone();
     var rowsToDelete = [];
     for (var i = 0; i < dates.length; i++) {
-      var cellDate = String(dates[i][0]).trim();
+      // ★ Google Sheets Date 객체 안전 변환
+      var cellDate = _cellToString(dates[i][0], tz);
       if (cellDate && cellDate !== todayStr) {
         rowsToDelete.push(i + 2); // sheet row (1-indexed, skip header)
       }

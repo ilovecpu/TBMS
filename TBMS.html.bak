@@ -2,12 +2,14 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<!-- 캐시 허용으로 로딩 속도 향상 -->
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%232e7d32'/%3E%3Cg transform='translate(8,10) scale(0.09375)'%3E%3Cpath fill='%23fff' d='M0 192c0-35.3 28.7-64 64-64c.5 0 1.1 0 1.6 0C73 91.5 105.3 64 144 64c15 0 29 4.1 40.9 11.2C198.2 49.6 225.1 32 256 32s57.8 17.6 71.1 43.2C339 68.1 353 64 368 64c38.7 0 71 27.5 78.4 64c.5 0 1.1 0 1.6 0c35.3 0 64 28.7 64 64c0 11.7-3.1 22.6-8.6 32H8.6C3.1 214.6 0 203.7 0 192zm0 91.4C0 268.3 12.3 256 27.4 256H484.6c15.1 0 27.4 12.3 27.4 27.4c0 70.5-44.4 130.7-106.7 154.1L403.5 452c-2 16-15.6 28-31.8 28H140.2c-16.1 0-29.8-12-31.8-28l-1.8-14.4C44.4 414.1 0 353.9 0 283.4z'/%3E%3C/g%3E%3C/svg%3E">
 <title>TBMS - The Bap Management System</title>
-<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" media="print" onload="this.media='all'">
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{--primary:#111111;--primary-light:#222222;--accent:#e84393;--accent-light:#fce4ec;--bg:#faf5f6;--card:#fff;--text:#222;--text-light:#777;--border:#e8dfe0;--success:#43a047;--warning:#fb8c00;--danger:#e53935;--sidebar-w:260px;--header-h:60px;--pink:#e84393;--pink-soft:#f8c8d8;--pink-bg:#fff0f3}
@@ -197,7 +199,11 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
   .modal{margin:10px;border-radius:12px}
   .kiosk-card{padding:24px}
 }
-/* 풀스크린 오버레이 CSS 제거됨 */
+.fs-overlay{position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:20px;color:#fff;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.fs-overlay .fs-icon{font-size:72px;animation:fsPulse 2s infinite}
+.fs-overlay h2{font-size:28px;font-weight:700}
+.fs-overlay p{font-size:15px;opacity:.6}
+@keyframes fsPulse{0%,100%{opacity:.7;transform:scale(1)}50%{opacity:1;transform:scale(1.1)}}
 </style>
 </head>
 <body>
@@ -236,7 +242,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
   <div class="login-logo">
     <div class="logo-icon"><i class="fas fa-bowl-food"></i></div>
     <h1>TBMS</h1>
-    <p>The Bap Management System <span style="opacity:.5;font-size:11px">Ver3.7</span></p>
+    <p>The Bap Management System <span style="opacity:.5;font-size:11px">Ver1.8</span></p>
   </div>
   <div class="form-group"><label>Username</label><input id="loginUser" placeholder="Enter username"></div>
   <div class="form-group"><label>Password</label><input id="loginPass" type="password" placeholder="Enter password"></div>
@@ -254,7 +260,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
 <!-- MAIN APP -->
 <div id="mainApp" class="hidden">
   <div class="sidebar" id="sidebar">
-    <div class="sidebar-header"><h2>TBMS <span style="font-size:12px;font-weight:400;opacity:.6">Ver3.7</span></h2><p>The Bap Management System</p></div>
+    <div class="sidebar-header"><h2>TBMS <span style="font-size:12px;font-weight:400;opacity:.6">Ver1.8</span></h2><p>The Bap Management System</p></div>
     <div class="sidebar-menu">
       <div class="menu-item active" data-page="dashboard" onclick="navigate('dashboard')"><i class="fas fa-home"></i>Dashboard</div>
       <div class="menu-group">
@@ -262,7 +268,6 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
         <div class="sub-menu">
           <div class="menu-item sub" data-page="stores" onclick="navigate('stores')"><i class="fas fa-list"></i>Store List</div>
           <div class="menu-item sub" data-page="store-mgmt" onclick="navigate('store-mgmt')"><i class="fas fa-cogs"></i>Store Management</div>
-          <div class="menu-item sub" data-page="sales-report" onclick="navigate('sales-report')"><i class="fas fa-chart-line"></i>Sales Report</div>
         </div>
       </div>
       <div class="menu-group">
@@ -300,8 +305,6 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
           <div class="menu-item sub" data-page="users" onclick="navigate('users')"><i class="fas fa-users-cog"></i>Users</div>
           <div class="menu-item sub" data-page="settings" onclick="navigate('settings')"><i class="fas fa-sliders"></i>General</div>
           <div class="menu-item sub" data-page="ai-assistant" onclick="navigate('ai-assistant')"><i class="fas fa-robot"></i>AI Assistant</div>
-          <div class="menu-item sub" data-page="ai-brain" onclick="navigate('ai-brain')"><i class="fas fa-brain"></i>AI Brain</div>
-          <div class="menu-item sub" data-page="bot-settings" onclick="navigate('bot-settings')"><i class="fas fa-qrcode"></i>Bot Settings</div>
         </div>
       </div>
     </div>
@@ -310,7 +313,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
   <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
   <div class="main-content">
     <div class="header">
-      <div class="header-left"><button class="menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button><h2 id="pageTitle" style="font-size:18px">Dashboard</h2><span style="font-size:11px;color:var(--text-light);margin-left:8px;font-weight:400;opacity:.7">Ver3.7</span></div>
+      <div class="header-left"><button class="menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button><h2 id="pageTitle" style="font-size:18px">Dashboard</h2><span style="font-size:11px;color:var(--text-light);margin-left:8px;font-weight:400;opacity:.7">Ver1.8</span></div>
       <div class="header-right"><span id="headerDate"></span><span class="sync-status"><span class="dot offline" id="syncDot"></span><span id="syncText">Local</span></span><button class="btn btn-sm btn-outline" onclick="doLogout()"><i class="fas fa-sign-out-alt"></i> Logout</button></div>
     </div>
     <div class="page-content" id="pageContent"></div>
@@ -323,7 +326,6 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
 // ==================== UTILITIES ====================
 function $(id){return document.getElementById(id)}
@@ -332,7 +334,7 @@ function fmtQty(n){n=Number(n)||0;if(n===0)return'0';const w=Math.floor(n);const
 function toast(msg,type='info'){const t=document.createElement('div');t.className='toast '+type;t.innerHTML='<i class="fas fa-'+(type==='error'?'exclamation-circle':type==='success'?'check-circle':'info-circle')+'"></i>'+escHtml(msg);$('toastContainer').appendChild(t);setTimeout(()=>t.remove(),3000);}
 function showLoading(t='Loading...'){$('loadingText').textContent=t;$('loadingOverlay').classList.remove('hidden');}
 function hideLoading(){$('loadingOverlay').classList.add('hidden');}
-function openModal(title,body,footer='',opts={}){$('modalTitle').innerHTML=title;$('modalBody').innerHTML=body;$('modalFooter').innerHTML=footer;const m=document.querySelector('#modalOverlay .modal');if(m)m.style.maxWidth=opts.wide?'860px':'600px';$('modalOverlay').classList.remove('hidden');}
+function openModal(title,body,footer='',style=''){$('modalTitle').innerHTML=title;$('modalBody').innerHTML=body;$('modalFooter').innerHTML=footer;const mc=document.querySelector('.modal-content');if(mc)mc.style.cssText=style||'';$('modalOverlay').classList.remove('hidden');}
 function closeModal(){$('modalOverlay').classList.add('hidden');}
 function genId(prefix){return prefix+'_'+Date.now()+'_'+Math.random().toString(36).substr(2,5);}
 function updateSyncStatus(s){const dot=$('syncDot'),txt=$('syncText');dot.className='dot '+s;txt.textContent=s==='online'?'Cloud':s==='syncing'?'Syncing...':'Local';}
@@ -345,7 +347,6 @@ const ALL_PAGES=[
   {id:'dashboard',label:'Dashboard',icon:'fa-home'},
   {id:'stores',label:'Store List',icon:'fa-store'},
   {id:'store-mgmt',label:'Store Management',icon:'fa-cogs'},
-  {id:'sales-report',label:'Sales Report',icon:'fa-chart-line'},
   {id:'staff',label:'Staff List',icon:'fa-list-ul'},
   {id:'attendance',label:'Attendance',icon:'fa-clipboard-check'},
   {id:'payroll',label:'Payroll',icon:'fa-calculator'},
@@ -421,32 +422,32 @@ const DEFAULT_DATA = {
     {id:'TBB',code:'TBB',name:'The Bap Bristol',company:'The Bap Bristol Ltd',companyNo:'',address:'21 Queens Road, Clifton, Bristol, BS8 1QE',phone:'',email:'',manager:'',memo:'',active:true}
   ],
   Staff: [
-    {id:'s1',storeId:'TBS',name:'Mr. Youngseon Yun',nickName:'',clothSize:'XL',kioskPwd:'4321',dob:'1992-03-02',address:'4 Horsham Road, Swindon, SN3 2BN',niNo:'SW 01 34 28 A',eVisa:'',mobile:'07308 354 998',startDate:'2022-05-07',leftDate:'',rate:15,taxCode:'',sortCode:'52-21-30',accountNo:'31585833',email:'roller1918@naver.com',memo:'',active:true},
-    {id:'s2',storeId:'TBS',name:'Mr. Niraj Gurung',nickName:'',clothSize:'M',kioskPwd:'1234',dob:'1978-11-15',address:'32 Horsham Road, Swindon, SN3 2BN',niNo:'SZ 29 40 74 C',eVisa:'',mobile:'07466 513 913',startDate:'2023-05-08',leftDate:'',rate:13.5,taxCode:'',sortCode:'77-04-38',accountNo:'63983960',email:'gurungniraj2006@yahoo.com',memo:'',active:true},
-    {id:'s3',storeId:'TBS',name:'Ms. Sraswati Rana',nickName:'',clothSize:'M',kioskPwd:'2928',dob:'1986-11-19',address:'17 March Close, Swindon, SN5 4GJ',niNo:'RY 09 04 02 C',eVisa:'',mobile:'',startDate:'',leftDate:'',rate:12.5,taxCode:'',sortCode:'',accountNo:'',email:'',memo:'',active:true},
-    {id:'s4',storeId:'TBS',name:'Mrs. Pataramon Jones',nickName:'',clothSize:'S',kioskPwd:'1212',dob:'1985-06-10',address:'22 King William Street, Swindon, SN1 3LB',niNo:'NJ 54 83 07 D',eVisa:'',mobile:'07384 308 243',startDate:'2022-10-19',leftDate:'',rate:12.5,taxCode:'',sortCode:'30-13-35',accountNo:'75625368',email:'am_ammymy@hotmail.com',memo:'',active:true},
-    {id:'s5',storeId:'TBS',name:'Ms. Alina Bakhshyar',nickName:'',clothSize:'S',kioskPwd:'2321',dob:'2007-04-15',address:'59 Upham Road, Swindon, SN3 1DN',niNo:'SK 09 73 10 C',eVisa:'',mobile:'',startDate:'2023-08-01',leftDate:'',rate:10.5,taxCode:'',sortCode:'',accountNo:'39747682',email:'alinabakhshyar1@gmail.com',memo:'',active:true},
-    {id:'s6',storeId:'TBS',name:'Ms. Sara Khan',nickName:'',clothSize:'S',kioskPwd:'2232',dob:'2006-11-18',address:'66 County Road, Swindon, SN1 2EW',niNo:'PL 70 48 21 B',eVisa:'',mobile:'',startDate:'2023-03-29',leftDate:'',rate:10.5,taxCode:'',sortCode:'23-05-80',accountNo:'26650784',email:'sarakhanstandard@gmail.com',memo:'',active:true},
-    {id:'s7',storeId:'TBS',name:'Ms. Zahra Bakhshyar',nickName:'',clothSize:'M',kioskPwd:'4554',dob:'2005-04-10',address:'59 Upham Road, Swindon, SN3 1DN',niNo:'SK 09 73 05 B',eVisa:'',mobile:'07491 948 790',startDate:'2022-05-14',leftDate:'',rate:11.5,taxCode:'',sortCode:'07-08-06',accountNo:'23952006',email:'zahrabakhshyar@gmail.com',memo:'',active:true},
-    {id:'s8',storeId:'TBS',name:'Mrs. Susan Rai',nickName:'',clothSize:'S',kioskPwd:'7665',dob:'1983-07-21',address:'30 Avening Street, Swindon, SN2 8BZ',niNo:'TJ 54 48 73 B',eVisa:'',mobile:'07472 953 406',startDate:'2023-10-05',leftDate:'',rate:13,taxCode:'',sortCode:'30-98-41',accountNo:'34089362',email:'susanuma1983@gmail.com',memo:'',active:true},
-    {id:'s9',storeId:'TBS',name:'Mrs. Devi Maya Pun',nickName:'',clothSize:'M',kioskPwd:'5644',dob:'1972-12-15',address:'11 Fraser Close, Nythe, Swindon, SN3 3RP',niNo:'SK 01 85 37 B',eVisa:'',mobile:'07414 966 478',startDate:'2023-03-13',leftDate:'',rate:12.5,taxCode:'',sortCode:'40-04-15',accountNo:'41717316',email:'kne@hotmail.co.uk',memo:'',active:true},
-    {id:'s10',storeId:'PAB',name:'Thir Bahadur B.K.',nickName:'',clothSize:'L',kioskPwd:'1234',dob:'1977-03-19',address:'14 Glenwood Court, Farnborough, GU14 7TB',niNo:'SW 61 55 50 C',eVisa:'',mobile:'',startDate:'2020-12-15',leftDate:'',rate:13.5,taxCode:'',sortCode:'',accountNo:'',email:'',memo:'',active:true},
-    {id:'s11',storeId:'PAB',name:'Jems B.K.',nickName:'',clothSize:'L',kioskPwd:'4311',dob:'1999-09-27',address:'14 Glenwood Court, Farnborough, GU14 7TB',niNo:'NJ 15 54 87 D',eVisa:'',mobile:'',startDate:'2021-06-30',leftDate:'',rate:13,taxCode:'',sortCode:'',accountNo:'',email:'',memo:'',active:true},
-    {id:'s12',storeId:'PAB',name:'Lila Kumari Rana',nickName:'',clothSize:'S',kioskPwd:'1111',dob:'1987-04-28',address:'42 Lulworth Close, Farnborough, GU14 8TR',niNo:'SY 34 56 11 D',eVisa:'',mobile:'',startDate:'2021-07-08',leftDate:'',rate:12.5,taxCode:'',sortCode:'',accountNo:'',email:'',memo:'',active:true},
-    {id:'s13',storeId:'PAB',name:'Dipson B.K.',nickName:'',clothSize:'L',kioskPwd:'2222',dob:'2004-04-11',address:'14 Glenwood Court, Farnborough, GU14 7TB',niNo:'TK 30 34 61 B',eVisa:'',mobile:'',startDate:'2024-03-01',leftDate:'',rate:12.5,taxCode:'',sortCode:'77-49-22',accountNo:'26518968',email:'',memo:'',active:true},
-    {id:'s14',storeId:'TBR',name:'Mr. Avinaya Rai',nickName:'',clothSize:'M',kioskPwd:'1212',dob:'1999-06-30',address:'34 Dwyer Road, Reading, RG30 3PN',niNo:'TL812621B',eVisa:'',mobile:'07440 714 416',startDate:'2023-08-01',leftDate:'',rate:13,taxCode:'',sortCode:'20-71-03',accountNo:'63332438',email:'iamavinaya69@gmail.com',memo:'',active:true},
-    {id:'s15',storeId:'TBR',name:'Ms. Diksha Rai',nickName:'',clothSize:'S',kioskPwd:'1212',dob:'2005-06-01',address:'38 Beresford Road, Reading, RG30 1BX',niNo:'TK740551D',eVisa:'',mobile:'07778 417 997',startDate:'2023-08-13',leftDate:'',rate:12,taxCode:'',sortCode:'77-66-73',accountNo:'00130894',email:'dikshabantawa2345@gmail.com',memo:'',active:true},
-    {id:'s16',storeId:'TBR',name:'Ms. Shuva Chapagai',nickName:'',clothSize:'S',kioskPwd:'1223',dob:'1996-08-02',address:'17 Walnut Way, Tilehurst, RG30 4TD',niNo:'NJ565252A',eVisa:'',mobile:'0777 682 2993',startDate:'2023-08-01',leftDate:'',rate:13,taxCode:'',sortCode:'30-67-99',accountNo:'75460668',email:'shuvachapagai@gmail.com',memo:'',active:true},
-    {id:'s17',storeId:'TBR',name:'Mr. Ashok Bhandari',nickName:'',clothSize:'XL',kioskPwd:'2322',dob:'1995-01-13',address:'93 Liverpool Road, Reading, RG1 3PN',niNo:'TK557314C',eVisa:'',mobile:'07769 010 211',startDate:'2023-08-22',leftDate:'',rate:13,taxCode:'',sortCode:'30-90-43',accountNo:'63726068',email:'ashook1995@gmail.com',memo:'',active:true},
-    {id:'s18',storeId:'TBR',name:'Mrs. Naina Kala Ghale',nickName:'',clothSize:'S',kioskPwd:'2322',dob:'1986-05-12',address:'55 Mason Street, Reading, RG1 7PD',niNo:'NJ544552A',eVisa:'SPM M24 5N3',mobile:'07465856894',startDate:'2023-10-14',leftDate:'',rate:12.5,taxCode:'',sortCode:'04-00-04',accountNo:'72331444',email:'nainaghale12@gmail.com',memo:'',active:true},
-    {id:'s19',storeId:'TBR',name:'Ms. Teena Ale',nickName:'',clothSize:'S',kioskPwd:'2344',dob:'2005-12-05',address:'55 Mason Street, Reading, RG1 7PD',niNo:'TJ818150C',eVisa:'WYW 434 54E',mobile:'07984236439',startDate:'2023-11-26',leftDate:'',rate:10.5,taxCode:'',sortCode:'',accountNo:'51917707',email:'teenaale2@gmail.com',memo:'',active:true},
-    {id:'s20',storeId:'TBR',name:'Mr. Saroj Ale',nickName:'',clothSize:'L',kioskPwd:'4433',dob:'2008-01-17',address:'77 Norfolk Road, Reading, RG30 2EG',niNo:'RZ082840A',eVisa:'WMF A6C 5BN',mobile:'07853750380',startDate:'2025-01-03',leftDate:'',rate:12,taxCode:'',sortCode:'04-00-03',accountNo:'86776795',email:'sarojale@gmail.com',memo:'',active:true},
-    {id:'s21',storeId:'TBB',name:'Mr. Mukesh Lamsal',nickName:'',clothSize:'XL',kioskPwd:'1234',dob:'1992-09-24',address:'93 Liverpool Road, Reading, RG1 3PN',niNo:'TJ366399D',eVisa:'',mobile:'07503 382 305',startDate:'2025-07-18',leftDate:'',rate:13,taxCode:'',sortCode:'30-67-99',accountNo:'87414660',email:'mukeshlamsal111@gmail.com',memo:'',active:true},
-    {id:'s22',storeId:'TBB',name:'Mrs. Jayanti Bhatta',nickName:'',clothSize:'M',kioskPwd:'3232',dob:'1994-10-23',address:'6 Bouverie Street, Easton, Bristol, BS5 0RS',niNo:'TJ642875D',eVisa:'WHC K64 6C9',mobile:'07459 028 504',startDate:'2025-07-18',leftDate:'',rate:12.5,taxCode:'',sortCode:'77-77-52',accountNo:'67762928',email:'jayantibhatta75@gmail.com',memo:'',active:true},
-    {id:'s23',storeId:'TBB',name:'Mr. Soe Thiha Maung',nickName:'',clothSize:'M',kioskPwd:'2323',dob:'2000-04-04',address:'14 Orchard Gardens, Bristol, BS15 9UA',niNo:'RZ474071D',eVisa:'',mobile:'07553 381 469',startDate:'2025-08-05',leftDate:'',rate:12.5,taxCode:'',sortCode:'',accountNo:'5016851',email:'SoeThiaMaung13@gmail.com',memo:'',active:true},
-    {id:'s24',storeId:'TBB',name:'Miss. Thi Ri May',nickName:'',clothSize:'S',kioskPwd:'2323',dob:'2003-11-14',address:'14 Orchard Gardens, Bristol, BS15 9UA',niNo:'TJ083444A',eVisa:'WW8 L8Z 58J',mobile:'07501 726 872',startDate:'2025-07-18',leftDate:'',rate:12.5,taxCode:'',sortCode:'30-62-96',accountNo:'48833663',email:'thirimaythonethone@gmail.com',memo:'',active:true},
-    {id:'s25',storeId:'TBB',name:'Miss. Kai Qi Koh',nickName:'',clothSize:'S',kioskPwd:'2323',dob:'2003-05-19',address:'Studio 16, Stonebridge House, Colston Ave, Bristol BS1 4TN',niNo:'D6785568',eVisa:'SF3 T9W 5NZ',mobile:'07535 616 619',startDate:'2025-07-18',leftDate:'',rate:12.5,taxCode:'',sortCode:'40-14-03',accountNo:'83893456',email:'charlottekoh03@gmail.com',memo:'',active:true},
-    {id:'s26',storeId:'TBB',name:'Mr. Timothy Chung',nickName:'',clothSize:'M',kioskPwd:'4432',dob:'2006-07-08',address:'13 Osborne Villas, Bristol, BS2 8BP',niNo:'TH444989B',eVisa:'W3K TL7 6CT',mobile:'07300 894 746',startDate:'2025-07-18',leftDate:'',rate:11,taxCode:'',sortCode:'04-00-03',accountNo:'75584464',email:'',memo:'',active:true}
+    {id:'s1',storeId:'TBS',name:'Mr. Youngseon Yun',nickName:'',clothSize:'XL',kioskPwd:'4321',dob:'1992-03-02',address:'4 Horsham Road, Swindon, SN3 2BN',niNo:'SW 01 34 28 A',eVisa:'',mobile:'07308 354 998',startDate:'2022-05-07',leftDate:'',rate:15,sortCode:'52-21-30',accountNo:'31585833',email:'roller1918@naver.com',memo:'',active:true},
+    {id:'s2',storeId:'TBS',name:'Mr. Niraj Gurung',nickName:'',clothSize:'M',kioskPwd:'1234',dob:'1978-11-15',address:'32 Horsham Road, Swindon, SN3 2BN',niNo:'SZ 29 40 74 C',eVisa:'',mobile:'07466 513 913',startDate:'2023-05-08',leftDate:'',rate:13.5,sortCode:'77-04-38',accountNo:'63983960',email:'gurungniraj2006@yahoo.com',memo:'',active:true},
+    {id:'s3',storeId:'TBS',name:'Ms. Sraswati Rana',nickName:'',clothSize:'M',kioskPwd:'2928',dob:'1986-11-19',address:'17 March Close, Swindon, SN5 4GJ',niNo:'RY 09 04 02 C',eVisa:'',mobile:'',startDate:'',leftDate:'',rate:12.5,sortCode:'',accountNo:'',email:'',memo:'',active:true},
+    {id:'s4',storeId:'TBS',name:'Mrs. Pataramon Jones',nickName:'',clothSize:'S',kioskPwd:'1212',dob:'1985-06-10',address:'22 King William Street, Swindon, SN1 3LB',niNo:'NJ 54 83 07 D',eVisa:'',mobile:'07384 308 243',startDate:'2022-10-19',leftDate:'',rate:12.5,sortCode:'30-13-35',accountNo:'75625368',email:'am_ammymy@hotmail.com',memo:'',active:true},
+    {id:'s5',storeId:'TBS',name:'Ms. Alina Bakhshyar',nickName:'',clothSize:'S',kioskPwd:'2321',dob:'2007-04-15',address:'59 Upham Road, Swindon, SN3 1DN',niNo:'SK 09 73 10 C',eVisa:'',mobile:'',startDate:'2023-08-01',leftDate:'',rate:10.5,sortCode:'',accountNo:'39747682',email:'alinabakhshyar1@gmail.com',memo:'',active:true},
+    {id:'s6',storeId:'TBS',name:'Ms. Sara Khan',nickName:'',clothSize:'S',kioskPwd:'2232',dob:'2006-11-18',address:'66 County Road, Swindon, SN1 2EW',niNo:'PL 70 48 21 B',eVisa:'',mobile:'',startDate:'2023-03-29',leftDate:'',rate:10.5,sortCode:'23-05-80',accountNo:'26650784',email:'sarakhanstandard@gmail.com',memo:'',active:true},
+    {id:'s7',storeId:'TBS',name:'Ms. Zahra Bakhshyar',nickName:'',clothSize:'M',kioskPwd:'4554',dob:'2005-04-10',address:'59 Upham Road, Swindon, SN3 1DN',niNo:'SK 09 73 05 B',eVisa:'',mobile:'07491 948 790',startDate:'2022-05-14',leftDate:'',rate:11.5,sortCode:'07-08-06',accountNo:'23952006',email:'zahrabakhshyar@gmail.com',memo:'',active:true},
+    {id:'s8',storeId:'TBS',name:'Mrs. Susan Rai',nickName:'',clothSize:'S',kioskPwd:'7665',dob:'1983-07-21',address:'30 Avening Street, Swindon, SN2 8BZ',niNo:'TJ 54 48 73 B',eVisa:'',mobile:'07472 953 406',startDate:'2023-10-05',leftDate:'',rate:13,sortCode:'30-98-41',accountNo:'34089362',email:'susanuma1983@gmail.com',memo:'',active:true},
+    {id:'s9',storeId:'TBS',name:'Mrs. Devi Maya Pun',nickName:'',clothSize:'M',kioskPwd:'5644',dob:'1972-12-15',address:'11 Fraser Close, Nythe, Swindon, SN3 3RP',niNo:'SK 01 85 37 B',eVisa:'',mobile:'07414 966 478',startDate:'2023-03-13',leftDate:'',rate:12.5,sortCode:'40-04-15',accountNo:'41717316',email:'kne@hotmail.co.uk',memo:'',active:true},
+    {id:'s10',storeId:'PAB',name:'Thir Bahadur B.K.',nickName:'',clothSize:'L',kioskPwd:'1234',dob:'1977-03-19',address:'14 Glenwood Court, Farnborough, GU14 7TB',niNo:'SW 61 55 50 C',eVisa:'',mobile:'',startDate:'2020-12-15',leftDate:'',rate:13.5,sortCode:'',accountNo:'',email:'',memo:'',active:true},
+    {id:'s11',storeId:'PAB',name:'Jems B.K.',nickName:'',clothSize:'L',kioskPwd:'4311',dob:'1999-09-27',address:'14 Glenwood Court, Farnborough, GU14 7TB',niNo:'NJ 15 54 87 D',eVisa:'',mobile:'',startDate:'2021-06-30',leftDate:'',rate:13,sortCode:'',accountNo:'',email:'',memo:'',active:true},
+    {id:'s12',storeId:'PAB',name:'Lila Kumari Rana',nickName:'',clothSize:'S',kioskPwd:'1111',dob:'1987-04-28',address:'42 Lulworth Close, Farnborough, GU14 8TR',niNo:'SY 34 56 11 D',eVisa:'',mobile:'',startDate:'2021-07-08',leftDate:'',rate:12.5,sortCode:'',accountNo:'',email:'',memo:'',active:true},
+    {id:'s13',storeId:'PAB',name:'Dipson B.K.',nickName:'',clothSize:'L',kioskPwd:'2222',dob:'2004-04-11',address:'14 Glenwood Court, Farnborough, GU14 7TB',niNo:'TK 30 34 61 B',eVisa:'',mobile:'',startDate:'2024-03-01',leftDate:'',rate:12.5,sortCode:'77-49-22',accountNo:'26518968',email:'',memo:'',active:true},
+    {id:'s14',storeId:'TBR',name:'Mr. Avinaya Rai',nickName:'',clothSize:'M',kioskPwd:'1212',dob:'1999-06-30',address:'34 Dwyer Road, Reading, RG30 3PN',niNo:'TL812621B',eVisa:'',mobile:'07440 714 416',startDate:'2023-08-01',leftDate:'',rate:13,sortCode:'20-71-03',accountNo:'63332438',email:'iamavinaya69@gmail.com',memo:'',active:true},
+    {id:'s15',storeId:'TBR',name:'Ms. Diksha Rai',nickName:'',clothSize:'S',kioskPwd:'1212',dob:'2005-06-01',address:'38 Beresford Road, Reading, RG30 1BX',niNo:'TK740551D',eVisa:'',mobile:'07778 417 997',startDate:'2023-08-13',leftDate:'',rate:12,sortCode:'77-66-73',accountNo:'00130894',email:'dikshabantawa2345@gmail.com',memo:'',active:true},
+    {id:'s16',storeId:'TBR',name:'Ms. Shuva Chapagai',nickName:'',clothSize:'S',kioskPwd:'1223',dob:'1996-08-02',address:'17 Walnut Way, Tilehurst, RG30 4TD',niNo:'NJ565252A',eVisa:'',mobile:'0777 682 2993',startDate:'2023-08-01',leftDate:'',rate:13,sortCode:'30-67-99',accountNo:'75460668',email:'shuvachapagai@gmail.com',memo:'',active:true},
+    {id:'s17',storeId:'TBR',name:'Mr. Ashok Bhandari',nickName:'',clothSize:'XL',kioskPwd:'2322',dob:'1995-01-13',address:'93 Liverpool Road, Reading, RG1 3PN',niNo:'TK557314C',eVisa:'',mobile:'07769 010 211',startDate:'2023-08-22',leftDate:'',rate:13,sortCode:'30-90-43',accountNo:'63726068',email:'ashook1995@gmail.com',memo:'',active:true},
+    {id:'s18',storeId:'TBR',name:'Mrs. Naina Kala Ghale',nickName:'',clothSize:'S',kioskPwd:'2322',dob:'1986-05-12',address:'55 Mason Street, Reading, RG1 7PD',niNo:'NJ544552A',eVisa:'SPM M24 5N3',mobile:'07465856894',startDate:'2023-10-14',leftDate:'',rate:12.5,sortCode:'04-00-04',accountNo:'72331444',email:'nainaghale12@gmail.com',memo:'',active:true},
+    {id:'s19',storeId:'TBR',name:'Ms. Teena Ale',nickName:'',clothSize:'S',kioskPwd:'2344',dob:'2005-12-05',address:'55 Mason Street, Reading, RG1 7PD',niNo:'TJ818150C',eVisa:'WYW 434 54E',mobile:'07984236439',startDate:'2023-11-26',leftDate:'',rate:10.5,sortCode:'',accountNo:'51917707',email:'teenaale2@gmail.com',memo:'',active:true},
+    {id:'s20',storeId:'TBR',name:'Mr. Saroj Ale',nickName:'',clothSize:'L',kioskPwd:'4433',dob:'2008-01-17',address:'77 Norfolk Road, Reading, RG30 2EG',niNo:'RZ082840A',eVisa:'WMF A6C 5BN',mobile:'07853750380',startDate:'2025-01-03',leftDate:'',rate:12,sortCode:'04-00-03',accountNo:'86776795',email:'sarojale@gmail.com',memo:'',active:true},
+    {id:'s21',storeId:'TBB',name:'Mr. Mukesh Lamsal',nickName:'',clothSize:'XL',kioskPwd:'1234',dob:'1992-09-24',address:'93 Liverpool Road, Reading, RG1 3PN',niNo:'TJ366399D',eVisa:'',mobile:'07503 382 305',startDate:'2025-07-18',leftDate:'',rate:13,sortCode:'30-67-99',accountNo:'87414660',email:'mukeshlamsal111@gmail.com',memo:'',active:true},
+    {id:'s22',storeId:'TBB',name:'Mrs. Jayanti Bhatta',nickName:'',clothSize:'M',kioskPwd:'3232',dob:'1994-10-23',address:'6 Bouverie Street, Easton, Bristol, BS5 0RS',niNo:'TJ642875D',eVisa:'WHC K64 6C9',mobile:'07459 028 504',startDate:'2025-07-18',leftDate:'',rate:12.5,sortCode:'77-77-52',accountNo:'67762928',email:'jayantibhatta75@gmail.com',memo:'',active:true},
+    {id:'s23',storeId:'TBB',name:'Mr. Soe Thiha Maung',nickName:'',clothSize:'M',kioskPwd:'2323',dob:'2000-04-04',address:'14 Orchard Gardens, Bristol, BS15 9UA',niNo:'RZ474071D',eVisa:'',mobile:'07553 381 469',startDate:'2025-08-05',leftDate:'',rate:12.5,sortCode:'',accountNo:'5016851',email:'SoeThiaMaung13@gmail.com',memo:'',active:true},
+    {id:'s24',storeId:'TBB',name:'Miss. Thi Ri May',nickName:'',clothSize:'S',kioskPwd:'2323',dob:'2003-11-14',address:'14 Orchard Gardens, Bristol, BS15 9UA',niNo:'TJ083444A',eVisa:'WW8 L8Z 58J',mobile:'07501 726 872',startDate:'2025-07-18',leftDate:'',rate:12.5,sortCode:'30-62-96',accountNo:'48833663',email:'thirimaythonethone@gmail.com',memo:'',active:true},
+    {id:'s25',storeId:'TBB',name:'Miss. Kai Qi Koh',nickName:'',clothSize:'S',kioskPwd:'2323',dob:'2003-05-19',address:'Studio 16, Stonebridge House, Colston Ave, Bristol BS1 4TN',niNo:'D6785568',eVisa:'SF3 T9W 5NZ',mobile:'07535 616 619',startDate:'2025-07-18',leftDate:'',rate:12.5,sortCode:'40-14-03',accountNo:'83893456',email:'charlottekoh03@gmail.com',memo:'',active:true},
+    {id:'s26',storeId:'TBB',name:'Mr. Timothy Chung',nickName:'',clothSize:'M',kioskPwd:'4432',dob:'2006-07-08',address:'13 Osborne Villas, Bristol, BS2 8BP',niNo:'TH444989B',eVisa:'W3K TL7 6CT',mobile:'07300 894 746',startDate:'2025-07-18',leftDate:'',rate:11,sortCode:'04-00-03',accountNo:'75584464',email:'',memo:'',active:true}
   ],
   Attendance: [],
   Suppliers: [
@@ -492,22 +493,22 @@ const DEFAULT_DATA = {
 // Generate StoreStock for all stores × templates
 DEFAULT_DATA.Stores.forEach(store => {
   DEFAULT_DATA.StockTemplate.forEach(item => {
-    DEFAULT_DATA.StoreStock.push({storeId:store.id, itemId:item.id, category:item.category, name:item.name, unit:item.unit, min:item.min, minCondition:item.minCondition||'lt', orderQty:item.orderQty||0, orderUnit:item.orderUnit||item.unit, alwaysOrder:item.alwaysOrder||false, qty:0, supplier1:item.supplier1||'', supplier2:item.supplier2||'', supplier3:item.supplier3||''});
+    DEFAULT_DATA.StoreStock.push({storeId:store.id, itemId:item.id, category:item.category, name:item.name, unit:item.unit, min:item.min, orderQty:item.orderQty||0, alwaysOrder:item.alwaysOrder||false, qty:0});
   });
 });
 
 // ==================== DATA LAYER ====================
-const D = { Users:[], Stores:[], Staff:[], Attendance:[], Suppliers:[], StockTemplate:[], StoreStock:[], StockCount:[], WeeklySales:[], StaffMessages:[], EditLog:[], TimeChangeReq:[], DiaryConfig:[], DiaryEntry:[], StoreInfo:[], KnowledgeBase:[] };
+const D = { Users:[], Stores:[], Staff:[], Attendance:[], Suppliers:[], StockTemplate:[], StoreStock:[], StockCount:[], WeeklySales:[], StaffMessages:[], EditLog:[], TimeChangeReq:[], DiaryConfig:[], DiaryEntry:[], StoreInfo:[] };
 
 // Canonical field names — must match Apps Script SHEETS definition exactly
 const FIELD_SCHEMA = {
   Users:['id','username','password','name','role','email','storeId','permissions'],
   Stores:['id','code','name','company','companyNo','vatNo','vatQuarter','address','phone','email','manager','memo','active'],
-  Staff:['id','storeId','name','nickName','clothSize','kioskPwd','kioskLogin','dob','address','niNo','eVisa','mobile','startDate','leftDate','rate','taxCode','sortCode','accountNo','email','memo','active'],
+  Staff:['id','storeId','name','nickName','clothSize','kioskPwd','kioskLogin','dob','address','niNo','eVisa','mobile','startDate','leftDate','rate','sortCode','accountNo','email','memo','active'],
   Attendance:['id','staffId','storeId','date','clockIn','clockOut','photoIn','photoOut','source'],
   Suppliers:['id','name','email','phone','address','website','memo','active'],
-  StockTemplate:['id','category','name','unit','min','minCondition','orderQty','orderUnit','alwaysOrder','sortOrder','supplier1','supplier2','supplier3','memo','photo'],
-  StoreStock:['storeId','itemId','category','name','unit','min','minCondition','orderQty','orderUnit','alwaysOrder','qty','supplier1','supplier2','supplier3'],
+  StockTemplate:['id','category','name','unit','min','orderQty','alwaysOrder','sortOrder','supplier1','supplier2','supplier3','memo','photo'],
+  StoreStock:['storeId','itemId','category','name','unit','min','orderQty','alwaysOrder','qty'],
   StockCount:['id','storeId','week','countDate','itemId','category','name','unit','qty','submittedBy','submittedAt'],
   WeeklySales:['id','storeId','week','weekStart','totalSales','notes','submittedBy','submittedAt'],
   StaffMessages:['id','storeId','staffId','type','message','active','createdBy','createdAt'],
@@ -515,8 +516,7 @@ const FIELD_SCHEMA = {
   TimeChangeReq:['id','attendanceId','staffId','storeId','date','field','currentValue','requestedValue','reason','status','kioskVersion','createdAt','reviewedBy','reviewedAt','acknowledgedAt'],
   DiaryConfig:['id','storeId','configType','name','sortOrder','active'],
   DiaryEntry:['id','storeId','date','openChecks','fridgeTemps','deliveries','cookingTemps','coolingRecords','leftovers','closingChecks','holdTemps','extraChecks','issues','signedBy','submittedBy','submittedAt'],
-  StoreInfo:['id','storeId','leaseStart','leaseEnd','monthlyRent','serviceCharge','rentReviewYears','landlordName','landlordPhone','landlordEmail','estateAgent','estateAgentPhone','estateAgentEmail','councilName','councilEmail','councilPhone','businessRateAnnual','hygieneInspDate','hygieneRating','electricCompany','electricContractStart','electricContractEnd','electricKwhRate','electricDailyCharge','phoneCompany','phoneContractStart','phoneContractEnd','waterCompany','cardMachineCompany','cardContractStart','cardContractEnd','cardRate','fridgeCleanDate','fridgeCleanNext','airconCleanDate','airconCleanNext','memo','custom1Label','custom1Value','custom2Label','custom2Value','custom3Label','custom3Value','custom4Label','custom4Value','custom5Label','custom5Value','custom6Label','custom6Value','custom7Label','custom7Value','custom8Label','custom8Value','custom9Label','custom9Value','custom10Label','custom10Value'],
-  KnowledgeBase:['id','category','title','content','tags','source','createdBy','createdAt','updatedAt','active','version']
+  StoreInfo:['id','storeId','leaseStart','leaseEnd','monthlyRent','serviceCharge','rentReviewYears','landlordName','landlordPhone','landlordEmail','estateAgent','estateAgentPhone','estateAgentEmail','councilName','councilEmail','councilPhone','businessRateAnnual','hygieneInspDate','hygieneRating','electricCompany','electricContractStart','electricContractEnd','electricKwhRate','electricDailyCharge','phoneCompany','phoneContractStart','phoneContractEnd','waterCompany','cardMachineCompany','cardContractStart','cardContractEnd','cardRate','fridgeCleanDate','fridgeCleanNext','airconCleanDate','airconCleanNext','memo','custom1Label','custom1Value','custom2Label','custom2Value','custom3Label','custom3Value','custom4Label','custom4Value','custom5Label','custom5Value','custom6Label','custom6Value','custom7Label','custom7Value','custom8Label','custom8Value','custom9Label','custom9Value','custom10Label','custom10Value']
 };
 // Normalize row keys: "Nick Name" → "nickName", "Left Date" → "leftDate"
 function normalizeRow(sheetName, row) {
@@ -548,7 +548,7 @@ const LS = {
   set(k, v) { localStorage.setItem('tbms_'+k, JSON.stringify(v)); },
   getConfig() { return this.get('config') || {}; }
 };
-const CLOUD_URL = 'https://script.google.com/macros/s/AKfycbwaLRx-O8T2-2PoxOfM2Kv1QAhru3Ou9x6reeBgWlpBUowzvCvYeCc3EqT3WilnecCy/exec';
+const CLOUD_URL = 'https://script.google.com/macros/s/AKfycbyWN7f8SUpv2jb-S4AaFsLiaHbd4ssG-YdirHYS5drxR4vyPbNj5BZf7ssFVJu69B0v/exec';
 const API_KEY = 'tBaP2026xKr!mGt9Qz';
 const API = {
   url: CLOUD_URL, mode: 'cloud',
@@ -597,20 +597,6 @@ function deleteData(sheet, id) {
 
 async function loadAllData() {
   showLoading('Loading data...');
-  // 캐시 우선 로딩: 캐시된 데이터가 있으면 먼저 표시 (빠른 첫 화면)
-  const cached=LS.get('dataCache');
-  if(cached&&typeof cached==='object'){
-    let cacheUsed=false;
-    for(let sheet in cached){
-      if(Array.isArray(cached[sheet])&&cached[sheet].length>0){
-        D[sheet]=cached[sheet];cacheUsed=true;
-      }
-    }
-    if(cacheUsed){
-      console.log('[TBMS] Cache loaded — fetching latest from cloud...');
-      showLoading('Updating...');
-    }
-  }
   if (API.mode === 'cloud') {
     const result = await API.get('getAll');
     if (result && result.error) console.error('[TBMS] Server error:', result.error);
@@ -655,21 +641,10 @@ async function loadAllData() {
             _bgPost({action:'saveSheet',sheet,rows:D[sheet]});
           }
         }
-        // 클라우드 데이터를 localStorage에 캐시 (다음 로딩 시 빠르게 표시)
-        try{
-          const cacheObj={};
-          for(let s of ['Staff','Stores','Suppliers','StockTemplate','StoreStock','Attendance','EditLog','TimeChangeReq']){
-            if(D[s]&&D[s].length)cacheObj[s]=D[s];
-          }
-          LS.set('dataCache',cacheObj);
-          console.log('[TBMS] Data cached to localStorage');
-        }catch(e){console.log('[TBMS] Cache save failed (storage full?)');}
-        // catOrder, timeRounding, KB 데이터를 병렬로 로딩 (속도 최적화)
-        Promise.all([
-          API.get('getSetting',{key:'catOrder'}).then(r=>{if(r&&r.value){LS.set('catOrder',r.value);console.log('[TBMS] catOrder loaded');}}).catch(()=>{}),
-          API.get('getSetting',{key:'timeRounding'}).then(r=>{if(r&&r.value!==null){LS.set('timeRounding',r.value);console.log('[TBMS] timeRounding loaded');}}).catch(()=>{}),
-          loadKBData().catch(e=>console.log('KB load deferred:',e))
-        ]);
+        // Load catOrder from cloud
+        try{const catRes=await API.get('getSetting',{key:'catOrder'});if(catRes&&catRes.value){LS.set('catOrder',catRes.value);console.log('[TBMS] catOrder loaded from cloud:',catRes.value);}}catch(e){}
+        // Load timeRounding from cloud
+        try{const trRes=await API.get('getSetting',{key:'timeRounding'});if(trRes&&trRes.value!==null){LS.set('timeRounding',trRes.value);console.log('[TBMS] timeRounding loaded from cloud:',trRes.value);}}catch(e){}
         hideLoading(); updateSyncStatus('online'); return true;
       }
     }
@@ -768,7 +743,7 @@ $('loginUser').addEventListener('keydown',e=>{if(e.key==='Enter')$('loginPass').
 // ==================== NAVIGATION ====================
 function toggleSidebar() { $('sidebar').classList.toggle('open');$('sidebarOverlay').classList.toggle('show'); }
 function toggleMenuGroup(el){el.parentElement.classList.toggle('open');}
-const pageTitles={dashboard:'Dashboard',stores:'Store List','store-mgmt':'Store Management',users:'User Management',staff:'Staff List',attendance:'Attendance Records',payroll:'Payroll',messages:'Staff Messages',stock:'Stock Status','stock-template':'Stock Template','stock-count':'Weekly Stock Count',sales:'Weekly Sales',analytics:'Usage Analytics',orders:'Order List',suppliers:'Supplier Management','diary-config':'Diary Configuration','diary-entries':'Diary Records',settings:'General Settings','ai-assistant':'AI Assistant','ai-brain':'AI Brain','bot-settings':'Bot Settings'};
+const pageTitles={dashboard:'Dashboard',stores:'Store List','store-mgmt':'Store Management',users:'User Management',staff:'Staff List',attendance:'Attendance Records',payroll:'Payroll',messages:'Staff Messages',stock:'Stock Status','stock-template':'Stock Template','stock-count':'Weekly Stock Count',sales:'Weekly Sales',analytics:'Usage Analytics',orders:'Order List',suppliers:'Supplier Management','diary-config':'Diary Configuration','diary-entries':'Diary Records',settings:'General Settings','ai-assistant':'AI Assistant'};
 let currentPage='dashboard';
 function navigate(page) {
   // Permission check
@@ -803,7 +778,6 @@ function renderPage(page) {
     case 'stock': renderStock(c); break;
     case 'stock-template': renderStockTemplatePage(c); break;
     case 'sales': renderSalesInput(c); break;
-    case 'sales-report': renderSalesReport(c); break;
     case 'analytics': renderAnalytics(c); break;
     case 'orders': renderOrders(c); break;
     case 'suppliers': renderSuppliers(c); break;
@@ -814,8 +788,6 @@ function renderPage(page) {
     case 'diary-config': renderDiaryConfig(c); break;
     case 'diary-entries': renderDiaryEntries(c); break;
     case 'ai-assistant': renderAiAssistant(c); break;
-    case 'ai-brain': renderAiBrain(c); break;
-    case 'bot-settings': renderBotSettings(c); break;
     default: c.innerHTML='<p>Page not found</p>';
   }
 }
@@ -981,7 +953,7 @@ async function saveStore(id) {
     D.StoreStock=D.StoreStock.filter(ss=>String(ss.storeId)!==String(s.id));
     // Create fresh entries
     D.StockTemplate.forEach(t=>{
-      D.StoreStock.push({storeId:s.id,itemId:t.id,category:t.category,name:t.name,unit:t.unit,min:t.min,minCondition:t.minCondition||'lt',orderQty:t.orderQty||0,orderUnit:t.orderUnit||t.unit,alwaysOrder:t.alwaysOrder||false,qty:0,supplier1:t.supplier1||'',supplier2:t.supplier2||'',supplier3:t.supplier3||''});
+      D.StoreStock.push({storeId:s.id,itemId:t.id,category:t.category,name:t.name,unit:t.unit,min:t.min,orderQty:t.orderQty||0,alwaysOrder:t.alwaysOrder||false,qty:0});
     });
     _bgPost({action:'saveSheet',sheet:'StoreStock',rows:D.StoreStock});
     toast(D.StockTemplate.length+' stock items initialized for '+s.name,'info');
@@ -1365,15 +1337,13 @@ function viewStaff(id) {
     ${showRate&&userCanViewRate()?`<div class="info-item"><i class="fas fa-pound-sign"></i><div><div class="label">Rate</div><div class="value">£${Number(s.rate).toFixed(2)}/hr</div></div></div>`:''}
     <div class="info-item"><i class="fas fa-calendar-plus"></i><div><div class="label">Start Date</div><div class="value">${fmtDate(s.startDate)}</div></div></div>
     ${isLeft?`<div class="info-item"><i class="fas fa-calendar-minus"></i><div><div class="label">Left Date</div><div class="value">${fmtDate(s.leftDate)}</div></div></div>`:''}
-    <div class="info-item"><i class="fas fa-file-invoice"></i><div><div class="label">Tax Code</div><div class="value">${escHtml(s.taxCode||'-')}</div></div></div>
     <div class="info-item"><i class="fas fa-university"></i><div><div class="label">Sort Code</div><div class="value">${escHtml(s.sortCode||'-')}</div></div></div>
     <div class="info-item"><i class="fas fa-credit-card"></i><div><div class="label">Account No</div><div class="value">${escHtml(s.accountNo||'-')}</div></div></div>
     <div class="info-item"><i class="fas fa-envelope"></i><div><div class="label">Email</div><div class="value">${escHtml(s.email||'-')}</div></div></div>
   </div>`,`<button class="btn btn-outline" onclick="closeModal()">Close</button>`);
 }
 function editStaff(id) {
-  const s=id?D.Staff.find(x=>x.id===id):{id:'',storeId:sF.storeId||'',name:'',nickName:'',clothSize:'',kioskPwd:'',dob:'',address:'',niNo:'',eVisa:'',mobile:'',startDate:'',leftDate:'',rate:12,taxCode:'',sortCode:'',accountNo:'',email:'',memo:'',active:true,kioskLogin:true};
-  if(!s.taxCode)s.taxCode='';
+  const s=id?D.Staff.find(x=>x.id===id):{id:'',storeId:sF.storeId||'',name:'',nickName:'',clothSize:'',kioskPwd:'',dob:'',address:'',niNo:'',eVisa:'',mobile:'',startDate:'',leftDate:'',rate:12,sortCode:'',accountNo:'',email:'',memo:'',active:true,kioskLogin:true};
   const isLeft=s.active===false;
   openModal(id?'Edit Staff':'Add Staff',`
     <div class="form-row"><div class="form-group"><label>Name</label><input id="mFN" value="${escHtml(s.name)}"></div><div class="form-group"><label>Nick Name</label><input id="mFNN" value="${escHtml(s.nickName||'')}" placeholder="Kiosk display name"></div></div>
@@ -1384,8 +1354,7 @@ function editStaff(id) {
     <div class="form-group"><label>Address</label><input id="mFA" value="${escHtml(s.address)}"></div>
     <div class="form-row"><div class="form-group"><label>NI No</label><input id="mFNI" value="${escHtml(s.niNo)}"></div><div class="form-group"><label>eVisa</label><input id="mFEV" value="${escHtml(s.eVisa)}"></div></div>
     <div class="form-row"><div class="form-group"><label>Mobile</label><input id="mFM" value="${escHtml(s.mobile)}"></div><div class="form-group"><label>Email</label><input id="mFEM" value="${escHtml(s.email)}"></div></div>
-    <div class="form-row"><div class="form-group"><label>Tax Code</label><input id="mFTC" value="${escHtml(s.taxCode)}" placeholder="e.g. 1257L"></div><div class="form-group"><label>Sort Code</label><input id="mFSC" value="${escHtml(s.sortCode)}"></div></div>
-    <div class="form-row"><div class="form-group"><label>Account No</label><input id="mFAN" value="${escHtml(s.accountNo)}"></div><div class="form-group"></div></div>
+    <div class="form-row"><div class="form-group"><label>Sort Code</label><input id="mFSC" value="${escHtml(s.sortCode)}"></div><div class="form-group"><label>Account No</label><input id="mFAN" value="${escHtml(s.accountNo)}"></div></div>
     <div class="form-group"><label>Memo</label><textarea id="mFME">${escHtml(s.memo)}</textarea></div>
     <div style="padding:12px 16px;background:${isLeft?'#ffebee':'#f1f8e9'};border-radius:10px;display:flex;justify-content:space-between;align-items:center">
       <div><strong style="font-size:14px">${isLeft?'This staff has left':'Currently working'}</strong><br><span style="font-size:12px;color:var(--text-light)">${isLeft?'Set to Active to re-enable kiosk access':'Mark as Left to disable kiosk access'}</span></div>
@@ -1420,7 +1389,7 @@ async function saveStaff(id) {
   const kioskLogin=$('mFKL').checked;
   const existingStaff=id?D.Staff.find(x=>x.id===id):null;
   const rate=userCanViewRate()?(parseFloat($('mFR')?.value)||12):(existingStaff?existingStaff.rate:12);
-  const s={id:id||genId('s'),storeId:$('mFS').value,name:$('mFN').value.trim(),nickName:$('mFNN').value.trim(),clothSize:$('mFC').value,kioskPwd:$('mFP').value,dob:$('mFD').value,address:$('mFA').value.trim(),niNo:$('mFNI').value.trim(),eVisa:$('mFEV').value.trim(),mobile:$('mFM').value.trim(),startDate:$('mFSD').value,leftDate,rate,taxCode:($('mFTC')?.value||'').trim(),sortCode:$('mFSC').value.trim(),accountNo:$('mFAN').value.trim(),email:$('mFEM').value.trim(),memo:$('mFME').value.trim(),active,kioskLogin};
+  const s={id:id||genId('s'),storeId:$('mFS').value,name:$('mFN').value.trim(),nickName:$('mFNN').value.trim(),clothSize:$('mFC').value,kioskPwd:$('mFP').value,dob:$('mFD').value,address:$('mFA').value.trim(),niNo:$('mFNI').value.trim(),eVisa:$('mFEV').value.trim(),mobile:$('mFM').value.trim(),startDate:$('mFSD').value,leftDate,rate,sortCode:$('mFSC').value.trim(),accountNo:$('mFAN').value.trim(),email:$('mFEM').value.trim(),memo:$('mFME').value.trim(),active,kioskLogin};
   if(!s.name){toast('Name required','error');return;}
   await saveRow('Staff',s); closeModal(); renderStaff($('pageContent')); toast('Staff saved','success');
 }
@@ -1523,10 +1492,10 @@ function trTimeSelHtml(prefix,ds,val){
   const ss='padding:2px 0;border:1.5px solid var(--border);border-radius:4px;font-size:13px;font-weight:600;text-align:center;background:#fff;appearance:none;-webkit-appearance:none;width:34px;';
   const fs='border-color:var(--success);background:#f0fff0;';
   const [vh,vm]=val?val.split(':'):['','00'];
-  const rvm=vm?String(parseInt(vm)).padStart(2,'0'):'00';
+  const rvm=vm?String(Math.round(parseInt(vm)/10)*10).padStart(2,'0'):'00';
   let hOpts='<option value="">--</option>';
   for(let i=0;i<24;i++){const hh=String(i).padStart(2,'0');hOpts+=`<option value="${hh}"${hh===vh?' selected':''}>${hh}</option>`;}
-  const mins=[];for(let i=0;i<60;i++)mins.push(String(i).padStart(2,'0'));
+  const mins=['00','10','20','30','40','50'];
   let mOpts='';mins.forEach(mm=>{mOpts+=`<option value="${mm}"${mm===rvm?' selected':''}>${mm}</option>`;});
   const filled=vh?fs:'';
   return `<span style="display:inline-flex;align-items:center;gap:1px"><select id="${prefix}H_${ds}" onchange="trCalcRow('${ds}')" style="${ss}${filled}">${hOpts}</select><span style="font-weight:700;font-size:13px">:</span><select id="${prefix}M_${ds}" onchange="trCalcRow('${ds}')" style="${ss}${filled}">${mOpts}</select></span>`;
@@ -2464,11 +2433,15 @@ function renderStockCalendar(){
   const countDates=new Set();
   const _scByDate={};
   _scMonth.forEach(sc=>{if(!_scByDate[sc.countDate])_scByDate[sc.countDate]=[];_scByDate[sc.countDate].push(sc);});
-  // 모든 날짜(오늘 포함)를 StockCount 기준으로만 녹색 표시
-  // StoreStock은 마지막 업데이트 값이 남아있어 실제 카운트 안 한 날도 표시될 수 있음
   Object.keys(_scByDate).forEach(dt=>{
+    if(dt===today){return;}// skip today — handled below via StoreStock
     if(_scByDate[dt].some(r=>(Number(r.qty)||0)>0))countDates.add(dt);
   });
+  // Today: check StoreStock live data
+  if(ym===today.substring(0,7)){
+    const todayStock=D.StoreStock.filter(s=>String(s.storeId)===storeId);
+    if(todayStock.some(s=>(Number(s.qty)||0)>0))countDates.add(today);
+  }
   // Build calendar grid
   const firstDay=new Date(_ssCalYear,_ssCalMonth,1).getDay();// 0=Sun
   const daysInMonth=new Date(_ssCalYear,_ssCalMonth+1,0).getDate();
@@ -2618,15 +2591,13 @@ function printStockStatus(){
     const ss=D.StoreStock.find(x=>String(x.storeId)===storeId&&String(x.itemId)===String(it.itemId));
     it._so=tpl?tpl.sortOrder:9999;
     it._min=isToday?Number(it.min)||0:(tpl?Number(tpl.min)||0:0);
-    it._minCond=ss?(ss.minCondition||'lt'):(tpl?(tpl.minCondition||'lt'):'lt'); // 'lt' or 'lte'
     it._orderQty=ss?Number(ss.orderQty)||0:(tpl?Number(tpl.orderQty)||0:0);
     const aoVal=ss?ss.alwaysOrder:(tpl?tpl.alwaysOrder:false);
     it._alwaysOrder=aoVal===true||aoVal==='true';
   });
   dataItems.sort((a,b)=>{const ci=catIdx.indexOf(a.category)-catIdx.indexOf(b.category);return ci!==0?ci:(a._so||0)-(b._so||0);});
   const _catColors=['#111111','#1565c0','#6a1b9a','#e65100','#00838f','#2e7d32','#c62828','#4527a0','#ef6c00','#00695c','#ad1457','#283593','#4e342e','#37474f','#1b5e20','#880e4f'];
-  // Order trigger: 'lt' = qty < min, 'lte' = qty <= min
-  const orderItems=dataItems.filter(s=>{const q=Number(s.qty)||0;const m=s._min||0;const c=s._minCond;const ao=s._alwaysOrder;const oq=s._orderQty||0;const needsOrder=m>0&&(c==='lte'?q<=m:q<m);return needsOrder||(ao&&oq>0);});
+  const orderItems=dataItems.filter(s=>{const q=Number(s.qty)||0;const m=s._min||0;const ao=s._alwaysOrder;const oq=s._orderQty||0;return(m>0&&q<m)||(ao&&oq>0);});
   // Build category blocks
   let catBlocks='',catIdx2=0,lastCat='',rows='';
   const flushCat=()=>{if(rows)catBlocks+=`<div class="cat-block"><table>${rows}</table></div>`;rows='';};
@@ -2639,10 +2610,10 @@ function printStockStatus(){
       const cs='background:'+clr+'!important;color:'+txtClr+'!important;padding:3px 6px;font-size:10px;font-weight:700';
       rows+=`<tr><td style="${cs};text-transform:uppercase">${escHtml(lastCat)}</td><td class="c" style="${cs}">Unit</td><td class="c" style="${cs}">Min</td><td class="c" style="${cs}">QTY</td><td class="c" style="${cs}">Order</td></tr>`;
     }
-    const qty=Number(s.qty)||0;const min=s._min||0;const mc=s._minCond||'lt';
+    const qty=Number(s.qty)||0;const min=s._min||0;
     const oq=s._orderQty||0;
     const ao=s._alwaysOrder===true||s._alwaysOrder==='true';
-    const needOrder=(min>0&&(mc==='lte'?qty<=min:qty<min))||(ao&&oq>0);
+    const needOrder=(min>0&&qty<min)||(ao&&oq>0);
     const orderVal=needOrder?Math.max(0,oq-qty):0;
     const nameHtml=needOrder?`<b>${escHtml(s.name)}</b>`:escHtml(s.name);
     const qtyStyle=needOrder?'font-weight:700;color:#c62828':'';
@@ -2748,7 +2719,7 @@ async function renderStockStatusTable(){
     const missing=D.StockTemplate.filter(t=>!existingIds.has(String(t.id)));
     if(missing.length>0){
       missing.forEach(t=>{
-        D.StoreStock.push({storeId,itemId:t.id,category:t.category,name:t.name,unit:t.unit,min:t.min,minCondition:t.minCondition||'lt',orderQty:t.orderQty||0,orderUnit:t.orderUnit||t.unit,alwaysOrder:t.alwaysOrder||false,qty:0});
+        D.StoreStock.push({storeId,itemId:t.id,category:t.category,name:t.name,unit:t.unit,min:t.min,orderQty:t.orderQty||0,alwaysOrder:t.alwaysOrder||false,qty:0});
       });
       _bgPost({action:'saveSheet',sheet:'StoreStock',rows:D.StoreStock});
       items=D.StoreStock.filter(s=>String(s.storeId)===storeId);
@@ -2774,11 +2745,11 @@ async function renderStockStatusTable(){
       const rec=existingRecs.find(r=>String(r.itemId)===String(s.itemId));
       qty=rec?Number(rec.qty):0;
     }
-    const min=Number(s.min)||0;const mc2=s.minCondition||'lt';
+    const min=Number(s.min)||0;
     const oq=Number(s.orderQty)||0;
     const ao=s.alwaysOrder===true||s.alwaysOrder==='true';
     const counted=isToday?todayCounted:hasExisting;
-    const needOrder=counted&&((min>0&&(mc2==='lte'?qty<=min:qty<min))||(ao&&oq>0));
+    const needOrder=counted&&((min>0&&qty<min)||(ao&&oq>0));
     const orderVal=needOrder?Math.max(0,oq-qty):0;
     const status=!counted?'badge-secondary':qty<=0?'badge-danger':qty<=min?'badge-warning':'badge-success';
     const statusText=!counted?'—':qty<=0?'Out':qty<=min?'Low':'OK';
@@ -2862,10 +2833,9 @@ function renderStoreQtyTable(){
   const _ci1=getSortedCategories();
   items.sort((a,b)=>{const ci=_ci1.indexOf(a.category)-_ci1.indexOf(b.category);return ci!==0?ci:a._so-b._so;});
   $('storeQtyBody').innerHTML=items.map(s=>{
-    const qty=Number(s.qty)||0;const min=Number(s.min)||0;const mc5=s.minCondition||'lt';
-    const isLow=min>0&&(mc5==='lte'?qty<=min:qty<min);
-    const status=qty<=0?'badge-danger':isLow?'badge-warning':'badge-success';
-    const statusText=qty<=0?'Out of Stock':isLow?'Low':'OK';
+    const qty=Number(s.qty)||0;const min=Number(s.min)||0;
+    const status=qty<=0?'badge-danger':qty<=min?'badge-warning':'badge-success';
+    const statusText=qty<=0?'Out of Stock':qty<=min?'Low':'OK';
     return`<tr><td style="font-size:12px;color:var(--text-light)">${escHtml(s.category)}</td><td>${escHtml(s.name)}</td><td>${escHtml(s.unit)}</td><td>${min}</td>
     <td><input type="number" min="0" value="${qty}" style="width:80px;padding:6px;border:2px solid var(--border);border-radius:6px;font-weight:600;text-align:center" data-store="${storeId}" data-item="${s.itemId}" onchange="updateStockQty(this)"></td>
     <td><span class="badge ${status}">${statusText}</span></td></tr>`;
@@ -3013,91 +2983,80 @@ function openStockItemModal(editId){
   const title=isNew?'Add New Stock Item':'Edit Stock Item';
   const maxSort=Math.max(0,...D.StockTemplate.map(t=>t.sortOrder||0));
   const body=`
-    <div class="form-row" style="margin-bottom:3px">
-      <div class="form-group" style="flex:2;margin-bottom:0"><label style="font-size:11px">Category</label>
-        <select id="siCat" style="padding:5px;border:1.5px solid var(--border);border-radius:6px;font-size:13px" onchange="toggleNewCat()">
+    <div class="form-group"><label>Category</label>
+      <div style="display:flex;gap:8px">
+        <select id="siCat" style="flex:1;padding:10px;border:2px solid var(--border);border-radius:8px" onchange="toggleNewCat()">
           ${cats.map(c=>`<option value="${c}"${existing&&existing.category===c?' selected':''}>${escHtml(c)}</option>`).join('')}
           <option value="__new__">+ New Category</option>
         </select>
-        <input type="text" id="siNewCat" class="hidden" placeholder="New category name" style="padding:5px;border:1.5px solid var(--border);border-radius:6px;font-size:13px;margin-top:2px">
+        <input type="text" id="siNewCat" class="hidden" placeholder="New category name" style="flex:1;padding:10px;border:2px solid var(--border);border-radius:8px">
       </div>
-      <div class="form-group" style="flex:1;margin-bottom:0"><label style="font-size:11px">Unit *</label>
-        <select id="siUnit" style="padding:5px;border:1.5px solid var(--border);border-radius:6px;font-size:13px">
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Item Name *</label>
+        <input type="text" id="siName" value="${existing?escHtml(existing.name):''}" placeholder="e.g. Soy Sauce 15L" style="padding:10px;border:2px solid var(--border);border-radius:8px"></div>
+      <div class="form-group"><label>Unit *</label>
+        <select id="siUnit" style="padding:10px;border:2px solid var(--border);border-radius:8px">
           ${['Bag','Box','Pack','Pcs','Kg','Ctn','L','Bottle'].map(u=>`<option${existing&&existing.unit===u?' selected':''}>${u}</option>`).join('')}
         </select></div>
     </div>
-    <div class="form-row" style="margin-bottom:3px">
-      <div class="form-group" style="flex:3;margin-bottom:0"><label style="font-size:11px">Item Name *</label>
-        <input type="text" id="siName" value="${existing?escHtml(existing.name):''}" placeholder="e.g. Soy Sauce 15L" style="padding:5px;border:1.5px solid var(--border);border-radius:6px;font-size:13px"></div>
-      <div class="form-group" style="flex:1;margin-bottom:0"><label style="font-size:11px">Order Unit</label>
-        <select id="siOrderUnit" style="padding:5px;border:1.5px solid var(--border);border-radius:6px;font-size:13px;color:#1565c0;font-weight:600">
-          ${['Bag','Box','Pack','Pcs','Kg','Ctn','L','Bottle'].map(u=>{const sel=existing?(existing.orderUnit||existing.unit)===u:u==='Box';return'<option'+(sel?' selected':'')+'>'+u+'</option>';}).join('')}
+    <div class="form-row">
+      <div class="form-group"><label>Minimum Stock</label>
+        <input type="number" id="siMin" min="0" value="${existing?existing.min:1}" style="padding:10px;border:2px solid var(--border);border-radius:8px"></div>
+      <div class="form-group"><label>Order Qty</label>
+        <input type="number" id="siOrderQty" min="0" value="${existing?(existing.orderQty||0):0}" style="padding:10px;border:2px solid var(--border);border-radius:8px" title="Fixed quantity to order when below minimum"></div>
+      <div class="form-group"><label>Sort Order</label>
+        <input type="number" id="siSort" min="0" value="${existing?existing.sortOrder:(maxSort+1)}" style="padding:10px;border:2px solid var(--border);border-radius:8px"></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;padding:10px 14px;background:${existing&&existing.alwaysOrder?'#e3f2fd':'#f8f9fa'};border-radius:8px;border:2px solid ${existing&&existing.alwaysOrder?'#1565c0':'var(--border)'}">
+      <input type="checkbox" id="siAlwaysOrder" ${existing&&existing.alwaysOrder?'checked':''} style="width:18px;height:18px;cursor:pointer">
+      <label for="siAlwaysOrder" style="cursor:pointer;font-size:13px;font-weight:600;color:${existing&&existing.alwaysOrder?'#1565c0':'var(--text)'}"><i class="fas fa-cart-plus" style="margin-right:6px"></i>Always Order — QTY가 Min 이상이어도 항상 주문</label>
+    </div>
+    <div style="border-top:1px solid var(--border);margin:16px 0 12px;padding-top:14px">
+      <label style="font-size:13px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:6px;margin-bottom:10px"><i class="fas fa-truck" style="color:var(--accent)"></i>Suppliers</label>
+      <div class="form-group" style="margin-bottom:10px"><label>Supplier 1 (Primary)</label>
+        <select id="siSup1" style="padding:10px;border:2px solid var(--border);border-radius:8px;width:100%">
+          <option value="">— None —</option>${D.Suppliers.map(s=>`<option value="${escHtml(s.id)}"${existing&&(existing.supplier1===s.id||existing.supplier1===s.name)?' selected':''}>${escHtml(s.name)}</option>`).join('')}
         </select></div>
-      <div class="form-group" style="width:60px;margin-bottom:0"><label style="font-size:11px">Sort</label>
-        <input type="number" id="siSort" min="0" value="${existing?existing.sortOrder:(maxSort+1)}" style="padding:5px;border:1.5px solid var(--border);border-radius:6px;font-size:13px;text-align:center"></div>
-    </div>
-    <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;padding:4px 10px;background:${existing&&existing.alwaysOrder?'#e3f2fd':'#f8f9fa'};border-radius:6px;border:1.5px solid ${existing&&existing.alwaysOrder?'#1565c0':'var(--border)'}">
-      <input type="checkbox" id="siAlwaysOrder" ${existing&&existing.alwaysOrder?'checked':''} style="width:16px;height:16px;cursor:pointer">
-      <label for="siAlwaysOrder" style="cursor:pointer;font-size:12px;font-weight:600;color:${existing&&existing.alwaysOrder?'#1565c0':'var(--text)'}"><i class="fas fa-cart-plus" style="margin-right:4px"></i>Always Order</label>
-    </div>
-    <div style="border-top:1px solid var(--border);margin:3px 0;padding-top:5px">
-      <label style="font-size:12px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:5px;margin-bottom:3px"><i class="fas fa-truck" style="color:var(--accent);font-size:11px"></i>Suppliers</label>
-      <div class="form-row" style="margin-bottom:3px">
-        <div class="form-group" style="margin-bottom:0"><label style="font-size:10px">Primary</label>
-          <select id="siSup1" style="padding:4px;border:1.5px solid var(--border);border-radius:6px;font-size:12px">
-            <option value="">— None —</option>${D.Suppliers.map(s=>`<option value="${escHtml(s.id)}"${existing&&(existing.supplier1===s.id||existing.supplier1===s.name)?' selected':''}>${escHtml(s.name)}</option>`).join('')}
-          </select></div>
-        <div class="form-group" style="margin-bottom:0"><label style="font-size:10px">Supplier 2</label>
-          <select id="siSup2" style="padding:4px;border:1.5px solid var(--border);border-radius:6px;font-size:12px">
+      <div class="form-row">
+        <div class="form-group"><label>Supplier 2</label>
+          <select id="siSup2" style="padding:10px;border:2px solid var(--border);border-radius:8px;width:100%">
             <option value="">— None —</option>${D.Suppliers.map(s=>`<option value="${escHtml(s.id)}"${existing&&(existing.supplier2===s.id||existing.supplier2===s.name)?' selected':''}>${escHtml(s.name)}</option>`).join('')}
           </select></div>
-        <div class="form-group" style="margin-bottom:0"><label style="font-size:10px">Supplier 3</label>
-          <select id="siSup3" style="padding:4px;border:1.5px solid var(--border);border-radius:6px;font-size:12px">
+        <div class="form-group"><label>Supplier 3</label>
+          <select id="siSup3" style="padding:10px;border:2px solid var(--border);border-radius:8px;width:100%">
             <option value="">— None —</option>${D.Suppliers.map(s=>`<option value="${escHtml(s.id)}"${existing&&(existing.supplier3===s.id||existing.supplier3===s.name)?' selected':''}>${escHtml(s.name)}</option>`).join('')}
           </select></div>
       </div>
     </div>
-    <div class="form-row" style="margin-bottom:3px;align-items:flex-start">
-      <div class="form-group" style="flex:1;margin-bottom:0"><label style="font-size:11px">Memo / Notes</label>
-        <textarea id="siMemo" rows="1" placeholder="e.g. Box/£22, Order on Mon..." style="padding:5px;border:1.5px solid var(--border);border-radius:6px;font-size:12px;resize:vertical">${existing?escHtml(existing.memo||''):''}</textarea></div>
-      ${existing?`<div class="form-group" style="width:140px;margin-bottom:0"><label style="font-size:11px"><i class="fas fa-camera" style="margin-right:3px;color:var(--accent)"></i>Photo</label>
-        <div style="display:flex;align-items:center;gap:8px">
-          <div id="siPhotoPreview" style="width:56px;height:56px;border-radius:8px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;font-size:24px;border:1.5px solid var(--border)">${existing.photo?'<img src="https://drive.google.com/thumbnail?id='+existing.photo+'&sz=w120" style="width:100%;height:100%;object-fit:cover">':'📦'}</div>
-          <label for="siPhotoFile" style="display:inline-flex;align-items:center;gap:4px;padding:6px 10px;background:var(--accent);color:#fff;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap"><i class="fas fa-upload"></i>Upload</label>
-          <input type="file" id="siPhotoFile" accept="image/*" capture="environment" style="display:none" onchange="handleStockPhoto(this)">
-        </div></div>`:''}
+    <div class="form-group"><label>Memo / Notes</label>
+      <textarea id="siMemo" rows="2" placeholder="e.g. Order on Mondays, 2-day lead time..." style="padding:10px;border:2px solid var(--border);border-radius:8px;resize:vertical">${existing?escHtml(existing.memo||''):''}</textarea></div>
+    ${existing?`<div style="border-top:1px solid var(--border);margin:16px 0 12px;padding-top:14px">
+      <label style="font-size:13px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:6px;margin-bottom:10px"><i class="fas fa-camera" style="color:var(--accent)"></i>Item Photo</label>
+      <div style="display:flex;align-items:center;gap:12px">
+        <div id="siPhotoPreview" style="width:80px;height:80px;border-radius:10px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;font-size:32px">${existing.photo?'<img src="https://drive.google.com/thumbnail?id='+existing.photo+'&sz=w160" style="width:100%;height:100%;object-fit:cover">':'📦'}</div>
+        <div style="flex:1"><input type="file" id="siPhotoFile" accept="image/*" capture="environment" style="font-size:13px" onchange="handleStockPhoto(this)">
+        <p style="font-size:11px;color:var(--text-light);margin-top:4px">Take photo or choose file. Saved to Google Drive.</p></div>
+      </div>
     </div>
-    ${existing?`<div style="border-top:1px solid var(--border);margin:6px 0;padding-top:8px">
-      <label style="font-size:12px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:5px;margin-bottom:6px"><i class="fas fa-store" style="color:var(--accent);font-size:11px"></i>Per-Store Min / Order Qty / Suppliers</label>
-      <div style="overflow-x:auto">
-      <div style="display:flex;gap:3px;padding:2px 8px;margin-bottom:3px;min-width:710px"><span style="flex:1;font-size:10px;font-weight:700;color:var(--text-light)">Store</span><span style="width:46px;text-align:center;font-size:10px;font-weight:700;color:var(--text-light)">Min</span><span style="width:34px;text-align:center;font-size:9px;font-weight:700;color:#c0392b">조건</span><span style="width:46px;text-align:center;font-size:10px;font-weight:700;color:var(--text-light)">Order</span><span style="width:120px;text-align:center;font-size:10px;font-weight:700;color:#6a1b9a">Sup1</span><span style="width:120px;text-align:center;font-size:10px;font-weight:700;color:#6a1b9a">Sup2</span><span style="width:120px;text-align:center;font-size:10px;font-weight:700;color:#6a1b9a">Sup3</span></div>
-      <div style="display:flex;flex-direction:column;gap:3px;min-width:710px">${D.Stores.filter(s=>s.active!==false).map(s=>{
+    <div style="border-top:1px solid var(--border);margin:16px 0 12px;padding-top:14px">
+      <label style="font-size:13px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:6px;margin-bottom:10px"><i class="fas fa-store" style="color:var(--accent)"></i>Per-Store Min / Order Qty</label>
+      <div style="display:flex;gap:8px;padding:4px 10px;margin-bottom:4px"><span style="flex:1;font-size:11px;font-weight:700;color:var(--text-light)">Store</span><span style="width:70px;text-align:center;font-size:11px;font-weight:700;color:var(--text-light)">Min</span><span style="width:70px;text-align:center;font-size:11px;font-weight:700;color:var(--text-light)">Order Qty</span></div>
+      <div style="display:flex;flex-direction:column;gap:6px">${D.Stores.filter(s=>s.active!==false).map(s=>{
         const ss=D.StoreStock.find(x=>String(x.storeId)===String(s.id)&&String(x.itemId)===editId);
         const sMin=ss?ss.min:existing.min;
-        const sCond=ss?(ss.minCondition||'lt'):(existing.minCondition||'lt');
         const sOQ=ss?(ss.orderQty||0):(existing.orderQty||0);
-        // 지점별 서플라이어: StoreStock에 supplier1 키가 있으면 그 값 사용 (빈값도 존중), 없으면 template 기본값
-        const sSup1=ss&&('supplier1' in ss)?ss.supplier1:(existing.supplier1||'');
-        const sSup2=ss&&('supplier2' in ss)?ss.supplier2:(existing.supplier2||'');
-        const sSup3=ss&&('supplier3' in ss)?ss.supplier3:(existing.supplier3||'');
-        const mkSel=(val,attr)=>'<select data-store-'+attr+'="'+s.id+'" style="width:120px;padding:2px;border:1.5px solid var(--border);border-radius:5px;font-size:11px"><option value="">—</option>'+D.Suppliers.map(sp=>'<option value="'+escHtml(sp.id)+'"'+(val===sp.id||val===sp.name?' selected':'')+'>'+escHtml(sp.name)+'</option>').join('')+'</select>';
-        return `<div style="display:flex;align-items:center;gap:3px;padding:4px 8px;background:#f8f9fa;border-radius:6px">
-          <span style="flex:1;font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(s.name)}</span>
-          <input type="number" min="0" value="${sMin}" data-store-min="${s.id}" style="width:46px;padding:4px;border:1.5px solid var(--border);border-radius:5px;text-align:center;font-weight:600;font-size:12px">
-          <select data-store-cond="${s.id}" style="width:34px;padding:2px 1px;border:1.5px solid var(--border);border-radius:5px;text-align:center;font-weight:700;font-size:11px;color:#c0392b">
-            <option value="lt" ${sCond!=='lte'?'selected':''}>＜</option>
-            <option value="lte" ${sCond==='lte'?'selected':''}>≤</option>
-          </select>
-          <input type="number" min="0" value="${sOQ}" data-store-oq="${s.id}" style="width:46px;padding:4px;border:1.5px solid var(--border);border-radius:5px;text-align:center;font-weight:600;font-size:12px;color:#1565c0">
-          ${mkSel(sSup1,'sup1')} ${mkSel(sSup2,'sup2')} ${mkSel(sSup3,'sup3')}
+        return `<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:#f8f9fa;border-radius:8px">
+          <span style="flex:1;font-size:13px;font-weight:600">${escHtml(s.name)}</span>
+          <input type="number" min="0" value="${sMin}" data-store-min="${s.id}" style="width:70px;padding:6px;border:2px solid var(--border);border-radius:6px;text-align:center;font-weight:600">
+          <input type="number" min="0" value="${sOQ}" data-store-oq="${s.id}" style="width:70px;padding:6px;border:2px solid var(--border);border-radius:6px;text-align:center;font-weight:600;color:#1565c0">
         </div>`;
       }).join('')}</div>
-      </div>
     </div>`:''}
-    ${isNew?'<p style="font-size:11px;color:var(--text-light);margin-top:4px"><i class="fas fa-info-circle"></i> This item will be added to all stores automatically.</p>':'<p style="font-size:11px;color:var(--text-light);margin-top:4px"><i class="fas fa-info-circle"></i> Changes will be synced to all stores.</p>'}`;
+    ${isNew?'<p style="font-size:12px;color:var(--text-light);margin-top:8px"><i class="fas fa-info-circle"></i> This item will be added to all stores automatically.</p>':'<p style="font-size:12px;color:var(--text-light);margin-top:8px"><i class="fas fa-info-circle"></i> Changes will be synced to all stores.</p>'}`;
   const footer=`<button class="btn btn-outline" onclick="closeModal()">Cancel</button>
     <button class="btn btn-primary" onclick="saveStockItem('${editId||''}')">${isNew?'<i class="fas fa-plus"></i> Add Item':'<i class="fas fa-save"></i> Save Changes'}</button>`;
-  openModal(title,body,footer,{wide:true});
+  openModal(title,body,footer);
 }
 function toggleNewCat(){
   const sel=$('siCat');const newInput=$('siNewCat');
@@ -3109,12 +3068,8 @@ async function saveStockItem(editId){
   if(category==='__new__'){category=($('siNewCat').value||'').trim();if(!category){toast('Enter category name','error');return;}}
   const name=($('siName').value||'').trim();
   const unit=$('siUnit').value;
-  // Template-level min/orderQty는 Per-Store에서 관리 — 기존값 유지 또는 디폴트 0
-  const existingTpl=editId?D.StockTemplate.find(t=>t.id===editId):null;
-  const min=existingTpl?existingTpl.min:0;
-  const minCondition=existingTpl?(existingTpl.minCondition||'lt'):'lt';
-  const orderQty=existingTpl?(existingTpl.orderQty||0):0;
-  const orderUnit=$('siOrderUnit')?.value||unit; // 주문단위 (기본값: 재고단위)
+  const min=parseInt($('siMin').value)||0;
+  const orderQty=parseInt($('siOrderQty')?.value)||0;
   const sortOrder=parseInt($('siSort').value)||0;
   const supplier1=($('siSup1')?.value||'').trim();
   const supplier2=($('siSup2')?.value||'').trim();
@@ -3130,32 +3085,21 @@ async function saveStockItem(editId){
     const tpl=D.StockTemplate.find(t=>t.id===editId);
     if(!tpl){toast('Item not found','error');return;}
     const alwaysOrder=$('siAlwaysOrder')?.checked||false;
-    tpl.category=category;tpl.name=name;tpl.unit=unit;tpl.min=min;tpl.minCondition=minCondition;tpl.orderQty=orderQty;tpl.orderUnit=orderUnit;tpl.alwaysOrder=alwaysOrder;tpl.sortOrder=sortOrder;
+    tpl.category=category;tpl.name=name;tpl.unit=unit;tpl.min=min;tpl.orderQty=orderQty;tpl.alwaysOrder=alwaysOrder;tpl.sortOrder=sortOrder;
     tpl.supplier1=supplier1;tpl.supplier2=supplier2;tpl.supplier3=supplier3;tpl.memo=memo;
-    // Per-store min + minCondition + orderQty 업데이트 (모달에 표시된 활성 매장)
-    const updatedStoreIds=new Set();
+    // Update per-store min + orderQty from modal inputs
     document.querySelectorAll('[data-store-min]').forEach(el=>{
       const storeId=el.dataset.storeMin;
-      updatedStoreIds.add(storeId);
       const storeMin=parseInt(el.value)||0;
-      const condEl=document.querySelector(`[data-store-cond="${storeId}"]`);
-      const storeCond=condEl?condEl.value:'lt';
       const oqEl=document.querySelector(`[data-store-oq="${storeId}"]`);
       const storeOQ=oqEl?parseInt(oqEl.value)||0:orderQty;
-      // 지점별 서플라이어 수집
-      const sup1El=document.querySelector(`[data-store-sup1="${storeId}"]`);
-      const sup2El=document.querySelector(`[data-store-sup2="${storeId}"]`);
-      const sup3El=document.querySelector(`[data-store-sup3="${storeId}"]`);
-      const storeSup1=sup1El?sup1El.value:'';
-      const storeSup2=sup2El?sup2El.value:'';
-      const storeSup3=sup3El?sup3El.value:'';
       const ss=D.StoreStock.find(x=>String(x.storeId)===storeId&&String(x.itemId)===editId);
-      if(ss){ss.category=category;ss.name=name;ss.unit=unit;ss.min=storeMin;ss.minCondition=storeCond;ss.orderQty=storeOQ;ss.orderUnit=orderUnit;ss.alwaysOrder=alwaysOrder;ss.supplier1=storeSup1;ss.supplier2=storeSup2;ss.supplier3=storeSup3;}
+      if(ss){ss.category=category;ss.name=name;ss.unit=unit;ss.min=storeMin;ss.orderQty=storeOQ;ss.alwaysOrder=alwaysOrder;}
     });
-    // 비활성 매장만 업데이트 (모달에 없는 매장 — per-store 값 덮어쓰기 방지, supplier 유지)
+    // Also update any StoreStock not shown (inactive stores)
     D.StoreStock.forEach(ss=>{
-      if(String(ss.itemId)===editId&&!updatedStoreIds.has(String(ss.storeId))){
-        ss.category=category;ss.name=name;ss.unit=unit;ss.minCondition=minCondition;ss.orderUnit=orderUnit;ss.alwaysOrder=alwaysOrder;
+      if(String(ss.itemId)===editId){
+        ss.category=category;ss.name=name;ss.unit=unit;ss.alwaysOrder=alwaysOrder;
       }
     });
     // Photo upload if file selected
@@ -3172,11 +3116,11 @@ async function saveStockItem(editId){
     // ---- ADD new ----
     const newId=genId('t');
     const alwaysOrder=$('siAlwaysOrder')?.checked||false;
-    const tpl={id:newId,category,name,unit,min,minCondition,orderQty,orderUnit,alwaysOrder,sortOrder,supplier1,supplier2,supplier3,memo,photo:''};
+    const tpl={id:newId,category,name,unit,min,orderQty,alwaysOrder,sortOrder,supplier1,supplier2,supplier3,memo,photo:''};
     D.StockTemplate.push(tpl);
-    // Add to StoreStock for EVERY store (template supplier를 기본값으로)
+    // Add to StoreStock for EVERY store
     D.Stores.forEach(store=>{
-      D.StoreStock.push({storeId:store.id,itemId:newId,category,name,unit,min,minCondition,orderQty,orderUnit,alwaysOrder,qty:0,supplier1,supplier2,supplier3});
+      D.StoreStock.push({storeId:store.id,itemId:newId,category,name,unit,min,orderQty,alwaysOrder,qty:0});
     });
     // Photo upload for new item
     const photoFileNew=$('siPhotoFile');
@@ -3302,16 +3246,16 @@ function renderOrders(c) {
     <select id="orderStore" onchange="renderOrderTable()"><option value="">Select Store</option>${getAccessibleStores().map(s=>`<option value="${s.id}">${s.name}</option>`).join('')}</select>
     <button class="btn btn-sm btn-success" onclick="exportOrder()"><i class="fas fa-download"></i> Export CSV</button>
     <button class="btn btn-sm btn-primary" onclick="printOrder()"><i class="fas fa-print"></i> Print</button>
-  </div><div class="card"><div class="table-wrap"><table><thead><tr><th>Category</th><th>Item</th><th>Unit</th><th>Min</th><th>Current</th><th>Order QTY</th><th>주문단위</th><th>Supplier</th></tr></thead><tbody id="orderBody"></tbody></table></div></div>`;
+  </div><div class="card"><div class="table-wrap"><table><thead><tr><th>Category</th><th>Item</th><th>Unit</th><th>Min</th><th>Current</th><th>Order QTY</th></tr></thead><tbody id="orderBody"></tbody></table></div></div>`;
 }
 function renderOrderTable() {
   const storeId=$('orderStore')?.value;
-  if(!storeId){$('orderBody').innerHTML='<tr><td colspan="8" style="text-align:center;color:var(--text-light)">Please select a store</td></tr>';return;}
+  if(!storeId){$('orderBody').innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--text-light)">Please select a store</td></tr>';return;}
   const items=D.StoreStock.filter(s=>{
     if(String(s.storeId)!==storeId)return false;
-    const qty=Number(s.qty)||0,min=Number(s.min)||0,mc3=s.minCondition||'lt',oq=Number(s.orderQty)||0;
+    const qty=Number(s.qty)||0,min=Number(s.min)||0,oq=Number(s.orderQty)||0;
     const ao=s.alwaysOrder===true||s.alwaysOrder==='true';
-    return(min>0&&(mc3==='lte'?qty<=min:qty<min))||(ao&&oq>0);
+    return(min>0&&qty<min)||(ao&&oq>0);
   });
   const catIdx=getSortedCategories();
   items.forEach(it=>{const tpl=D.StockTemplate.find(t=>String(t.id)===String(it.itemId));it._so=tpl?tpl.sortOrder:9999;});
@@ -3320,22 +3264,16 @@ function renderOrderTable() {
     const oq=Number(s.orderQty)||0;
     const qty=Number(s.qty)||0;
     const ao=s.alwaysOrder===true||s.alwaysOrder==='true';
-    const mc4=s.minCondition||'lt';
-    const needOrder=(Number(s.min)>0&&(mc4==='lte'?qty<=Number(s.min):qty<Number(s.min)))||(ao&&oq>0);
+    const needOrder=(Number(s.min)>0&&qty<Number(s.min))||(ao&&oq>0);
     const orderVal=needOrder?Math.max(0,oq-qty):0;
     const aoIcon=ao?'<i class="fas fa-cart-plus" style="color:#1565c0;font-size:10px;margin-left:4px" title="Always Order"></i>':'';
-    const ou=s.orderUnit||s.unit;
-    // 지점별 서플라이어 표시 (supplier1 우선)
-    const _supId=s.supplier1||'';
-    const _supObj=_supId?D.Suppliers.find(x=>x.id===_supId||x.name===_supId):null;
-    const _supName=_supObj?_supObj.name:(_supId||'—');
-    return`<tr><td>${escHtml(s.category)}</td><td>${escHtml(s.name)}${aoIcon}</td><td>${escHtml(s.unit)}</td><td>${s.min}</td><td><span class="badge ${Number(s.qty)<=0?'badge-danger':qty<Number(s.min)?'badge-warning':'badge-success'}">${s.qty}</span></td><td><strong style="color:#c62828">${orderVal}</strong></td><td style="color:#1565c0;font-weight:600">${escHtml(ou)}</td><td style="font-size:12px">${escHtml(_supName)}</td></tr>`;
-  }).join(''):'<tr><td colspan="8" style="text-align:center;color:var(--success)"><i class="fas fa-check-circle"></i> All items are sufficiently stocked!</td></tr>';
+    return`<tr><td>${escHtml(s.category)}</td><td>${escHtml(s.name)}${aoIcon}</td><td>${escHtml(s.unit)}</td><td>${s.min}</td><td><span class="badge ${Number(s.qty)<=0?'badge-danger':qty<Number(s.min)?'badge-warning':'badge-success'}">${s.qty}</span></td><td><strong style="color:#c62828">${orderVal}</strong></td></tr>`;
+  }).join(''):'<tr><td colspan="6" style="text-align:center;color:var(--success)"><i class="fas fa-check-circle"></i> All items are sufficiently stocked!</td></tr>';
 }
 function exportOrder() {
   const rows=document.querySelectorAll('#orderBody tr');
-  let csv='Category,Item,Unit,Min,Current,Order QTY,Order Unit,Supplier\n';
-  rows.forEach(r=>{const cells=r.querySelectorAll('td');if(cells.length>=8)csv+=Array.from(cells).map(c=>'"'+c.textContent.trim()+'"').join(',')+'\n';});
+  let csv='Category,Item,Unit,Min,Current,Order QTY\n';
+  rows.forEach(r=>{const cells=r.querySelectorAll('td');if(cells.length>=6)csv+=Array.from(cells).map(c=>'"'+c.textContent.trim()+'"').join(',')+'\n';});
   const store=D.Stores.find(s=>s.id===$('orderStore')?.value);
   const blob=new Blob([csv],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`order_${store?store.code:'all'}_${new Date().toISOString().split('T')[0]}.csv`;a.click();toast('Order CSV exported','success');
 }
@@ -3417,14 +3355,10 @@ function openSupplierModal(editId){
   const existing=editId?D.Suppliers.find(s=>s.id===editId):null;
   const isNew=!existing;
   const title=isNew?'Add Supplier':'Edit Supplier';
-  const v=existing||{id:'',name:'',email:'',phone:'',address:'',website:'',memo:''};
+  const v=existing||{name:'',email:'',phone:'',address:'',website:'',memo:''};
   const body=`
-    <div class="form-row">
-      <div class="form-group" style="flex:0 0 100px"><label>ID *</label>
-        <input type="text" id="supId" value="${escHtml(v.id)}" placeholder="e.g. AZ" ${existing?'readonly style="padding:10px;border:2px solid var(--border);border-radius:8px;background:#f5f5f5;color:#888"':'style="padding:10px;border:2px solid var(--border);border-radius:8px"'}></div>
-      <div class="form-group"><label>Company Name *</label>
-        <input type="text" id="supName" value="${escHtml(v.name)}" placeholder="e.g. Pan Asia" style="padding:10px;border:2px solid var(--border);border-radius:8px"></div>
-    </div>
+    <div class="form-group"><label>Company Name *</label>
+      <input type="text" id="supName" value="${escHtml(v.name)}" placeholder="e.g. Pan Asia" style="padding:10px;border:2px solid var(--border);border-radius:8px"></div>
     <div class="form-row">
       <div class="form-group"><label>Email</label>
         <input type="email" id="supEmail" value="${escHtml(v.email)}" placeholder="orders@supplier.com" style="padding:10px;border:2px solid var(--border);border-radius:8px"></div>
@@ -3444,16 +3378,10 @@ function openSupplierModal(editId){
 async function saveSupplier(editId){
   const name=($('supName')?.value||'').trim();
   if(!name){toast('Company name is required','error');return;}
-  // ID: 수정시 기존 ID 유지, 신규시 사용자 입력 ID 사용
-  const inputId=($('supId')?.value||'').trim();
-  if(!editId&&!inputId){toast('ID is required','error');return;}
-  const supId=editId||inputId;
-  // 중복 체크
-  if(!editId){const dupId=D.Suppliers.find(s=>s.id===supId);if(dupId){toast(`ID "${supId}" already exists`,'error');return;}}
-  const dup=D.Suppliers.find(s=>s.name.toLowerCase()===name.toLowerCase()&&s.id!==supId);
+  const dup=D.Suppliers.find(s=>s.name.toLowerCase()===name.toLowerCase()&&s.id!==editId);
   if(dup){toast(`"${name}" already exists`,'error');return;}
   const row={
-    id:supId, name,
+    id:editId||genId('sup'), name,
     email:($('supEmail')?.value||'').trim(),
     phone:($('supPhone')?.value||'').trim(),
     address:($('supAddr')?.value||'').trim(),
@@ -4108,214 +4036,6 @@ function renderStockHistoryTable(){
   }).join(''):'<tr><td colspan="8" style="text-align:center;color:var(--text-light)">No records found</td></tr>';
 }
 
-// ==================== SALES REPORT (POS Data) ====================
-// ★ TBMS Sales Report — reads DailySales/LiveSales/EndSales from Google Sheets
-let _srView = 'live'; // 'live' | 'daily' | 'endsales'
-let _srDataMode = 'main'; // 'main' | 'sub'
-
-function renderSalesReport(c) {
-  const stores = getAccessibleStores();
-  const today = new Date().toISOString().slice(0,10);
-  const weekAgo = new Date(Date.now() - 7*86400000).toISOString().slice(0,10);
-  const storeColors = {PAB:'#1b5e20',TBS:'#1565c0',TBR:'#6a1b9a',TBB:'#e65100',TBO:'#00838f'};
-
-  c.innerHTML = `<div class="card" style="margin-bottom:16px">
-    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:16px">
-      <h3><i class="fas fa-chart-line" style="color:var(--accent);margin-right:8px"></i>Sales Report (POS Data)</h3>
-      <div style="display:flex;gap:8px;align-items:center">
-        <!-- MAIN / SUB Toggle -->
-        <div style="display:inline-flex;border:2px solid var(--border);border-radius:8px;overflow:hidden">
-          <button id="srModeMain" class="btn btn-sm" style="border:none;border-radius:0;font-size:12px;padding:6px 14px;background:#1565c0;color:#fff" onclick="_srDataMode='main';_srRefresh()">MAIN</button>
-          <button id="srModeSub" class="btn btn-sm" style="border:none;border-radius:0;font-size:12px;padding:6px 14px;background:#fff;color:var(--text)" onclick="_srDataMode='sub';_srRefresh()">SUB</button>
-        </div>
-      </div>
-    </div>
-    <!-- Tab buttons -->
-    <div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap">
-      <button id="srTabLive" class="btn btn-sm btn-primary" onclick="_srView='live';_srRefresh()"><i class="fas fa-bolt"></i> Live Today</button>
-      <button id="srTabDaily" class="btn btn-sm btn-outline" onclick="_srView='daily';_srRefresh()"><i class="fas fa-calendar-alt"></i> Daily History</button>
-      <button id="srTabEnd" class="btn btn-sm btn-outline" onclick="_srView='endsales';_srRefresh()"><i class="fas fa-flag-checkered"></i> END Sales Log</button>
-    </div>
-    <!-- Filters (for daily/endsales) -->
-    <div id="srFilters" style="display:none;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:16px">
-      <div class="form-group" style="margin:0"><label>From</label>
-        <input type="date" id="srFrom" value="${weekAgo}" style="padding:8px;border:2px solid var(--border);border-radius:8px"></div>
-      <div class="form-group" style="margin:0"><label>To</label>
-        <input type="date" id="srTo" value="${today}" style="padding:8px;border:2px solid var(--border);border-radius:8px"></div>
-      <div class="form-group" style="margin:0"><label>Store</label>
-        <select id="srStore" style="padding:8px 12px;border:2px solid var(--border);border-radius:8px;font-size:13px">
-          <option value="">All Stores</option>${stores.map(s=>'<option value="'+s.code+'">'+escHtml(s.name)+'</option>').join('')}</select></div>
-      <button class="btn btn-sm btn-primary" onclick="_srFetch()" style="height:38px"><i class="fas fa-search"></i> Search</button>
-    </div>
-    <div id="srContent" style="min-height:200px"><div style="text-align:center;padding:60px;color:var(--text-light)"><i class="fas fa-spinner fa-spin" style="font-size:24px"></i><br>Loading...</div></div>
-  </div>`;
-  _srRefresh();
-}
-
-function _srRefresh() {
-  // Toggle button styles
-  const tabs = {live:'srTabLive',daily:'srTabDaily',endsales:'srTabEnd'};
-  Object.entries(tabs).forEach(([k,id])=>{
-    const el=$(id); if(!el)return;
-    el.className = k===_srView ? 'btn btn-sm btn-primary' : 'btn btn-sm btn-outline';
-  });
-  const mainBtn=$('srModeMain'), subBtn=$('srModeSub');
-  if(mainBtn) mainBtn.style.cssText='border:none;border-radius:0;font-size:12px;padding:6px 14px;'+(_srDataMode==='main'?'background:#1565c0;color:#fff':'background:#fff;color:var(--text)');
-  if(subBtn) subBtn.style.cssText='border:none;border-radius:0;font-size:12px;padding:6px 14px;'+(_srDataMode==='sub'?'background:#e84393;color:#fff':'background:#fff;color:var(--text)');
-  // Show/hide filters
-  const fEl=$('srFilters');
-  if(fEl) fEl.style.display = _srView==='live' ? 'none' : 'flex';
-  _srFetch();
-}
-
-async function _srFetch() {
-  const el=$('srContent');
-  if(!el) return;
-  el.innerHTML='<div style="text-align:center;padding:40px;color:var(--text-light)"><i class="fas fa-spinner fa-spin"></i> Loading...</div>';
-  try {
-    if(_srView==='live') await _srFetchLive(el);
-    else if(_srView==='daily') await _srFetchDaily(el);
-    else if(_srView==='endsales') await _srFetchEndSales(el);
-  } catch(e) {
-    el.innerHTML='<div style="text-align:center;padding:40px;color:var(--danger)"><i class="fas fa-exclamation-triangle"></i> '+escHtml(e.message)+'</div>';
-  }
-}
-
-async function _srFetchLive(el) {
-  const resp = await tbmsGet('getLiveSales');
-  if(resp.error) { el.innerHTML='<div style="color:var(--danger);padding:20px">'+escHtml(resp.error)+'</div>'; return; }
-  const rows = resp.data || [];
-  const isMain = _srDataMode==='main';
-  const themeClr = isMain ? '#1565c0' : '#e84393';
-  const themeBg = isMain ? '#e3f2fd' : '#fce4ec';
-  const label = isMain ? 'MAIN (Actual)' : 'SUB (Cash %)';
-
-  if(rows.length===0) {
-    el.innerHTML='<div style="text-align:center;padding:40px;color:var(--text-light)"><i class="fas fa-info-circle"></i> No live sales data yet today. Data is pushed hourly from each branch.</div>';
-    return;
-  }
-
-  let totalGrand = 0, totalOrders = 0;
-  const storeColors = {PAB:'#1b5e20',TBS:'#1565c0',TBR:'#6a1b9a',TBB:'#e65100',TBO:'#00838f'};
-  let cardsHtml = rows.map(r => {
-    const grand = isMain ? Number(r.main_grandTotal||0) : Number(r.sub_grandTotal||0);
-    const vat = isMain ? Number(r.main_vatTotal||0) : Number(r.sub_vatTotal||0);
-    const clr = storeColors[r.branch] || 'var(--primary)';
-    totalGrand += grand; totalOrders += Number(r.totalOrders||0);
-    return `<div style="background:#fff;border:2px solid ${themeBg};border-left:5px solid ${clr};border-radius:12px;padding:16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
-      <div style="min-width:120px"><strong style="font-size:16px;color:${clr}">${escHtml(r.branchName||r.branch)}</strong>
-        <div style="font-size:11px;color:var(--text-light)">Updated: ${r.lastUpdated ? new Date(r.lastUpdated).toLocaleTimeString('en-GB') : '—'}</div></div>
-      <div style="flex:1;display:flex;gap:20px;flex-wrap:wrap;align-items:center">
-        <div><div style="font-size:11px;color:var(--text-light)">Orders</div><div style="font-size:18px;font-weight:700">${r.totalOrders||0}</div></div>
-        <div><div style="font-size:11px;color:var(--text-light)">Cash</div><div style="font-size:14px;font-weight:600">${r.cashCount||0}</div></div>
-        <div><div style="font-size:11px;color:var(--text-light)">Card</div><div style="font-size:14px;font-weight:600">${r.cardCount||0}</div></div>
-        <div><div style="font-size:11px;color:var(--text-light)">Total</div><div style="font-size:20px;font-weight:700;color:${themeClr}">£${grand.toFixed(2)}</div></div>
-        <div><div style="font-size:11px;color:var(--text-light)">VAT</div><div style="font-size:14px;font-weight:600;color:${themeClr}">£${vat.toFixed(2)}</div></div>
-      </div>
-    </div>`;
-  }).join('');
-
-  el.innerHTML = `<div style="background:${themeBg};border-radius:12px;padding:16px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
-    <div><span style="font-size:13px;color:${themeClr};font-weight:700">${label}</span>
-      <span style="font-size:11px;color:var(--text-light);margin-left:8px">Today ${resp.today||''}</span></div>
-    <div style="display:flex;gap:20px">
-      <div><span style="font-size:12px;color:var(--text-light)">Total Orders:</span> <strong>${totalOrders}</strong></div>
-      <div><span style="font-size:12px;color:var(--text-light)">Grand Total:</span> <strong style="color:${themeClr};font-size:18px">£${totalGrand.toFixed(2)}</strong></div>
-    </div>
-  </div>
-  <div style="display:flex;flex-direction:column;gap:10px">${cardsHtml}</div>`;
-}
-
-async function _srFetchDaily(el) {
-  const from = $('srFrom')?.value || '';
-  const to = $('srTo')?.value || '';
-  const branch = $('srStore')?.value || '';
-  let params = 'from='+from+'&to='+to;
-  if(branch) params += '&branch='+branch;
-  const resp = await tbmsGet('getSalesReport', params);
-  if(resp.error) { el.innerHTML='<div style="color:var(--danger);padding:20px">'+escHtml(resp.error)+'</div>'; return; }
-  const rows = resp.data || [];
-  const isMain = _srDataMode==='main';
-  const themeClr = isMain ? '#1565c0' : '#e84393';
-  const label = isMain ? 'MAIN' : 'SUB';
-
-  if(rows.length===0) {
-    el.innerHTML='<div style="text-align:center;padding:40px;color:var(--text-light)"><i class="fas fa-info-circle"></i> No daily sales data found for this range. Data is pushed automatically at midnight.</div>';
-    return;
-  }
-
-  // Summary totals
-  let sumGrand=0, sumOrders=0;
-  rows.forEach(r => {
-    sumGrand += isMain ? Number(r.main_grandTotal||0) : Number(r.sub_grandTotal||0);
-    sumOrders += Number(r.totalOrders||0);
-  });
-
-  el.innerHTML = `<div style="background:${isMain?'#e3f2fd':'#fce4ec'};border-radius:10px;padding:12px 16px;margin-bottom:12px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px">
-    <span style="font-weight:700;color:${themeClr}">${label} — ${rows.length} day(s)</span>
-    <span>Orders: <strong>${sumOrders}</strong> | Total: <strong style="color:${themeClr}">£${sumGrand.toFixed(2)}</strong></span>
-  </div>
-  <table class="data-table"><thead><tr><th>Date</th><th>Branch</th><th>Orders</th><th>Cash</th><th>Card</th><th>Total</th><th>VAT</th></tr></thead><tbody>`
-  + rows.map(r => {
-    const grand = isMain ? Number(r.main_grandTotal||0) : Number(r.sub_grandTotal||0);
-    const cash = isMain ? Number(r.main_cashTotal||0) : Number(r.sub_cashTotal||0);
-    const card = isMain ? Number(r.main_cardTotal||0) : Number(r.sub_cardTotal||0);
-    const vat = isMain ? Number(r.main_vatTotal||0) : Number(r.sub_vatTotal||0);
-    return `<tr>
-      <td style="font-weight:600">${r.date||'—'}</td>
-      <td>${escHtml(r.branchName||r.branch||'—')}</td>
-      <td>${r.totalOrders||0}</td>
-      <td>£${cash.toFixed(2)}</td>
-      <td>£${card.toFixed(2)}</td>
-      <td style="font-weight:700;color:${themeClr}">£${grand.toFixed(2)}</td>
-      <td>£${vat.toFixed(2)}</td></tr>`;
-  }).join('') + `</tbody></table>`;
-}
-
-async function _srFetchEndSales(el) {
-  const from = $('srFrom')?.value || '';
-  const to = $('srTo')?.value || '';
-  const branch = $('srStore')?.value || '';
-  let params = 'from='+from+'&to='+to;
-  if(branch) params += '&branch='+branch;
-  const resp = await tbmsGet('getEndSalesLog', params);
-  if(resp.error) { el.innerHTML='<div style="color:var(--danger);padding:20px">'+escHtml(resp.error)+'</div>'; return; }
-  const rows = resp.data || [];
-  const isMain = _srDataMode==='main';
-  const themeClr = isMain ? '#1565c0' : '#e84393';
-  const label = isMain ? 'MAIN' : 'SUB';
-
-  if(rows.length===0) {
-    el.innerHTML='<div style="text-align:center;padding:40px;color:var(--text-light)"><i class="fas fa-info-circle"></i> No END Sales records found. END Sales data is pushed when staff performs END Sales on POS.</div>';
-    return;
-  }
-
-  el.innerHTML = `<div style="background:${isMain?'#e3f2fd':'#fce4ec'};border-radius:10px;padding:12px 16px;margin-bottom:12px">
-    <span style="font-weight:700;color:${themeClr}">${label} — ${rows.length} END Sales Record(s)</span></div>
-  <table class="data-table"><thead><tr><th>Branch</th><th>Period</th><th>Orders</th><th>Total</th><th>VAT</th><th>Staff</th><th>Pushed</th></tr></thead><tbody>`
-  + rows.map(r => {
-    const grand = isMain ? Number(r.main_grandTotal||0) : Number(r.sub_grandTotal||0);
-    const vat = isMain ? Number(r.main_vatTotal||0) : Number(r.sub_vatTotal||0);
-    const from = r.periodFrom ? new Date(r.periodFrom).toLocaleDateString('en-GB') : '—';
-    const to = r.periodTo ? new Date(r.periodTo).toLocaleDateString('en-GB') : '—';
-    return `<tr>
-      <td style="font-weight:600">${escHtml(r.branchName||r.branch||'—')}</td>
-      <td style="font-size:12px">${from} ~ ${to}</td>
-      <td>${r.totalOrders||0}</td>
-      <td style="font-weight:700;color:${themeClr}">£${grand.toFixed(2)}</td>
-      <td>£${vat.toFixed(2)}</td>
-      <td style="font-size:12px">${escHtml(r.staff||'—')}</td>
-      <td style="font-size:11px;color:var(--text-light)">${r.pushedAt ? new Date(r.pushedAt).toLocaleString('en-GB') : '—'}</td></tr>`;
-  }).join('') + `</tbody></table>`;
-}
-
-// ─── Helper: GET from TBMS Apps Script ───
-async function tbmsGet(action, extraParams) {
-  const url = SETUP.apiUrl + '?action='+action+'&apikey='+encodeURIComponent(SETUP.apiKey) + (extraParams ? '&'+extraParams : '');
-  const resp = await fetch(url);
-  return await resp.json();
-}
-
 // ==================== WEEKLY SALES ====================
 function renderSalesInput(c){
   const stores=getAccessibleStores();
@@ -4793,7 +4513,7 @@ function exportAllExcel(){
     }
     // 2. Staff (full detail)
     if(D.Staff.length){
-      const rows=D.Staff.map(s=>({Store:_storeName(s.storeId),Name:s.name,NickName:s.nickName||'','Cloth Size':s.clothSize||'',DOB:s.dob||'',Address:s.address||'','NI No':s.niNo||'','eVisa':s.eVisa||'',Mobile:s.mobile||'','Start Date':s.startDate||'','Left Date':s.leftDate||'',Rate:s.rate||'','Tax Code':s.taxCode||'','Sort Code':s.sortCode||'','Account No':s.accountNo||'',Email:s.email||'','Kiosk Login':s.kioskLogin?'Yes':'No',Memo:s.memo||'',Active:s.active?'Yes':'No'}));
+      const rows=D.Staff.map(s=>({Store:_storeName(s.storeId),Name:s.name,NickName:s.nickName||'','Cloth Size':s.clothSize||'',DOB:s.dob||'',Address:s.address||'','NI No':s.niNo||'','eVisa':s.eVisa||'',Mobile:s.mobile||'','Start Date':s.startDate||'','Left Date':s.leftDate||'',Rate:s.rate||'','Sort Code':s.sortCode||'','Account No':s.accountNo||'',Email:s.email||'','Kiosk Login':s.kioskLogin?'Yes':'No',Memo:s.memo||'',Active:s.active?'Yes':'No'}));
       XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),'Staff');
     }
     // 3. Suppliers
@@ -4803,7 +4523,7 @@ function exportAllExcel(){
     }
     // 4. Stock Template (master item list)
     if(D.StockTemplate.length){
-      const rows=D.StockTemplate.map(t=>({Category:t.category,Name:t.name,Unit:t.unit,Min:t.min,Condition:(t.minCondition||'lt')==='lte'?'≤':'<','Order Qty':t.orderQty||'','Order Unit':t.orderUnit||t.unit,'Always Order':t.alwaysOrder?'Yes':'No','Supplier 1':t.supplier1||'','Supplier 2':t.supplier2||'','Supplier 3':t.supplier3||''}));
+      const rows=D.StockTemplate.map(t=>({Category:t.category,Name:t.name,Unit:t.unit,Min:t.min,'Order Qty':t.orderQty||'','Always Order':t.alwaysOrder?'Yes':'No','Supplier 1':t.supplier1||'','Supplier 2':t.supplier2||'','Supplier 3':t.supplier3||''}));
       XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),'Stock Items');
     }
     // 5. Users (no password)
@@ -4894,7 +4614,7 @@ function exportAllWord(){
     D.Staff.forEach(s=>{
       const store=_storeName(s.storeId);
       html+=sub(`${s.name}${s.nickName?' ('+s.nickName+')':''} \u2014 ${store} ${s.active?'':'[LEFT]'}`);
-      const fields=[['DOB',s.dob],['Address',s.address],['NI No',s.niNo],['eVisa',s.eVisa],['Mobile',s.mobile],['Email',s.email],['Cloth Size',s.clothSize],['Start Date',s.startDate],['Left Date',s.leftDate],['Rate',s.rate?'\u00a3'+s.rate+'/hr':''],['Tax Code',s.taxCode||''],['Sort Code',s.sortCode],['Account No',s.accountNo],['Kiosk Login',s.kioskLogin?'Yes':'No']];
+      const fields=[['DOB',s.dob],['Address',s.address],['NI No',s.niNo],['eVisa',s.eVisa],['Mobile',s.mobile],['Email',s.email],['Cloth Size',s.clothSize],['Start Date',s.startDate],['Left Date',s.leftDate],['Rate',s.rate?'\u00a3'+s.rate+'/hr':''],['Sort Code',s.sortCode],['Account No',s.accountNo],['Kiosk Login',s.kioskLogin?'Yes':'No']];
       fields.forEach(([k,v])=>{if(v)html+=b(`${k}: ${v}`);});
       if(s.memo)html+=b(`Memo: ${s.memo}`);
     });
@@ -4955,7 +4675,7 @@ function exportAllWord(){
       ['submittedBy / submittedAt','Who submitted and when']
     ]);
 
-    html+=`<hr style="margin:16px 0"><p style="text-align:center;font-size:8pt;color:#999;font-style:italic">TBMS Ver3.7 \u2014 Programmed by DJ</p>`;
+    html+=`<hr style="margin:16px 0"><p style="text-align:center;font-size:8pt;color:#999;font-style:italic">TBMS Ver1.8 \u2014 Programmed by DJ</p>`;
     html+=`</body></html>`;
 
     const blob=new Blob(['\ufeff'+html],{type:'application/msword'});
@@ -5251,253 +4971,19 @@ async function aiSend(){
   renderAiAssistant($('pageContent'));
 }
 
-// ==================== AI BRAIN (Knowledge Base Management) ====================
-const KB_CATEGORIES=['Brand Philosophy','Menu & Recipes','Sauce Recipes','Supplier Info','Staff Training','Kitchen Ops','Store Ops','Marketing','Expansion','Memory'];
-let kbCurrentCat='all';
-let kbData=[];
-
-async function loadKBData(){
-  try{
-    const json=await API.get('getKB');
-    if(json&&json.status==='ok'){
-      kbData=json.data||[];
-      D.KnowledgeBase=kbData;
-    }
-  }catch(e){console.error('KB load:',e);}
-}
-
-async function saveKBEntry(entry){
-  try{
-    const json=await API.post({action:'saveKB',entry});
-    if(json&&json.status==='ok'){await loadKBData();return true;}
-    toast('Save failed','error');return false;
-  }catch(e){toast('Error: '+e.message,'error');return false;}
-}
-
-async function deleteKBEntry(id){
-  if(!confirm('Delete this knowledge entry?'))return;
-  try{
-    const json=await API.post({action:'deleteKB',id});
-    if(json&&json.status==='ok'){toast('Deleted','success');await loadKBData();renderAiBrain($('pageContent'));}
-  }catch(e){toast('Error: '+e.message,'error');}
-}
-
-function renderAiBrain(c){
-  const filtered=kbCurrentCat==='all'?kbData:kbData.filter(k=>k.category===kbCurrentCat);
-  const stats={};
-  KB_CATEGORIES.forEach(cat=>{stats[cat]=kbData.filter(k=>k.category===cat).length;});
-
-  let html=`<div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:20px">
-    <div class="card" style="flex:1;min-width:200px;text-align:center"><h2 style="font-size:28px;color:var(--accent)">${kbData.length}</h2><div style="font-size:12px;color:var(--text-light)">Total Entries</div></div>
-    <div class="card" style="flex:1;min-width:200px;text-align:center"><h2 style="font-size:28px;color:var(--success)">${KB_CATEGORIES.length}</h2><div style="font-size:12px;color:var(--text-light)">Categories</div></div>
-    <div class="card" style="flex:1;min-width:200px;text-align:center"><h2 style="font-size:28px;color:var(--info)">${kbData.filter(k=>{const d=k.updatedAt||k.createdAt;return d&&d.startsWith(new Date().toISOString().substring(0,10));}).length}</h2><div style="font-size:12px;color:var(--text-light)">Updated Today</div></div>
-  </div>`;
-
-  // Category filter tabs
-  html+=`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
-    <button class="btn btn-sm ${kbCurrentCat==='all'?'btn-primary':'btn-ghost'}" onclick="kbCurrentCat='all';renderAiBrain($('pageContent'))">All (${kbData.length})</button>`;
-  KB_CATEGORIES.forEach(cat=>{
-    html+=`<button class="btn btn-sm ${kbCurrentCat===cat?'btn-primary':'btn-ghost'}" onclick="kbCurrentCat='${cat}';renderAiBrain($('pageContent'))">${cat} (${stats[cat]||0})</button>`;
-  });
-  html+=`</div>`;
-
-  // Add new entry button
-  html+=`<div style="margin-bottom:16px"><button class="btn btn-primary btn-sm" onclick="showKBEditModal()"><i class="fas fa-plus"></i> Add Entry</button></div>`;
-
-  // KB entries list
-  if(filtered.length===0){
-    html+=`<div class="card" style="text-align:center;padding:40px"><i class="fas fa-brain" style="font-size:48px;color:var(--text-dim);margin-bottom:16px"></i><p style="color:var(--text-light)">No knowledge entries${kbCurrentCat!=='all'?' in this category':''}. Add some to teach the AI!</p></div>`;
-  }else{
-    html+=`<div class="card"><table class="data-table"><thead><tr><th>Category</th><th>Title</th><th>Access</th><th>Tags</th><th>Ver</th><th>Updated</th><th style="width:100px">Actions</th></tr></thead><tbody>`;
-    filtered.forEach(kb=>{
-      const updated=(kb.updatedAt||kb.createdAt||'').substring(0,10);
-      const accLbl={'customer':'🌐 Public','staff':'👥 All','manager':'🔑 Mgr','dj':'👑 DJ'};
-      const accColor={'customer':'var(--success,#27ae60)','staff':'var(--info)','manager':'var(--warning,#f39c12)','dj':'var(--danger)'};
-      const al=kb.accessLevel||'staff';
-      html+=`<tr>
-        <td><span style="background:var(--accent);color:#fff;padding:2px 8px;border-radius:10px;font-size:11px;white-space:nowrap">${kb.category}</span></td>
-        <td style="font-weight:600">${kb.title}</td>
-        <td><span style="background:${accColor[al]||'var(--info)'};color:#fff;padding:2px 6px;border-radius:8px;font-size:10px">${accLbl[al]||'All'}</span></td>
-        <td style="font-size:12px;color:var(--text-light)">${kb.tags||''}</td>
-        <td style="text-align:center">v${kb.version||1}</td>
-        <td style="font-size:12px">${updated}</td>
-        <td>
-          <button class="btn btn-ghost btn-sm" onclick="showKBEditModal('${kb.id}')" title="Edit"><i class="fas fa-edit"></i></button>
-          <button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="deleteKBEntry('${kb.id}')" title="Delete"><i class="fas fa-trash"></i></button>
-        </td>
-      </tr>`;
-    });
-    html+=`</tbody></table></div>`;
-  }
-
-  c.innerHTML=html;
-}
-
-function showKBEditModal(id){
-  const entry=id?kbData.find(k=>k.id===id):null;
-  let html=`<div class="modal-overlay active" onclick="if(event.target===this)this.remove()">
-    <div class="modal" style="max-width:600px">
-      <div class="modal-header"><h3>${entry?'Edit':'Add'} Knowledge Entry</h3><button class="modal-close" onclick="this.closest('.modal-overlay').remove()">&times;</button></div>
-      <div class="modal-body">
-        <div class="form-group"><label>Category</label><select id="kbEditCat" class="form-control">
-          ${KB_CATEGORIES.map(cat=>`<option ${entry&&entry.category===cat?'selected':''}>${cat}</option>`).join('')}
-        </select></div>
-        <div class="form-group"><label>Title</label><input id="kbEditTitle" class="form-control" value="${entry?entry.title.replace(/"/g,'&quot;'):''}"></div>
-        <div class="form-group"><label>Content</label><textarea id="kbEditContent" class="form-control" rows="8" style="resize:vertical">${entry?entry.content:''}</textarea></div>
-        <div class="form-group"><label>Tags (comma separated)</label><input id="kbEditTags" class="form-control" value="${entry?(entry.tags||''):''}"></div>
-        <div class="form-group"><label>Source</label><input id="kbEditSource" class="form-control" value="${entry?(entry.source||'manual'):'manual'}" placeholder="manual, file upload, training..."></div>
-        <div class="form-group"><label>Access Level</label><select id="kbEditAccess" class="form-control">
-          <option value="customer" ${entry&&entry.accessLevel==='customer'?'selected':''}>Customer — 손님 챗봇에도 공개</option>
-          <option value="staff" ${!entry||entry.accessLevel==='staff'?'selected':''}>All Staff — 모든 직원 열람 가능</option>
-          <option value="manager" ${entry&&entry.accessLevel==='manager'?'selected':''}>Manager Only — 매니저만 열람</option>
-          <option value="dj" ${entry&&entry.accessLevel==='dj'?'selected':''}>DJ Only — 오너(DJ:)만 열람</option>
-        </select></div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-ghost" onclick="this.closest('.modal-overlay').remove()">Cancel</button>
-        <button class="btn btn-primary" onclick="saveKBFromModal('${id||''}')">Save</button>
-      </div>
-    </div>
-  </div>`;
-  document.body.insertAdjacentHTML('beforeend',html);
-}
-
-async function saveKBFromModal(id){
-  const entry={
-    category:$('kbEditCat').value,
-    title:$('kbEditTitle').value.trim(),
-    content:$('kbEditContent').value.trim(),
-    tags:$('kbEditTags').value.trim(),
-    source:$('kbEditSource').value.trim()||'manual',
-    createdBy:currentUser?.name||'admin',
-    accessLevel:$('kbEditAccess').value||'staff'
-  };
-  if(!entry.title||!entry.content){toast('Title and Content are required','error');return;}
-  if(id){entry.id=id;const old=kbData.find(k=>k.id===id);if(old)entry.version=old.version;}
-  const ok=await saveKBEntry(entry);
-  if(ok){
-    document.querySelector('.modal-overlay.active')?.remove();
-    toast('Knowledge entry saved','success');
-    renderAiBrain($('pageContent'));
-  }
-}
-
-// ==================== BOT SETTINGS ====================
-function renderBotSettings(c){
-  const baseUrl=window.location.href.replace(/TBMS\.html.*/,'TBBot.html');
-  const customerBaseUrl=window.location.href.replace(/TBMS\.html.*/,'TBCustomer.html');
-  const staffUrl=baseUrl+'?mode=staff';
-  const mgrUrl=baseUrl+'?mode=manager';
-  const customerUrl=customerBaseUrl;
-
-  let html=`<div style="display:grid;gap:20px;grid-template-columns:repeat(auto-fit,minmax(320px,1fr))">`;
-
-  // Customer AI QR
-  html+=`<div class="card">
-    <div class="card-header"><h3><i class="fas fa-utensils" style="color:#27ae60;margin-right:8px"></i>The Bap Menu AI (Customer)</h3></div>
-    <p style="font-size:13px;color:var(--text-light);margin-bottom:16px">손님용 AI 챗봇. 메뉴, 가격, 알레르기, 영양정보, 소스 등을 물어볼 수 있습니다.</p>
-    <div id="qrCustomer" style="text-align:center;margin:16px 0;background:#fff;padding:16px;border-radius:8px;display:inline-block"></div>
-    <div style="margin-top:8px"><input class="form-control" value="${customerUrl}" readonly style="font-size:11px" onclick="this.select()"></div>
-    <button class="btn btn-primary btn-sm" style="margin-top:8px" onclick="navigator.clipboard.writeText('${customerUrl}');toast('URL copied','success')"><i class="fas fa-copy"></i> Copy URL</button>
-    <a class="btn btn-ghost btn-sm" style="margin-top:8px" href="${customerUrl}" target="_blank"><i class="fas fa-external-link-alt"></i> Open</a>
-  </div>`;
-
-  // Staff AI QR
-  html+=`<div class="card">
-    <div class="card-header"><h3><i class="fas fa-user" style="color:var(--accent);margin-right:8px"></i>The Bap Staff AI</h3></div>
-    <p style="font-size:13px;color:var(--text-light);margin-bottom:16px">직원용 AI 챗봇. QR코드를 스캔하면 레시피, 운영절차 등을 물어볼 수 있습니다.</p>
-    <div id="qrStaff" style="text-align:center;margin:16px 0;background:#fff;padding:16px;border-radius:8px;display:inline-block"></div>
-    <div style="margin-top:8px"><input class="form-control" value="${staffUrl}" readonly style="font-size:11px" onclick="this.select()"></div>
-    <button class="btn btn-primary btn-sm" style="margin-top:8px" onclick="navigator.clipboard.writeText('${staffUrl}');toast('URL copied','success')"><i class="fas fa-copy"></i> Copy URL</button>
-    <a class="btn btn-ghost btn-sm" style="margin-top:8px" href="${staffUrl}" target="_blank"><i class="fas fa-external-link-alt"></i> Open</a>
-  </div>`;
-
-  // Manager AI QR
-  html+=`<div class="card">
-    <div class="card-header"><h3><i class="fas fa-crown" style="color:var(--accent);margin-right:8px"></i>The Bap AI Bot</h3></div>
-    <p style="font-size:13px;color:var(--text-light);margin-bottom:16px">관리자용 AI 봇. 운영, 마케팅, 전략, Training Mode 사용 가능. PIN 필요.</p>
-    <div id="qrManager" style="text-align:center;margin:16px 0;background:#fff;padding:16px;border-radius:8px;display:inline-block"></div>
-    <div style="margin-top:8px"><input class="form-control" value="${mgrUrl}" readonly style="font-size:11px" onclick="this.select()"></div>
-    <button class="btn btn-primary btn-sm" style="margin-top:8px" onclick="navigator.clipboard.writeText('${mgrUrl}');toast('URL copied','success')"><i class="fas fa-copy"></i> Copy URL</button>
-    <a class="btn btn-ghost btn-sm" style="margin-top:8px" href="${mgrUrl}" target="_blank"><i class="fas fa-external-link-alt"></i> Open</a>
-  </div>`;
-
-  // Manager PIN
-  html+=`<div class="card">
-    <div class="card-header"><h3><i class="fas fa-lock" style="color:var(--accent);margin-right:8px"></i>Manager PIN</h3></div>
-    <p style="font-size:13px;color:var(--text-light);margin-bottom:16px">관리자 봇 접근용 PIN 설정. 첫 접근 시 설정된 PIN이 필요합니다.</p>
-    <div class="form-group"><label>PIN Code</label><input type="text" id="mgrPinInput" class="form-control" maxlength="6" placeholder="4-6자리 PIN" value=""></div>
-    <button class="btn btn-primary btn-sm" onclick="saveMgrPin()"><i class="fas fa-save"></i> Save PIN</button>
-    <p style="font-size:11px;color:var(--text-dim);margin-top:8px">* PIN은 Bot 로컬 저장소에 저장됩니다. 각 기기에서 처음 접근 시 PIN 입력이 필요합니다.</p>
-  </div>`;
-
-  // KB Stats
-  html+=`<div class="card">
-    <div class="card-header"><h3><i class="fas fa-brain" style="color:var(--accent);margin-right:8px"></i>Knowledge Base Stats</h3></div>`;
-  KB_CATEGORIES.forEach(cat=>{
-    const cnt=kbData.filter(k=>k.category===cat).length;
-    html+=`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border)">
-      <span style="font-size:13px">${cat}</span>
-      <span style="font-size:13px;font-weight:600;color:${cnt>0?'var(--success)':'var(--text-dim)'}">${cnt}</span>
-    </div>`;
-  });
-  html+=`<div style="display:flex;justify-content:space-between;padding:8px 0;font-weight:700">
-    <span>Total</span><span style="color:var(--accent)">${kbData.length}</span>
-  </div></div>`;
-
-  html+=`</div>`;
-  c.innerHTML=html;
-
-  // Generate QR codes
-  setTimeout(()=>{
-    const qrCustEl=document.getElementById('qrCustomer');
-    const qrStaffEl=document.getElementById('qrStaff');
-    const qrMgrEl=document.getElementById('qrManager');
-    if(qrCustEl&&typeof QRCode!=='undefined'){
-      qrCustEl.innerHTML='';
-      new QRCode(qrCustEl,{text:customerUrl,width:180,height:180,colorDark:'#1a5e2a',colorLight:'#fff'});
-    }
-    if(qrStaffEl&&typeof QRCode!=='undefined'){
-      qrStaffEl.innerHTML='';
-      new QRCode(qrStaffEl,{text:staffUrl,width:180,height:180,colorDark:'#000',colorLight:'#fff'});
-    }
-    if(qrMgrEl&&typeof QRCode!=='undefined'){
-      qrMgrEl.innerHTML='';
-      new QRCode(qrMgrEl,{text:mgrUrl,width:180,height:180,colorDark:'#000',colorLight:'#fff'});
-    }
-  },100);
-}
-
-function saveMgrPin(){
-  const pin=document.getElementById('mgrPinInput')?.value?.trim();
-  if(!pin||pin.length<4){toast('PIN must be at least 4 digits','error');return;}
-  API.post({action:'saveSetting',key:'mgrBotPin',value:pin}).then(j=>{
-    if(j&&j.status==='ok')toast('Manager PIN saved','success');
-    else toast('Save failed','error');
-  }).catch(e=>toast('Error: '+e.message,'error'));
-}
-
 // ==================== INITIALIZATION ====================
 async function init() {
   // Always use the hardcoded CLOUD_URL (latest deployment)
   API.mode = 'cloud';
   API.url = CLOUD_URL;
   LS.set('config', {apiUrl: CLOUD_URL, mode: 'cloud'});
-  // 캐시가 있으면 로그인 화면을 먼저 표시 (체감 속도 향상)
-  const hasCache=LS.get('dataCache');
-  if(hasCache){
-    $('loginPage').classList.remove('hidden');
-    $('headerDate').textContent=new Date().toLocaleDateString('en-GB',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
-  }
-  // Load data from cloud (캐시 있으면 캐시 먼저 로드 후 클라우드 업데이트)
+  // Load data from cloud
   await loadAllData();
   // If no users loaded, initialize defaults
   if (!D.Users || D.Users.length === 0) { await initDefaultData(); }
-  // Show login (캐시 없었을 때)
-  if(!hasCache){
-    $('loginPage').classList.remove('hidden');
-    $('headerDate').textContent=new Date().toLocaleDateString('en-GB',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
-  }
+  // Show login
+  $('loginPage').classList.remove('hidden');
+  $('headerDate').textContent = new Date().toLocaleDateString('en-GB', {weekday:'long', year:'numeric', month:'long', day:'numeric'});
   window.addEventListener('resize', () => { if (window.innerWidth > 1024) { $('sidebar').classList.remove('open'); $('sidebarOverlay').classList.remove('show'); } });
 }
 // ==================== DIARY DATA (ON-DEMAND LOAD) ====================
@@ -6750,8 +6236,40 @@ function _showDiaryModal(html,maxW){
 
 init();
 
-// ==================== FULLSCREEN MODE (비활성화 — 풀스크린 불필요) ====================
-// 풀스크린 기능 제거됨: TBMS는 일반 브라우저 모드에서 실행
+// ==================== FULLSCREEN MODE ====================
+function goFullscreen(){
+  const el=document.documentElement;
+  if(el.requestFullscreen)el.requestFullscreen();
+  else if(el.webkitRequestFullscreen)el.webkitRequestFullscreen();
+  else if(el.msRequestFullscreen)el.msRequestFullscreen();
+  const ov=document.getElementById('fsOverlay');if(ov)ov.remove();
+  const ov2=document.getElementById('fsReturnOverlay');if(ov2)ov2.remove();
+}
+function exitFsHandler(){
+  if(!document.fullscreenElement&&!document.webkitFullscreenElement){
+    if(!document.getElementById('fsOverlay')&&!document.getElementById('fsReturnOverlay'))showFsReturnOverlay();
+  }
+}
+function showFsOverlay(){
+  const ov=document.createElement('div');ov.className='fs-overlay';ov.id='fsOverlay';
+  ov.innerHTML='<div class="fs-icon"><i class="fas fa-expand"></i></div><h2>Tap to Start</h2><p>Full screen mode</p>';
+  ov.addEventListener('click',goFullscreen);
+  document.body.appendChild(ov);
+}
+function showFsReturnOverlay(){
+  if(document.fullscreenElement||document.webkitFullscreenElement)return;
+  if(document.getElementById('fsReturnOverlay'))return;
+  const ov=document.createElement('div');ov.className='fs-overlay';ov.id='fsReturnOverlay';
+  ov.style.background='rgba(0,0,0,.7)';
+  ov.innerHTML='<div class="fs-icon"><i class="fas fa-expand"></i></div><h2>Tap to Continue</h2><p>Return to full screen</p>';
+  ov.addEventListener('click',goFullscreen);
+  document.body.appendChild(ov);
+}
+document.addEventListener('fullscreenchange',exitFsHandler);
+document.addEventListener('webkitfullscreenchange',exitFsHandler);
+if(!window.matchMedia('(display-mode: standalone)').matches&&!window.matchMedia('(display-mode: fullscreen)').matches){
+  showFsOverlay();
+}
 </script>
 </body>
 </html>

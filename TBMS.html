@@ -236,7 +236,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
   <div class="login-logo">
     <div class="logo-icon"><i class="fas fa-bowl-food"></i></div>
     <h1>TBMS</h1>
-    <p>The Bap Management System <span style="opacity:.5;font-size:11px">Ver4.3</span></p>
+    <p>The Bap Management System <span style="opacity:.5;font-size:11px">Ver4.4</span></p>
   </div>
   <div class="form-group"><label>Username</label><input id="loginUser" placeholder="Enter username"></div>
   <div class="form-group"><label>Password</label><input id="loginPass" type="password" placeholder="Enter password"></div>
@@ -254,7 +254,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
 <!-- MAIN APP -->
 <div id="mainApp" class="hidden">
   <div class="sidebar" id="sidebar">
-    <div class="sidebar-header"><h2>TBMS <span style="font-size:12px;font-weight:400;opacity:.6">Ver4.3</span></h2><p>The Bap Management System</p></div>
+    <div class="sidebar-header"><h2>TBMS <span style="font-size:12px;font-weight:400;opacity:.6">Ver4.4</span></h2><p>The Bap Management System</p></div>
     <div class="sidebar-menu">
       <div class="menu-item active" data-page="dashboard" onclick="navigate('dashboard')"><i class="fas fa-home"></i>Dashboard</div>
       <div class="menu-group">
@@ -310,7 +310,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
   <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
   <div class="main-content">
     <div class="header">
-      <div class="header-left"><button class="menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button><h2 id="pageTitle" style="font-size:18px">Dashboard</h2><span style="font-size:11px;color:var(--text-light);margin-left:8px;font-weight:400;opacity:.7">Ver4.3</span></div>
+      <div class="header-left"><button class="menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button><h2 id="pageTitle" style="font-size:18px">Dashboard</h2><span style="font-size:11px;color:var(--text-light);margin-left:8px;font-weight:400;opacity:.7">Ver4.4</span></div>
       <div class="header-right"><span id="headerDate"></span><span class="sync-status"><span class="dot offline" id="syncDot"></span><span id="syncText">Local</span></span><button class="btn btn-sm btn-outline" onclick="doLogout()"><i class="fas fa-sign-out-alt"></i> Logout</button></div>
     </div>
     <div class="page-content" id="pageContent"></div>
@@ -4122,13 +4122,7 @@ function renderSalesReport(c) {
   c.innerHTML = `<div class="card" style="margin-bottom:16px">
     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:16px">
       <h3><i class="fas fa-chart-line" style="color:var(--accent);margin-right:8px"></i>Sales Report (POS Data)</h3>
-      <div style="display:flex;gap:8px;align-items:center">
-        <!-- MAIN / SUB Toggle -->
-        <div style="display:inline-flex;border:2px solid var(--border);border-radius:8px;overflow:hidden">
-          <button id="srModeMain" class="btn btn-sm" style="border:none;border-radius:0;font-size:12px;padding:6px 14px;background:#1565c0;color:#fff" onclick="_srDataMode='main';_srRefresh()">MAIN</button>
-          <button id="srModeSub" class="btn btn-sm" style="border:none;border-radius:0;font-size:12px;padding:6px 14px;background:#fff;color:var(--text)" onclick="_srDataMode='sub';_srRefresh()">SUB</button>
-        </div>
-      </div>
+      <div style="display:flex;gap:8px;align-items:center"></div>
     </div>
     <!-- Tab buttons -->
     <div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap">
@@ -4450,6 +4444,9 @@ function _showEsDetail(idx) {
   let items = r.itemBreakdown || [];
   if(typeof items === 'string') { try { items = JSON.parse(items); } catch(e) { items = []; } }
 
+  // Store data for print
+  window._esDetailData = { r, fromStr, toStr, mainCash, mainCard, mainGrand, mainVat, mainNet, subGrand, subVat, subCash, subCard, subVatableGross, subNonVatable, subVatRate, cashCount, cardCount, totalOrders, hasSub, items };
+
   const detailEl = document.getElementById('esDetailView');
   const listEl = document.getElementById('esListTable');
   if(listEl) listEl.style.display = 'none';
@@ -4457,8 +4454,14 @@ function _showEsDetail(idx) {
   let html = `
     <div style="background:#FEF2F2;border:2px solid #DC2626;border-radius:12px;padding:16px;margin-bottom:12px">
       <h3 style="color:#DC2626;margin:0 0 6px 0;font-size:16px">END Sales Detail — ${escHtml(r.branchName||r.branch)}</h3>
-      <div style="font-size:12px;color:#6B7280">Period: ${fromStr} → ${toStr}</div>
+      <div style="font-size:14px;font-weight:700;color:#374151;margin-bottom:4px">Period: ${fromStr} → ${toStr}</div>
       <div style="font-size:11px;color:#9CA3AF">ID: ${escHtml(r.id||'—')} · ${totalOrders} orders${r.staff ? ' · Staff: '+escHtml(r.staff) : ''}</div>
+    </div>
+
+    <!-- Print Buttons -->
+    <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+      <button onclick="_printEsDetail('main')" style="flex:1;min-width:140px;padding:10px;background:#2563EB;color:#fff;border:none;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer"><i class="fas fa-print" style="margin-right:4px"></i> Print MAIN</button>
+      ${hasSub ? `<button onclick="_printEsDetail('sub')" style="flex:1;min-width:140px;padding:10px;background:#D97706;color:#fff;border:none;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer"><i class="fas fa-print" style="margin-right:4px"></i> Print SUB</button>` : ''}
     </div>
 
     <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px">
@@ -4535,6 +4538,80 @@ function _closeEsDetail() {
   const listEl = document.getElementById('esListTable');
   if(detailEl) { detailEl.innerHTML = ''; detailEl.style.display = 'none'; }
   if(listEl) listEl.style.display = '';
+}
+
+function _printEsDetail(mode) {
+  const d = window._esDetailData;
+  if(!d) return;
+  const fp = v => '£' + Number(v||0).toFixed(2);
+  const branchName = escHtml(d.r.branchName||d.r.branch);
+  const isMain = mode === 'main';
+  const title = isMain ? 'END SALES — MAIN' : 'END SALES — SUB';
+  const themeClr = isMain ? '#2563EB' : '#D97706';
+  const themeBg = isMain ? '#EFF6FF' : '#FFFBEB';
+
+  let payRows = '', totalLabel, totalVal, vatSection = '';
+  if(isMain) {
+    payRows = `<tr><td>CARD</td><td style="text-align:center">${d.cardCount}</td><td style="text-align:right">${fp(d.mainCard)}</td></tr>
+               <tr><td>CASH</td><td style="text-align:center">${d.cashCount}</td><td style="text-align:right">${fp(d.mainCash)}</td></tr>`;
+    totalLabel = 'MAIN TOTAL'; totalVal = fp(d.mainGrand);
+    vatSection = `<table style="width:100%;border-collapse:collapse;margin-top:8px;font-size:11px">
+      <tr style="border-bottom:1px solid #ccc"><th style="text-align:left;padding:4px">Rate</th><th style="text-align:right;padding:4px">Net</th><th style="text-align:right;padding:4px">VAT</th><th style="text-align:right;padding:4px">Gross</th></tr>
+      <tr><td style="padding:4px">20%</td><td style="text-align:right;padding:4px">${fp(d.mainNet)}</td><td style="text-align:right;padding:4px;color:#D97706;font-weight:700">${fp(d.mainVat)}</td><td style="text-align:right;padding:4px">${fp(d.mainGrand)}</td></tr>
+    </table>
+    <div style="text-align:right;font-weight:800;font-size:14px;margin-top:6px;border-top:2px solid #2563EB;padding-top:6px">Main VAT: ${fp(d.mainVat)}</div>`;
+  } else {
+    payRows = `<tr><td>CARD</td><td style="text-align:center">${d.cardCount}</td><td style="text-align:right">${fp(d.subCard||d.mainCard)}</td></tr>
+               <tr><td>CASH</td><td style="text-align:center">${d.cashCount}</td><td style="text-align:right">${fp(d.subCash)}</td></tr>`;
+    totalLabel = 'SUB TOTAL'; totalVal = fp(d.subGrand);
+    vatSection = `<div style="margin-top:8px;font-size:12px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:3px"><span>VATable:</span><span style="font-weight:600">${fp(d.subVatableGross)}</span></div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:3px"><span>Non-VATable:</span><span style="font-weight:600">${fp(d.subNonVatable)}</span></div>
+      <div style="border-top:2px solid #D97706;padding-top:6px;margin-top:6px;display:flex;justify-content:space-between">
+        <span style="font-weight:800;font-size:14px">VAT (${d.subVatRate}%)</span>
+        <span style="font-weight:800;font-size:16px;color:#D97706">${fp(d.subVat)}</span>
+      </div>
+    </div>`;
+  }
+
+  let itemsHtml = '';
+  if(d.items && d.items.length > 0) {
+    itemsHtml = `<h4 style="margin:14px 0 6px;font-size:12px">Item Sales</h4>
+    <table style="width:100%;border-collapse:collapse;font-size:11px">
+      <tr style="border-bottom:1px solid #ccc"><th style="text-align:left;padding:3px">Item</th><th style="text-align:right;padding:3px">Qty</th><th style="text-align:right;padding:3px">Revenue</th></tr>
+      ${d.items.map(i => `<tr><td style="padding:3px">${escHtml(i.name||'—')}</td><td style="text-align:right;padding:3px">${i.qty||0}</td><td style="text-align:right;padding:3px">${fp(i.total||0)}</td></tr>`).join('')}
+    </table>`;
+  }
+
+  const printHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${title}</title>
+    <style>body{font-family:Arial,sans-serif;max-width:400px;margin:20px auto;font-size:13px}
+    @media print{body{margin:0;max-width:100%}}</style></head><body>
+    <div style="text-align:center;margin-bottom:12px">
+      <h2 style="margin:0;color:${themeClr}">${title}</h2>
+      <div style="font-weight:700;margin-top:4px">${branchName}</div>
+      <div style="font-size:12px;font-weight:700;margin-top:4px">${d.fromStr} → ${d.toStr}</div>
+      <div style="font-size:11px;color:#999">${d.totalOrders} orders</div>
+    </div>
+    <table style="width:100%;border-collapse:collapse;margin-bottom:8px;font-size:12px">
+      <tr style="border-bottom:1px solid #ccc"><th style="text-align:left;padding:4px">Payment</th><th style="text-align:center;padding:4px">Count</th><th style="text-align:right;padding:4px">Amount</th></tr>
+      ${payRows}
+    </table>
+    <div style="display:flex;justify-content:space-between;padding:8px 12px;background:${themeBg};border-radius:6px;font-weight:800;font-size:15px;border:2px solid ${themeClr}">
+      <span>${totalLabel}</span><span>${totalVal}</span>
+    </div>
+    ${vatSection}
+    ${isMain ? `<div style="margin-top:10px;padding:8px 12px;background:#ECFDF5;border:2px solid #059669;border-radius:6px;display:flex;justify-content:space-between">
+      <span style="font-weight:700;color:#059669">Cash in Drawer (£100 + Cash)</span>
+      <span style="font-weight:800;color:#059669">${fp(100 + d.mainCash)}</span>
+    </div>` : ''}
+    ${itemsHtml}
+    <div style="text-align:center;margin-top:16px;font-size:9px;color:#999">TBMS Ver4.4 — Programmed by DJ</div>
+  </body></html>`;
+
+  const w = window.open('','_blank','width=450,height=700');
+  w.document.write(printHtml);
+  w.document.close();
+  w.onload = () => { w.print(); };
 }
 
 // ─── Helper: GET from TBMS Apps Script ───

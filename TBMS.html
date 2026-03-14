@@ -237,7 +237,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
   <div class="login-logo">
     <div class="logo-icon"><i class="fas fa-bowl-food"></i></div>
     <h1>TBMS</h1>
-    <p>The Bap Management System <span style="opacity:.5;font-size:11px">Ver4.5.2</span></p>
+    <p>The Bap Management System <span style="opacity:.5;font-size:11px">Ver4.5.5</span></p>
   </div>
   <div class="form-group"><label>Username</label><input id="loginUser" placeholder="Enter username"></div>
   <div class="form-group"><label>Password</label><input id="loginPass" type="password" placeholder="Enter password"></div>
@@ -254,7 +254,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
 <!-- MAIN APP -->
 <div id="mainApp" class="hidden">
   <div class="sidebar" id="sidebar">
-    <div class="sidebar-header"><h2>TBMS <span style="font-size:12px;font-weight:400;opacity:.6">Ver4.5.2</span></h2><p>The Bap Management System</p></div>
+    <div class="sidebar-header"><h2>TBMS <span style="font-size:12px;font-weight:400;opacity:.6">Ver4.5.5</span></h2><p>The Bap Management System</p></div>
     <div class="sidebar-menu">
       <div class="menu-item active" data-page="dashboard" onclick="navigate('dashboard')"><i class="fas fa-home"></i>Dashboard</div>
       <div class="menu-group">
@@ -311,7 +311,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
   <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
   <div class="main-content">
     <div class="header">
-      <div class="header-left"><button class="menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button><h2 id="pageTitle" style="font-size:18px">Dashboard</h2><span style="font-size:11px;color:var(--text-light);margin-left:8px;font-weight:400;opacity:.7">Ver4.5.2</span></div>
+      <div class="header-left"><button class="menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button><h2 id="pageTitle" style="font-size:18px">Dashboard</h2><span style="font-size:11px;color:var(--text-light);margin-left:8px;font-weight:400;opacity:.7">Ver4.5.5</span></div>
       <div class="header-right"><span id="headerDate"></span><span class="sync-status"><span class="dot offline" id="syncDot"></span><span id="syncText">Local</span></span><button class="btn btn-sm btn-outline" onclick="doLogout()"><i class="fas fa-sign-out-alt"></i> Logout</button></div>
     </div>
     <div class="page-content" id="pageContent"></div>
@@ -2804,11 +2804,10 @@ async function renderStockStatusTable(){
   if(!items.length)html='<tr><td colspan="9" style="text-align:center;color:var(--text-light)">No items for this store</td></tr>';
   $('ssBody').innerHTML=html;
 }
-// ─── Stock Template 인쇄 (지점별 Min/Order/Supplier 포함) ───
+// ─── Stock Template 인쇄 (아이템별 지점 상세 표시) ───
 function printStockTemplate(){
   const catIdx=getSortedCategories();
-  const stores=getAccessibleStores();
-  const storeNames={};stores.forEach(s=>{const st=D.Stores.find(x=>x.id===s);storeNames[s]=st?st.name:s;});
+  const stores=getAccessibleStores(); // Store 객체 배열 반환
   let items=[...D.StockTemplate];
   // 현재 필터 적용
   const catF=$('stockCat')?.value||'';
@@ -2816,96 +2815,96 @@ function printStockTemplate(){
   if(catF)items=items.filter(t=>t.category===catF);
   if(search)items=items.filter(t=>(t.name||'').toLowerCase().includes(search)||(t.category||'').toLowerCase().includes(search));
   items.sort((a,b)=>{const ci=catIdx.indexOf(a.category)-catIdx.indexOf(b.category);return ci!==0?ci:(a.sortOrder||0)-(b.sortOrder||0);});
-  // 서플라이어 이름 변환 함수
+  // 서플라이어 이름 변환
   const supName=c=>{if(!c)return'';const s=D.Suppliers.find(x=>x.id===c||x.name===c);return s?s.name:c;};
-  const numStores=stores.length;
-  const totalCols=5+numStores*3; // #, Item, Unit, OrderUnit, ID + 지점별(Min,Order,Supplier)
-  // 카테고리별 그룹핑
+  const today=new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  const filterInfo=catF?` — Category: ${escHtml(catF)}`:'';
+  const searchInfo=search?` — Search: "${escHtml(search)}"`:'';
+
+  // ── 아이템별 + 지점 sub-row 생성 ──
   let rows='';let lastCat='';let num=0;
   items.forEach(t=>{
     if(t.category!==lastCat){
       lastCat=t.category;
       const cnt=items.filter(i=>i.category===lastCat).length;
-      rows+=`<tr><td colspan="${totalCols}" style="background:#333;color:#fff;font-weight:700;font-size:12px;padding:7px 10px;border:none">${escHtml(lastCat)} (${cnt})</td></tr>`;
+      rows+=`<tr><td colspan="6" class="cat-row">${escHtml(lastCat)} (${cnt})</td></tr>`;
     }
     num++;
-    const ou=t.orderUnit||t.unit||'';
     const ao=t.alwaysOrder===true||t.alwaysOrder==='true';
     const memo=t.memo||'';
-    // 기본 셀
-    let row=`<tr>
-      <td style="text-align:center;color:#888;font-size:10px">${num}</td>
-      <td style="font-weight:600;white-space:nowrap">${escHtml(t.name)}${ao?'<span style="color:#1565c0;font-size:9px;margin-left:3px" title="Always Order">★</span>':''}${memo?'<div style="font-size:9px;color:#888;margin-top:1px">'+escHtml(memo)+'</div>':''}</td>
-      <td style="text-align:center">${escHtml(t.unit)}</td>
-      <td style="text-align:center;font-size:10px">${escHtml(ou)}</td>`;
-    // 지점별 셀
-    stores.forEach(storeId=>{
+    const ou=t.orderUnit||t.unit||'';
+    // 아이템 헤더 행
+    rows+=`<tr class="item-row">
+      <td class="tc num" rowspan="1">${num}</td>
+      <td colspan="5" style="padding:6px 8px">
+        <strong style="font-size:12px">${escHtml(t.name)}</strong>${ao?' <span class="ao">★</span>':''}
+        <span style="color:#888;font-size:10px;margin-left:8px">${escHtml(t.unit)}${ou!==t.unit?' → '+escHtml(ou):''}</span>
+        ${memo?'<span style="color:#888;font-size:9px;margin-left:8px">'+escHtml(memo)+'</span>':''}
+      </td>
+    </tr>`;
+    // 지점별 sub-rows
+    stores.forEach(store=>{
+      const storeId=String(store.id);
+      const storeName=store.name||storeId;
       const ss=D.StoreStock.find(x=>String(x.storeId)===storeId&&String(x.itemId)===String(t.id));
-      // Min: StoreStock 값 사용, 없으면 template 기본값
+      // Min
       const sMin=ss?Number(ss.min)||0:Number(t.min)||0;
       const sMc=ss?(ss.minCondition||'lt'):(t.minCondition||'lt');
-      const minDisp=sMin>0?(sMc==='lte'?'≤ ':'< ')+sMin:sMin;
-      // Order: StoreStock 값 사용, 없으면 template 기본값
+      const minDisp=sMin>0?(sMc==='lte'?'≤ ':'< ')+sMin:'0';
+      // Order Qty
       const sOq=ss?Number(ss.orderQty)||0:Number(t.orderQty)||0;
-      // Supplier: StoreStock에 키가 있으면 그 값 (빈값도 존중), 없으면 template 기본값
+      // Suppliers
       const sSup1=ss&&('supplier1' in ss)?ss.supplier1:(t.supplier1||'');
       const sSup2=ss&&('supplier2' in ss)?ss.supplier2:(t.supplier2||'');
       const sSup3=ss&&('supplier3' in ss)?ss.supplier3:(t.supplier3||'');
-      const sups=[sSup1,sSup2,sSup3].filter(Boolean).map(c=>supName(c));
-      const supStr=sups.length>0?sups.join(', '):'—';
-      // 템플릿과 다르면 하이라이트
-      const tMin=Number(t.min)||0;const tOq=Number(t.orderQty)||0;
-      const tSups=[t.supplier1||'',t.supplier2||'',t.supplier3||''].filter(Boolean).join(',');
-      const sSups2=[sSup1,sSup2,sSup3].filter(Boolean).join(',');
-      const minDiff=sMin!==tMin;
-      const oqDiff=sOq!==tOq;
-      const supDiff=sSups2!==tSups;
-      row+=`<td style="text-align:center;font-weight:600;font-size:10px${minDiff?';color:#c62828;background:#fff5f5':''}">${minDisp}</td>`;
-      row+=`<td style="text-align:center;font-weight:600;font-size:10px;color:${sOq>0?(oqDiff?'#c62828':'#1565c0'):'#ccc'}${oqDiff?';background:#fff5f5':''}">${sOq>0?sOq:'—'}</td>`;
-      row+=`<td style="font-size:9px${supDiff?';color:#c62828;background:#fff5f5':''}">${escHtml(supStr)}</td>`;
+      const sups=[sSup1,sSup2,sSup3].filter(Boolean).map(c=>supName(c)).join(', ');
+      rows+=`<tr class="store-row">
+        <td class="store-name">${escHtml(storeName)}</td>
+        <td class="tc fw">${minDisp}</td>
+        <td class="tc fw" style="color:${sOq>0?'#1565c0':'#ccc'}">${sOq>0?sOq:'—'}</td>
+        <td class="sup" colspan="2">${sups||'—'}</td>
+      </tr>`;
     });
-    row+=`<td style="font-size:9px;color:#888">${escHtml(t.id)}</td></tr>`;
-    rows+=row;
+    // 아이템 구분선
+    rows+=`<tr><td colspan="6" style="border:none;padding:0;height:4px;background:#e5e7eb"></td></tr>`;
   });
-  // 지점 헤더
-  let storeHeaders='';let storeSubHeaders='';
-  stores.forEach(s=>{
-    storeHeaders+=`<th colspan="3" style="text-align:center;background:#1565c0;color:#fff;font-size:10px;padding:5px 4px;border:1px solid #1256a0">${escHtml(storeNames[s])}</th>`;
-    storeSubHeaders+=`<th style="text-align:center;font-size:9px;width:35px">Min</th><th style="text-align:center;font-size:9px;width:35px">Ord</th><th style="text-align:center;font-size:9px;min-width:60px">Supplier</th>`;
-  });
-  const today=new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
-  const filterInfo=catF?` — Category: ${escHtml(catF)}`:'';
-  const searchInfo=search?` — Search: "${escHtml(search)}"`:'' ;
+
   const w=window.open('','_blank');
   w.document.write(`<!DOCTYPE html><html><head><title>Stock Template - Print</title>
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
-  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;padding:10px;font-size:11px;color:#222}
-  h2{font-size:16px;margin-bottom:3px}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;padding:12px;font-size:11px;color:#222}
+  h2{font-size:16px;margin-bottom:4px}
   .meta{font-size:10px;color:#666;margin-bottom:10px}
-  table{width:100%;border-collapse:collapse;font-size:10px}
-  th{background:#f5f5f5;font-weight:700;padding:4px 5px;border:1px solid #ddd;text-align:left;font-size:10px}
-  td{padding:3px 5px;border:1px solid #eee;vertical-align:top}
-  .legend{margin-top:10px;font-size:10px;color:#666;display:flex;gap:16px;flex-wrap:wrap}
-  .legend span{display:inline-flex;align-items:center;gap:4px}
-  .diff-sample{display:inline-block;width:10px;height:10px;background:#fff5f5;border:1px solid #c62828;border-radius:2px}
+  table{width:100%;border-collapse:collapse;font-size:11px;margin-bottom:8px}
+  th{background:#f5f5f5;font-weight:700;padding:5px 8px;border:1px solid #ddd;text-align:left}
+  td{padding:3px 8px;border:1px solid #eee;vertical-align:middle}
+  .tc{text-align:center} .fw{font-weight:600} .num{color:#888;font-size:11px;font-weight:700}
+  .ao{color:#1565c0;font-size:10px} .sup{font-size:10px}
+  .cat-row{background:#333;color:#fff;font-weight:700;font-size:12px;padding:8px 10px;border:none}
+  .item-row td{background:#f0f4ff;border-bottom:none}
+  .store-row td{font-size:11px}
+  .store-name{font-weight:600;font-size:11px;color:#444;padding-left:16px !important;width:180px}
+  .legend{font-size:10px;color:#666;margin:8px 0;display:flex;gap:16px;flex-wrap:wrap}
   .btn-row{text-align:center;margin:10px 0}
-  @media print{@page{size:A4 landscape;margin:6mm 8mm}.btn-row{display:none!important}body{padding:0}table{font-size:9px}td,th{padding:2px 4px}}
+  @media print{
+    @page{size:A4 portrait;margin:8mm 12mm}
+    .btn-row{display:none!important}
+    body{padding:0}
+    table{font-size:10px}
+    .store-name{font-size:10px}
+  }
 </style></head><body>
   <div class="btn-row"><button onclick="window.print()" style="padding:8px 24px;font-size:13px;font-weight:700;background:#222;color:#fff;border:none;border-radius:8px;cursor:pointer">🖨 Print</button></div>
   <h2>Stock Template — Per-Store Detail</h2>
   <div class="meta">${today}${filterInfo}${searchInfo} — ${items.length} items / ${stores.length} stores / Programmed by DJ</div>
   <table>
-    <thead>
-      <tr><th rowspan="2" style="width:25px">#</th><th rowspan="2">Item</th><th rowspan="2" style="width:35px;text-align:center">Unit</th><th rowspan="2" style="width:45px;text-align:center">Ord Unit</th>${storeHeaders}<th rowspan="2" style="width:50px">ID</th></tr>
-      <tr>${storeSubHeaders}</tr>
-    </thead>
+    <thead><tr><th style="width:30px">#</th><th>Store</th><th style="width:55px" class="tc">Min</th><th style="width:55px" class="tc">Order</th><th colspan="2">Supplier(s)</th></tr></thead>
     <tbody>${rows}</tbody>
   </table>
   <div class="legend">
     <span>★ = Always Order</span>
-    <span><span class="diff-sample"></span> = 템플릿 기본값과 다름 (지점별 설정)</span>
-    <span>Total: <strong>${items.length}</strong> items / <strong>${[...new Set(items.map(t=>t.category))].length}</strong> categories</span>
+    <span>Total: <strong>${items.length}</strong> items / <strong>${[...new Set(items.map(t=>t.category))].length}</strong> categories / <strong>${stores.length}</strong> stores</span>
   </div>
   <div class="btn-row" style="margin-top:10px"><button onclick="window.print()" style="padding:8px 24px;font-size:13px;font-weight:700;background:#222;color:#fff;border:none;border-radius:8px;cursor:pointer">🖨 Print</button></div>
 </body></html>`);
@@ -5178,7 +5177,7 @@ ${d.hourKeys.length>0 ? `<div class="sec"><div class="sec-t">Hourly Breakdown</d
 
 <div class="sec"><div class="sec-t">Item Sales (${d.totalQty} items)</div><table><thead><tr><th>Item</th><th style="text-align:center">Qty</th><th style="text-align:right">Revenue</th><th style="text-align:right">%</th></tr></thead><tbody>${itemRows}</tbody></table></div>
 
-<div class="footer">TBMS Ver4.5.2 &copy; ${new Date().getFullYear()} The Bap. All rights reserved.</div>
+<div class="footer">TBMS Ver4.5.5 &copy; ${new Date().getFullYear()} The Bap. All rights reserved.</div>
 </body></html>`;
 
   const w = window.open('','_blank','width=800,height=1000');
@@ -5557,7 +5556,7 @@ function exportAllWord(){
       ['submittedBy / submittedAt','Who submitted and when']
     ]);
 
-    html+=`<hr style="margin:16px 0"><p style="text-align:center;font-size:8pt;color:#999;font-style:italic">TBMS Ver4.5.2</p>`;
+    html+=`<hr style="margin:16px 0"><p style="text-align:center;font-size:8pt;color:#999;font-style:italic">TBMS Ver4.5.5</p>`;
     html+=`</body></html>`;
 
     const blob=new Blob(['\ufeff'+html],{type:'application/msword'});

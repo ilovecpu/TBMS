@@ -4547,68 +4547,58 @@ function _printEsDetail(mode) {
   const branchName = escHtml(d.r.branchName||d.r.branch);
   const isMain = mode === 'main';
   const title = isMain ? 'END SALES — MAIN' : 'END SALES — SUB';
-  const themeClr = isMain ? '#2563EB' : '#D97706';
-  const themeBg = isMain ? '#EFF6FF' : '#FFFBEB';
 
-  let payRows = '', totalLabel, totalVal, vatSection = '';
+  // VAT section
+  let vatRows = '';
   if(isMain) {
-    payRows = `<tr><td>CARD</td><td style="text-align:center">${d.cardCount}</td><td style="text-align:right">${fp(d.mainCard)}</td></tr>
-               <tr><td>CASH</td><td style="text-align:center">${d.cashCount}</td><td style="text-align:right">${fp(d.mainCash)}</td></tr>`;
-    totalLabel = 'MAIN TOTAL'; totalVal = fp(d.mainGrand);
-    vatSection = `<table style="width:100%;border-collapse:collapse;margin-top:8px;font-size:11px">
-      <tr style="border-bottom:1px solid #ccc"><th style="text-align:left;padding:4px">Rate</th><th style="text-align:right;padding:4px">Net</th><th style="text-align:right;padding:4px">VAT</th><th style="text-align:right;padding:4px">Gross</th></tr>
-      <tr><td style="padding:4px">20%</td><td style="text-align:right;padding:4px">${fp(d.mainNet)}</td><td style="text-align:right;padding:4px;color:#D97706;font-weight:700">${fp(d.mainVat)}</td><td style="text-align:right;padding:4px">${fp(d.mainGrand)}</td></tr>
-    </table>
-    <div style="text-align:right;font-weight:800;font-size:14px;margin-top:6px;border-top:2px solid #2563EB;padding-top:6px">Main VAT: ${fp(d.mainVat)}</div>`;
+    vatRows = `<div class="r-row"><span>VAT 20%:</span><span>${fp(d.mainVat)} (Net: ${fp(d.mainNet)})</span></div>`;
   } else {
-    payRows = `<tr><td>CARD</td><td style="text-align:center">${d.cardCount}</td><td style="text-align:right">${fp(d.subCard||d.mainCard)}</td></tr>
-               <tr><td>CASH</td><td style="text-align:center">${d.cashCount}</td><td style="text-align:right">${fp(d.subCash)}</td></tr>`;
-    totalLabel = 'SUB TOTAL'; totalVal = fp(d.subGrand);
-    vatSection = `<div style="margin-top:8px;font-size:12px">
-      <div style="display:flex;justify-content:space-between;margin-bottom:3px"><span>VATable:</span><span style="font-weight:600">${fp(d.subVatableGross)}</span></div>
-      <div style="display:flex;justify-content:space-between;margin-bottom:3px"><span>Non-VATable:</span><span style="font-weight:600">${fp(d.subNonVatable)}</span></div>
-      <div style="border-top:2px solid #D97706;padding-top:6px;margin-top:6px;display:flex;justify-content:space-between">
-        <span style="font-weight:800;font-size:14px">VAT (${d.subVatRate}%)</span>
-        <span style="font-weight:800;font-size:16px;color:#D97706">${fp(d.subVat)}</span>
-      </div>
-    </div>`;
+    vatRows = `<div class="r-row"><span>VATable:</span><span>${fp(d.subVatableGross)}</span></div>
+    <div class="r-row"><span>Non-VATable:</span><span>${fp(d.subNonVatable)}</span></div>
+    <div class="r-row" style="font-size:16px;border-top:2px solid #000;padding-top:4px;margin-top:4px"><span>VAT (${d.subVatRate}%)</span><span>${fp(d.subVat)}</span></div>`;
   }
 
-  let itemsHtml = '';
-  if(d.items && d.items.length > 0) {
-    itemsHtml = `<h4 style="margin:14px 0 6px;font-size:12px">Item Sales</h4>
-    <table style="width:100%;border-collapse:collapse;font-size:11px">
-      <tr style="border-bottom:1px solid #ccc"><th style="text-align:left;padding:3px">Item</th><th style="text-align:right;padding:3px">Qty</th><th style="text-align:right;padding:3px">Revenue</th></tr>
-      ${d.items.map(i => `<tr><td style="padding:3px">${escHtml(i.name||'—')}</td><td style="text-align:right;padding:3px">${i.qty||0}</td><td style="text-align:right;padding:3px">${fp(i.total||0)}</td></tr>`).join('')}
-    </table>`;
-  }
+  const cashAmt = isMain ? d.mainCash : d.subCash;
+  const cardAmt = isMain ? (d.mainCard) : (d.subCard||d.mainCard);
+  const grandAmt = isMain ? d.mainGrand : d.subGrand;
+  const vatTotal = isMain ? d.mainVat : d.subVat;
 
   const printHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${title}</title>
-    <style>body{font-family:Arial,sans-serif;max-width:400px;margin:20px auto;font-size:13px}
-    @media print{body{margin:0;max-width:100%}}</style></head><body>
-    <div style="text-align:center;margin-bottom:12px">
-      <h2 style="margin:0;color:${themeClr}">${title}</h2>
-      <div style="font-weight:700;margin-top:4px">${branchName}</div>
-      <div style="font-size:12px;font-weight:700;margin-top:4px">${d.fromStr} → ${d.toStr}</div>
-      <div style="font-size:11px;color:#999">${d.totalOrders} orders</div>
-    </div>
-    <table style="width:100%;border-collapse:collapse;margin-bottom:8px;font-size:12px">
-      <tr style="border-bottom:1px solid #ccc"><th style="text-align:left;padding:4px">Payment</th><th style="text-align:center;padding:4px">Count</th><th style="text-align:right;padding:4px">Amount</th></tr>
-      ${payRows}
-    </table>
-    <div style="display:flex;justify-content:space-between;padding:8px 12px;background:${themeBg};border-radius:6px;font-weight:800;font-size:15px;border:2px solid ${themeClr}">
-      <span>${totalLabel}</span><span>${totalVal}</span>
-    </div>
-    ${vatSection}
-    ${isMain ? `<div style="margin-top:10px;padding:8px 12px;background:#ECFDF5;border:2px solid #059669;border-radius:6px;display:flex;justify-content:space-between">
-      <span style="font-weight:700;color:#059669">Cash in Drawer (£100 + Cash)</span>
-      <span style="font-weight:800;color:#059669">${fp(100 + d.mainCash)}</span>
-    </div>` : ''}
-    ${itemsHtml}
-    <div style="text-align:center;margin-top:16px;font-size:9px;color:#999">TBMS Ver4.4 — Programmed by DJ</div>
-  </body></html>`;
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Courier New',monospace;width:310px;margin:0 auto;padding:12px;font-size:14px;font-weight:700;color:#000}
+  .r-logo{text-align:center;font-size:22px;font-weight:900;margin-bottom:4px}
+  .r-sub{text-align:center;font-size:13px;font-weight:700;margin-bottom:8px}
+  .r-line{border-top:2px dashed #000;margin:5px 0}
+  .r-row{display:flex;justify-content:space-between;font-size:14px;font-weight:700;padding:1px 0}
+  .r-total{font-size:20px;font-weight:900}
+  .r-center{text-align:center;font-weight:700}
+  @media print{body{margin:0;padding:8px;width:100%}}
+</style></head><body>
+  <div class="r-logo">The Bap</div>
+  <div class="r-sub">${branchName}</div>
+  <div class="r-line"></div>
+  <div class="r-center" style="font-size:12px">${title}</div>
+  <div class="r-line"></div>
+  <div class="r-row"><span>Period From:</span><span>${d.fromStr}</span></div>
+  <div class="r-row"><span>Period To:</span><span>${d.toStr}</span></div>
+  <div class="r-line"></div>
+  <div class="r-row"><span>Total Orders:</span><span>${d.totalOrders}</span></div>
+  <div class="r-row"><span>Cash Customers:</span><span>${d.cashCount}</span></div>
+  <div class="r-row"><span>Card Customers:</span><span>${d.cardCount}</span></div>
+  <div class="r-line"></div>
+  <div class="r-row"><span>Cash Total:</span><span>${fp(cashAmt)}</span></div>
+  <div class="r-row"><span>Card Total:</span><span>${fp(cardAmt)}</span></div>
+  <div class="r-row r-total"><span>GRAND TOTAL:</span><span>${fp(grandAmt)}</span></div>
+  <div class="r-row"><span>Cash in Drawer:</span><span>${fp(100 + d.mainCash)}</span></div>
+  <div class="r-line"></div>
+  ${vatRows}
+  <div class="r-row"><span>Total VAT:</span><span>${fp(vatTotal)}</span></div>
+  <div class="r-line"></div>
+  <div class="r-center" style="margin-top:8px;font-size:9px">Printed: ${new Date().toLocaleString('en-GB')}</div>
+</body></html>`;
 
-  const w = window.open('','_blank','width=450,height=700');
+  const w = window.open('','_blank','width=360,height=600');
   w.document.write(printHtml);
   w.document.close();
   w.onload = () => { w.print(); };

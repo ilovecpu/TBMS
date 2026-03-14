@@ -1,8 +1,8 @@
 // ============================================================
-//  TBMS - The Bap Management System v4.3
+//  TBMS - The Bap Management System v4.4.2
 //  Google Apps Script Backend (Code.gs)
 //  Deployed: 2026-03-14
-//  URL: https://script.google.com/macros/s/AKfycbwfUwhd-9GBbc1UKnwVlXF6VR8bc9yfUZ0ZeujZW4w94Lk-vK6na9zDT7niuOj8e85T/exec
+//  URL: https://script.google.com/macros/s/AKfycbwPrE7EsVgrI-xIiLzJUsI2-F0RozFtRVQWRWJFqHzmBJjcjs4_9Nb3T177nO65qAkC/exec
 // ============================================================
 //  SETUP:
 //  1. Google Drive > New > Google Sheets > Name "TBMS Database"
@@ -32,14 +32,13 @@ const SHEETS = {
   DiaryEntry:     ['id','storeId','date','openChecks','fridgeTemps','deliveries','cookingTemps','coolingRecords','leftovers','closingChecks','holdTemps','extraChecks','issues','signedBy','submittedBy','submittedAt'],
   StoreInfo:      ['id','storeId','leaseStart','leaseEnd','monthlyRent','serviceCharge','rentReviewYears','landlordName','landlordPhone','landlordEmail','estateAgent','estateAgentPhone','estateAgentEmail','councilName','councilEmail','councilPhone','businessRateAnnual','hygieneInspDate','hygieneRating','electricCompany','electricContractStart','electricContractEnd','electricKwhRate','electricDailyCharge','phoneCompany','phoneContractStart','phoneContractEnd','waterCompany','cardMachineCompany','cardContractStart','cardContractEnd','cardRate','fridgeCleanDate','fridgeCleanNext','airconCleanDate','airconCleanNext','memo','custom1Label','custom1Value','custom2Label','custom2Value','custom3Label','custom3Value','custom4Label','custom4Value','custom5Label','custom5Value','custom6Label','custom6Value','custom7Label','custom7Value','custom8Label','custom8Value','custom9Label','custom9Value','custom10Label','custom10Value'],
   KnowledgeBase:  ['id','category','title','content','tags','source','createdBy','createdAt','updatedAt','active','version','accessLevel'],
-  // ★ POS Sales Data — pushed from branch servers
-  DailySales:     ['date','branch','branchName','totalOrders','main_cashTotal','main_cardTotal','main_grandTotal','main_vatTotal','main_vatBreakdown','sub_cashPct','sub_cashTotal','sub_cardTotal','sub_grandTotal','sub_vatTotal','sub_vatablePct','sub_vatableGross','sub_nonVatableGross','sub_totalNet','cashCount','cardCount','itemBreakdown','pushedAt'],
-  LiveSales:      ['date','branch','branchName','main_grandTotal','main_vatTotal','main_cashTotal','main_cardTotal','sub_grandTotal','sub_vatTotal','sub_vatablePct','sub_vatableGross','sub_nonVatableGross','sub_totalNet','sub_cashTotal','sub_cardTotal','totalOrders','cashCount','cardCount','lastUpdated'],
+  // ★ POS Sales Data
+  // DailySales/LiveSales 제거 (v4.4.2) → SalesOrders 기반 getSalesOrdersSummary로 대체
   EndSales:       ['id','branch','branchName','periodFrom','periodTo','totalOrders','cashCount','cardCount','main_cashTotal','main_cardTotal','main_grandTotal','main_vatTotal','sub_cashPct','sub_cashTotal','sub_cardTotal','sub_grandTotal','sub_vatTotal','sub_vatablePct','sub_vatableGross','sub_nonVatableGross','sub_totalNet','itemBreakdown','staff','pushedAt']
 };
 
 // ★ SalesOrders — 월별 시트 (SalesOrders_YYYY_MM), SHEETS에는 미포함
-const SALES_ORDERS_HEADERS = ['id','branch','branchName','orderNumber','timestamp','date','orderType','paymentMethod','total','itemCount','items','refunded','refundedAt','refundMethod','vat','pushedAt'];
+const SALES_ORDERS_HEADERS = ['id','branch','branchName','orderNumber','timestamp','date','orderType','paymentMethod','total','itemCount','items','refunded','refundedAt','refundMethod','vat','cashPct','vatablePct','pushedAt'];
 
 // Fields that should remain numeric
 const NUMERIC_FIELDS = ['rate','min','orderQty','qty','totalSales','sortOrder'];
@@ -79,17 +78,17 @@ function doGet(e) {
       case 'getStoreData': result = getStoreData(e.parameter.store, e.parameter.sheets); break;
       case 'getSetting': result = getSetting(e.parameter.key); break;
       case 'init':     result = initSheets(); break;
-      case 'ping':     result = {status:'ok', time: new Date().toISOString(), version:'TBMS 4.1'}; break;
+      case 'ping':     result = {status:'ok', time: new Date().toISOString(), version:'TBMS 4.4.2'}; break;
       case 'diagSheets': result = {status:'ok', sheets: Object.keys(SHEETS)}; break;
       case 'getArchive': result = getArchiveData(e.parameter.sheet, e.parameter.store, e.parameter.from, e.parameter.to); break;
       case 'getKB':      result = getKB(e.parameter.category); break;
       case 'searchKB':   result = searchKB(e.parameter.q); break;
       // ★ POS Sales Data — read endpoints for TBMS dashboard
-      case 'getSalesReport': result = getSalesReport(e.parameter.branch, e.parameter.from, e.parameter.to); break;
-      case 'getLiveSales':   result = getLiveSales(e.parameter.date); break;
       case 'getEndSalesLog': result = getEndSalesLog(e.parameter.branch, e.parameter.from, e.parameter.to); break;
       // ★ SalesOrders — 개별 주문 데이터 조회
       case 'getSalesOrders': result = getSalesOrders(e.parameter.branch, e.parameter.from, e.parameter.to); break;
+      // ★ SalesOrders 기반 라이브 요약 (MAIN+SUB) — Live Today 대체
+      case 'getSalesOrdersSummary': result = getSalesOrdersSummary(e.parameter.date); break;
       default:         result = {error:'Unknown action: '+action};
     }
     return ContentService.createTextOutput(JSON.stringify(result)).setMimeType(ContentService.MimeType.JSON);
@@ -127,8 +126,7 @@ function doPost(e) {
       case 'runArchive': result = archiveOldData(); break;
       case 'initData':   result = initWithData(data); break;
       // ★ POS Sales Data — push endpoints from branch servers
-      case 'pushDailySales': result = pushDailySales(data); break;
-      case 'pushLiveSales':  result = pushLiveSales(data); break;
+      // pushDailySales/pushLiveSales 제거 (v4.4) → SalesOrders 기반 getSalesOrdersSummary로 대체
       case 'pushEndSales':   result = pushEndSales(data); break;
       // ★ SalesOrders — 개별 주문 데이터 배치 푸시
       case 'pushSalesOrders': result = pushSalesOrders(data); break;
@@ -1105,96 +1103,6 @@ function _cellToString(val, tz) {
   return String(val).trim();
 }
 
-// ─── pushDailySales: 자정 자동 푸시 (upsert by date+branch) ───
-function pushDailySales(data) {
-  if (!data.date || !data.branch) return {error: 'date and branch required'};
-  var row = {
-    date:               data.date,
-    branch:             data.branch,
-    branchName:         data.branchName || data.branch,
-    totalOrders:        data.totalOrders || 0,
-    main_cashTotal:     data.main ? data.main.cashTotal : 0,
-    main_cardTotal:     data.main ? data.main.cardTotal : 0,
-    main_grandTotal:    data.main ? data.main.grandTotal : 0,
-    main_vatTotal:      data.main ? data.main.vatTotal : 0,
-    main_vatBreakdown:  data.main ? data.main.vatBreakdown : {},
-    sub_cashPct:        data.sub ? data.sub.cashPct : 100,
-    sub_cashTotal:      data.sub ? data.sub.cashTotal : 0,
-    sub_cardTotal:      data.sub ? data.sub.cardTotal : 0,
-    sub_grandTotal:     data.sub ? data.sub.grandTotal : 0,
-    sub_vatTotal:       data.sub ? data.sub.vatTotal : 0,
-    sub_vatablePct:     data.sub ? data.sub.vatablePct : 20,
-    sub_vatableGross:   data.sub ? data.sub.vatableGross : 0,
-    sub_nonVatableGross: data.sub ? data.sub.nonVatableGross : 0,
-    sub_totalNet:       data.sub ? data.sub.totalNet : 0,
-    cashCount:          data.cashCount || 0,
-    cardCount:          data.cardCount || 0,
-    itemBreakdown:      data.itemBreakdown || [],
-    pushedAt:           new Date().toISOString()
-  };
-  return _upsertSalesRow('DailySales', ['date', 'branch'], row);
-}
-
-// ─── pushLiveSales: 매시간 라이브 푸시 (upsert by date+branch) ───
-function pushLiveSales(data) {
-  if (!data.date || !data.branch) return {error: 'date and branch required'};
-  // ★ 자동 리셋: 오늘이 아닌 이전 날짜 데이터 삭제
-  _cleanOldLiveSales(data.date);
-  var row = {
-    date:            data.date,
-    branch:          data.branch,
-    branchName:      data.branchName || data.branch,
-    main_grandTotal: data.main_grandTotal || 0,
-    main_vatTotal:   data.main_vatTotal || 0,
-    main_cashTotal:  data.main_cashTotal || 0,
-    main_cardTotal:  data.main_cardTotal || 0,
-    sub_grandTotal:  data.sub_grandTotal || 0,
-    sub_vatTotal:    data.sub_vatTotal || 0,
-    sub_vatablePct:  data.sub_vatablePct || 20,
-    sub_vatableGross: data.sub_vatableGross || 0,
-    sub_nonVatableGross: data.sub_nonVatableGross || 0,
-    sub_totalNet:    data.sub_totalNet || 0,
-    sub_cashTotal:   data.sub_cashTotal || 0,
-    sub_cardTotal:   data.sub_cardTotal || 0,
-    totalOrders:     data.totalOrders || 0,
-    cashCount:       data.cashCount || 0,
-    cardCount:       data.cardCount || 0,
-    lastUpdated:     new Date().toISOString()
-  };
-  return _upsertSalesRow('LiveSales', ['date', 'branch'], row);
-}
-
-// ★ LiveSales 자동 리셋 — 오늘 날짜가 아닌 행 삭제
-function _cleanOldLiveSales(todayStr) {
-  try {
-    var sheetName = 'LiveSales';
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var sh = ss.getSheetByName(sheetName);
-    if (!sh) return;
-    var lastRow = sh.getLastRow();
-    if (lastRow <= 1) return; // header only
-    var dates = sh.getRange(2, 1, lastRow - 1, 1).getValues(); // column A = date
-    var tz = Session.getScriptTimeZone();
-    var rowsToDelete = [];
-    for (var i = 0; i < dates.length; i++) {
-      // ★ Google Sheets Date 객체 안전 변환
-      var cellDate = _cellToString(dates[i][0], tz);
-      if (cellDate && cellDate !== todayStr) {
-        rowsToDelete.push(i + 2); // sheet row (1-indexed, skip header)
-      }
-    }
-    // 역순으로 삭제 (아래→위, 인덱스 변동 방지)
-    for (var j = rowsToDelete.length - 1; j >= 0; j--) {
-      sh.deleteRow(rowsToDelete[j]);
-    }
-    if (rowsToDelete.length > 0) {
-      Logger.log('[LiveSales] Cleaned ' + rowsToDelete.length + ' old rows (not ' + todayStr + ')');
-    }
-  } catch (e) {
-    Logger.log('[LiveSales] Clean error: ' + e.message);
-  }
-}
-
 // ─── pushEndSales: END Sales 이벤트 푸시 (append) ───
 function pushEndSales(data) {
   if (!data.id || !data.branch) return {error: 'id and branch required'};
@@ -1226,66 +1134,6 @@ function pushEndSales(data) {
   };
   // Upsert by id to prevent duplicates
   return _upsertSalesRow('EndSales', ['id'], row);
-}
-
-// ─── getSalesReport: 날짜 범위 DailySales 조회 (TBMS 대시보드) ───
-function getSalesReport(branch, from, to) {
-  var rows = readSheet('DailySales');
-  if (branch) rows = rows.filter(function(r) { return r.branch === branch; });
-  if (from)   rows = rows.filter(function(r) { return r.date >= from; });
-  if (to)     rows = rows.filter(function(r) { return r.date <= to; });
-  // Parse JSON fields
-  rows.forEach(function(r) {
-    try { if (typeof r.main_vatBreakdown === 'string') r.main_vatBreakdown = JSON.parse(r.main_vatBreakdown); } catch(e) {}
-    try { if (typeof r.itemBreakdown === 'string') r.itemBreakdown = JSON.parse(r.itemBreakdown); } catch(e) {}
-  });
-  rows.sort(function(a,b) { return a.date < b.date ? 1 : a.date > b.date ? -1 : 0; });
-  return {status: 'ok', data: rows, total: rows.length};
-}
-
-// ─── getLiveSales: 라이브 세일즈 전체 지점 (TBMS 대시보드) ───
-// date 파라미터 없으면 오늘, 있으면 해당 날짜 조회
-// 오늘 = LiveSales 시트, 과거 = DailySales 시트에서 조회
-function getLiveSales(date) {
-  var today = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd');
-  var targetDate = date || today;
-  var isToday = (targetDate === today);
-
-  if (isToday) {
-    // 오늘: LiveSales 시트에서 실시간 데이터
-    var rows = readSheet('LiveSales');
-    rows = rows.filter(function(r) { return r.date === targetDate; });
-    return {status: 'ok', data: rows, date: targetDate, isToday: true};
-  } else {
-    // 과거: DailySales 시트에서 조회 → LiveSales 형식으로 변환
-    var dailyRows = readSheet('DailySales');
-    dailyRows = dailyRows.filter(function(r) { return r.date === targetDate; });
-    var mapped = dailyRows.map(function(r) {
-      return {
-        date:            r.date,
-        branch:          r.branch,
-        branchName:      r.branchName || r.branch,
-        main_grandTotal: r.main_grandTotal || 0,
-        main_vatTotal:   r.main_vatTotal || 0,
-        sub_grandTotal:  r.sub_grandTotal || 0,
-        sub_vatTotal:    r.sub_vatTotal || 0,
-        sub_vatablePct:  r.sub_vatablePct || 20,
-        sub_vatableGross: r.sub_vatableGross || 0,
-        sub_nonVatableGross: r.sub_nonVatableGross || 0,
-        sub_totalNet:    r.sub_totalNet || 0,
-        totalOrders:     r.totalOrders || 0,
-        cashCount:       r.cashCount || 0,
-        cardCount:       r.cardCount || 0,
-        lastUpdated:     r.pushedAt || '',
-        // DailySales 추가 정보
-        main_cashTotal:  r.main_cashTotal || 0,
-        main_cardTotal:  r.main_cardTotal || 0,
-        sub_cashTotal:   r.sub_cashTotal || 0,
-        sub_cardTotal:   r.sub_cardTotal || 0
-      };
-    });
-    return {status: 'ok', data: mapped, date: targetDate, isToday: false};
-  }
 }
 
 // ─── getEndSalesLog: END Sales 기록 조회 ───
@@ -1514,6 +1362,94 @@ function getSalesOrders(branch, from, to) {
   });
 
   return {status: 'ok', data: allRows, total: allRows.length, sheets: sheetNames};
+}
+
+// ─── SalesOrders 기반 라이브 요약 (MAIN + SUB) ───
+// Live Today 대체: 개별 주문 데이터에서 지점별 MAIN/SUB 계산
+function getSalesOrdersSummary(date) {
+  if (!date) date = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd');
+
+  // 1. SalesOrders 읽기
+  var orders;
+  try {
+    var result = getSalesOrders('', date, date);
+    orders = (result.data || []).filter(function(o) {
+      return o.paymentMethod && !o.refunded && o.refunded !== 'true';
+    });
+  } catch(e) { return {error: e.message, data: []}; }
+
+  if (orders.length === 0) return {status:'ok', data: [], total: 0};
+
+  // 2. 지점별 그룹핑 — cashPct/vatablePct는 주문 데이터에서 직접 읽음 (POS 설정값)
+  var branchData = {};
+  orders.forEach(function(o) {
+    var b = String(o.branch).trim();
+    if (!branchData[b]) branchData[b] = {
+      branchName: o.branchName || b,
+      cashTotal: 0, cardTotal: 0, vatTotal: 0,
+      cashCount: 0, cardCount: 0, orders: 0,
+      cashPct: 100, vatablePct: 20   // 디폴트
+    };
+    var total = Number(o.total || 0);
+    var vat = Number(o.vat || 0);
+    if (o.paymentMethod === 'cash') {
+      branchData[b].cashTotal += total;
+      branchData[b].cashCount++;
+    } else {
+      branchData[b].cardTotal += total;
+      branchData[b].cardCount++;
+    }
+    branchData[b].vatTotal += vat;
+    branchData[b].orders++;
+    // ★ POS에서 보낸 설정값 — 최신 주문의 값이 현재 POS 설정
+    if (o.cashPct != null && o.cashPct !== '') branchData[b].cashPct = Number(o.cashPct);
+    if (o.vatablePct != null && o.vatablePct !== '') branchData[b].vatablePct = Number(o.vatablePct);
+  });
+
+  // 3. MAIN + SUB 계산
+  var data = [];
+  Object.keys(branchData).forEach(function(branch) {
+    var d = branchData[branch];
+
+    // MAIN = 100% actual
+    var mainGrand = d.cashTotal + d.cardTotal;
+    var mainVat = d.vatTotal;
+
+    // SUB = Card 100% + Cash × cashPct%
+    var subCashTotal = d.cashTotal * (d.cashPct / 100);
+    var subCardTotal = d.cardTotal;
+    var subGrand = subCashTotal + subCardTotal;
+    // VAT = vatablePct% of subGrand is VATable → VAT = VATable / 6 (20% VAT = 1/6 of gross)
+    var subVatableGross = subGrand * (d.vatablePct / 100);
+    var subNonVatableGross = subGrand - subVatableGross;
+    var subVat = subVatableGross / 6;
+    var subTotalNet = subGrand - subVat;
+
+    data.push({
+      date: date,
+      branch: branch,
+      branchName: d.branchName,
+      main_grandTotal: mainGrand,
+      main_vatTotal: mainVat,
+      main_cashTotal: d.cashTotal,
+      main_cardTotal: d.cardTotal,
+      sub_grandTotal: subGrand,
+      sub_vatTotal: subVat,
+      sub_cashPct: d.cashPct,
+      sub_vatablePct: d.vatablePct,
+      sub_vatableGross: subVatableGross,
+      sub_nonVatableGross: subNonVatableGross,
+      sub_totalNet: subTotalNet,
+      sub_cashTotal: subCashTotal,
+      sub_cardTotal: subCardTotal,
+      totalOrders: d.orders,
+      cashCount: d.cashCount,
+      cardCount: d.cardCount,
+      lastUpdated: new Date().toISOString()
+    });
+  });
+
+  return {status:'ok', data: data, total: orders.length};
 }
 
 // ─── 날짜 범위에 걸치는 월 시트 이름 목록 ───

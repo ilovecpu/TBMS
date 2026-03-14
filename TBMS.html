@@ -4397,17 +4397,21 @@ async function _srFetchEndSales(el) {
     return;
   }
 
+  // Store rows for detail view
+  window._esRows = rows;
+
   el.innerHTML = `<div style="background:${isMain?'#e3f2fd':'#fce4ec'};border-radius:10px;padding:12px 16px;margin-bottom:12px">
     <span style="font-weight:700;color:${themeClr}">${label} — ${rows.length} END Sales Record(s)</span></div>
-  <table class="data-table"><thead><tr><th>Branch</th><th>Period</th><th>Orders</th><th>Total</th><th>VAT</th><th>Staff</th><th>Pushed</th></tr></thead><tbody>`
-  + rows.map(r => {
+  <div id="esDetailView"></div>
+  <table class="data-table" id="esListTable"><thead><tr><th>Branch</th><th>Period</th><th>Orders</th><th>Total</th><th>VAT</th><th>Staff</th><th>Pushed</th></tr></thead><tbody>`
+  + rows.map((r,idx) => {
     const grand = isMain ? Number(r.main_grandTotal||0) : Number(r.sub_grandTotal||0);
     const vat = isMain ? Number(r.main_vatTotal||0) : Number(r.sub_vatTotal||0);
     const vatablePct = isMain ? '' : Number(r.sub_vatablePct||0);
     const vatPctDisplay = !isMain && vatablePct ? `<div style="font-size:10px;color:var(--text-light);margin-top:2px">${vatablePct}%</div>` : '';
     const from = r.periodFrom ? new Date(r.periodFrom).toLocaleDateString('en-GB') : '—';
     const to = r.periodTo ? new Date(r.periodTo).toLocaleDateString('en-GB') : '—';
-    return `<tr>
+    return `<tr style="cursor:pointer" onclick="_showEsDetail(${idx})">
       <td style="font-weight:600">${escHtml(r.branchName||r.branch||'—')}</td>
       <td style="font-size:12px">${from} ~ ${to}</td>
       <td>${r.totalOrders||0}</td>
@@ -4416,6 +4420,121 @@ async function _srFetchEndSales(el) {
       <td style="font-size:12px">${escHtml(r.staff||'—')}</td>
       <td style="font-size:11px;color:var(--text-light)">${r.pushedAt ? new Date(r.pushedAt).toLocaleString('en-GB') : '—'}</td></tr>`;
   }).join('') + `</tbody></table>`;
+}
+
+// ─── END Sales Detail View (POS 스타일) ───
+function _showEsDetail(idx) {
+  const r = window._esRows[idx];
+  if(!r) return;
+  const fp = v => '£' + Number(v||0).toFixed(2);
+  const fromStr = r.periodFrom ? new Date(r.periodFrom).toLocaleString('en-GB') : '—';
+  const toStr = r.periodTo ? new Date(r.periodTo).toLocaleString('en-GB') : '—';
+  const mainCash = Number(r.main_cashTotal||0);
+  const mainCard = Number(r.main_cardTotal||0);
+  const mainGrand = Number(r.main_grandTotal||0);
+  const mainVat = Number(r.main_vatTotal||0);
+  const mainNet = +(mainGrand - mainVat).toFixed(2);
+  const subGrand = Number(r.sub_grandTotal||0);
+  const subVat = Number(r.sub_vatTotal||0);
+  const subCash = Number(r.sub_cashTotal||0);
+  const subCard = Number(r.sub_cardTotal||0);
+  const subVatableGross = Number(r.sub_vatableGross||0);
+  const subNonVatable = Number(r.sub_nonVatableGross||0);
+  const subVatRate = 20;
+  const cashCount = Number(r.cashCount||0);
+  const cardCount = Number(r.cardCount||0);
+  const totalOrders = Number(r.totalOrders||0);
+  const hasSub = subGrand > 0 || subVat > 0;
+
+  // Item breakdown
+  let items = r.itemBreakdown || [];
+  if(typeof items === 'string') { try { items = JSON.parse(items); } catch(e) { items = []; } }
+
+  const detailEl = document.getElementById('esDetailView');
+  const listEl = document.getElementById('esListTable');
+  if(listEl) listEl.style.display = 'none';
+
+  let html = `
+    <div style="background:#FEF2F2;border:2px solid #DC2626;border-radius:12px;padding:16px;margin-bottom:12px">
+      <h3 style="color:#DC2626;margin:0 0 6px 0;font-size:16px">END Sales Detail — ${escHtml(r.branchName||r.branch)}</h3>
+      <div style="font-size:12px;color:#6B7280">Period: ${fromStr} → ${toStr}</div>
+      <div style="font-size:11px;color:#9CA3AF">ID: ${escHtml(r.id||'—')} · ${totalOrders} orders${r.staff ? ' · Staff: '+escHtml(r.staff) : ''}</div>
+    </div>
+
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px">
+      <!-- MAIN -->
+      <div style="flex:1;min-width:280px;background:#EFF6FF;border:2px solid #2563EB;border-radius:12px;padding:14px">
+        <h4 style="color:#2563EB;margin:0 0 10px 0;font-size:15px"><i class="fas fa-chart-bar" style="margin-right:4px"></i> MAIN (Actual Sales)</h4>
+        <table class="data-table" style="margin-bottom:8px">
+          <thead><tr><th>Payment</th><th>Count</th><th>Amount</th></tr></thead>
+          <tbody>
+            <tr><td>💳 CARD</td><td>${cardCount}</td><td style="color:#059669;font-weight:600">${fp(mainCard)}</td></tr>
+            <tr><td>💵 CASH</td><td>${cashCount}</td><td style="color:#059669;font-weight:600">${fp(mainCash)}</td></tr>
+          </tbody>
+        </table>
+        <div style="display:flex;justify-content:space-between;padding:10px 14px;background:#DBEAFE;border-radius:8px;margin-bottom:8px">
+          <span style="font-weight:700;color:#1E40AF;font-size:14px">MAIN TOTAL</span>
+          <span style="font-weight:800;color:#1E40AF;font-size:18px">${fp(mainGrand)}</span>
+        </div>
+        <table class="data-table" style="margin-bottom:6px">
+          <thead><tr><th>Rate</th><th>Net</th><th>VAT</th><th>Gross</th></tr></thead>
+          <tbody><tr><td>20%</td><td>${fp(mainNet)}</td><td style="color:#D97706;font-weight:600">${fp(mainVat)}</td><td style="color:#059669;font-weight:600">${fp(mainGrand)}</td></tr></tbody>
+        </table>
+        <div style="display:flex;justify-content:space-between;padding:6px 14px;background:#DBEAFE;border-radius:8px">
+          <span style="font-weight:700;color:#1E40AF;font-size:12px">Main VAT</span>
+          <span style="font-weight:800;color:#1E40AF;font-size:14px">${fp(mainVat)}</span>
+        </div>
+      </div>
+
+      ${hasSub ? `
+      <!-- SUB -->
+      <div style="flex:1;min-width:280px;background:#FFFBEB;border:2px solid #F59E0B;border-radius:12px;padding:14px">
+        <h4 style="color:#D97706;margin:0 0 10px 0;font-size:15px">📋 SUB</h4>
+        <table class="data-table" style="margin-bottom:8px">
+          <thead><tr><th>Payment</th><th>Count</th><th>Amount</th></tr></thead>
+          <tbody>
+            <tr><td>💳 CARD</td><td>${cardCount}</td><td style="color:#059669;font-weight:600">${fp(subCard||mainCard)}</td></tr>
+            <tr><td>💵 CASH</td><td>${cashCount}</td><td style="color:#059669;font-weight:600">${fp(subCash)}</td></tr>
+          </tbody>
+        </table>
+        <div style="display:flex;justify-content:space-between;padding:10px 14px;background:#FDE68A;border-radius:8px;margin-bottom:8px">
+          <span style="font-weight:700;color:#92400E;font-size:14px">SUB TOTAL</span>
+          <span style="font-weight:800;color:#D97706;font-size:18px">${fp(subGrand)}</span>
+        </div>
+        <div style="padding:10px 14px;background:#FDE68A;border-radius:8px;font-size:13px;color:#92400E">
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>VATable:</span><span style="font-weight:600">${fp(subVatableGross)}</span></div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>Non-VATable:</span><span style="font-weight:600">${fp(subNonVatable)}</span></div>
+          <div style="border-top:2px solid #D97706;padding-top:6px;display:flex;justify-content:space-between;margin-top:6px">
+            <span style="font-weight:800;font-size:14px;color:#92400E">VAT (${subVatRate}%)</span>
+            <span style="font-weight:800;font-size:16px;color:#D97706">${fp(subVat)}</span>
+          </div>
+        </div>
+      </div>` : ''}
+    </div>
+
+    <div style="background:#ECFDF5;border:2px solid #059669;border-radius:10px;padding:10px 14px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center">
+      <span style="font-weight:700;color:#059669;font-size:13px">💵 Cash in Drawer (£100 + Cash)</span>
+      <span style="font-weight:800;color:#059669;font-size:18px">${fp(100 + mainCash)}</span>
+    </div>`;
+
+  if(items.length > 0) {
+    html += `<h4 style="margin:12px 0 6px;color:#374151;font-size:13px">Item Sales</h4>
+    <table class="data-table"><thead><tr><th>Item</th><th>Qty</th><th>Revenue</th></tr></thead><tbody>
+    ${items.map(i => `<tr><td>${escHtml(i.name||'—')}</td><td>${i.qty||0}</td><td style="color:#059669;font-weight:600">${fp(i.total||0)}</td></tr>`).join('')}
+    </tbody></table>`;
+  }
+
+  html += `<button onclick="_closeEsDetail()" style="margin-top:16px;padding:12px;border:2px solid #D1D5DB;border-radius:8px;background:#fff;font-weight:600;cursor:pointer;font-size:13px;color:#6B7280;width:100%;text-align:center">← Back to END Sales List</button>`;
+
+  detailEl.innerHTML = html;
+  detailEl.style.display = 'block';
+}
+
+function _closeEsDetail() {
+  const detailEl = document.getElementById('esDetailView');
+  const listEl = document.getElementById('esListTable');
+  if(detailEl) { detailEl.innerHTML = ''; detailEl.style.display = 'none'; }
+  if(listEl) listEl.style.display = '';
 }
 
 // ─── Helper: GET from TBMS Apps Script ───

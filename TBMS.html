@@ -236,7 +236,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
   <div class="login-logo">
     <div class="logo-icon"><i class="fas fa-bowl-food"></i></div>
     <h1>TBMS</h1>
-    <p>The Bap Management System <span style="opacity:.5;font-size:11px">Ver4.4.1</span></p>
+    <p>The Bap Management System <span style="opacity:.5;font-size:11px">Ver4.5</span></p>
   </div>
   <div class="form-group"><label>Username</label><input id="loginUser" placeholder="Enter username"></div>
   <div class="form-group"><label>Password</label><input id="loginPass" type="password" placeholder="Enter password"></div>
@@ -245,7 +245,6 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
   </div>
   <div style="margin-top:24px;padding-top:16px;border-top:1px solid var(--border);text-align:center;font-size:11px;color:#aaa;line-height:1.6">
     <div>&copy; 2026 The Bap. All rights reserved.</div>
-    <div style="margin-top:4px">Developed by DJ Kim</div>
   </div>
 </div>
 </div>
@@ -254,7 +253,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
 <!-- MAIN APP -->
 <div id="mainApp" class="hidden">
   <div class="sidebar" id="sidebar">
-    <div class="sidebar-header"><h2>TBMS <span style="font-size:12px;font-weight:400;opacity:.6">Ver4.4.1</span></h2><p>The Bap Management System</p></div>
+    <div class="sidebar-header"><h2>TBMS <span style="font-size:12px;font-weight:400;opacity:.6">Ver4.5</span></h2><p>The Bap Management System</p></div>
     <div class="sidebar-menu">
       <div class="menu-item active" data-page="dashboard" onclick="navigate('dashboard')"><i class="fas fa-home"></i>Dashboard</div>
       <div class="menu-group">
@@ -263,6 +262,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
           <div class="menu-item sub" data-page="stores" onclick="navigate('stores')"><i class="fas fa-list"></i>Store List</div>
           <div class="menu-item sub" data-page="store-mgmt" onclick="navigate('store-mgmt')"><i class="fas fa-cogs"></i>Store Management</div>
           <div class="menu-item sub" data-page="sales-report" onclick="navigate('sales-report')"><i class="fas fa-chart-line"></i>Sales Report</div>
+          <div class="menu-item sub" data-page="sales-analysis" onclick="navigate('sales-analysis')"><i class="fas fa-magnifying-glass-chart"></i>Sales Analysis</div>
         </div>
       </div>
       <div class="menu-group">
@@ -310,7 +310,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
   <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
   <div class="main-content">
     <div class="header">
-      <div class="header-left"><button class="menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button><h2 id="pageTitle" style="font-size:18px">Dashboard</h2><span style="font-size:11px;color:var(--text-light);margin-left:8px;font-weight:400;opacity:.7">Ver4.4.1</span></div>
+      <div class="header-left"><button class="menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button><h2 id="pageTitle" style="font-size:18px">Dashboard</h2><span style="font-size:11px;color:var(--text-light);margin-left:8px;font-weight:400;opacity:.7">Ver4.5</span></div>
       <div class="header-right"><span id="headerDate"></span><span class="sync-status"><span class="dot offline" id="syncDot"></span><span id="syncText">Local</span></span><button class="btn btn-sm btn-outline" onclick="doLogout()"><i class="fas fa-sign-out-alt"></i> Logout</button></div>
     </div>
     <div class="page-content" id="pageContent"></div>
@@ -346,6 +346,7 @@ const ALL_PAGES=[
   {id:'stores',label:'Store List',icon:'fa-store'},
   {id:'store-mgmt',label:'Store Management',icon:'fa-cogs'},
   {id:'sales-report',label:'Sales Report',icon:'fa-chart-line'},
+  {id:'sales-analysis',label:'Sales Analysis',icon:'fa-magnifying-glass-chart'},
   {id:'staff',label:'Staff List',icon:'fa-list-ul'},
   {id:'attendance',label:'Attendance',icon:'fa-clipboard-check'},
   {id:'payroll',label:'Payroll',icon:'fa-calculator'},
@@ -548,7 +549,7 @@ const LS = {
   set(k, v) { localStorage.setItem('tbms_'+k, JSON.stringify(v)); },
   getConfig() { return this.get('config') || {}; }
 };
-const CLOUD_URL = 'https://script.google.com/macros/s/AKfycbx7u5YHL3bbZ7sg_l5Lb7jYLJbDvvGTJsvHmDUFGfSccmOMNOKvumJmFRL7RQOHHDjk/exec';
+const CLOUD_URL = 'https://script.google.com/macros/s/AKfycbwfUwhd-9GBbc1UKnwVlXF6VR8bc9yfUZ0ZeujZW4w94Lk-vK6na9zDT7niuOj8e85T/exec';
 const API_KEY = 'tBaP2026xKr!mGt9Qz';
 const API = {
   url: CLOUD_URL, mode: 'cloud',
@@ -804,6 +805,7 @@ function renderPage(page) {
     case 'stock-template': renderStockTemplatePage(c); break;
     case 'sales': renderSalesInput(c); break;
     case 'sales-report': renderSalesReport(c); break;
+    case 'sales-analysis': renderSalesAnalysis(c); break;
     case 'analytics': renderAnalytics(c); break;
     case 'orders': renderOrders(c); break;
     case 'suppliers': renderSuppliers(c); break;
@@ -4546,7 +4548,7 @@ function _printEsDetail(mode) {
   const fp = v => '£' + Number(v||0).toFixed(2);
   const branchName = escHtml(d.r.branchName||d.r.branch);
   const isMain = mode === 'main';
-  const title = isMain ? 'END SALES — MAIN' : 'END SALES — SUB';
+  const title = isMain ? 'Sales Report — MAIN' : 'Sales Report';
 
   // VAT section
   let vatRows = '';
@@ -4595,7 +4597,7 @@ function _printEsDetail(mode) {
   ${vatRows}
   <div class="r-row"><span>Total VAT:</span><span>${fp(vatTotal)}</span></div>
   <div class="r-line"></div>
-  <div class="r-center" style="margin-top:8px;font-size:9px">Printed: ${new Date().toLocaleString('en-GB')}</div>
+  <div class="r-line"></div>
 </body></html>`;
 
   const w = window.open('','_blank','width=360,height=600');
@@ -4878,6 +4880,251 @@ function openStoreSalesModal(storeId,year){
   });
   body+=`</div>`;
   openModal(`<span style="color:${clr}"><i class="fas fa-calendar-alt" style="margin-right:8px"></i>${escHtml(storeName)}</span>`,body,`<button class="btn btn-outline" onclick="closeModal()">Close</button>`,'max-width:560px');
+}
+
+// ==================== SALES ANALYSIS (Individual Orders from SalesOrders) ====================
+// ★ POS와 동일한 분석: MAIN/SUB, 시간대별, 아이템별, Sales by Type
+function renderSalesAnalysis(c) {
+  const stores = getAccessibleStores();
+  const today = new Date().toISOString().slice(0,10);
+  const storeOpts = stores.map(s => `<option value="${s.code}">${s.name||s.code}</option>`).join('');
+
+  c.innerHTML = `<div class="card" style="margin-bottom:16px">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:16px">
+      <h3><i class="fas fa-magnifying-glass-chart" style="color:var(--accent);margin-right:8px"></i>Sales Analysis</h3>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:12px">
+      <div><label style="font-size:11px;color:var(--text-light)">Branch</label><br>
+        <select id="saStore" style="padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:13px">
+          <option value="">All Branches</option>${storeOpts}
+        </select>
+      </div>
+      <div><label style="font-size:11px;color:var(--text-light)">From</label><br>
+        <input type="date" id="saFrom" value="${today}" style="padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:13px">
+      </div>
+      <div><label style="font-size:11px;color:var(--text-light)">To</label><br>
+        <input type="date" id="saTo" value="${today}" style="padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:13px">
+      </div>
+      <button onclick="_runSA()" class="btn btn-primary" style="padding:8px 20px;font-size:13px"><i class="fas fa-search"></i> ANALYSE</button>
+      <button id="saPrintBtn" onclick="_printSA()" class="btn" style="padding:8px 16px;font-size:13px;display:none;background:#374151;color:#fff;border:none;border-radius:6px"><i class="fas fa-print"></i> PRINT (A4)</button>
+    </div>
+    <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap">
+      <button onclick="_setSAPeriod('today')" class="btn btn-outline" style="font-size:11px;padding:4px 10px">Today</button>
+      <button onclick="_setSAPeriod('yesterday')" class="btn btn-outline" style="font-size:11px;padding:4px 10px">Yesterday</button>
+      <button onclick="_setSAPeriod('week')" class="btn btn-outline" style="font-size:11px;padding:4px 10px">This Week</button>
+      <button onclick="_setSAPeriod('month')" class="btn btn-outline" style="font-size:11px;padding:4px 10px">This Month</button>
+    </div>
+    <div id="saResult" style="color:var(--text-light);text-align:center;padding:30px;font-size:14px">Select date range and click ANALYSE</div>
+  </div>`;
+}
+
+// Quick period setters
+function _setSAPeriod(p) {
+  const f = document.getElementById('saFrom'), t = document.getElementById('saTo');
+  const today = new Date();
+  if (p==='today') { f.value = t.value = today.toISOString().slice(0,10); }
+  else if (p==='yesterday') { const y = new Date(today); y.setDate(y.getDate()-1); f.value = t.value = y.toISOString().slice(0,10); }
+  else if (p==='week') { const w = new Date(today); w.setDate(w.getDate()-w.getDay()+1); f.value = w.toISOString().slice(0,10); t.value = today.toISOString().slice(0,10); }
+  else if (p==='month') { f.value = today.toISOString().slice(0,8)+'01'; t.value = today.toISOString().slice(0,10); }
+}
+
+let _saOrderData = null; // 인쇄용 데이터 저장
+
+async function _runSA() {
+  const branch = document.getElementById('saStore').value;
+  const from = document.getElementById('saFrom').value;
+  const to = document.getElementById('saTo').value;
+  const el = document.getElementById('saResult');
+  if (!from || !to) { el.innerHTML = '<div style="color:red">Please select date range</div>'; return; }
+  el.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-light)"><i class="fas fa-spinner fa-spin"></i> Loading orders...</div>';
+  document.getElementById('saPrintBtn').style.display = 'none';
+
+  try {
+    const url = API.url + '?action=getSalesOrders&apikey=' + encodeURIComponent(API_KEY) + '&branch=' + encodeURIComponent(branch) + '&from=' + from + '&to=' + to;
+    const resp = await fetch(url);
+    const json = await resp.json();
+    if (json.error) { el.innerHTML = `<div style="color:red">${json.error}</div>`; return; }
+
+    const orders = json.data || [];
+    if (orders.length === 0) { el.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-light)">No orders found for this period</div>'; return; }
+
+    // ── 분석 계산 ──
+    const active = orders.filter(o => !o.refunded || o.refunded === 'false');
+    const paid = active;
+    const cashOrds = paid.filter(o => o.paymentMethod === 'cash');
+    const cardOrds = paid.filter(o => o.paymentMethod === 'card');
+    const cashTot = cashOrds.reduce((s,o) => s + Number(o.total||0), 0);
+    const cardTot = cardOrds.reduce((s,o) => s + Number(o.total||0), 0);
+    const grandTot = cashTot + cardTot;
+    const takeaway = paid.filter(o => (o.orderType||'').includes('takeaway'));
+    const eatIn = paid.filter(o => (o.orderType||'').includes('eat_in'));
+    const fp = v => '£' + Number(v||0).toFixed(2);
+
+    // 시간대별
+    const hourMap = {};
+    paid.forEach(o => {
+      const h = o.timestamp ? new Date(o.timestamp).getHours() : 0;
+      if (!hourMap[h]) hourMap[h] = {count:0, total:0};
+      hourMap[h].count++;
+      hourMap[h].total += Number(o.total||0);
+    });
+    const hourKeys = Object.keys(hourMap).sort((a,b) => Number(a)-Number(b));
+
+    // 아이템별
+    const itemMap = {};
+    paid.forEach(o => {
+      const items = Array.isArray(o.items) ? o.items : [];
+      items.forEach(i => {
+        const k = i.name || 'Unknown';
+        if (!itemMap[k]) itemMap[k] = {qty:0, total:0};
+        itemMap[k].qty += Number(i.qty||1);
+        itemMap[k].total += Number(i.price||0);
+      });
+    });
+    const sortedItems = Object.entries(itemMap).sort((a,b) => b[1].total - a[1].total);
+    const totalQty = sortedItems.reduce((s,[,d]) => s + d.qty, 0);
+
+    // 환불
+    const refunded = orders.filter(o => o.refunded && o.refunded !== 'false');
+    const refundTot = refunded.reduce((s,o) => s + Number(o.total||0), 0);
+
+    // 지점별 (All Branches 모드)
+    const branchMap = {};
+    paid.forEach(o => {
+      const b = o.branchName || o.branch || '?';
+      if (!branchMap[b]) branchMap[b] = {count:0, total:0};
+      branchMap[b].count++;
+      branchMap[b].total += Number(o.total||0);
+    });
+
+    // 데이터 저장 (인쇄용)
+    _saOrderData = {from, to, branch, paid, cashOrds, cardOrds, cashTot, cardTot, grandTot, takeaway, eatIn, hourMap, hourKeys, sortedItems, totalQty, refunded, refundTot, branchMap};
+
+    // ── HTML 렌더링 ──
+    let branchHtml = '';
+    if (!branch && Object.keys(branchMap).length > 1) {
+      branchHtml = `<div class="card" style="margin-bottom:12px;padding:12px">
+        <h4 style="margin:0 0 8px;font-size:13px;color:var(--text-light)">Sales by Branch</h4>
+        <table class="data-table"><thead><tr><th>Branch</th><th style="text-align:center">Orders</th><th style="text-align:right">Amount</th></tr></thead><tbody>
+        ${Object.entries(branchMap).map(([b,d]) => `<tr><td>${b}</td><td style="text-align:center">${d.count}</td><td style="text-align:right;font-weight:600;color:var(--success)">${fp(d.total)}</td></tr>`).join('')}
+        </tbody></table>
+      </div>`;
+    }
+
+    el.innerHTML = `
+      <div style="text-align:center;margin-bottom:12px">
+        <div style="font-size:13px;color:var(--text-light);font-weight:600">${from} ~ ${to} · ${paid.length} orders</div>
+      </div>
+
+      <!-- MAIN Summary -->
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px">
+        <div class="card" style="flex:1;min-width:250px;padding:12px;border-left:4px solid var(--accent)">
+          <h4 style="margin:0 0 8px;font-size:14px;color:var(--accent)">📊 MAIN (Actual Sales)</h4>
+          <table class="data-table"><thead><tr><th>Payment</th><th style="text-align:center">Count</th><th style="text-align:right">Amount</th></tr></thead><tbody>
+            <tr><td>💳 Card</td><td style="text-align:center">${cardOrds.length}</td><td style="text-align:right;font-weight:600;color:var(--accent)">${fp(cardTot)}</td></tr>
+            <tr><td>💵 Cash</td><td style="text-align:center">${cashOrds.length}</td><td style="text-align:right;font-weight:600;color:var(--success)">${fp(cashTot)}</td></tr>
+          </tbody></table>
+          <div style="display:flex;justify-content:space-between;padding:8px 12px;background:var(--bg-alt);border-radius:6px;margin-top:8px">
+            <span style="font-weight:700;font-size:14px">TOTAL</span>
+            <span style="font-weight:800;font-size:18px;color:var(--accent)">${fp(grandTot)}</span>
+          </div>
+        </div>
+      </div>
+
+      ${branchHtml}
+
+      <!-- Sales by Type -->
+      <div class="card" style="margin-bottom:12px;padding:12px">
+        <h4 style="margin:0 0 8px;font-size:13px;color:var(--text-light)">Sales by Type</h4>
+        <table class="data-table"><thead><tr><th>Type</th><th style="text-align:center">Orders</th><th style="text-align:right">Amount</th><th style="text-align:right">Avg</th></tr></thead><tbody>
+          <tr><td>Takeaway</td><td style="text-align:center">${takeaway.length}</td><td style="text-align:right">${fp(takeaway.reduce((s,o)=>s+Number(o.total||0),0))}</td><td style="text-align:right">${takeaway.length ? fp(takeaway.reduce((s,o)=>s+Number(o.total||0),0)/takeaway.length) : '—'}</td></tr>
+          <tr><td>Eat In</td><td style="text-align:center">${eatIn.length}</td><td style="text-align:right">${fp(eatIn.reduce((s,o)=>s+Number(o.total||0),0))}</td><td style="text-align:right">${eatIn.length ? fp(eatIn.reduce((s,o)=>s+Number(o.total||0),0)/eatIn.length) : '—'}</td></tr>
+        </tbody></table>
+        <div style="font-size:11px;color:var(--text-light);margin-top:4px">Average order: <strong>${fp(grandTot/paid.length)}</strong></div>
+      </div>
+
+      <!-- Hourly Breakdown -->
+      ${hourKeys.length > 0 ? `<div class="card" style="margin-bottom:12px;padding:12px">
+        <h4 style="margin:0 0 8px;font-size:13px;color:var(--text-light)">Hourly Breakdown</h4>
+        <table class="data-table"><thead><tr><th>Hour</th><th style="text-align:center">Orders</th><th style="text-align:right">Revenue</th><th style="text-align:right">Avg</th></tr></thead><tbody>
+          ${hourKeys.map(h => `<tr><td>${String(h).padStart(2,'0')}:00</td><td style="text-align:center">${hourMap[h].count}</td><td style="text-align:right">${fp(hourMap[h].total)}</td><td style="text-align:right">${fp(hourMap[h].total/hourMap[h].count)}</td></tr>`).join('')}
+        </tbody></table>
+      </div>` : ''}
+
+      <!-- Item Sales -->
+      <div class="card" style="margin-bottom:12px;padding:12px">
+        <h4 style="margin:0 0 8px;font-size:13px;color:var(--text-light)">Item Sales (${totalQty} items)</h4>
+        <table class="data-table"><thead><tr><th>Item</th><th style="text-align:center">Qty</th><th style="text-align:right">Revenue</th><th style="text-align:right">%</th></tr></thead><tbody>
+          ${sortedItems.map(([n,d]) => `<tr><td>${n}</td><td style="text-align:center">${d.qty}</td><td style="text-align:right">${fp(d.total)}</td><td style="text-align:right;color:var(--text-light)">${grandTot>0?(d.total/grandTot*100).toFixed(1)+'%':'—'}</td></tr>`).join('')}
+        </tbody></table>
+      </div>
+
+      ${refunded.length > 0 ? `<div class="card" style="margin-bottom:12px;padding:12px;border-left:4px solid #DC2626">
+        <h4 style="margin:0 0 8px;font-size:13px;color:#DC2626">Refunds (${refunded.length})</h4>
+        <div style="font-size:12px">${refunded.map(r => `<div style="padding:2px 0">• ${r.orderNumber} ${fp(r.total)} ${(r.refundMethod||'').toUpperCase()}</div>`).join('')}</div>
+        <div style="text-align:right;font-weight:700;color:#DC2626;margin-top:4px">Total Refunded: ${fp(refundTot)}</div>
+      </div>` : ''}
+    `;
+    document.getElementById('saPrintBtn').style.display = 'inline-block';
+
+  } catch(e) {
+    el.innerHTML = `<div style="color:red">Failed to load: ${e.message}</div>`;
+  }
+}
+
+// ── Sales Analysis A4 Print ──
+function _printSA() {
+  const d = _saOrderData;
+  if (!d) return;
+  const fp = v => '£' + Number(v||0).toFixed(2);
+
+  let itemRows = d.sortedItems.map(([n,info]) => {
+    const pct = d.grandTot>0 ? (info.total/d.grandTot*100).toFixed(1)+'%' : '—';
+    return `<tr><td style="padding:3px 8px;font-size:11px">${n}</td><td style="padding:3px 8px;font-size:11px;text-align:center">${info.qty}</td><td style="padding:3px 8px;font-size:11px;text-align:right">${fp(info.total)}</td><td style="padding:3px 8px;font-size:11px;text-align:right;color:#6B7280">${pct}</td></tr>`;
+  }).join('');
+  let hourRows = d.hourKeys.map(h => `<tr><td style="padding:3px 8px;font-size:11px">${String(h).padStart(2,'0')}:00</td><td style="padding:3px 8px;font-size:11px;text-align:center">${d.hourMap[h].count}</td><td style="padding:3px 8px;font-size:11px;text-align:right">${fp(d.hourMap[h].total)}</td><td style="padding:3px 8px;font-size:11px;text-align:right">${fp(d.hourMap[h].total/d.hourMap[h].count)}</td></tr>`).join('');
+  let branchRows = Object.entries(d.branchMap).map(([b,info]) => `<tr><td style="padding:3px 8px;font-size:11px">${b}</td><td style="padding:3px 8px;font-size:11px;text-align:center">${info.count}</td><td style="padding:3px 8px;font-size:11px;text-align:right">${fp(info.total)}</td></tr>`).join('');
+
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Sales Analysis</title>
+<style>
+@page{size:A4;margin:15mm}*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#1F2937;line-height:1.4}
+.hdr{text-align:center;border-bottom:3px solid #1F2937;padding-bottom:12px;margin-bottom:16px}
+.hdr h1{font-size:22px;font-weight:800}.hdr .sub{font-size:13px;color:#6B7280;margin-top:4px}
+.sec{margin-bottom:16px}.sec-t{font-size:14px;font-weight:700;border-bottom:2px solid #374151;padding-bottom:4px;margin-bottom:8px}
+table{width:100%;border-collapse:collapse}th{background:#F3F4F6;padding:4px 8px;text-align:left;font-size:11px;font-weight:700;border-bottom:2px solid #D1D5DB}
+.card{border:2px solid #D1D5DB;border-radius:8px;padding:10px;flex:1}
+.footer{text-align:center;font-size:9px;color:#9CA3AF;margin-top:20px;border-top:1px solid #E5E7EB;padding-top:8px}
+@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+</style></head><body>
+<div class="hdr"><h1>The Bap</h1><div class="sub">Sales Analysis Report</div><div class="sub">${d.from} ~ ${d.to} · ${d.paid.length} orders${d.branch ? ' · '+d.branch : ''}</div></div>
+
+<div class="sec"><div class="sec-t">Sales Summary</div>
+<div class="card" style="border-color:#2563EB">
+  <table>
+    <tr><td style="padding:2px 0">💳 Card (${d.cardOrds.length})</td><td style="text-align:right;font-weight:600">${fp(d.cardTot)}</td></tr>
+    <tr><td style="padding:2px 0">💵 Cash (${d.cashOrds.length})</td><td style="text-align:right;font-weight:600">${fp(d.cashTot)}</td></tr>
+    <tr style="border-top:2px solid #2563EB"><td style="padding:4px 0;font-weight:800;font-size:14px">TOTAL</td><td style="text-align:right;font-weight:800;font-size:16px;color:#2563EB">${fp(d.grandTot)}</td></tr>
+  </table>
+</div></div>
+
+${Object.keys(d.branchMap).length>1 ? `<div class="sec"><div class="sec-t">Sales by Branch</div><table><thead><tr><th>Branch</th><th style="text-align:center">Orders</th><th style="text-align:right">Amount</th></tr></thead><tbody>${branchRows}</tbody></table></div>` : ''}
+
+<div class="sec"><div class="sec-t">Sales by Type</div><table><thead><tr><th>Type</th><th style="text-align:center">Orders</th><th style="text-align:right">Amount</th><th style="text-align:right">Avg</th></tr></thead><tbody>
+<tr><td style="padding:3px 8px;font-size:11px">Takeaway</td><td style="text-align:center;font-size:11px">${d.takeaway.length}</td><td style="text-align:right;font-size:11px">${fp(d.takeaway.reduce((s,o)=>s+Number(o.total||0),0))}</td><td style="text-align:right;font-size:11px">${d.takeaway.length ? fp(d.takeaway.reduce((s,o)=>s+Number(o.total||0),0)/d.takeaway.length) : '—'}</td></tr>
+<tr><td style="padding:3px 8px;font-size:11px">Eat In</td><td style="text-align:center;font-size:11px">${d.eatIn.length}</td><td style="text-align:right;font-size:11px">${fp(d.eatIn.reduce((s,o)=>s+Number(o.total||0),0))}</td><td style="text-align:right;font-size:11px">${d.eatIn.length ? fp(d.eatIn.reduce((s,o)=>s+Number(o.total||0),0)/d.eatIn.length) : '—'}</td></tr>
+</tbody></table></div>
+
+${d.hourKeys.length>0 ? `<div class="sec"><div class="sec-t">Hourly Breakdown</div><table><thead><tr><th>Hour</th><th style="text-align:center">Orders</th><th style="text-align:right">Revenue</th><th style="text-align:right">Avg</th></tr></thead><tbody>${hourRows}</tbody></table></div>` : ''}
+
+<div class="sec"><div class="sec-t">Item Sales (${d.totalQty} items)</div><table><thead><tr><th>Item</th><th style="text-align:center">Qty</th><th style="text-align:right">Revenue</th><th style="text-align:right">%</th></tr></thead><tbody>${itemRows}</tbody></table></div>
+
+<div class="footer">TBMS Ver4.5 &copy; ${new Date().getFullYear()} The Bap. All rights reserved.</div>
+</body></html>`;
+
+  const w = window.open('','_blank','width=800,height=1000');
+  w.document.write(html);
+  w.document.close();
+  setTimeout(() => w.print(), 500);
 }
 
 // ==================== USAGE ANALYTICS ====================
@@ -5250,7 +5497,7 @@ function exportAllWord(){
       ['submittedBy / submittedAt','Who submitted and when']
     ]);
 
-    html+=`<hr style="margin:16px 0"><p style="text-align:center;font-size:8pt;color:#999;font-style:italic">TBMS Ver4.1 \u2014 Programmed by DJ</p>`;
+    html+=`<hr style="margin:16px 0"><p style="text-align:center;font-size:8pt;color:#999;font-style:italic">TBMS Ver4.5</p>`;
     html+=`</body></html>`;
 
     const blob=new Blob(['\ufeff'+html],{type:'application/msword'});

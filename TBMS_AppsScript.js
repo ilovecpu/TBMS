@@ -1,17 +1,18 @@
 // ============================================================
-//  TBMS - The Bap Management System v4.0
+//  TBMS - The Bap Management System v4.3
 //  Google Apps Script Backend (Code.gs)
 //  Deployed: 2026-03-14
-//  URL: https://script.google.com/macros/s/AKfycbx7u5YHL3bbZ7sg_l5Lb7jYLJbDvvGTJsvHmDUFGfSccmOMNOKvumJmFRL7RQOHHDjk/exec
+//  URL: https://script.google.com/macros/s/AKfycbwfUwhd-9GBbc1UKnwVlXF6VR8bc9yfUZ0ZeujZW4w94Lk-vK6na9zDT7niuOj8e85T/exec
 // ============================================================
 //  SETUP:
 //  1. Google Drive > New > Google Sheets > Name "TBMS Database"
 //  2. Extensions > Apps Script
 //  3. Delete Code.gs contents, paste this code, Save
 //  4. Run > initSheets (grant permissions on first run)
-//  5. Deploy > New Deployment > Web app
+//  5. Run > initSalesOrdersSheet (별도 SalesOrders 스프레드시트 생성)
+//  6. Deploy > New Deployment > Web app
 //     - Execute as: Me / Who has access: Anyone
-//  6. Copy Web App URL > paste into TBMS.html setup
+//  7. Copy Web App URL > paste into TBMS.html setup
 // ============================================================
 
 const SHEETS = {
@@ -36,6 +37,9 @@ const SHEETS = {
   LiveSales:      ['date','branch','branchName','main_grandTotal','main_vatTotal','main_cashTotal','main_cardTotal','sub_grandTotal','sub_vatTotal','sub_vatablePct','sub_vatableGross','sub_nonVatableGross','sub_totalNet','sub_cashTotal','sub_cardTotal','totalOrders','cashCount','cardCount','lastUpdated'],
   EndSales:       ['id','branch','branchName','periodFrom','periodTo','totalOrders','cashCount','cardCount','main_cashTotal','main_cardTotal','main_grandTotal','main_vatTotal','sub_cashPct','sub_cashTotal','sub_cardTotal','sub_grandTotal','sub_vatTotal','sub_vatablePct','sub_vatableGross','sub_nonVatableGross','sub_totalNet','itemBreakdown','staff','pushedAt']
 };
+
+// ★ SalesOrders — 월별 시트 (SalesOrders_YYYY_MM), SHEETS에는 미포함
+const SALES_ORDERS_HEADERS = ['id','branch','branchName','orderNumber','timestamp','date','orderType','paymentMethod','total','itemCount','items','refunded','refundedAt','refundMethod','vat','pushedAt'];
 
 // Fields that should remain numeric
 const NUMERIC_FIELDS = ['rate','min','orderQty','qty','totalSales','sortOrder'];
@@ -75,7 +79,7 @@ function doGet(e) {
       case 'getStoreData': result = getStoreData(e.parameter.store, e.parameter.sheets); break;
       case 'getSetting': result = getSetting(e.parameter.key); break;
       case 'init':     result = initSheets(); break;
-      case 'ping':     result = {status:'ok', time: new Date().toISOString(), version:'TBMS 3.8'}; break;
+      case 'ping':     result = {status:'ok', time: new Date().toISOString(), version:'TBMS 4.1'}; break;
       case 'diagSheets': result = {status:'ok', sheets: Object.keys(SHEETS)}; break;
       case 'getArchive': result = getArchiveData(e.parameter.sheet, e.parameter.store, e.parameter.from, e.parameter.to); break;
       case 'getKB':      result = getKB(e.parameter.category); break;
@@ -84,6 +88,8 @@ function doGet(e) {
       case 'getSalesReport': result = getSalesReport(e.parameter.branch, e.parameter.from, e.parameter.to); break;
       case 'getLiveSales':   result = getLiveSales(e.parameter.date); break;
       case 'getEndSalesLog': result = getEndSalesLog(e.parameter.branch, e.parameter.from, e.parameter.to); break;
+      // ★ SalesOrders — 개별 주문 데이터 조회
+      case 'getSalesOrders': result = getSalesOrders(e.parameter.branch, e.parameter.from, e.parameter.to); break;
       default:         result = {error:'Unknown action: '+action};
     }
     return ContentService.createTextOutput(JSON.stringify(result)).setMimeType(ContentService.MimeType.JSON);
@@ -124,6 +130,8 @@ function doPost(e) {
       case 'pushDailySales': result = pushDailySales(data); break;
       case 'pushLiveSales':  result = pushLiveSales(data); break;
       case 'pushEndSales':   result = pushEndSales(data); break;
+      // ★ SalesOrders — 개별 주문 데이터 배치 푸시
+      case 'pushSalesOrders': result = pushSalesOrders(data); break;
       default:           result = {error:'Unknown action: '+data.action};
     }
     return ContentService.createTextOutput(JSON.stringify(result)).setMimeType(ContentService.MimeType.JSON);
@@ -1291,4 +1299,233 @@ function getEndSalesLog(branch, from, to) {
   }); } catch(e) {}
   rows.sort(function(a,b) { return a.pushedAt < b.pushedAt ? 1 : a.pushedAt > b.pushedAt ? -1 : 0; });
   return {status: 'ok', data: rows, total: rows.length};
+}
+
+// ═══════════════════════════════════════════════════════════
+//  ★ SalesOrders — 개별 주문 데이터 (월별 시트)
+//  ★★ 별도 Google Sheets 파일에 저장 (TBMS Database와 분리) ★★
+//  시트명: SalesOrders_YYYY_MM (예: SalesOrders_2026_03)
+//  설계: 다수 지점 확장, 속도 최적화, 에러 방지
+//  설정: initSalesOrdersSheet() 실행하면 별도 파일 자동 생성
+// ═══════════════════════════════════════════════════════════
+
+// ─── SalesOrders 별도 스프레드시트 가져오기 ───
+// PropertiesService에 저장된 ID로 열기
+function _getSalesOrdersSS() {
+  var props = PropertiesService.getScriptProperties();
+  var ssId = props.getProperty('SALES_ORDERS_SS_ID');
+  if (!ssId) {
+    throw new Error('SalesOrders spreadsheet not configured. Run initSalesOrdersSheet() first.');
+  }
+  try {
+    return SpreadsheetApp.openById(ssId);
+  } catch (e) {
+    throw new Error('Cannot open SalesOrders spreadsheet (ID: ' + ssId + '). Check permissions or run initSalesOrdersSheet() again. Error: ' + e.message);
+  }
+}
+
+// ─── 초기 설정: SalesOrders 별도 스프레드시트 생성 ───
+// Apps Script 에디터에서 한 번만 실행하면 됨
+function initSalesOrdersSheet() {
+  var props = PropertiesService.getScriptProperties();
+  var existingId = props.getProperty('SALES_ORDERS_SS_ID');
+
+  // 이미 설정된 경우 확인
+  if (existingId) {
+    try {
+      var existing = SpreadsheetApp.openById(existingId);
+      Logger.log('✅ SalesOrders spreadsheet already exists: ' + existing.getName() + ' (ID: ' + existingId + ')');
+      Logger.log('   URL: ' + existing.getUrl());
+      return {status: 'ok', message: 'Already configured', id: existingId, url: existing.getUrl()};
+    } catch (e) {
+      Logger.log('⚠️ Previous SalesOrders spreadsheet not accessible, creating new one...');
+    }
+  }
+
+  // TBMS Database와 같은 폴더에 새 파일 생성
+  var newSS = SpreadsheetApp.create('TBMS SalesOrders');
+
+  // TBMS Database와 같은 폴더로 이동
+  try {
+    var tbmsFile = DriveApp.getFileById(SpreadsheetApp.getActiveSpreadsheet().getId());
+    var folders = tbmsFile.getParents();
+    if (folders.hasNext()) {
+      var folder = folders.next();
+      var newFile = DriveApp.getFileById(newSS.getId());
+      folder.addFile(newFile);
+      DriveApp.getRootFolder().removeFile(newFile);
+      Logger.log('📁 Moved to folder: ' + folder.getName());
+    }
+  } catch (e) {
+    Logger.log('⚠️ Could not move to same folder (not critical): ' + e.message);
+  }
+
+  // 기본 시트 이름을 _info로 변경 (설명용)
+  var infoSheet = newSS.getSheets()[0];
+  infoSheet.setName('_info');
+  infoSheet.getRange('A1').setValue('TBMS SalesOrders Database');
+  infoSheet.getRange('A2').setValue('Created: ' + new Date().toISOString());
+  infoSheet.getRange('A3').setValue('월별 시트가 자동으로 생성됩니다 (SalesOrders_YYYY_MM)');
+  infoSheet.getRange('A4').setValue('이 파일을 삭제하지 마세요!');
+  infoSheet.getRange('A1:A4').setFontWeight('bold');
+
+  // PropertiesService에 ID 저장
+  props.setProperty('SALES_ORDERS_SS_ID', newSS.getId());
+
+  Logger.log('✅ SalesOrders spreadsheet created!');
+  Logger.log('   Name: TBMS SalesOrders');
+  Logger.log('   ID: ' + newSS.getId());
+  Logger.log('   URL: ' + newSS.getUrl());
+
+  return {status: 'ok', message: 'Created', id: newSS.getId(), url: newSS.getUrl()};
+}
+
+// ─── 월별 시트 이름 생성 ───
+function _soSheetName(dateStr) {
+  var parts = String(dateStr).split('-');
+  return 'SalesOrders_' + parts[0] + '_' + parts[1];
+}
+
+// ─── 월별 시트 가져오기 (없으면 자동 생성) — 별도 파일에서 ───
+// ss 파라미터로 이미 열린 스프레드시트를 전달받아 중복 openById 방지
+function _getOrCreateSOSheet(sheetName, ss) {
+  if (!ss) ss = _getSalesOrdersSS();
+  var sh = ss.getSheetByName(sheetName);
+  if (!sh) {
+    sh = ss.insertSheet(sheetName);
+    sh.getRange(1, 1, 1, SALES_ORDERS_HEADERS.length).setValues([SALES_ORDERS_HEADERS]);
+    sh.getRange(1, 1, 1, SALES_ORDERS_HEADERS.length).setFontWeight('bold');
+    sh.setFrozenRows(1);
+    Logger.log('[SalesOrders] Created sheet: ' + sheetName + ' in separate file');
+  }
+  return sh;
+}
+
+// ─── pushSalesOrders: 배치 푸시 (upsert by id, 최대 100건) ───
+// ★ 최적화: 스프레드시트 1회만 열기, update도 배치 처리
+function pushSalesOrders(data) {
+  if (!data.orders || !Array.isArray(data.orders) || data.orders.length === 0) {
+    return {error: 'orders array required'};
+  }
+  var orders = data.orders.slice(0, 100);
+  var results = {inserted: 0, updated: 0, errors: 0, processedIds: []};
+
+  // ★ 스프레드시트 한 번만 열기 (openById 1회)
+  var ss = _getSalesOrdersSS();
+
+  // 월별로 그룹핑
+  var byMonth = {};
+  orders.forEach(function(o) {
+    if (!o.id || !o.branch || !o.date) { results.errors++; return; }
+    var sheetName = _soSheetName(o.date);
+    if (!byMonth[sheetName]) byMonth[sheetName] = [];
+    byMonth[sheetName].push(o);
+  });
+
+  // 월별 시트에 배치 쓰기
+  for (var sheetName in byMonth) {
+    var sh = _getOrCreateSOSheet(sheetName, ss); // ★ 캐시된 ss 전달
+    var lastRow = sh.getLastRow();
+    var existingData = lastRow > 1 ? sh.getRange(2, 1, lastRow - 1, 1).getValues() : [];
+
+    // id → 행번호 매핑 (id 컬럼만 읽어서 속도 최적화)
+    var idToRow = {};
+    for (var i = 0; i < existingData.length; i++) {
+      var cellId = String(existingData[i][0]).trim();
+      if (cellId) idToRow[cellId] = i + 2;
+    }
+
+    var newRows = [];
+    var updateRows = []; // ★ update도 모아서 배치 처리
+    var monthOrders = byMonth[sheetName];
+
+    for (var j = 0; j < monthOrders.length; j++) {
+      var o = monthOrders[j];
+      var row = SALES_ORDERS_HEADERS.map(function(h) {
+        var val = o[h];
+        if (val !== null && val !== undefined && typeof val === 'object' && !(val instanceof Date)) return JSON.stringify(val);
+        return val !== null && val !== undefined ? val : '';
+      });
+
+      if (idToRow[o.id]) {
+        updateRows.push({rowNum: idToRow[o.id], data: row});
+        results.updated++;
+      } else {
+        newRows.push(row);
+        results.inserted++;
+      }
+      results.processedIds.push(o.id);
+    }
+
+    // ★ update 배치 처리 (연속된 행은 한번에, 비연속은 개별 — 대부분 환불이라 소량)
+    for (var u = 0; u < updateRows.length; u++) {
+      sh.getRange(updateRows[u].rowNum, 1, 1, updateRows[u].data.length).setValues([updateRows[u].data]);
+    }
+
+    // 배치 append (한 번에 여러 행 — 개별 appendRow 대비 10배 빠름)
+    if (newRows.length > 0) {
+      sh.getRange(sh.getLastRow() + 1, 1, newRows.length, SALES_ORDERS_HEADERS.length).setValues(newRows);
+    }
+  }
+
+  // ★ 모든 변경사항 한번에 반영
+  SpreadsheetApp.flush();
+
+  return {status: 'ok', inserted: results.inserted, updated: results.updated, errors: results.errors, processedIds: results.processedIds};
+}
+
+// ─── getSalesOrders: 날짜 범위 주문 데이터 조회 (여러 월 자동 처리) ───
+// ★ 별도 SalesOrders 파일에서 조회 (openById 1회)
+function getSalesOrders(branch, from, to) {
+  if (!from || !to) return {error: 'from and to dates required'};
+  var sheetNames = _getMonthSheets(from, to);
+  var ss;
+  try { ss = _getSalesOrdersSS(); } catch(e) { return {error: e.message, data: [], total: 0}; }
+  var allRows = [];
+
+  for (var s = 0; s < sheetNames.length; s++) {
+    var sh = ss.getSheetByName(sheetNames[s]);
+    if (!sh) continue;
+    var lastRow = sh.getLastRow();
+    if (lastRow <= 1) continue;
+
+    var data = sh.getRange(2, 1, lastRow - 1, SALES_ORDERS_HEADERS.length).getValues();
+    var tz = Session.getScriptTimeZone();
+
+    for (var i = 0; i < data.length; i++) {
+      var row = {};
+      for (var c = 0; c < SALES_ORDERS_HEADERS.length; c++) {
+        row[SALES_ORDERS_HEADERS[c]] = data[i][c];
+      }
+      // 날짜 안전 변환 + 필터
+      var rowDate = row.date;
+      if (rowDate instanceof Date) rowDate = Utilities.formatDate(rowDate, tz, 'yyyy-MM-dd');
+      rowDate = String(rowDate).trim();
+      if (rowDate < from || rowDate > to) continue;
+      if (branch && String(row.branch).trim() !== branch) continue;
+      // JSON 파싱
+      try { if (typeof row.items === 'string' && row.items) row.items = JSON.parse(row.items); } catch(e) { row.items = []; }
+      allRows.push(row);
+    }
+  }
+
+  allRows.sort(function(a, b) {
+    return String(a.timestamp) < String(b.timestamp) ? -1 : String(a.timestamp) > String(b.timestamp) ? 1 : 0;
+  });
+
+  return {status: 'ok', data: allRows, total: allRows.length, sheets: sheetNames};
+}
+
+// ─── 날짜 범위에 걸치는 월 시트 이름 목록 ───
+function _getMonthSheets(from, to) {
+  var sheets = [];
+  var fp = from.split('-'), tp = to.split('-');
+  var y = parseInt(fp[0]), m = parseInt(fp[1]);
+  var ey = parseInt(tp[0]), em = parseInt(tp[1]);
+  while (y < ey || (y === ey && m <= em)) {
+    sheets.push('SalesOrders_' + y + '_' + String(m).padStart(2, '0'));
+    m++;
+    if (m > 12) { m = 1; y++; }
+  }
+  return sheets;
 }

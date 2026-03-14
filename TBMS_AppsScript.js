@@ -1,8 +1,8 @@
 // ============================================================
-//  TBMS - The Bap Management System v4.4.2
+//  TBMS - The Bap Management System v4.5.1
 //  Google Apps Script Backend (Code.gs)
 //  Deployed: 2026-03-14
-//  URL: https://script.google.com/macros/s/AKfycbwPrE7EsVgrI-xIiLzJUsI2-F0RozFtRVQWRWJFqHzmBJjcjs4_9Nb3T177nO65qAkC/exec
+//  URL: https://script.google.com/macros/s/AKfycbywEbwq7t1O8-nrb48i0Js6yLLxDNOXbmiA5EHdEnbkfirDJLfwJRv0B7uAcHUY5dN6/exec
 // ============================================================
 //  SETUP:
 //  1. Google Drive > New > Google Sheets > Name "TBMS Database"
@@ -37,7 +37,7 @@ const SHEETS = {
   EndSales:       ['id','branch','branchName','periodFrom','periodTo','totalOrders','cashCount','cardCount','main_cashTotal','main_cardTotal','main_grandTotal','main_vatTotal','sub_cashPct','sub_cashTotal','sub_cardTotal','sub_grandTotal','sub_vatTotal','sub_vatablePct','sub_vatableGross','sub_nonVatableGross','sub_totalNet','itemBreakdown','staff','pushedAt']
 };
 
-// ★ SalesOrders — 월별 시트 (SalesOrders_YYYY_MM), SHEETS에는 미포함
+// ★ SalesOrders — 주간 시트 (SalesOrders_YYYY_WNN), SHEETS에는 미포함 (v4.5.1: 월간→주간 전환, 기존 월간 시트 하위 호환)
 const SALES_ORDERS_HEADERS = ['id','branch','branchName','orderNumber','timestamp','date','orderType','paymentMethod','total','itemCount','items','refunded','refundedAt','refundMethod','vat','cashPct','vatablePct','pushedAt'];
 
 // Fields that should remain numeric
@@ -78,7 +78,7 @@ function doGet(e) {
       case 'getStoreData': result = getStoreData(e.parameter.store, e.parameter.sheets); break;
       case 'getSetting': result = getSetting(e.parameter.key); break;
       case 'init':     result = initSheets(); break;
-      case 'ping':     result = {status:'ok', time: new Date().toISOString(), version:'TBMS 4.4.2'}; break;
+      case 'ping':     result = {status:'ok', time: new Date().toISOString(), version:'TBMS 4.5.1'}; break;
       case 'diagSheets': result = {status:'ok', sheets: Object.keys(SHEETS)}; break;
       case 'getArchive': result = getArchiveData(e.parameter.sheet, e.parameter.store, e.parameter.from, e.parameter.to); break;
       case 'getKB':      result = getKB(e.parameter.category); break;
@@ -1152,7 +1152,7 @@ function getEndSalesLog(branch, from, to) {
 // ═══════════════════════════════════════════════════════════
 //  ★ SalesOrders — 개별 주문 데이터 (월별 시트)
 //  ★★ 별도 Google Sheets 파일에 저장 (TBMS Database와 분리) ★★
-//  시트명: SalesOrders_YYYY_MM (예: SalesOrders_2026_03)
+//  시트명: SalesOrders_YYYY_WNN (예: SalesOrders_2026_W11) — 주간 분리
 //  설계: 다수 지점 확장, 속도 최적화, 에러 방지
 //  설정: initSalesOrdersSheet() 실행하면 별도 파일 자동 생성
 // ═══════════════════════════════════════════════════════════
@@ -1213,7 +1213,7 @@ function initSalesOrdersSheet() {
   infoSheet.setName('_info');
   infoSheet.getRange('A1').setValue('TBMS SalesOrders Database');
   infoSheet.getRange('A2').setValue('Created: ' + new Date().toISOString());
-  infoSheet.getRange('A3').setValue('월별 시트가 자동으로 생성됩니다 (SalesOrders_YYYY_MM)');
+  infoSheet.getRange('A3').setValue('주간 시트가 자동으로 생성됩니다 (SalesOrders_YYYY_WNN)');
   infoSheet.getRange('A4').setValue('이 파일을 삭제하지 마세요!');
   infoSheet.getRange('A1:A4').setFontWeight('bold');
 
@@ -1228,10 +1228,21 @@ function initSalesOrdersSheet() {
   return {status: 'ok', message: 'Created', id: newSS.getId(), url: newSS.getUrl()};
 }
 
-// ─── 월별 시트 이름 생성 ───
+// ─── 주간 시트 이름 생성 (v4.5.1: 월간→주간 분리, 10지점 확장 대비) ───
+// 형식: SalesOrders_2026_W11 (ISO week number)
 function _soSheetName(dateStr) {
   var parts = String(dateStr).split('-');
-  return 'SalesOrders_' + parts[0] + '_' + parts[1];
+  var d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+  var week = _isoWeek(d);
+  return 'SalesOrders_' + parts[0] + '_W' + String(week).padStart(2, '0');
+}
+
+// ISO 주차 계산
+function _isoWeek(date) {
+  var d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+  var yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
 }
 
 // ─── 월별 시트 가져오기 (없으면 자동 생성) — 별도 파일에서 ───
@@ -1261,17 +1272,17 @@ function pushSalesOrders(data) {
   // ★ 스프레드시트 한 번만 열기 (openById 1회)
   var ss = _getSalesOrdersSS();
 
-  // 월별로 그룹핑
-  var byMonth = {};
+  // 주간 시트별 그룹핑 (v4.5.1: 월간→주간)
+  var bySheet = {};
   orders.forEach(function(o) {
     if (!o.id || !o.branch || !o.date) { results.errors++; return; }
     var sheetName = _soSheetName(o.date);
-    if (!byMonth[sheetName]) byMonth[sheetName] = [];
-    byMonth[sheetName].push(o);
+    if (!bySheet[sheetName]) bySheet[sheetName] = [];
+    bySheet[sheetName].push(o);
   });
 
-  // 월별 시트에 배치 쓰기
-  for (var sheetName in byMonth) {
+  // 주간 시트에 배치 쓰기
+  for (var sheetName in bySheet) {
     var sh = _getOrCreateSOSheet(sheetName, ss); // ★ 캐시된 ss 전달
     var lastRow = sh.getLastRow();
     var existingData = lastRow > 1 ? sh.getRange(2, 1, lastRow - 1, 1).getValues() : [];
@@ -1285,10 +1296,10 @@ function pushSalesOrders(data) {
 
     var newRows = [];
     var updateRows = []; // ★ update도 모아서 배치 처리
-    var monthOrders = byMonth[sheetName];
+    var sheetOrders = bySheet[sheetName];
 
-    for (var j = 0; j < monthOrders.length; j++) {
-      var o = monthOrders[j];
+    for (var j = 0; j < sheetOrders.length; j++) {
+      var o = sheetOrders[j];
       var row = SALES_ORDERS_HEADERS.map(function(h) {
         var val = o[h];
         if (val !== null && val !== undefined && typeof val === 'object' && !(val instanceof Date)) return JSON.stringify(val);
@@ -1326,7 +1337,7 @@ function pushSalesOrders(data) {
 // ★ 별도 SalesOrders 파일에서 조회 (openById 1회)
 function getSalesOrders(branch, from, to) {
   if (!from || !to) return {error: 'from and to dates required'};
-  var sheetNames = _getMonthSheets(from, to);
+  var sheetNames = _getSheets(from, to);
   var ss;
   try { ss = _getSalesOrdersSS(); } catch(e) { return {error: e.message, data: [], total: 0}; }
   var allRows = [];
@@ -1337,23 +1348,51 @@ function getSalesOrders(branch, from, to) {
     var lastRow = sh.getLastRow();
     if (lastRow <= 1) continue;
 
-    var data = sh.getRange(2, 1, lastRow - 1, SALES_ORDERS_HEADERS.length).getValues();
     var tz = Session.getScriptTimeZone();
+    // ★ 최적화 (v4.5.1): date 컬럼(6번째)만 먼저 읽어서 해당 행만 full read
+    var dateColIdx = SALES_ORDERS_HEADERS.indexOf('date') + 1; // 1-based
+    var branchColIdx = SALES_ORDERS_HEADERS.indexOf('branch') + 1;
+    var dateVals = sh.getRange(2, dateColIdx, lastRow - 1, 1).getValues();
+    var branchVals = branch ? sh.getRange(2, branchColIdx, lastRow - 1, 1).getValues() : null;
 
-    for (var i = 0; i < data.length; i++) {
-      var row = {};
-      for (var c = 0; c < SALES_ORDERS_HEADERS.length; c++) {
-        row[SALES_ORDERS_HEADERS[c]] = data[i][c];
-      }
-      // 날짜 안전 변환 + 필터
-      var rowDate = row.date;
+    // 대상 행 번호 수집
+    var targetRows = [];
+    for (var i = 0; i < dateVals.length; i++) {
+      var rowDate = dateVals[i][0];
       if (rowDate instanceof Date) rowDate = Utilities.formatDate(rowDate, tz, 'yyyy-MM-dd');
       rowDate = String(rowDate).trim();
       if (rowDate < from || rowDate > to) continue;
-      if (branch && String(row.branch).trim() !== branch) continue;
-      // JSON 파싱
-      try { if (typeof row.items === 'string' && row.items) row.items = JSON.parse(row.items); } catch(e) { row.items = []; }
-      allRows.push(row);
+      if (branch && String(branchVals[i][0]).trim() !== branch) continue;
+      targetRows.push(i + 2); // 1-based row number (header=1)
+    }
+
+    if (targetRows.length === 0) continue;
+
+    // 연속 구간이면 한번에 읽기, 아니면 전체 읽기 후 필터
+    var data;
+    if (targetRows.length > lastRow * 0.3) {
+      // 30% 이상이면 전체 읽기가 효율적
+      data = sh.getRange(2, 1, lastRow - 1, SALES_ORDERS_HEADERS.length).getValues();
+      for (var i = 0; i < targetRows.length; i++) {
+        var rowIdx = targetRows[i] - 2; // 0-based
+        var row = {};
+        for (var c = 0; c < SALES_ORDERS_HEADERS.length; c++) {
+          row[SALES_ORDERS_HEADERS[c]] = data[rowIdx][c];
+        }
+        try { if (typeof row.items === 'string' && row.items) row.items = JSON.parse(row.items); } catch(e) { row.items = []; }
+        allRows.push(row);
+      }
+    } else {
+      // 소량이면 개별 행 읽기
+      for (var i = 0; i < targetRows.length; i++) {
+        var vals = sh.getRange(targetRows[i], 1, 1, SALES_ORDERS_HEADERS.length).getValues()[0];
+        var row = {};
+        for (var c = 0; c < SALES_ORDERS_HEADERS.length; c++) {
+          row[SALES_ORDERS_HEADERS[c]] = vals[c];
+        }
+        try { if (typeof row.items === 'string' && row.items) row.items = JSON.parse(row.items); } catch(e) { row.items = []; }
+        allRows.push(row);
+      }
     }
   }
 
@@ -1453,15 +1492,39 @@ function getSalesOrdersSummary(date) {
 }
 
 // ─── 날짜 범위에 걸치는 월 시트 이름 목록 ───
-function _getMonthSheets(from, to) {
+// ─── 날짜 범위 → 주간 시트 이름 목록 (v4.5.1: 월간→주간) ───
+function _getWeekSheets(from, to) {
   var sheets = [];
+  var seen = {};
+  var fp = from.split('-'), tp = to.split('-');
+  var d = new Date(parseInt(fp[0]), parseInt(fp[1]) - 1, parseInt(fp[2]));
+  var end = new Date(parseInt(tp[0]), parseInt(tp[1]) - 1, parseInt(tp[2]));
+  // 하루씩 순회하며 해당 주 시트 이름 수집
+  while (d <= end) {
+    var name = _soSheetName(d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'));
+    if (!seen[name]) { seen[name] = true; sheets.push(name); }
+    d.setDate(d.getDate() + 1);
+  }
+  return sheets;
+}
+
+// ★ 하위 호환: 기존 월간 시트도 검색 (이전 데이터 마이그레이션 전까지)
+function _getSheets(from, to) {
+  var weekSheets = _getWeekSheets(from, to);
+  // 월간 시트도 포함 (기존 데이터)
+  var monthSheets = [];
+  var seen = {};
   var fp = from.split('-'), tp = to.split('-');
   var y = parseInt(fp[0]), m = parseInt(fp[1]);
   var ey = parseInt(tp[0]), em = parseInt(tp[1]);
   while (y < ey || (y === ey && m <= em)) {
-    sheets.push('SalesOrders_' + y + '_' + String(m).padStart(2, '0'));
+    var name = 'SalesOrders_' + y + '_' + String(m).padStart(2, '0');
+    if (!seen[name]) { seen[name] = true; monthSheets.push(name); }
     m++;
     if (m > 12) { m = 1; y++; }
   }
-  return sheets;
+  // 주간 시트 + 월간 시트 (중복 제거)
+  var all = weekSheets;
+  monthSheets.forEach(function(n) { if (!seen[n]) all.push(n); });
+  return all;
 }

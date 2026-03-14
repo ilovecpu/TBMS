@@ -237,7 +237,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
   <div class="login-logo">
     <div class="logo-icon"><i class="fas fa-bowl-food"></i></div>
     <h1>TBMS</h1>
-    <p>The Bap Management System <span style="opacity:.5;font-size:11px">Ver4.5.0</span></p>
+    <p>The Bap Management System <span style="opacity:.5;font-size:11px">Ver4.5.1</span></p>
   </div>
   <div class="form-group"><label>Username</label><input id="loginUser" placeholder="Enter username"></div>
   <div class="form-group"><label>Password</label><input id="loginPass" type="password" placeholder="Enter password"></div>
@@ -254,7 +254,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
 <!-- MAIN APP -->
 <div id="mainApp" class="hidden">
   <div class="sidebar" id="sidebar">
-    <div class="sidebar-header"><h2>TBMS <span style="font-size:12px;font-weight:400;opacity:.6">Ver4.5.0</span></h2><p>The Bap Management System</p></div>
+    <div class="sidebar-header"><h2>TBMS <span style="font-size:12px;font-weight:400;opacity:.6">Ver4.5.1</span></h2><p>The Bap Management System</p></div>
     <div class="sidebar-menu">
       <div class="menu-item active" data-page="dashboard" onclick="navigate('dashboard')"><i class="fas fa-home"></i>Dashboard</div>
       <div class="menu-group">
@@ -311,7 +311,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
   <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
   <div class="main-content">
     <div class="header">
-      <div class="header-left"><button class="menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button><h2 id="pageTitle" style="font-size:18px">Dashboard</h2><span style="font-size:11px;color:var(--text-light);margin-left:8px;font-weight:400;opacity:.7">Ver4.5.0</span></div>
+      <div class="header-left"><button class="menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button><h2 id="pageTitle" style="font-size:18px">Dashboard</h2><span style="font-size:11px;color:var(--text-light);margin-left:8px;font-weight:400;opacity:.7">Ver4.5.1</span></div>
       <div class="header-right"><span id="headerDate"></span><span class="sync-status"><span class="dot offline" id="syncDot"></span><span id="syncText">Local</span></span><button class="btn btn-sm btn-outline" onclick="doLogout()"><i class="fas fa-sign-out-alt"></i> Logout</button></div>
     </div>
     <div class="page-content" id="pageContent"></div>
@@ -2685,6 +2685,7 @@ function renderStockTemplatePage(c){
       <div style="display:flex;gap:8px;align-items:center">
         <span style="font-size:12px;color:var(--text-light)"><i class="fas fa-info-circle"></i> All ${stores.length} stores</span>
         <button class="btn btn-sm" onclick="openCatOrderModal()" style="background:#f0f0f0;color:#555"><i class="fas fa-layer-group"></i> Categories</button>
+        <button class="btn btn-sm" onclick="printStockTemplate()" style="background:#f0f0f0;color:#555"><i class="fas fa-print"></i> Print</button>
         <button class="btn btn-primary btn-sm" onclick="openStockItemModal()"><i class="fas fa-plus"></i> Add Item</button>
       </div>
     </div>
@@ -2803,6 +2804,81 @@ async function renderStockStatusTable(){
   if(!items.length)html='<tr><td colspan="9" style="text-align:center;color:var(--text-light)">No items for this store</td></tr>';
   $('ssBody').innerHTML=html;
 }
+// ─── Stock Template 인쇄 ───
+function printStockTemplate(){
+  const catIdx=getSortedCategories();
+  let items=[...D.StockTemplate];
+  // 현재 필터 적용
+  const catF=$('stockCat')?.value||'';
+  const search=($('stockSearch')?.value||'').toLowerCase().trim();
+  if(catF)items=items.filter(t=>t.category===catF);
+  if(search)items=items.filter(t=>(t.name||'').toLowerCase().includes(search)||(t.category||'').toLowerCase().includes(search));
+  items.sort((a,b)=>{const ci=catIdx.indexOf(a.category)-catIdx.indexOf(b.category);return ci!==0?ci:(a.sortOrder||0)-(b.sortOrder||0);});
+  // 서플라이어 이름 변환 함수
+  const supName=c=>{const s=D.Suppliers.find(x=>x.id===c||x.name===c);return s?s.name:c;};
+  // 카테고리별 그룹핑
+  let rows='';let lastCat='';let num=0;
+  items.forEach(t=>{
+    if(t.category!==lastCat){
+      lastCat=t.category;
+      const cnt=items.filter(i=>i.category===lastCat).length;
+      rows+=`<tr><td colspan="8" style="background:#333;color:#fff;font-weight:700;font-size:13px;padding:8px 12px;border:none">${escHtml(lastCat)} (${cnt})</td></tr>`;
+    }
+    num++;
+    const sup1=t.supplier1||'';const sup2=t.supplier2||'';const sup3=t.supplier3||'';
+    const sups=[sup1,sup2,sup3].filter(Boolean).map(c=>supName(c)).join(', ');
+    const oq=t.orderQty||0;
+    const ou=t.orderUnit||t.unit||'';
+    const ao=t.alwaysOrder===true||t.alwaysOrder==='true';
+    const mc=t.minCondition||'lt';
+    const minDisp=t.min?(mc==='lte'?'≤':'<')+' '+t.min:t.min||0;
+    const memo=t.memo||'';
+    rows+=`<tr>
+      <td style="text-align:center;color:#888;font-size:11px">${num}</td>
+      <td style="font-weight:600">${escHtml(t.name)}${memo?'<div style="font-size:10px;color:#888;margin-top:2px">'+escHtml(memo)+'</div>':''}</td>
+      <td style="text-align:center">${escHtml(t.unit)}</td>
+      <td style="text-align:center;font-weight:600">${minDisp}</td>
+      <td style="text-align:center;font-weight:600;color:${oq>0?'#1565c0':'#ccc'}">${oq>0?oq:'—'}${ao?' ★':''}</td>
+      <td style="text-align:center">${escHtml(ou)}</td>
+      <td style="font-size:11px">${sups||'—'}</td>
+      <td style="font-size:11px;color:#888">${escHtml(t.id)}</td>
+    </tr>`;
+  });
+  const today=new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  const filterInfo=catF?` — Category: ${escHtml(catF)}`:'';
+  const searchInfo=search?` — Search: "${escHtml(search)}"`:'' ;
+  const w=window.open('','_blank');
+  w.document.write(`<!DOCTYPE html><html><head><title>Stock Template - Print</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;padding:15px;font-size:12px;color:#222}
+  h2{font-size:18px;margin-bottom:4px}
+  .meta{font-size:11px;color:#666;margin-bottom:12px}
+  table{width:100%;border-collapse:collapse;font-size:11px}
+  th{background:#f5f5f5;font-weight:700;padding:6px 8px;border:1px solid #ddd;text-align:left;font-size:11px}
+  td{padding:5px 8px;border:1px solid #eee;vertical-align:top}
+  tr:nth-child(even){background:#fafafa}
+  .summary{margin-top:12px;font-size:11px;color:#666;display:flex;gap:20px}
+  .btn-row{text-align:center;margin:12px 0}
+  @media print{@page{size:A4 landscape;margin:8mm 10mm}.btn-row{display:none!important}body{padding:0}}
+</style></head><body>
+  <div class="btn-row"><button onclick="window.print()" style="padding:8px 24px;font-size:13px;font-weight:700;background:#222;color:#fff;border:none;border-radius:8px;cursor:pointer">🖨 Print</button></div>
+  <h2>Stock Template</h2>
+  <div class="meta">${today}${filterInfo}${searchInfo} — Total ${items.length} items / Programmed by DJ</div>
+  <table>
+    <thead><tr><th style="width:30px">#</th><th>Item</th><th style="width:50px;text-align:center">Unit</th><th style="width:55px;text-align:center">Min</th><th style="width:55px;text-align:center">Order</th><th style="width:60px;text-align:center">Order Unit</th><th>Supplier(s)</th><th style="width:60px">ID</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table>
+  <div class="summary">
+    <span>Total Items: <strong>${items.length}</strong></span>
+    <span>Categories: <strong>${[...new Set(items.map(t=>t.category))].length}</strong></span>
+    <span>★ = Always Order</span>
+  </div>
+  <div class="btn-row" style="margin-top:10px"><button onclick="window.print()" style="padding:8px 24px;font-size:13px;font-weight:700;background:#222;color:#fff;border:none;border-radius:8px;cursor:pointer">🖨 Print</button></div>
+</body></html>`);
+  w.document.close();
+}
+
 function renderStockTable() {
   const catF=$('stockCat')?.value||'';
   const search=($('stockSearch')?.value||'').toLowerCase().trim();
@@ -5069,7 +5145,7 @@ ${d.hourKeys.length>0 ? `<div class="sec"><div class="sec-t">Hourly Breakdown</d
 
 <div class="sec"><div class="sec-t">Item Sales (${d.totalQty} items)</div><table><thead><tr><th>Item</th><th style="text-align:center">Qty</th><th style="text-align:right">Revenue</th><th style="text-align:right">%</th></tr></thead><tbody>${itemRows}</tbody></table></div>
 
-<div class="footer">TBMS Ver4.5.0 &copy; ${new Date().getFullYear()} The Bap. All rights reserved.</div>
+<div class="footer">TBMS Ver4.5.1 &copy; ${new Date().getFullYear()} The Bap. All rights reserved.</div>
 </body></html>`;
 
   const w = window.open('','_blank','width=800,height=1000');
@@ -5448,7 +5524,7 @@ function exportAllWord(){
       ['submittedBy / submittedAt','Who submitted and when']
     ]);
 
-    html+=`<hr style="margin:16px 0"><p style="text-align:center;font-size:8pt;color:#999;font-style:italic">TBMS Ver4.5.0</p>`;
+    html+=`<hr style="margin:16px 0"><p style="text-align:center;font-size:8pt;color:#999;font-style:italic">TBMS Ver4.5.1</p>`;
     html+=`</body></html>`;
 
     const blob=new Blob(['\ufeff'+html],{type:'application/msword'});

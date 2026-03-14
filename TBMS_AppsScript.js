@@ -1,8 +1,8 @@
 // ============================================================
-//  TBMS - The Bap Management System v3.8
+//  TBMS - The Bap Management System v4.0
 //  Google Apps Script Backend (Code.gs)
-//  Deployed: 2026-03-13
-//  URL: https://script.google.com/macros/s/AKfycbxYPwOPkJqoGbI3OQ0ITG7_OXuchjOD0_HBuNRsrqtaMbMmFtPqVZbSEBN-xNjKwQA-/exec
+//  Deployed: 2026-03-14
+//  URL: https://script.google.com/macros/s/AKfycbx7u5YHL3bbZ7sg_l5Lb7jYLJbDvvGTJsvHmDUFGfSccmOMNOKvumJmFRL7RQOHHDjk/exec
 // ============================================================
 //  SETUP:
 //  1. Google Drive > New > Google Sheets > Name "TBMS Database"
@@ -32,9 +32,9 @@ const SHEETS = {
   StoreInfo:      ['id','storeId','leaseStart','leaseEnd','monthlyRent','serviceCharge','rentReviewYears','landlordName','landlordPhone','landlordEmail','estateAgent','estateAgentPhone','estateAgentEmail','councilName','councilEmail','councilPhone','businessRateAnnual','hygieneInspDate','hygieneRating','electricCompany','electricContractStart','electricContractEnd','electricKwhRate','electricDailyCharge','phoneCompany','phoneContractStart','phoneContractEnd','waterCompany','cardMachineCompany','cardContractStart','cardContractEnd','cardRate','fridgeCleanDate','fridgeCleanNext','airconCleanDate','airconCleanNext','memo','custom1Label','custom1Value','custom2Label','custom2Value','custom3Label','custom3Value','custom4Label','custom4Value','custom5Label','custom5Value','custom6Label','custom6Value','custom7Label','custom7Value','custom8Label','custom8Value','custom9Label','custom9Value','custom10Label','custom10Value'],
   KnowledgeBase:  ['id','category','title','content','tags','source','createdBy','createdAt','updatedAt','active','version','accessLevel'],
   // ★ POS Sales Data — pushed from branch servers
-  DailySales:     ['date','branch','branchName','totalOrders','main_cashTotal','main_cardTotal','main_grandTotal','main_vatTotal','main_vatBreakdown','sub_cashPct','sub_cashTotal','sub_cardTotal','sub_grandTotal','sub_vatTotal','sub_vatBreakdown','cashCount','cardCount','itemBreakdown','pushedAt'],
-  LiveSales:      ['date','branch','branchName','main_grandTotal','main_vatTotal','main_cashTotal','main_cardTotal','sub_grandTotal','sub_vatTotal','sub_cashTotal','sub_cardTotal','totalOrders','cashCount','cardCount','lastUpdated'],
-  EndSales:       ['id','branch','branchName','periodFrom','periodTo','totalOrders','main_cashTotal','main_cardTotal','main_grandTotal','main_vatTotal','sub_cashPct','sub_grandTotal','sub_vatTotal','itemBreakdown','staff','pushedAt']
+  DailySales:     ['date','branch','branchName','totalOrders','main_cashTotal','main_cardTotal','main_grandTotal','main_vatTotal','main_vatBreakdown','sub_cashPct','sub_cashTotal','sub_cardTotal','sub_grandTotal','sub_vatTotal','sub_vatablePct','sub_vatableGross','sub_nonVatableGross','sub_totalNet','cashCount','cardCount','itemBreakdown','pushedAt'],
+  LiveSales:      ['date','branch','branchName','main_grandTotal','main_vatTotal','main_cashTotal','main_cardTotal','sub_grandTotal','sub_vatTotal','sub_vatablePct','sub_vatableGross','sub_nonVatableGross','sub_totalNet','sub_cashTotal','sub_cardTotal','totalOrders','cashCount','cardCount','lastUpdated'],
+  EndSales:       ['id','branch','branchName','periodFrom','periodTo','totalOrders','cashCount','cardCount','main_cashTotal','main_cardTotal','main_grandTotal','main_vatTotal','sub_cashPct','sub_cashTotal','sub_cardTotal','sub_grandTotal','sub_vatTotal','sub_vatablePct','sub_vatableGross','sub_nonVatableGross','sub_totalNet','itemBreakdown','staff','pushedAt']
 };
 
 // Fields that should remain numeric
@@ -75,7 +75,7 @@ function doGet(e) {
       case 'getStoreData': result = getStoreData(e.parameter.store, e.parameter.sheets); break;
       case 'getSetting': result = getSetting(e.parameter.key); break;
       case 'init':     result = initSheets(); break;
-      case 'ping':     result = {status:'ok', time: new Date().toISOString(), version:'TBMS 2.5'}; break;
+      case 'ping':     result = {status:'ok', time: new Date().toISOString(), version:'TBMS 3.8'}; break;
       case 'diagSheets': result = {status:'ok', sheets: Object.keys(SHEETS)}; break;
       case 'getArchive': result = getArchiveData(e.parameter.sheet, e.parameter.store, e.parameter.from, e.parameter.to); break;
       case 'getKB':      result = getKB(e.parameter.category); break;
@@ -1115,7 +1115,10 @@ function pushDailySales(data) {
     sub_cardTotal:      data.sub ? data.sub.cardTotal : 0,
     sub_grandTotal:     data.sub ? data.sub.grandTotal : 0,
     sub_vatTotal:       data.sub ? data.sub.vatTotal : 0,
-    sub_vatBreakdown:   data.sub ? data.sub.vatBreakdown : {},
+    sub_vatablePct:     data.sub ? data.sub.vatablePct : 20,
+    sub_vatableGross:   data.sub ? data.sub.vatableGross : 0,
+    sub_nonVatableGross: data.sub ? data.sub.nonVatableGross : 0,
+    sub_totalNet:       data.sub ? data.sub.totalNet : 0,
     cashCount:          data.cashCount || 0,
     cardCount:          data.cardCount || 0,
     itemBreakdown:      data.itemBreakdown || [],
@@ -1139,6 +1142,10 @@ function pushLiveSales(data) {
     main_cardTotal:  data.main_cardTotal || 0,
     sub_grandTotal:  data.sub_grandTotal || 0,
     sub_vatTotal:    data.sub_vatTotal || 0,
+    sub_vatablePct:  data.sub_vatablePct || 20,
+    sub_vatableGross: data.sub_vatableGross || 0,
+    sub_nonVatableGross: data.sub_nonVatableGross || 0,
+    sub_totalNet:    data.sub_totalNet || 0,
     sub_cashTotal:   data.sub_cashTotal || 0,
     sub_cardTotal:   data.sub_cardTotal || 0,
     totalOrders:     data.totalOrders || 0,
@@ -1190,13 +1197,21 @@ function pushEndSales(data) {
     periodFrom:      data.periodFrom || '',
     periodTo:        data.periodTo || '',
     totalOrders:     data.totalOrders || 0,
+    cashCount:       data.cashCount || 0,
+    cardCount:       data.cardCount || 0,
     main_cashTotal:  data.main ? data.main.cashTotal : 0,
     main_cardTotal:  data.main ? data.main.cardTotal : 0,
     main_grandTotal: data.main ? data.main.grandTotal : 0,
     main_vatTotal:   data.main ? data.main.vatTotal : 0,
     sub_cashPct:     data.sub ? data.sub.cashPct : 100,
+    sub_cashTotal:   data.sub ? data.sub.cashTotal : 0,
+    sub_cardTotal:   data.sub ? data.sub.cardTotal : 0,
     sub_grandTotal:  data.sub ? data.sub.grandTotal : 0,
     sub_vatTotal:    data.sub ? data.sub.vatTotal : 0,
+    sub_vatablePct:  data.sub ? data.sub.vatablePct : 20,
+    sub_vatableGross: data.sub ? data.sub.vatableGross : 0,
+    sub_nonVatableGross: data.sub ? data.sub.nonVatableGross : 0,
+    sub_totalNet:    data.sub ? data.sub.totalNet : 0,
     itemBreakdown:   data.itemBreakdown || [],
     staff:           data.staff || '',
     pushedAt:        new Date().toISOString()
@@ -1214,7 +1229,6 @@ function getSalesReport(branch, from, to) {
   // Parse JSON fields
   rows.forEach(function(r) {
     try { if (typeof r.main_vatBreakdown === 'string') r.main_vatBreakdown = JSON.parse(r.main_vatBreakdown); } catch(e) {}
-    try { if (typeof r.sub_vatBreakdown === 'string') r.sub_vatBreakdown = JSON.parse(r.sub_vatBreakdown); } catch(e) {}
     try { if (typeof r.itemBreakdown === 'string') r.itemBreakdown = JSON.parse(r.itemBreakdown); } catch(e) {}
   });
   rows.sort(function(a,b) { return a.date < b.date ? 1 : a.date > b.date ? -1 : 0; });
@@ -1247,6 +1261,10 @@ function getLiveSales(date) {
         main_vatTotal:   r.main_vatTotal || 0,
         sub_grandTotal:  r.sub_grandTotal || 0,
         sub_vatTotal:    r.sub_vatTotal || 0,
+        sub_vatablePct:  r.sub_vatablePct || 20,
+        sub_vatableGross: r.sub_vatableGross || 0,
+        sub_nonVatableGross: r.sub_nonVatableGross || 0,
+        sub_totalNet:    r.sub_totalNet || 0,
         totalOrders:     r.totalOrders || 0,
         cashCount:       r.cashCount || 0,
         cardCount:       r.cardCount || 0,

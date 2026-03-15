@@ -237,7 +237,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
   <div class="login-logo">
     <div class="logo-icon"><i class="fas fa-bowl-food"></i></div>
     <h1>TBMS</h1>
-    <p>The Bap Management System <span style="opacity:.5;font-size:11px">Ver4.6.9</span></p>
+    <p>The Bap Management System <span style="opacity:.5;font-size:11px">Ver4.7.0</span></p>
   </div>
   <div class="form-group"><label>Username</label><input id="loginUser" placeholder="Enter username"></div>
   <div class="form-group"><label>Password</label><input id="loginPass" type="password" placeholder="Enter password"></div>
@@ -254,7 +254,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
 <!-- MAIN APP -->
 <div id="mainApp" class="hidden">
   <div class="sidebar" id="sidebar">
-    <div class="sidebar-header"><h2>TBMS <span style="font-size:12px;font-weight:400;opacity:.6">Ver4.6.9</span></h2><p>The Bap Management System</p></div>
+    <div class="sidebar-header"><h2>TBMS <span style="font-size:12px;font-weight:400;opacity:.6">Ver4.7.0</span></h2><p>The Bap Management System</p></div>
     <div class="sidebar-menu">
       <div class="menu-item active" data-page="dashboard" onclick="navigate('dashboard')"><i class="fas fa-home"></i>Dashboard</div>
       <div class="menu-group">
@@ -310,7 +310,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
   <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
   <div class="main-content">
     <div class="header">
-      <div class="header-left"><button class="menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button><h2 id="pageTitle" style="font-size:18px">Dashboard</h2><span style="font-size:11px;color:var(--text-light);margin-left:8px;font-weight:400;opacity:.7">Ver4.6.9</span></div>
+      <div class="header-left"><button class="menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button><h2 id="pageTitle" style="font-size:18px">Dashboard</h2><span style="font-size:11px;color:var(--text-light);margin-left:8px;font-weight:400;opacity:.7">Ver4.7.0</span></div>
       <div class="header-right"><span id="headerDate"></span><span class="sync-status"><span class="dot offline" id="syncDot"></span><span id="syncText">Local</span></span><button class="btn btn-sm btn-outline" onclick="doLogout()"><i class="fas fa-sign-out-alt"></i> Logout</button></div>
     </div>
     <div class="page-content" id="pageContent"></div>
@@ -502,13 +502,13 @@ const D = { Users:[], Stores:[], Staff:[], Attendance:[], Suppliers:[], StockTem
 // Canonical field names — must match Apps Script SHEETS definition exactly
 const FIELD_SCHEMA = {
   Users:['id','username','password','name','role','email','storeId','permissions'],
-  Stores:['id','code','name','company','companyNo','vatNo','vatQuarter','address','phone','email','manager','memo','active'],
-  Staff:['id','storeId','name','nickName','clothSize','kioskPwd','kioskLogin','dob','address','niNo','eVisa','mobile','startDate','leftDate','rate','taxCode','sortCode','accountNo','email','memo','active'],
+  Stores:['id','code','name','company','companyNo','vatNo','vatQuarter','address','phone','email','manager','memo','active','spare1','spare2','spare3','spare4','spare5','spare6','spare7','spare8','spare9','spare10'],
+  Staff:['id','storeId','name','nickName','clothSize','kioskPwd','kioskLogin','dob','address','niNo','eVisa','mobile','startDate','leftDate','rate','taxCode','sortCode','accountNo','email','memo','active','spare1','spare2','spare3','spare4','spare5','spare6','spare7','spare8','spare9','spare10'],
   Attendance:['id','staffId','storeId','date','clockIn','clockOut','photoIn','photoOut','source'],
-  Suppliers:['id','name','email','phone','address','website','memo','active'],
-  StockTemplate:['id','category','name','unit','min','minCondition','orderQty','orderUnit','alwaysOrder','priority','sortOrder','supplier1','supplier2','supplier3','memo','photo'],
-  StoreStock:['storeId','itemId','category','name','unit','min','minCondition','orderQty','orderUnit','alwaysOrder','qty','supplier1','supplier2','supplier3'],
-  StockCount:['id','storeId','week','countDate','itemId','category','name','unit','qty','submittedBy','submittedAt'],
+  Suppliers:['id','name','email','phone','address','website','memo','active','spare1','spare2','spare3','spare4','spare5'],
+  StockTemplate:['id','category','name','unit','min','minCondition','orderQty','orderUnit','alwaysOrder','priority','sortOrder','supplier1','supplier2','supplier3','memo','photo','spare1','spare2','spare3','spare4','spare5','spare6','spare7','spare8','spare9','spare10'],
+  StoreStock:['storeId','itemId','category','name','unit','min','minCondition','orderQty','orderUnit','alwaysOrder','qty','supplier1','supplier2','supplier3','spare1','spare2','spare3','spare4','spare5','spare6','spare7','spare8','spare9','spare10'],
+  StockCount:['id','storeId','week','countDate','itemId','category','name','unit','qty','submittedBy','submittedAt','spare1','spare2','spare3','spare4','spare5'],
   WeeklySales:['id','storeId','week','weekStart','totalSales','notes','submittedBy','submittedAt'],
   StaffMessages:['id','storeId','staffId','type','message','active','createdBy','createdAt'],
   EditLog:['id','attendanceId','staffId','storeId','date','fieldChanged','oldValue','newValue','editTimestamp','kioskVersion'],
@@ -548,7 +548,7 @@ const LS = {
   set(k, v) { localStorage.setItem('tbms_'+k, JSON.stringify(v)); },
   getConfig() { return this.get('config') || {}; }
 };
-const CLOUD_URL = 'https://script.google.com/macros/s/AKfycbzhRNwcQTsecEsX2XxqdBaj0h1PiJE_66q5zFwvhts4RuNMEhTo8gCl6nSQ3J6N1vqE/exec';
+const CLOUD_URL = 'https://script.google.com/macros/s/AKfycbzIOUKhRoUysB6FGK-TTbkdguXYFy_GZF0qHS6XadqUs8eKQVL_m3J3zrFjHczfcHtO/exec';
 const API_KEY = 'tBaP2026xKr!mGt9Qz';
 const API = {
   url: CLOUD_URL, mode: 'cloud',
@@ -3755,7 +3755,7 @@ th{font-size:9px;color:#666;font-weight:600}
 <h1><i class="fas fa-clipboard-list"></i> The Bap — Order List</h1>
 <div class="info">Date: <b>${today}</b> &nbsp; Store: <b>${escHtml(selNames)}</b> &nbsp; Suppliers: <b>${supKeys.length}</b> &nbsp; Total Items: <b>${totalItems}</b></div>
 ${blocks}
-<p style="text-align:center;font-size:8px;color:#999;margin-top:20px">TBMS Ver4.6.9</p>
+<p style="text-align:center;font-size:8px;color:#999;margin-top:20px">TBMS Ver4.7.0</p>
 </body></html>`);
   w.document.close();
 }
@@ -5216,7 +5216,7 @@ ${d.hourKeys.length>0 ? `<div class="sec"><div class="sec-t">Hourly Breakdown</d
 
 <div class="sec"><div class="sec-t">Item Sales (${d.totalQty} items)</div><table><thead><tr><th>Item</th><th style="text-align:center">Qty</th><th style="text-align:right">Revenue</th><th style="text-align:right">%</th></tr></thead><tbody>${itemRows}</tbody></table></div>
 
-<div class="footer">TBMS Ver4.6.9 &copy; ${new Date().getFullYear()} The Bap. All rights reserved.</div>
+<div class="footer">TBMS Ver4.7.0 &copy; ${new Date().getFullYear()} The Bap. All rights reserved.</div>
 </body></html>`;
 
   const w = window.open('','_blank','width=800,height=1000');
@@ -5595,7 +5595,7 @@ function exportAllWord(){
       ['submittedBy / submittedAt','Who submitted and when']
     ]);
 
-    html+=`<hr style="margin:16px 0"><p style="text-align:center;font-size:8pt;color:#999;font-style:italic">TBMS Ver4.6.9</p>`;
+    html+=`<hr style="margin:16px 0"><p style="text-align:center;font-size:8pt;color:#999;font-style:italic">TBMS Ver4.7.0</p>`;
     html+=`</body></html>`;
 
     const blob=new Blob(['\ufeff'+html],{type:'application/msword'});

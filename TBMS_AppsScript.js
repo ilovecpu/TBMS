@@ -1,8 +1,8 @@
 // ============================================================
-//  TBMS - The Bap Management System v4.5.1
+//  TBMS - The Bap Management System v4.5.2
 //  Google Apps Script Backend (Code.gs)
 //  Deployed: 2026-03-14
-//  URL: https://script.google.com/macros/s/AKfycbzhRNwcQTsecEsX2XxqdBaj0h1PiJE_66q5zFwvhts4RuNMEhTo8gCl6nSQ3J6N1vqE/exec
+//  URL: https://script.google.com/macros/s/AKfycbzIOUKhRoUysB6FGK-TTbkdguXYFy_GZF0qHS6XadqUs8eKQVL_m3J3zrFjHczfcHtO/exec
 // ============================================================
 //  SETUP:
 //  1. Google Drive > New > Google Sheets > Name "TBMS Database"
@@ -17,13 +17,13 @@
 
 const SHEETS = {
   Users:         ['id','username','password','name','role','email','storeId','permissions'],
-  Stores:        ['id','code','name','company','companyNo','vatNo','vatQuarter','address','phone','email','manager','memo','active'],
-  Staff:         ['id','storeId','name','nickName','clothSize','kioskPwd','dob','address','niNo','eVisa','mobile','startDate','leftDate','rate','taxCode','sortCode','accountNo','email','memo','active','kioskLogin'],
+  Stores:        ['id','code','name','company','companyNo','vatNo','vatQuarter','address','phone','email','manager','memo','active','spare1','spare2','spare3','spare4','spare5','spare6','spare7','spare8','spare9','spare10'],
+  Staff:         ['id','storeId','name','nickName','clothSize','kioskPwd','dob','address','niNo','eVisa','mobile','startDate','leftDate','rate','taxCode','sortCode','accountNo','email','memo','active','kioskLogin','spare1','spare2','spare3','spare4','spare5','spare6','spare7','spare8','spare9','spare10'],
   Attendance:    ['id','staffId','storeId','date','clockIn','clockOut','photoIn','photoOut','source'],
-  Suppliers:     ['id','name','email','phone','address','website','memo','active'],
-  StockTemplate: ['id','category','name','unit','min','minCondition','orderQty','orderUnit','alwaysOrder','sortOrder','supplier1','supplier2','supplier3','memo','photo'],
-  StoreStock:    ['storeId','itemId','category','name','unit','min','minCondition','orderQty','orderUnit','alwaysOrder','qty','supplier1','supplier2','supplier3'],
-  StockCount:    ['id','storeId','week','countDate','itemId','category','name','unit','qty','submittedBy','submittedAt'],
+  Suppliers:     ['id','name','email','phone','address','website','memo','active','spare1','spare2','spare3','spare4','spare5'],
+  StockTemplate: ['id','category','name','unit','min','minCondition','orderQty','orderUnit','alwaysOrder','priority','sortOrder','supplier1','supplier2','supplier3','memo','photo','spare1','spare2','spare3','spare4','spare5','spare6','spare7','spare8','spare9','spare10'],
+  StoreStock:    ['storeId','itemId','category','name','unit','min','minCondition','orderQty','orderUnit','alwaysOrder','qty','supplier1','supplier2','supplier3','spare1','spare2','spare3','spare4','spare5','spare6','spare7','spare8','spare9','spare10'],
+  StockCount:    ['id','storeId','week','countDate','itemId','category','name','unit','qty','submittedBy','submittedAt','spare1','spare2','spare3','spare4','spare5'],
   WeeklySales:   ['id','storeId','week','weekStart','totalSales','notes','submittedBy','submittedAt'],
   StaffMessages: ['id','storeId','staffId','type','message','active','createdBy','createdAt'],
   EditLog:        ['id','attendanceId','staffId','storeId','date','fieldChanged','oldValue','newValue','editTimestamp','kioskVersion'],

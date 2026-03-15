@@ -1,8 +1,8 @@
 // ============================================================
-//  TBMS - The Bap Management System v4.5.5
+//  TBMS - The Bap Management System v4.5.7
 //  Google Apps Script Backend (Code.gs)
 //  Deployed: 2026-03-14
-//  URL: https://script.google.com/macros/s/AKfycbwRPuMygxRoPbN4ZAl-Kk0dN7Q3nFAp5PJIkYtAnHSv3PZuIhX-b2HC88ECTByQh6ZM/exec
+//  URL: https://script.google.com/macros/s/AKfycby75Nj9fMZLlGYDeAYd-2WH4dpYjvoFVYTjyV2qgyBZ5_3sd-cJQzO-ShO4wMsMidFj/exec
 // ============================================================
 //  SETUP:
 //  1. Google Drive > New > Google Sheets > Name "TBMS Database"
@@ -621,6 +621,15 @@ function clockOutWithPhoto(data) {
 // ============================================================
 //  Stock Count — Batch save weekly stock count + sync StoreStock
 // ============================================================
+// ★ 날짜 정규화 — Google Sheets가 Date 객체로 변환할 수 있으므로 항상 YYYY-MM-DD 문자열로 통일
+function normalizeDate(val) {
+  if (!val) return '';
+  if (val instanceof Date) {
+    var y = val.getFullYear(), m = val.getMonth() + 1, d = val.getDate();
+    return y + '-' + (m < 10 ? '0' + m : m) + '-' + (d < 10 ? '0' + d : d);
+  }
+  return String(val).trim();
+}
 function getISOWeek(dateStr) {
   var d = new Date(dateStr);
   d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
@@ -632,7 +641,9 @@ function getISOWeek(dateStr) {
 }
 
 function saveStockCount(data) {
-  if (!data.storeId || !data.countDate || !data.items || !data.items.length) {
+  // ★ items가 빈 배열이면 삭제 요청이므로 items.length 체크 제거
+  // items=[] → 해당 storeId+countDate의 StockCount 행 삭제 + stockDate 갱신
+  if (!data.storeId || !data.countDate || !Array.isArray(data.items)) {
     return {error: 'Missing required fields: storeId, countDate, items'};
   }
   var ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -649,11 +660,13 @@ function saveStockCount(data) {
   // Delete existing rows for same storeId + countDate (batch method — much faster than deleteRow loop)
   var storeCol = headers.indexOf('storeId');
   var dateCol = headers.indexOf('countDate');
+  var targetDate = normalizeDate(data.countDate);
   if (storeCol >= 0 && dateCol >= 0) {
     var allData = scSheet.getDataRange().getValues();
     var keepRows = [allData[0]]; // keep header
     for (var d = 1; d < allData.length; d++) {
-      if (String(allData[d][storeCol]) === String(data.storeId) && String(allData[d][dateCol]) === String(data.countDate)) {
+      // ★ normalizeDate로 Date 객체/문자열 모두 안전하게 비교
+      if (String(allData[d][storeCol]) === String(data.storeId) && normalizeDate(allData[d][dateCol]) === targetDate) {
         continue; // skip rows to delete
       }
       keepRows.push(allData[d]);
@@ -672,7 +685,7 @@ function saveStockCount(data) {
   for (var i = 0; i < data.items.length; i++) {
     var item = data.items[i];
     var id = 'sc' + Date.now().toString(36) + Math.random().toString(36).substr(2, 4) + i;
-    rows.push([
+    var row = [
       id,
       data.storeId,
       week,
@@ -684,7 +697,10 @@ function saveStockCount(data) {
       Number(item.qty) || 0,
       submittedBy,
       timestamp
-    ]);
+    ];
+    // spare 컬럼 패딩 — headers 길이에 맞춤
+    while (row.length < headers.length) row.push('');
+    rows.push(row);
   }
 
   // Batch append all rows at once
@@ -706,12 +722,12 @@ function saveStockCount(data) {
   // countDate가 이전 기록보다 같거나 최신이면 → StoreStock 동기화 + 날짜 갱신
   var shouldSync = false;
   if (data.items && data.items.length > 0) {
-    if (!prevDate || data.countDate >= prevDate) {
+    if (!prevDate || targetDate >= prevDate) {
       shouldSync = true;
     }
   } else {
     // items가 비어있음 = 삭제 요청. 삭제한 날짜가 현재 기록 날짜와 같으면 날짜도 초기화
-    if (data.countDate === prevDate) {
+    if (targetDate === prevDate) {
       // 해당 지점의 StockCount에서 남은 가장 최근 날짜 찾기
       var allSC = scSheet.getDataRange().getValues();
       var scStoreCol = headers.indexOf('storeId');
@@ -720,7 +736,8 @@ function saveStockCount(data) {
       var newLatest = '';
       for (var k = 1; k < allSC.length; k++) {
         if (String(allSC[k][scStoreCol]) === String(data.storeId)) {
-          var dt = String(allSC[k][scDateCol] || '');
+          // ★ normalizeDate로 안전하게 비교
+          var dt = normalizeDate(allSC[k][scDateCol]);
           var q = Number(allSC[k][scQtyCol]) || 0;
           if (q > 0 && dt > newLatest) newLatest = dt;
         }
@@ -753,10 +770,10 @@ function saveStockCount(data) {
       }
     }
     // ★ 핵심: 날짜 세팅 저장 — 이 지점의 StoreStock이 언제 데이터인지 확정
-    props.setProperty('setting_stockDate_' + data.storeId, JSON.stringify(data.countDate));
+    props.setProperty('setting_stockDate_' + data.storeId, JSON.stringify(targetDate));
   }
 
-  return {status: 'ok', week: week, count: rows.length, synced: shouldSync, stockDate: data.countDate};
+  return {status: 'ok', week: week, count: rows.length, synced: shouldSync, stockDate: targetDate};
 }
 
 // ============================================================

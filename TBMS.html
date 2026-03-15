@@ -237,7 +237,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
   <div class="login-logo">
     <div class="logo-icon"><i class="fas fa-bowl-food"></i></div>
     <h1>TBMS</h1>
-    <p>The Bap Management System <span style="opacity:.5;font-size:11px">Ver4.7.2</span></p>
+    <p>The Bap Management System <span style="opacity:.5;font-size:11px">Ver4.8.0</span></p>
   </div>
   <div class="form-group"><label>Username</label><input id="loginUser" placeholder="Enter username"></div>
   <div class="form-group"><label>Password</label><input id="loginPass" type="password" placeholder="Enter password"></div>
@@ -254,7 +254,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
 <!-- MAIN APP -->
 <div id="mainApp" class="hidden">
   <div class="sidebar" id="sidebar">
-    <div class="sidebar-header"><h2>TBMS <span style="font-size:12px;font-weight:400;opacity:.6">Ver4.7.2</span></h2><p>The Bap Management System</p></div>
+    <div class="sidebar-header"><h2>TBMS <span style="font-size:12px;font-weight:400;opacity:.6">Ver4.8.0</span></h2><p>The Bap Management System</p></div>
     <div class="sidebar-menu">
       <div class="menu-item active" data-page="dashboard" onclick="navigate('dashboard')"><i class="fas fa-home"></i>Dashboard</div>
       <div class="menu-group">
@@ -310,7 +310,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
   <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
   <div class="main-content">
     <div class="header">
-      <div class="header-left"><button class="menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button><h2 id="pageTitle" style="font-size:18px">Dashboard</h2><span style="font-size:11px;color:var(--text-light);margin-left:8px;font-weight:400;opacity:.7">Ver4.7.2</span></div>
+      <div class="header-left"><button class="menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button><h2 id="pageTitle" style="font-size:18px">Dashboard</h2><span style="font-size:11px;color:var(--text-light);margin-left:8px;font-weight:400;opacity:.7">Ver4.8.0</span></div>
       <div class="header-right"><span id="headerDate"></span><span class="sync-status"><span class="dot offline" id="syncDot"></span><span id="syncText">Local</span></span><button class="btn btn-sm btn-outline" onclick="doLogout()"><i class="fas fa-sign-out-alt"></i> Logout</button></div>
     </div>
     <div class="page-content" id="pageContent"></div>
@@ -3520,7 +3520,7 @@ function renderOrders(c) {
     <div class="card-header">
       <h3><i class="fas fa-clipboard-list" style="color:var(--accent);margin-right:8px"></i>Order List <span id="orderSummary" style="font-size:13px;font-weight:400;color:var(--text-light)"></span></h3>
       <div style="display:flex;gap:8px;align-items:center">
-        <button id="olFullListBtn" class="btn btn-sm" onclick="toggleFullList()" style="background:#f0f0f0;color:#555;border:2px solid var(--border)"><i class="fas fa-list"></i> Full List</button>
+        <button id="olFullListBtn" class="btn btn-sm" onclick="toggleFullListAll()" style="background:#f0f0f0;color:#555;border:2px solid var(--border)"><i class="fas fa-list"></i> Full List</button>
         <button class="btn btn-sm" onclick="printOrderList()" style="background:#f0f0f0;color:#555"><i class="fas fa-print"></i> Print</button>
         <button class="btn btn-sm" onclick="exportOrderListCSV()" style="background:#1a7340;color:#fff"><i class="fas fa-file-csv"></i> CSV</button>
       </div>
@@ -3557,20 +3557,42 @@ function _getCheckedStoreIds(){
   const checks=document.querySelectorAll('.ol-store-chk:checked');
   return Array.from(checks).map(cb=>cb.value);
 }
-// Full List 토글 상태
-let _olFullList=false;
-function toggleFullList(){
-  _olFullList=!_olFullList;
+// Full List 전역 + 서플라이어별 토글 상태
+let _olFullAll=false;
+let _olFullMap={};
+// 전역 Full List 토글 (모든 서플라이어 ON/OFF)
+function toggleFullListAll(){
+  _olFullAll=!_olFullAll;
+  // 전역 토글 시 모든 서플라이어 맵도 동기화
+  const checkedIds=_getCheckedStoreIds();
+  const {supGroups}=_collectOrderData(checkedIds);
+  Object.keys(supGroups).forEach(k=>{_olFullMap[k]=_olFullAll;});
   const btn=$('olFullListBtn');
   if(btn){
-    btn.style.background=_olFullList?'var(--primary)':'#f0f0f0';
-    btn.style.color=_olFullList?'#fff':'#555';
-    btn.style.borderColor=_olFullList?'var(--primary)':'var(--border)';
+    btn.style.background=_olFullAll?'var(--primary)':'#f0f0f0';
+    btn.style.color=_olFullAll?'#fff':'#555';
+    btn.style.borderColor=_olFullAll?'var(--primary)':'var(--border)';
+  }
+  renderOrderListBody();
+}
+// 서플라이어별 개별 Full List 토글
+function toggleSupFullList(supKey){
+  _olFullMap[supKey]=!_olFullMap[supKey];
+  // 전역 버튼 상태 동기화 (모두 ON이면 전역도 ON, 아니면 OFF)
+  const checkedIds=_getCheckedStoreIds();
+  const {supGroups}=_collectOrderData(checkedIds);
+  const allKeys=Object.keys(supGroups);
+  _olFullAll=allKeys.length>0&&allKeys.every(k=>!!_olFullMap[k]);
+  const btn=$('olFullListBtn');
+  if(btn){
+    btn.style.background=_olFullAll?'var(--primary)':'#f0f0f0';
+    btn.style.color=_olFullAll?'#fff':'#555';
+    btn.style.borderColor=_olFullAll?'var(--primary)':'var(--border)';
   }
   renderOrderListBody();
 }
 // 서플라이어별 주문 데이터 수집
-function _collectOrderData(storeIds,fullList){
+function _collectOrderData(storeIds){
   const stores=getAccessibleStores();
   // storeIds 배열이 주어지면 해당 지점만, 아니면 전체
   const targetStores=storeIds&&storeIds.length?stores.filter(s=>storeIds.includes(String(s.id))):stores;
@@ -3585,12 +3607,7 @@ function _collectOrderData(storeIds,fullList){
       const qty=Number(s.qty)||0,min=Number(s.min)||0;
       const mc=s.minCondition||'lt',oq=Number(s.orderQty)||0;
       const ao=s.alwaysOrder===true||s.alwaysOrder==='true';
-      // fullList가 아니면 미니멈 이하이거나 alwaysOrder인 경우만 포함
-      if(!fullList){
-        const belowMin=min>0&&(mc==='lte'?qty<=min:qty<min);
-        const needOrder=belowMin||(ao&&oq>0);
-        if(!needOrder)return;
-      }
+      // 항상 전체 아이템 수집 (서플라이어별 Full List 토글은 렌더링에서 처리)
       totalItems++;
       const tpl=D.StockTemplate.find(t=>String(t.id)===String(s.itemId));
       // 서플라이어 이름 (StoreStock 우선 → StockTemplate fallback)
@@ -3621,14 +3638,19 @@ function _collectOrderData(storeIds,fullList){
 // 화면에 서플라이어별 주문지 렌더링
 function renderOrderListBody(){
   const checkedIds=_getCheckedStoreIds();
-  const {supGroups, totalItems, storeCount}=_collectOrderData(checkedIds,_olFullList);
+  const {supGroups, totalItems, storeCount}=_collectOrderData(checkedIds);
+  // 주문 필요 아이템 수 계산
+  let orderItemCount=0;
+  Object.values(supGroups).forEach(rows=>rows.forEach(r=>{if(r.needOrder)orderItemCount++;}));
   const summary=$('orderSummary');
   if(summary){
-    if(_olFullList) summary.textContent=`${Object.keys(supGroups).length} suppliers · ${totalItems} total items (Full List)`;
-    else summary.textContent=totalItems>0?`${Object.keys(supGroups).length} suppliers · ${totalItems} items to order`:'No orders needed';
+    const anyFull=Object.keys(_olFullMap).some(k=>_olFullMap[k]);
+    summary.textContent=orderItemCount>0?`${Object.keys(supGroups).length} suppliers · ${orderItemCount} items to order${anyFull?' (some Full List)':''}`:'No orders needed';
   }
   const cont=$('orderListContent');
-  if(!totalItems){
+  // 주문 필요 아이템 또는 Full List 토글된 서플라이어가 하나라도 있는지 확인
+  const hasAny=orderItemCount>0||Object.keys(_olFullMap).some(k=>_olFullMap[k]);
+  if(!hasAny){
     cont.innerHTML=`<div style="text-align:center;padding:40px;color:var(--success)"><i class="fas fa-check-circle" style="font-size:48px;margin-bottom:12px"></i><p style="font-size:16px;font-weight:600">All items are sufficiently stocked!</p></div>`;
     return;
   }
@@ -3641,27 +3663,29 @@ function renderOrderListBody(){
   const _supClrs=['#1565c0','#6a1b9a','#e65100','#00838f','#2e7d32','#c62828','#4527a0','#ef6c00','#00695c','#ad1457','#283593','#4e342e'];
   let html='',_palIdx=0;
   supKeys.forEach((supKey,si)=>{
-    const rows=supGroups[supKey];
+    const allRows=supGroups[supKey];
     // 아이템별로 정렬 (지점→카테고리→sortOrder)
     const catIdx=getSortedCategories();
-    rows.sort((a,b)=>{const si=a.storeName.localeCompare(b.storeName);if(si!==0)return si;const ci=catIdx.indexOf(a.category)-catIdx.indexOf(b.category);return ci!==0?ci:(a.sortOrder||0)-(b.sortOrder||0);});
+    allRows.sort((a,b)=>{const si=(a.storeCode||a.storeName).localeCompare(b.storeCode||b.storeName);if(si!==0)return si;const ci=catIdx.indexOf(a.category)-catIdx.indexOf(b.category);return ci!==0?ci:(a.sortOrder||0)-(b.sortOrder||0);});
+    // 서플라이어별 Full List 토글 적용
+    const isFull=!!_olFullMap[supKey];
+    const rows=isFull?allRows:allRows.filter(r=>r.needOrder);
+    if(!rows.length&&!isFull)return; // 주문 아이템 없으면 서플라이어 자체 스킵
     const fixedClr=_supFixedClrs[supKey.toLowerCase()];
     const clr=fixedClr||_supClrs[_palIdx++%_supClrs.length];
-    // Sup2, Sup3 목록 수집
-    const sub2=new Set(),sub3=new Set();
-    rows.forEach(r=>{if(r.sup2)sub2.add(r.sup2);if(r.sup3)sub3.add(r.sup3);});
-    const subInfo=[];
-    if(sub2.size)subInfo.push('Sup2: '+[...sub2].join(', '));
-    if(sub3.size)subInfo.push('Sup3: '+[...sub3].join(', '));
+    // Full List 버튼 스타일
+    const flBtnStyle=isFull?'background:rgba(255,255,255,.95);color:'+clr+';font-weight:700':'background:rgba(255,255,255,.2);color:#fff';
     html+=`<div style="margin-bottom:20px;border:2px solid ${clr}22;border-radius:12px;overflow:hidden">`;
-    // 서플라이어 헤더
-    html+=`<div style="background:${clr};color:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap">
-      <div>
-        <i class="fas fa-truck" style="margin-right:8px"></i>
+    // 서플라이어 헤더 + Full List 버튼
+    html+=`<div style="background:${clr};color:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:center">
+      <div style="display:flex;align-items:center;gap:10px">
+        <i class="fas fa-truck" style="margin-right:4px"></i>
         <strong style="font-size:15px">${escHtml(supKey)}</strong>
-        <span style="opacity:.7;margin-left:8px;font-size:13px">${rows.length} items</span>
+        <span style="opacity:.7;font-size:13px">${isFull?allRows.length+' items':rows.length+' items'}</span>
       </div>
-      ${subInfo.length?`<div style="font-size:11px;opacity:.8">${escHtml(subInfo.join(' | '))}</div>`:''}
+      <button onclick="toggleSupFullList('${escHtml(supKey).replace(/'/g,"\\'")}')" style="${flBtnStyle};border:1.5px solid rgba(255,255,255,.5);border-radius:6px;padding:3px 10px;font-size:11px;cursor:pointer">
+        <i class="fas fa-list" style="margin-right:3px"></i>${isFull?'Order Only':'Full List'}
+      </button>
     </div>`;
     // 테이블
     html+=`<table style="width:100%;border-collapse:collapse;font-size:13px">
@@ -3671,8 +3695,8 @@ function renderOrderListBody(){
         <th style="padding:8px 12px;text-align:left;font-size:12px;color:#666;border-bottom:2px solid #eee">Category</th>
         <th style="padding:8px 6px;text-align:center;font-size:12px;color:#666;border-bottom:2px solid #eee">QTY</th>
         <th style="padding:8px 6px;text-align:center;font-size:12px;color:#666;border-bottom:2px solid #eee">Min</th>
-        <th style="padding:8px 6px;text-align:center;font-size:12px;color:#666;border-bottom:2px solid #eee;font-weight:700;color:#c62828">Order</th>
-        <th style="padding:8px 6px;text-align:center;font-size:12px;color:#666;border-bottom:2px solid #eee">Ord Unit</th>
+        <th style="padding:8px 6px;text-align:center;font-size:12px;color:#666;border-bottom:2px solid #eee">Unit</th>
+        <th style="padding:8px 6px;text-align:center;font-size:12px;color:#c62828;border-bottom:2px solid #eee;font-weight:700">Order</th>
         <th style="padding:8px 12px;text-align:left;font-size:12px;color:#666;border-bottom:2px solid #eee">Sup2</th>
         <th style="padding:8px 12px;text-align:left;font-size:12px;color:#666;border-bottom:2px solid #eee">Sup3</th>
       </tr></thead><tbody>`;
@@ -3682,28 +3706,24 @@ function renderOrderListBody(){
       const qtyClr=r.qty<=0?'color:#c62828;font-weight:700':r.qty<=r.min?'color:#e65100;font-weight:600':'';
       // Full List에서 주문 불필요 아이템은 연하게 표시
       const dimStyle=!r.needOrder?'opacity:.45;':'';
-      const orderDisplay=r.needOrder?`<span style="font-weight:700;color:#c62828;font-size:15px">${r.orderQty}</span>`:`<span style="color:#ccc">—</span>`;
       // High Priority 행은 좌측 빨간 보더
       const priBorder=r.priority==='high'&&r.needOrder?'border-left:4px solid #c62828;':'';
       html+=`<tr style="border-bottom:1px solid #f0f0f0;${dimStyle}${priBorder}">
-        <td style="padding:8px 12px;font-weight:600">${escHtml(r.storeName)}</td>
+        <td style="padding:8px 12px;font-weight:600">${escHtml(r.storeCode||r.storeName)}</td>
         <td style="padding:8px 12px">${escHtml(r.itemName)}${aoIcon}${priIcon}</td>
         <td style="padding:8px 12px;color:var(--text-light);font-size:12px">${escHtml(r.category)}</td>
         <td style="padding:8px 6px;text-align:center;${qtyClr}">${r.qty}</td>
         <td style="padding:8px 6px;text-align:center">${r.min}</td>
-        <td style="padding:8px 6px;text-align:center">${orderDisplay}</td>
-        <td style="padding:8px 6px;text-align:center;color:#1565c0;font-weight:600">${escHtml(r.ordUnit)}</td>
+        <td style="padding:8px 6px;text-align:center;color:#666;font-size:12px">${escHtml(r.unit)}</td>
+        <td style="padding:8px 6px;text-align:center;white-space:nowrap">${r.needOrder?`<span style="font-weight:700;color:#c62828;font-size:15px">${r.orderQty}</span> <span style="color:#1565c0;font-weight:600;font-size:12px">${escHtml(r.ordUnit)}</span>`:`<span style="color:#ccc">—</span>`}</td>
         <td style="padding:8px 12px;font-size:11px;color:#666">${escHtml(r.sup2||'—')}</td>
         <td style="padding:8px 12px;font-size:11px;color:#666">${escHtml(r.sup3||'—')}</td>
       </tr>`;
     });
     // 서플라이어별 소계 (주문 필요 아이템만)
     const orderRows=rows.filter(r=>r.needOrder);
-    const totalOrd=orderRows.reduce((sum,r)=>sum+r.orderQty,0);
     html+=`<tr style="background:#fafafa;font-weight:600">
-      <td colspan="5" style="padding:8px 12px;text-align:right;color:#666">Order: ${orderRows.length} / ${rows.length} items</td>
-      <td style="padding:8px 6px;text-align:center;color:#c62828;font-size:14px">${totalOrd}</td>
-      <td colspan="3"></td>
+      <td colspan="9" style="padding:8px 12px;text-align:right;color:#666">Order: ${orderRows.length} / ${rows.length} items</td>
     </tr>`;
     html+=`</tbody></table></div>`;
   });
@@ -3712,14 +3732,16 @@ function renderOrderListBody(){
 // CSV 내보내기
 function exportOrderListCSV(){
   const checkedIds=_getCheckedStoreIds();
-  const {supGroups}=_collectOrderData(checkedIds,_olFullList);
+  const {supGroups}=_collectOrderData(checkedIds);
   const catIdx=getSortedCategories();
   let csv='Supplier,Store,Item,Category,Unit,QTY,Min,Order,Ord Unit,Priority,Sup2,Sup3\n';
   Object.keys(supGroups).sort().forEach(sup=>{
-    const rows=supGroups[sup];
-    rows.sort((a,b)=>{const si=a.storeName.localeCompare(b.storeName);if(si!==0)return si;const ci=catIdx.indexOf(a.category)-catIdx.indexOf(b.category);return ci!==0?ci:(a.sortOrder||0)-(b.sortOrder||0);});
+    // CSV는 주문 필요 아이템만 출력
+    const rows=supGroups[sup].filter(r=>r.needOrder);
+    if(!rows.length)return;
+    rows.sort((a,b)=>{const si=(a.storeCode||a.storeName).localeCompare(b.storeCode||b.storeName);if(si!==0)return si;const ci=catIdx.indexOf(a.category)-catIdx.indexOf(b.category);return ci!==0?ci:(a.sortOrder||0)-(b.sortOrder||0);});
     rows.forEach(r=>{
-      csv+=[sup,r.storeName,r.itemName,r.category,r.unit,r.qty,r.min,r.orderQty,r.ordUnit,r.priority==='high'?'HIGH':'',r.sup2||'',r.sup3||''].map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')+'\n';
+      csv+=[sup,r.storeCode||r.storeName,r.itemName,r.category,r.unit,r.qty,r.min,r.orderQty,r.ordUnit,r.priority==='high'?'HIGH':'',r.sup2||'',r.sup3||''].map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')+'\n';
     });
   });
   const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
@@ -3730,8 +3752,12 @@ function exportOrderListCSV(){
 // 인쇄
 function printOrderList(){
   const checkedIds=_getCheckedStoreIds();
-  const {supGroups, totalItems}=_collectOrderData(checkedIds,_olFullList);
-  if(!totalItems){toast('No items to order','info');return;}
+  const {supGroups}=_collectOrderData(checkedIds);
+  // 인쇄는 주문 필요 아이템만 — totalItems 재계산
+  let printTotal=0;
+  Object.values(supGroups).forEach(rows=>rows.forEach(r=>{if(r.needOrder)printTotal++;}));
+  if(!printTotal){toast('No items to order','info');return;}
+  const totalItems=printTotal;
   const catIdx=getSortedCategories();
   const supKeys=Object.keys(supGroups).sort((a,b)=>{if(a==='Unassigned')return 1;if(b==='Unassigned')return -1;return a.localeCompare(b);});
   const _supFixedClrs2={'treestone butchers':'#111111','treestone butcher':'#111111'};
@@ -3742,8 +3768,10 @@ function printOrderList(){
   const selNames=checkedIds.length===stores.length?'All Stores':checkedIds.map(id=>{const st=stores.find(s=>String(s.id)===id);return st?st.name:id;}).join(', ');
   let blocks='',_pIdx2=0;
   supKeys.forEach((supKey,si)=>{
-    const rows=supGroups[supKey];
-    rows.sort((a,b)=>{const si=a.storeName.localeCompare(b.storeName);if(si!==0)return si;const ci=catIdx.indexOf(a.category)-catIdx.indexOf(b.category);return ci!==0?ci:(a.sortOrder||0)-(b.sortOrder||0);});
+    // 인쇄는 주문 필요 아이템만
+    const rows=supGroups[supKey].filter(r=>r.needOrder);
+    if(!rows.length)return;
+    rows.sort((a,b)=>{const si=(a.storeCode||a.storeName).localeCompare(b.storeCode||b.storeName);if(si!==0)return si;const ci=catIdx.indexOf(a.category)-catIdx.indexOf(b.category);return ci!==0?ci:(a.sortOrder||0)-(b.sortOrder||0);});
     const fixClr2=_supFixedClrs2[supKey.toLowerCase()];
     const clr=fixClr2||_supClrs[_pIdx2++%_supClrs.length];
     const sub2=new Set(),sub3=new Set();
@@ -3755,8 +3783,8 @@ function printOrderList(){
         ${subTxt.length?`<span style="float:right;font-weight:400;opacity:.8;font-size:9px">${escHtml(subTxt.join(' | '))}</span>`:''}
       </div>
       <table style="width:100%;border-collapse:collapse;font-size:9px">
-        <tr style="background:#f5f5f5"><th style="padding:3px 6px;text-align:left">Store</th><th style="padding:3px 6px;text-align:left">Item</th><th style="padding:3px 4px;text-align:center">QTY</th><th style="padding:3px 4px;text-align:center">Min</th><th style="padding:3px 4px;text-align:center;color:#c62828;font-weight:700">Order</th><th style="padding:3px 4px;text-align:center">Ord Unit</th><th style="padding:3px 4px;text-align:center">Pri</th><th style="padding:3px 6px">Sup2</th><th style="padding:3px 6px">Sup3</th></tr>
-        ${rows.map(r=>`<tr style="border-bottom:1px solid #eee${r.qty<=0?' ;background:#fff5f5':''}${r.priority==='high'?';border-left:3px solid #c62828':''}"><td style="padding:3px 6px;font-weight:600">${escHtml(r.storeName)}</td><td style="padding:3px 6px">${escHtml(r.itemName)}</td><td style="padding:3px 4px;text-align:center;${r.qty<=0?'color:#c62828;font-weight:700':''}">${r.qty}</td><td style="padding:3px 4px;text-align:center">${r.min}</td><td style="padding:3px 4px;text-align:center;font-weight:700;color:#c62828">${r.orderQty}</td><td style="padding:3px 4px;text-align:center;color:#1565c0">${escHtml(r.ordUnit)}</td><td style="padding:3px 4px;text-align:center">${r.priority==='high'?'<span style="color:#c62828;font-weight:700">🔥</span>':''}</td><td style="padding:3px 6px;color:#666">${escHtml(r.sup2||'-')}</td><td style="padding:3px 6px;color:#666">${escHtml(r.sup3||'-')}</td></tr>`).join('')}
+        <tr style="background:#f5f5f5"><th style="padding:3px 6px;text-align:left">Store</th><th style="padding:3px 6px;text-align:left">Item</th><th style="padding:3px 4px;text-align:center">QTY</th><th style="padding:3px 4px;text-align:center">Min</th><th style="padding:3px 4px;text-align:center">Unit</th><th style="padding:3px 4px;text-align:center;color:#c62828;font-weight:700">Order</th><th style="padding:3px 4px;text-align:center">Pri</th><th style="padding:3px 6px">Sup2</th><th style="padding:3px 6px">Sup3</th></tr>
+        ${rows.map(r=>`<tr style="border-bottom:1px solid #eee${r.qty<=0?' ;background:#fff5f5':''}${r.priority==='high'?';border-left:3px solid #c62828':''}"><td style="padding:3px 6px;font-weight:600">${escHtml(r.storeCode||r.storeName)}</td><td style="padding:3px 6px">${escHtml(r.itemName)}</td><td style="padding:3px 4px;text-align:center;${r.qty<=0?'color:#c62828;font-weight:700':''}">${r.qty}</td><td style="padding:3px 4px;text-align:center">${r.min}</td><td style="padding:3px 4px;text-align:center;color:#666">${escHtml(r.unit)}</td><td style="padding:3px 4px;text-align:center;font-weight:700;color:#c62828;white-space:nowrap">${r.orderQty} <span style="color:#1565c0;font-weight:600">${escHtml(r.ordUnit)}</span></td><td style="padding:3px 4px;text-align:center">${r.priority==='high'?'<span style="color:#c62828;font-weight:700">🔥</span>':''}</td><td style="padding:3px 6px;color:#666">${escHtml(r.sup2||'-')}</td><td style="padding:3px 6px;color:#666">${escHtml(r.sup3||'-')}</td></tr>`).join('')}
       </table>
     </div>`;
   });
@@ -3775,7 +3803,7 @@ th{font-size:9px;color:#666;font-weight:600}
 <h1><i class="fas fa-clipboard-list"></i> The Bap — Order List</h1>
 <div class="info">Date: <b>${today}</b> &nbsp; Store: <b>${escHtml(selNames)}</b> &nbsp; Suppliers: <b>${supKeys.length}</b> &nbsp; Total Items: <b>${totalItems}</b></div>
 ${blocks}
-<p style="text-align:center;font-size:8px;color:#999;margin-top:20px">TBMS Ver4.7.2</p>
+<p style="text-align:center;font-size:8px;color:#999;margin-top:20px">TBMS Ver4.8.0</p>
 </body></html>`);
   w.document.close();
 }
@@ -5236,7 +5264,7 @@ ${d.hourKeys.length>0 ? `<div class="sec"><div class="sec-t">Hourly Breakdown</d
 
 <div class="sec"><div class="sec-t">Item Sales (${d.totalQty} items)</div><table><thead><tr><th>Item</th><th style="text-align:center">Qty</th><th style="text-align:right">Revenue</th><th style="text-align:right">%</th></tr></thead><tbody>${itemRows}</tbody></table></div>
 
-<div class="footer">TBMS Ver4.7.2 &copy; ${new Date().getFullYear()} The Bap. All rights reserved.</div>
+<div class="footer">TBMS Ver4.8.0 &copy; ${new Date().getFullYear()} The Bap. All rights reserved.</div>
 </body></html>`;
 
   const w = window.open('','_blank','width=800,height=1000');
@@ -5615,7 +5643,7 @@ function exportAllWord(){
       ['submittedBy / submittedAt','Who submitted and when']
     ]);
 
-    html+=`<hr style="margin:16px 0"><p style="text-align:center;font-size:8pt;color:#999;font-style:italic">TBMS Ver4.7.2</p>`;
+    html+=`<hr style="margin:16px 0"><p style="text-align:center;font-size:8pt;color:#999;font-style:italic">TBMS Ver4.8.0</p>`;
     html+=`</body></html>`;
 
     const blob=new Blob(['\ufeff'+html],{type:'application/msword'});

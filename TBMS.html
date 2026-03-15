@@ -237,7 +237,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
   <div class="login-logo">
     <div class="logo-icon"><i class="fas fa-bowl-food"></i></div>
     <h1>TBMS</h1>
-    <p>The Bap Management System <span style="opacity:.5;font-size:11px">Ver4.8.5</span></p>
+    <p>The Bap Management System <span style="opacity:.5;font-size:11px">Ver4.9.5</span></p>
   </div>
   <div class="form-group"><label>Username</label><input id="loginUser" placeholder="Enter username"></div>
   <div class="form-group"><label>Password</label><input id="loginPass" type="password" placeholder="Enter password"></div>
@@ -254,7 +254,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
 <!-- MAIN APP -->
 <div id="mainApp" class="hidden">
   <div class="sidebar" id="sidebar">
-    <div class="sidebar-header"><h2>TBMS <span style="font-size:12px;font-weight:400;opacity:.6">Ver4.8.5</span></h2><p>The Bap Management System</p></div>
+    <div class="sidebar-header"><h2>TBMS <span style="font-size:12px;font-weight:400;opacity:.6">Ver4.9.5</span></h2><p>The Bap Management System</p></div>
     <div class="sidebar-menu">
       <div class="menu-item active" data-page="dashboard" onclick="navigate('dashboard')"><i class="fas fa-home"></i>Dashboard</div>
       <div class="menu-group">
@@ -310,7 +310,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
   <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
   <div class="main-content">
     <div class="header">
-      <div class="header-left"><button class="menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button><h2 id="pageTitle" style="font-size:18px">Dashboard</h2><span style="font-size:11px;color:var(--text-light);margin-left:8px;font-weight:400;opacity:.7">Ver4.8.5</span></div>
+      <div class="header-left"><button class="menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button><h2 id="pageTitle" style="font-size:18px">Dashboard</h2><span style="font-size:11px;color:var(--text-light);margin-left:8px;font-weight:400;opacity:.7">Ver4.9.5</span></div>
       <div class="header-right"><span id="headerDate"></span><span class="sync-status"><span class="dot offline" id="syncDot"></span><span id="syncText">Local</span></span><button class="btn btn-sm btn-outline" onclick="doLogout()"><i class="fas fa-sign-out-alt"></i> Logout</button></div>
     </div>
     <div class="page-content" id="pageContent"></div>
@@ -3530,14 +3530,15 @@ function renderOrders(c) {
     <div id="olStoreChecks" style="display:flex;flex-wrap:wrap;gap:6px;margin:12px 0;padding:12px;background:#f8f9fa;border-radius:10px;align-items:center">
       <label style="font-size:12px;font-weight:700;color:#555;margin-right:4px"><i class="fas fa-store" style="margin-right:4px"></i>Stores:</label>
       <label style="cursor:pointer;display:flex;align-items:center;gap:4px;padding:5px 10px;border-radius:6px;background:#fff;border:1.5px solid var(--border);font-size:13px;font-weight:600;color:var(--primary)">
-        <input type="checkbox" id="olCheckAll" checked onchange="toggleAllStoreChecks(this.checked)" style="accent-color:var(--primary)"> All
+        <input type="checkbox" id="olCheckAll" onchange="toggleAllStoreChecks(this.checked)" style="accent-color:var(--primary)"> All
       </label>
       ${stores.map(s=>`<label style="cursor:pointer;display:flex;align-items:center;gap:4px;padding:5px 10px;border-radius:6px;background:#fff;border:1.5px solid var(--border);font-size:13px">
-        <input type="checkbox" class="ol-store-chk" value="${s.id}" checked onchange="onStoreCheckChange()" style="accent-color:var(--primary)"> ${escHtml(s.name)}
+        <input type="checkbox" class="ol-store-chk" value="${s.id}" onchange="onStoreCheckChange()" style="accent-color:var(--primary)"> ${escHtml(s.name)}
       </label>`).join('')}
     </div>
     <div id="orderListContent" style="margin-top:12px"></div>
   </div>`;
+  // 초기 상태: 지점 미선택 → 안내 메시지 표시
   renderOrderListBody();
 }
 // 전체 선택/해제 토글
@@ -3796,6 +3797,20 @@ async function exportTreestoneOrderForm(supKey){
   }
 }
 
+// 서플라이어별 접기/펼치기 상태 맵 (supKey 기반)
+let _olCollapseMap={};
+// _olSupIdx: 현재 렌더의 인덱스→supKey 매핑 (DOM id는 인덱스, 상태는 supKey로 유지)
+let _olSupIdx=[];
+function toggleSupCollapse(idx){
+  const supKey=_olSupIdx[idx];
+  if(!supKey)return;
+  _olCollapseMap[supKey]=!_olCollapseMap[supKey];
+  const tbl=document.getElementById('olTbl_'+idx);
+  const icon=document.getElementById('olChev_'+idx);
+  if(tbl){tbl.style.display=_olCollapseMap[supKey]?'none':'table';}
+  if(icon){icon.className=_olCollapseMap[supKey]?'fas fa-chevron-right':'fas fa-chevron-down';}
+}
+
 // Full List 전역 + 서플라이어별 토글 상태
 let _olFullAll=false;
 let _olFullMap={};
@@ -3887,6 +3902,11 @@ function renderOrderListBody(){
     summary.textContent=orderItemCount>0?`${Object.keys(supGroups).length} suppliers · ${orderItemCount} items to order${anyFull?' (some Full List)':''}`:'No orders needed';
   }
   const cont=$('orderListContent');
+  // 지점 미선택 시 안내 메시지
+  if(!checkedIds.length){
+    cont.innerHTML=`<div style="text-align:center;padding:40px;color:var(--text-light)"><i class="fas fa-hand-pointer" style="font-size:48px;margin-bottom:12px;opacity:.4"></i><p style="font-size:16px;font-weight:600">Select stores above to view order list</p></div>`;
+    return;
+  }
   // 주문 필요 아이템 또는 Full List 토글된 서플라이어가 하나라도 있는지 확인
   const hasAny=orderItemCount>0||Object.keys(_olFullMap).some(k=>_olFullMap[k]);
   if(!hasAny){
@@ -3897,6 +3917,8 @@ function renderOrderListBody(){
   const supKeys=Object.keys(supGroups).sort((a,b)=>{
     if(a==='Unassigned')return 1;if(b==='Unassigned')return -1;return a.localeCompare(b);
   });
+  // 인덱스→supKey 매핑 갱신 (접기/펼치기용)
+  _olSupIdx=supKeys.slice();
   // 서플라이어 지정 색상 (이름 소문자 매칭) + 기본 팔레트
   const _supFixedClrs={'treestone butchers':'#111111','treestone butcher':'#111111'};
   const _supClrs=['#1565c0','#6a1b9a','#e65100','#00838f','#2e7d32','#c62828','#4527a0','#ef6c00','#00695c','#ad1457','#283593','#4e342e'];
@@ -3916,9 +3938,11 @@ function renderOrderListBody(){
     const flBtnStyle=isFull?'background:rgba(255,255,255,.95);color:'+clr+';font-weight:700':'background:rgba(255,255,255,.2);color:#fff';
     html+=`<div style="margin-bottom:20px;border:2px solid ${clr}22;border-radius:12px;overflow:hidden">`;
     // 서플라이어 헤더 + Full List 버튼
+    const isCollapsed=!!_olCollapseMap[supKey];
     html+=`<div style="background:${clr};color:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:center">
-      <div style="display:flex;align-items:center;gap:10px">
-        <i class="fas fa-truck" style="margin-right:4px"></i>
+      <div style="display:flex;align-items:center;gap:10px;cursor:pointer" onclick="toggleSupCollapse(${si})">
+        <i id="olChev_${si}" class="fas fa-chevron-${isCollapsed?'right':'down'}" style="font-size:12px;width:14px;transition:transform .2s"></i>
+        <i class="fas fa-truck"></i>
         <strong style="font-size:15px">${escHtml(supKey)}</strong>
         <span style="opacity:.7;font-size:13px">${isFull?allRows.length+' items':rows.length+' items'}</span>
       </div>
@@ -3931,8 +3955,8 @@ function renderOrderListBody(){
         </button>`:''}
       </div>
     </div>`;
-    // 테이블
-    html+=`<table style="width:100%;border-collapse:collapse;font-size:13px">
+    // 테이블 (접기/펼치기 지원)
+    html+=`<table id="olTbl_${si}" style="width:100%;border-collapse:collapse;font-size:13px;${isCollapsed?'display:none':''}">
       <thead><tr style="background:#f5f5f5">
         <th style="padding:8px 12px;text-align:left;font-size:12px;color:#666;border-bottom:2px solid #eee">Store</th>
         <th style="padding:8px 12px;text-align:left;font-size:12px;color:#666;border-bottom:2px solid #eee">Item</th>
@@ -4009,7 +4033,12 @@ function printOrderList(){
   const today=new Date().toISOString().split('T')[0];
   // 선택된 지점 이름 목록
   const stores=getAccessibleStores();
-  const selNames=checkedIds.length===stores.length?'All Stores':checkedIds.map(id=>{const st=stores.find(s=>String(s.id)===id);return st?st.name:id;}).join(', ');
+  // 선택된 지점별 배지 HTML 생성 (배경색 포함)
+  const _pStClrH={'PAB':'#1b5e20','TBS':'#1565c0','TBR':'#6a1b9a','TBB':'#e65100','TBO':'#00838f'};
+  const selStores=checkedIds.map(id=>stores.find(s=>String(s.id)===id)).filter(Boolean);
+  const selBadges=checkedIds.length===stores.length
+    ?'<span style="display:inline-block;background:#333;color:#fff;padding:6px 18px;border-radius:6px;font-size:16px;font-weight:800;letter-spacing:1px">All Stores</span>'
+    :selStores.map(st=>{const c=_pStClrH[st.code]||'#555';return`<span style="display:inline-block;background:${c};color:#fff;padding:6px 14px;border-radius:6px;font-size:16px;font-weight:800;letter-spacing:1px;margin-right:6px">${escHtml(st.name)}</span>`;}).join('');
   let blocks='',_pIdx2=0;
   supKeys.forEach((supKey,si)=>{
     // 인쇄는 주문 필요 아이템만
@@ -4022,13 +4051,13 @@ function printOrderList(){
     rows.forEach(r=>{if(r.sup2)sub2.add(r.sup2);if(r.sup3)sub3.add(r.sup3);});
     const subTxt=[];if(sub2.size)subTxt.push('Sup2: '+[...sub2].join(', '));if(sub3.size)subTxt.push('Sup3: '+[...sub3].join(', '));
     blocks+=`<div style="break-inside:avoid;margin-bottom:16px;border:1.5px solid ${clr}">
-      <div style="background:${clr};color:#fff;padding:6px 10px;font-weight:700;font-size:11px">
-        <i class="fas fa-truck"></i> ${escHtml(supKey)} (${rows.length} items)
-        ${subTxt.length?`<span style="float:right;font-weight:400;opacity:.8;font-size:9px">${escHtml(subTxt.join(' | '))}</span>`:''}
+      <div style="background:#fff;color:#111;padding:10px 14px;font-weight:900;font-size:15px;border-bottom:1.5px solid ${clr}">
+        <i class="fas fa-truck" style="color:#666"></i> ${escHtml(supKey)} <span style="font-weight:500;font-size:11px;color:#666">(${rows.length} items)</span>
+        ${subTxt.length?`<span style="float:right;font-weight:400;color:#888;font-size:10px">${escHtml(subTxt.join(' | '))}</span>`:''}
       </div>
       <table style="width:100%;border-collapse:collapse;font-size:9px">
         <tr style="background:#f5f5f5"><th style="padding:3px 6px;text-align:left">Store</th><th style="padding:3px 6px;text-align:left">Item</th><th style="padding:3px 4px;text-align:center">QTY</th><th style="padding:3px 4px;text-align:center">Min</th><th style="padding:3px 4px;text-align:center">Unit</th><th style="padding:3px 4px;text-align:center;color:#c62828;font-weight:700">Order</th><th style="padding:3px 4px;text-align:center">Pri</th><th style="padding:3px 6px">Sup2</th><th style="padding:3px 6px">Sup3</th></tr>
-        ${rows.map(r=>`<tr style="border-bottom:1px solid #eee${r.qty<=0?' ;background:#fff5f5':''}${r.priority==='high'?';border-left:3px solid #c62828':''}"><td style="padding:3px 6px;font-weight:600">${escHtml(r.storeCode||r.storeName)}</td><td style="padding:3px 6px">${escHtml(r.itemName)}</td><td style="padding:3px 4px;text-align:center;${r.qty<=0?'color:#c62828;font-weight:700':''}">${r.qty}</td><td style="padding:3px 4px;text-align:center">${r.min}</td><td style="padding:3px 4px;text-align:center;color:#666">${escHtml(r.unit)}</td><td style="padding:3px 4px;text-align:center;font-weight:700;color:#c62828;white-space:nowrap">${r.orderQty} <span style="color:#1565c0;font-weight:600">${escHtml(r.ordUnit)}</span></td><td style="padding:3px 4px;text-align:center">${r.priority==='high'?'<span style="color:#c62828;font-weight:700">🔥</span>':''}</td><td style="padding:3px 6px;color:#666">${escHtml(r.sup2||'-')}</td><td style="padding:3px 6px;color:#666">${escHtml(r.sup3||'-')}</td></tr>`).join('')}
+        ${rows.map(r=>{const _sc=r.storeCode||r.storeName;return`<tr style="border-bottom:1px solid #eee${r.priority==='high'?';border-left:3px solid #c62828':''}"><td style="padding:3px 6px;font-weight:600;color:#aaa;text-align:center">${escHtml(_sc)}</td><td style="padding:3px 6px">${escHtml(r.itemName)}</td><td style="padding:3px 4px;text-align:center;${r.qty<=0?'color:#c62828;font-weight:700':''}">${r.qty}</td><td style="padding:3px 4px;text-align:center">${r.min}</td><td style="padding:3px 4px;text-align:center;color:#666">${escHtml(r.unit)}</td><td style="padding:3px 4px;text-align:center;font-weight:700;color:#c62828;white-space:nowrap">${r.orderQty} <span style="color:#1565c0;font-weight:600">${escHtml(r.ordUnit)}</span></td><td style="padding:3px 4px;text-align:center">${r.priority==='high'?'<span style="color:#c62828;font-weight:700">🔥</span>':''}</td><td style="padding:3px 6px;color:#666">${escHtml(r.sup2||'-')}</td><td style="padding:3px 6px;color:#666">${escHtml(r.sup3||'-')}</td></tr>`;}).join('')}
       </table>
     </div>`;
   });
@@ -4036,7 +4065,7 @@ function printOrderList(){
   w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Order List</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
-@media print{.no-print{display:none!important}@page{size:A4 portrait;margin:10mm}}
+@media print{.no-print{display:none!important}@page{size:A4 portrait;margin:10mm}*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;color-adjust:exact!important}}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;margin:20px;color:#333}
 h1{font-size:18px;margin:0 0 4px 0}
 .info{font-size:12px;color:#666;margin-bottom:16px}
@@ -4045,9 +4074,10 @@ th{font-size:9px;color:#666;font-weight:600}
 </style></head><body>
 <div class="no-print" style="margin-bottom:16px"><button onclick="window.print()" style="padding:8px 24px;font-size:13px;font-weight:700;background:#222;color:#fff;border:none;border-radius:8px;cursor:pointer">PRINT</button></div>
 <h1><i class="fas fa-clipboard-list"></i> The Bap — Order List</h1>
-<div class="info">Date: <b>${today}</b> &nbsp; Store: <b>${escHtml(selNames)}</b> &nbsp; Suppliers: <b>${supKeys.length}</b> &nbsp; Total Items: <b>${totalItems}</b></div>
+<div style="margin-bottom:12px">${selBadges}</div>
+<div class="info">Date: <b>${today}</b> &nbsp; Suppliers: <b>${supKeys.length}</b> &nbsp; Total Items: <b>${totalItems}</b></div>
 ${blocks}
-<p style="text-align:center;font-size:8px;color:#999;margin-top:20px">TBMS Ver4.8.5</p>
+<p style="text-align:center;font-size:8px;color:#999;margin-top:20px">TBMS Ver4.9.5</p>
 </body></html>`);
   w.document.close();
 }
@@ -5508,7 +5538,7 @@ ${d.hourKeys.length>0 ? `<div class="sec"><div class="sec-t">Hourly Breakdown</d
 
 <div class="sec"><div class="sec-t">Item Sales (${d.totalQty} items)</div><table><thead><tr><th>Item</th><th style="text-align:center">Qty</th><th style="text-align:right">Revenue</th><th style="text-align:right">%</th></tr></thead><tbody>${itemRows}</tbody></table></div>
 
-<div class="footer">TBMS Ver4.8.5 &copy; ${new Date().getFullYear()} The Bap. All rights reserved.</div>
+<div class="footer">TBMS Ver4.9.5 &copy; ${new Date().getFullYear()} The Bap. All rights reserved.</div>
 </body></html>`;
 
   const w = window.open('','_blank','width=800,height=1000');
@@ -5887,7 +5917,7 @@ function exportAllWord(){
       ['submittedBy / submittedAt','Who submitted and when']
     ]);
 
-    html+=`<hr style="margin:16px 0"><p style="text-align:center;font-size:8pt;color:#999;font-style:italic">TBMS Ver4.8.5</p>`;
+    html+=`<hr style="margin:16px 0"><p style="text-align:center;font-size:8pt;color:#999;font-style:italic">TBMS Ver4.9.5</p>`;
     html+=`</body></html>`;
 
     const blob=new Blob(['\ufeff'+html],{type:'application/msword'});

@@ -237,7 +237,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
   <div class="login-logo">
     <div class="logo-icon"><i class="fas fa-bowl-food"></i></div>
     <h1>TBMS</h1>
-    <p>The Bap Management System <span style="opacity:.5;font-size:11px">Ver4.5.5</span></p>
+    <p>The Bap Management System <span style="opacity:.5;font-size:11px">Ver4.6.1</span></p>
   </div>
   <div class="form-group"><label>Username</label><input id="loginUser" placeholder="Enter username"></div>
   <div class="form-group"><label>Password</label><input id="loginPass" type="password" placeholder="Enter password"></div>
@@ -254,7 +254,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
 <!-- MAIN APP -->
 <div id="mainApp" class="hidden">
   <div class="sidebar" id="sidebar">
-    <div class="sidebar-header"><h2>TBMS <span style="font-size:12px;font-weight:400;opacity:.6">Ver4.5.5</span></h2><p>The Bap Management System</p></div>
+    <div class="sidebar-header"><h2>TBMS <span style="font-size:12px;font-weight:400;opacity:.6">Ver4.6.1</span></h2><p>The Bap Management System</p></div>
     <div class="sidebar-menu">
       <div class="menu-item active" data-page="dashboard" onclick="navigate('dashboard')"><i class="fas fa-home"></i>Dashboard</div>
       <div class="menu-group">
@@ -271,7 +271,6 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
         <div class="sub-menu">
           <div class="menu-item sub" data-page="stock" onclick="navigate('stock')"><i class="fas fa-warehouse"></i>Stock Status</div>
           <div class="menu-item sub" data-page="stock-template" onclick="navigate('stock-template')"><i class="fas fa-boxes-stacked"></i>Stock Template</div>
-          <div class="menu-item sub" data-page="sales" onclick="navigate('sales')"><i class="fas fa-chart-bar"></i>Weekly Sales</div>
           <div class="menu-item sub" data-page="analytics" onclick="navigate('analytics')"><i class="fas fa-chart-line"></i>Usage Analytics</div>
           <div class="menu-item sub" data-page="orders" onclick="navigate('orders')"><i class="fas fa-clipboard-list"></i>Order List</div>
           <div class="menu-item sub" data-page="suppliers" onclick="navigate('suppliers')"><i class="fas fa-truck-field"></i>Suppliers</div>
@@ -311,7 +310,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
   <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
   <div class="main-content">
     <div class="header">
-      <div class="header-left"><button class="menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button><h2 id="pageTitle" style="font-size:18px">Dashboard</h2><span style="font-size:11px;color:var(--text-light);margin-left:8px;font-weight:400;opacity:.7">Ver4.5.5</span></div>
+      <div class="header-left"><button class="menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button><h2 id="pageTitle" style="font-size:18px">Dashboard</h2><span style="font-size:11px;color:var(--text-light);margin-left:8px;font-weight:400;opacity:.7">Ver4.6.1</span></div>
       <div class="header-right"><span id="headerDate"></span><span class="sync-status"><span class="dot offline" id="syncDot"></span><span id="syncText">Local</span></span><button class="btn btn-sm btn-outline" onclick="doLogout()"><i class="fas fa-sign-out-alt"></i> Logout</button></div>
     </div>
     <div class="page-content" id="pageContent"></div>
@@ -354,7 +353,6 @@ const ALL_PAGES=[
   {id:'messages',label:'Messages',icon:'fa-envelope'},
   {id:'stock',label:'Stock Status',icon:'fa-warehouse'},
   {id:'stock-template',label:'Stock Template',icon:'fa-boxes-stacked'},
-  {id:'sales',label:'Weekly Sales',icon:'fa-chart-bar'},
   {id:'analytics',label:'Usage Analytics',icon:'fa-chart-line'},
   {id:'orders',label:'Order List',icon:'fa-clipboard-list'},
   {id:'suppliers',label:'Suppliers',icon:'fa-truck-field'},
@@ -770,7 +768,7 @@ $('loginUser').addEventListener('keydown',e=>{if(e.key==='Enter')$('loginPass').
 // ==================== NAVIGATION ====================
 function toggleSidebar() { $('sidebar').classList.toggle('open');$('sidebarOverlay').classList.toggle('show'); }
 function toggleMenuGroup(el){el.parentElement.classList.toggle('open');}
-const pageTitles={dashboard:'Dashboard',stores:'Store List','store-mgmt':'Store Management',users:'User Management',staff:'Staff List',attendance:'Attendance Records',payroll:'Payroll',messages:'Staff Messages',stock:'Stock Status','stock-template':'Stock Template','stock-count':'Weekly Stock Count',sales:'Weekly Sales',analytics:'Usage Analytics',orders:'Order List',suppliers:'Supplier Management','diary-config':'Diary Configuration','diary-entries':'Diary Records',settings:'General Settings','ai-assistant':'AI Assistant','ai-brain':'AI Brain','bot-settings':'Bot Settings'};
+const pageTitles={dashboard:'Dashboard',stores:'Store List','store-mgmt':'Store Management',users:'User Management',staff:'Staff List',attendance:'Attendance Records',payroll:'Payroll',messages:'Staff Messages',stock:'Stock Status','stock-template':'Stock Template','stock-count':'Weekly Stock Count',analytics:'Usage Analytics',orders:'Order List',suppliers:'Supplier Management','diary-config':'Diary Configuration','diary-entries':'Diary Records',settings:'General Settings','ai-assistant':'AI Assistant','ai-brain':'AI Brain','bot-settings':'Bot Settings'};
 let currentPage='dashboard';
 function navigate(page) {
   // Permission check
@@ -804,7 +802,6 @@ function renderPage(page) {
     case 'payroll': renderPayroll(c); break;
     case 'stock': renderStock(c); break;
     case 'stock-template': renderStockTemplatePage(c); break;
-    case 'sales': renderSalesInput(c); break;
     case 'sales-report': renderSalesReport(c); break;
     case 'sales-analysis': renderSalesAnalysis(c); break;
     case 'analytics': renderAnalytics(c); break;
@@ -2438,7 +2435,7 @@ async function renderStock(c) {
     </div>
     <div id="ssDateBanner"></div>
     <div class="table-wrap"><table><thead><tr>
-      <th style="width:40px">#</th><th style="width:50px">Photo</th><th>Item</th><th>Category</th><th>Unit</th><th>Min</th><th style="width:90px">QTY</th><th>Order</th><th style="width:80px">Status</th>
+      <th style="width:40px">#</th><th style="width:50px">Photo</th><th>Item</th><th>Category</th><th>Unit</th><th>Min</th><th style="width:90px">QTY</th><th>Order</th><th>Ord Unit</th><th style="width:80px">Status</th>
     </tr></thead><tbody id="ssBody"></tbody></table></div>
     <div id="ssActionBar" style="margin-top:12px;display:flex;justify-content:space-between;align-items:center">
       <button class="btn btn-sm" onclick="printStockStatus()" style="background:#f0f0f0;color:#555"><i class="fas fa-print"></i> Print</button>
@@ -2640,18 +2637,22 @@ function printStockStatus(){
       lastCat=s.category;
       const txtClr=['#e65100','#ef6c00'].includes(clr)?'#000':'#fff';
       const cs='background:'+clr+'!important;color:'+txtClr+'!important;padding:3px 6px;font-size:10px;font-weight:700';
-      rows+=`<tr><td style="${cs};text-transform:uppercase">${escHtml(lastCat)}</td><td class="c" style="${cs}">Unit</td><td class="c" style="${cs}">Min</td><td class="c" style="${cs}">QTY</td><td class="c" style="${cs}">Order</td></tr>`;
+      rows+=`<tr><td style="${cs};text-transform:uppercase">${escHtml(lastCat)}</td><td class="c" style="${cs}">Unit</td><td class="c" style="${cs}">Min</td><td class="c" style="${cs}">QTY</td><td class="c" style="${cs}">Order</td><td class="c" style="${cs}">Ord Unit</td></tr>`;
     }
     const qty=Number(s.qty)||0;const min=s._min||0;const mc=s._minCond||'lt';
     const oq=s._orderQty||0;
     const ao=s._alwaysOrder===true||s._alwaysOrder==='true';
     const needOrder=(min>0&&(mc==='lte'?qty<=min:qty<min))||(ao&&oq>0);
-    const orderVal=needOrder?Math.max(0,oq-qty):0;
+    const orderVal=needOrder?oq:0; // 주문수량은 계산하지 않고 템플릿 설정값 그대로 표시
     const nameHtml=needOrder?`<b>${escHtml(s.name)}</b>`:escHtml(s.name);
     const qtyStyle=needOrder?'font-weight:700;color:#c62828':'';
     const aoIcon=ao?'<i class="fas fa-cart-plus" style="color:#1565c0;font-size:10px;margin-left:4px" title="Always Order"></i>':'';
     const orderCell=needOrder?`<td class="c" style="font-weight:700;color:#c62828">${fmtQty(orderVal)}</td>`:`<td class="c" style="color:#ccc">-</td>`;
-    rows+=`<tr${needOrder?' style="background:#ffe0e6!important"':''}><td>${nameHtml}${aoIcon}</td><td class="c">${escHtml(s.unit||'')}</td><td class="c">${fmtQty(min)}</td><td class="c" style="${qtyStyle}">${fmtQty(qty)}</td>${orderCell}</tr>`;
+    // 주문 단위: StoreStock → StockTemplate → unit 순으로 fallback
+    const tpl2=D.StockTemplate.find(t=>String(t.id)===String(s.itemId));
+    const ss2=D.StoreStock.find(x=>String(x.storeId)===storeId&&String(x.itemId)===String(s.itemId));
+    const ordUnit2=(ss2?ss2.orderUnit:'')||(tpl2?tpl2.orderUnit:'')||s.unit||'';
+    rows+=`<tr${needOrder?' style="background:#ffe0e6!important"':''}><td>${nameHtml}${aoIcon}</td><td class="c">${escHtml(s.unit||'')}</td><td class="c">${fmtQty(min)}</td><td class="c" style="${qtyStyle}">${fmtQty(qty)}</td>${orderCell}<td class="c">${escHtml(ordUnit2)}</td></tr>`;
   });
   flushCat();
   const storeName=store?escHtml(store.name):'';
@@ -2686,6 +2687,7 @@ function renderStockTemplatePage(c){
         <span style="font-size:12px;color:var(--text-light)"><i class="fas fa-info-circle"></i> All ${stores.length} stores</span>
         <button class="btn btn-sm" onclick="openCatOrderModal()" style="background:#f0f0f0;color:#555"><i class="fas fa-layer-group"></i> Categories</button>
         <button class="btn btn-sm" onclick="printStockTemplate()" style="background:#f0f0f0;color:#555"><i class="fas fa-print"></i> Print</button>
+        <button class="btn btn-sm" onclick="exportStockTemplateExcel()" style="background:#1a7340;color:#fff"><i class="fas fa-file-excel"></i> Excel</button>
         <button class="btn btn-primary btn-sm" onclick="openStockItemModal()"><i class="fas fa-plus"></i> Add Item</button>
       </div>
     </div>
@@ -2769,7 +2771,7 @@ async function renderStockStatusTable(){
       lastCat=s.category;
       const cnt=items.filter(i=>i.category===lastCat).length;
       const catBg=isToday?'var(--primary)':(hasExisting?'#1565c0':'#e65100');
-      html+=`<tr><td colspan="9" style="background:${catBg};color:#fff;font-weight:700;font-size:13px;padding:8px 16px;border:none"><i class="fas fa-layer-group" style="margin-right:8px"></i>${escHtml(lastCat)} <span style="opacity:.6;font-size:12px;margin-left:8px">${cnt} items</span></td></tr>`;
+      html+=`<tr><td colspan="10" style="background:${catBg};color:#fff;font-weight:700;font-size:13px;padding:8px 16px;border:none"><i class="fas fa-layer-group" style="margin-right:8px"></i>${escHtml(lastCat)} <span style="opacity:.6;font-size:12px;margin-left:8px">${cnt} items</span></td></tr>`;
     }
     // Determine QTY to show
     let qty;
@@ -2783,13 +2785,16 @@ async function renderStockStatusTable(){
     const ao=s.alwaysOrder===true||s.alwaysOrder==='true';
     const counted=isToday?todayCounted:hasExisting;
     const needOrder=counted&&((min>0&&(mc2==='lte'?qty<=min:qty<min))||(ao&&oq>0));
-    const orderVal=needOrder?Math.max(0,oq-qty):0;
+    const orderVal=needOrder?oq:0; // 주문수량은 계산하지 않고 템플릿 설정값 그대로 표시
     const status=!counted?'badge-secondary':qty<=0?'badge-danger':qty<=min?'badge-warning':'badge-success';
     const statusText=!counted?'—':qty<=0?'Out':qty<=min?'Low':'OK';
     const photoHtml=s._photo?`<img src="https://drive.google.com/thumbnail?id=${s._photo}&sz=w80" style="width:36px;height:36px;object-fit:cover;border-radius:6px;cursor:pointer" onclick="showPhotoLightbox('${s._photo}','${escHtml(s.name)}')">`:'<span style="font-size:18px;opacity:.3">📦</span>';
     const inputStyle=!isToday&&existingRecs.find(r=>String(r.itemId)===String(s.itemId))?'border-color:#1565c0;background:#e3f2fd':'';
     const aoIcon=ao?'<i class="fas fa-cart-plus" style="color:#1565c0;font-size:10px;margin-left:4px" title="Always Order"></i>':'';
     const orderCellHtml=needOrder?`<span style="font-weight:700;color:#c62828">${fmtQty(orderVal)}</span>`:`<span style="color:#ccc">—</span>`;
+    // 주문 단위: StoreStock의 orderUnit → StockTemplate의 orderUnit → unit 순으로 fallback
+    const tpl=D.StockTemplate.find(t=>String(t.id)===String(s.itemId));
+    const ordUnit=s.orderUnit||(tpl?tpl.orderUnit:'')||s.unit||'';
     html+=`<tr${needOrder?' style="background:#fff8f8"':''}>
       <td style="color:var(--text-light);font-size:12px">${idx+1}</td>
       <td style="text-align:center">${photoHtml}</td>
@@ -2798,10 +2803,11 @@ async function renderStockStatusTable(){
       <td>${escHtml(s.unit)}</td><td>${min}</td>
       <td><input type="number" min="0" step="0.5" value="${qty}" class="ss-qty" data-store="${storeId}" data-item="${s.itemId}" data-cat="${escHtml(s.category)}" data-name="${escHtml(s.name)}" data-unit="${escHtml(s.unit)}" style="width:70px;padding:6px;border:2px solid var(--border);border-radius:6px;font-weight:600;text-align:center;${inputStyle}" onchange="${isToday?'updateStockQty(this)':''}"></td>
       <td style="text-align:center">${orderCellHtml}</td>
+      <td style="font-size:12px;color:var(--text-light)">${escHtml(ordUnit)}</td>
       <td><span class="badge ${status}">${statusText}</span></td>
     </tr>`;
   });
-  if(!items.length)html='<tr><td colspan="9" style="text-align:center;color:var(--text-light)">No items for this store</td></tr>';
+  if(!items.length)html='<tr><td colspan="10" style="text-align:center;color:var(--text-light)">No items for this store</td></tr>';
   $('ssBody').innerHTML=html;
 }
 // ─── Stock Template 인쇄 (아이템별 지점 상세 표시) ───
@@ -2909,6 +2915,75 @@ function printStockTemplate(){
   <div class="btn-row" style="margin-top:10px"><button onclick="window.print()" style="padding:8px 24px;font-size:13px;font-weight:700;background:#222;color:#fff;border:none;border-radius:8px;cursor:pointer">🖨 Print</button></div>
 </body></html>`);
   w.document.close();
+}
+
+// ─── Stock Template Excel 내보내기 (아이템별 지점 상세) ───
+function exportStockTemplateExcel(){
+  const catIdx=getSortedCategories();
+  const stores=getAccessibleStores();
+  let items=[...D.StockTemplate];
+  const catF=$('stockCat')?.value||'';
+  const search=($('stockSearch')?.value||'').toLowerCase().trim();
+  if(catF)items=items.filter(t=>t.category===catF);
+  if(search)items=items.filter(t=>(t.name||'').toLowerCase().includes(search)||(t.category||'').toLowerCase().includes(search));
+  items.sort((a,b)=>{const ci=catIdx.indexOf(a.category)-catIdx.indexOf(b.category);return ci!==0?ci:(a.sortOrder||0)-(b.sortOrder||0);});
+  const supName=c=>{if(!c)return'';const s=D.Suppliers.find(x=>x.id===c||x.name===c);return s?s.name:c;};
+  const wb=XLSX.utils.book_new();
+  // ── 전체 시트: 아이템 + 지점별 행 ──
+  const rows=[];
+  let num=0;
+  items.forEach(t=>{
+    num++;
+    const ao=t.alwaysOrder===true||t.alwaysOrder==='true';
+    const ou=t.orderUnit||t.unit||'';
+    // 아이템 헤더 행
+    rows.push({'#':num,'Item':t.name+(ao?' ★':''),'Store':'','Unit':t.unit,'Order Unit':ou,'Min':'','Condition':'','Order':'','Supplier 1':'','Supplier 2':'','Supplier 3':'','Category':t.category,'Memo':t.memo||'','ID':t.id});
+    // 지점별 행
+    stores.forEach(store=>{
+      const storeId=String(store.id);
+      const storeName=store.name||storeId;
+      const ss=D.StoreStock.find(x=>String(x.storeId)===storeId&&String(x.itemId)===String(t.id));
+      const sMin=ss?Number(ss.min)||0:Number(t.min)||0;
+      const sMc=ss?(ss.minCondition||'lt'):(t.minCondition||'lt');
+      const sOq=ss?Number(ss.orderQty)||0:Number(t.orderQty)||0;
+      const sSup1=ss&&('supplier1' in ss)?ss.supplier1:(t.supplier1||'');
+      const sSup2=ss&&('supplier2' in ss)?ss.supplier2:(t.supplier2||'');
+      const sSup3=ss&&('supplier3' in ss)?ss.supplier3:(t.supplier3||'');
+      rows.push({'#':'','Item':'','Store':storeName,'Unit':'','Order Unit':'','Min':sMin,'Condition':sMc==='lte'?'≤':'<','Order':sOq,'Supplier 1':supName(sSup1),'Supplier 2':supName(sSup2),'Supplier 3':supName(sSup3),'Category':'','Memo':'','ID':''});
+    });
+  });
+  const ws=XLSX.utils.json_to_sheet(rows);
+  // 열 너비 설정
+  ws['!cols']=[{wch:4},{wch:32},{wch:20},{wch:6},{wch:9},{wch:6},{wch:4},{wch:6},{wch:22},{wch:22},{wch:22},{wch:16},{wch:25},{wch:8}];
+  XLSX.utils.book_append_sheet(wb,ws,'Stock Template');
+
+  // ── 지점별 별도 시트 ──
+  stores.forEach(store=>{
+    const storeId=String(store.id);
+    const storeName=store.name||storeId;
+    const sRows=[];let sNum=0;
+    items.forEach(t=>{
+      sNum++;
+      const ss=D.StoreStock.find(x=>String(x.storeId)===storeId&&String(x.itemId)===String(t.id));
+      const sMin=ss?Number(ss.min)||0:Number(t.min)||0;
+      const sMc=ss?(ss.minCondition||'lt'):(t.minCondition||'lt');
+      const sOq=ss?Number(ss.orderQty)||0:Number(t.orderQty)||0;
+      const ao=t.alwaysOrder===true||t.alwaysOrder==='true';
+      const ou=t.orderUnit||t.unit||'';
+      const sSup1=ss&&('supplier1' in ss)?ss.supplier1:(t.supplier1||'');
+      const sSup2=ss&&('supplier2' in ss)?ss.supplier2:(t.supplier2||'');
+      const sSup3=ss&&('supplier3' in ss)?ss.supplier3:(t.supplier3||'');
+      sRows.push({'#':sNum,'Category':t.category,'Item':t.name+(ao?' ★':''),'Unit':t.unit,'Min':sMin,'Cond':sMc==='lte'?'≤':'<','Order':sOq,'Order Unit':ou,'Supplier 1':supName(sSup1),'Supplier 2':supName(sSup2),'Supplier 3':supName(sSup3)});
+    });
+    const sws=XLSX.utils.json_to_sheet(sRows);
+    sws['!cols']=[{wch:4},{wch:16},{wch:32},{wch:6},{wch:6},{wch:4},{wch:6},{wch:9},{wch:22},{wch:22},{wch:22}];
+    // 시트 이름은 31자 제한
+    const sheetName=(storeName.length>28?storeName.substring(0,28)+'..':storeName);
+    XLSX.utils.book_append_sheet(wb,sws,sheetName);
+  });
+
+  XLSX.writeFile(wb,`Stock_Template_${new Date().toISOString().split('T')[0]}.xlsx`);
+  toast('Excel file downloaded','success');
 }
 
 function renderStockTable() {
@@ -3433,7 +3508,7 @@ function renderOrderTable() {
     const ao=s.alwaysOrder===true||s.alwaysOrder==='true';
     const mc4=s.minCondition||'lt';
     const needOrder=(Number(s.min)>0&&(mc4==='lte'?qty<=Number(s.min):qty<Number(s.min)))||(ao&&oq>0);
-    const orderVal=needOrder?Math.max(0,oq-qty):0;
+    const orderVal=needOrder?oq:0; // 주문수량은 계산하지 않고 템플릿 설정값 그대로 표시
     const aoIcon=ao?'<i class="fas fa-cart-plus" style="color:#1565c0;font-size:10px;margin-left:4px" title="Always Order"></i>':'';
     const ou=s.orderUnit||s.unit;
     // 지점별 서플라이어 표시 (supplier1 우선)
@@ -4672,275 +4747,6 @@ async function tbmsGet(action, extraParams) {
   return await resp.json();
 }
 
-// ==================== WEEKLY SALES ====================
-function renderSalesInput(c){
-  const stores=getAccessibleStores();
-  const today=new Date();const weekNo=getISOWeek(today);
-  const monday=new Date(today);monday.setDate(today.getDate()-(today.getDay()||7)+1);
-  const weekStart=monday.toISOString().split('T')[0];
-  const storeColors={PAB:'#1b5e20',TBS:'#1565c0',TBR:'#6a1b9a',TBB:'#e65100',TBO:'#00838f'};
-  c.innerHTML=`<div class="card" style="margin-bottom:16px">
-    <h3 style="margin-bottom:16px"><i class="fas fa-chart-bar" style="color:var(--accent);margin-right:8px"></i>Weekly Sales Input — Week ${String(weekNo).slice(-2)}</h3>
-    <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:16px">
-      <div class="form-group" style="margin:0"><label>Week Start (Monday)</label>
-        <input type="date" id="wsDate" value="${weekStart}" onchange="fillSalesForDate()" style="padding:10px;border:2px solid var(--border);border-radius:8px"></div>
-    </div>
-    <div style="display:flex;flex-direction:column;gap:12px">
-    ${stores.map(s=>{
-      const clr=storeColors[s.code]||'var(--primary)';
-      return `<div style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:#f8f9fa;border-radius:12px;border-left:4px solid ${clr}">
-        <div style="min-width:140px"><strong style="font-size:15px;color:${clr};cursor:pointer;text-decoration:underline;text-decoration-style:dotted" onclick="openStoreSalesModal('${s.id}')">${escHtml(s.name)}</strong></div>
-        <div style="display:flex;align-items:center;gap:4px"><span style="font-size:18px;font-weight:700;color:#555">£</span>
-          <input type="number" min="0" step="0.01" placeholder="0.00" id="wsSales_${s.id}" style="padding:10px;border:2px solid var(--border);border-radius:8px;width:130px;font-size:16px;font-weight:700;text-align:right"></div>
-        <input type="text" placeholder="Notes..." id="wsNotes_${s.id}" style="flex:1;min-width:120px;padding:10px;border:2px solid var(--border);border-radius:8px;font-size:13px">
-        <button class="btn btn-primary btn-sm" onclick="submitWeeklySalesFor('${s.id}')" style="height:40px;white-space:nowrap"><i class="fas fa-save"></i> Save</button>
-      </div>`}).join('')}
-    </div>
-  </div>
-  <div class="card">
-    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:12px">
-      <h3>Sales History</h3>
-      <div style="display:flex;gap:8px;align-items:center">
-        <div style="display:inline-flex;border:2px solid var(--border);border-radius:8px;overflow:hidden">
-          <button id="shViewList" class="btn btn-sm" style="border:none;border-radius:0;font-size:12px;padding:6px 14px;background:var(--primary);color:#fff" onclick="salesHistView='list';renderSalesHistView()"><i class="fas fa-list"></i> List</button>
-          <button id="shViewCal" class="btn btn-sm" style="border:none;border-radius:0;font-size:12px;padding:6px 14px;background:#fff;color:var(--text)" onclick="salesHistView='calendar';renderSalesHistView()"><i class="fas fa-calendar-alt"></i> Calendar</button>
-        </div>
-        <select id="wsHistStore" onchange="renderSalesHistView()" style="padding:8px 12px;border:2px solid var(--border);border-radius:8px;font-size:13px">
-          <option value="">All Stores</option>${stores.map(s=>`<option value="${s.id}">${escHtml(s.name)}</option>`).join('')}</select>
-      </div>
-    </div>
-    <div id="wsHistContent"></div>
-  </div>`;
-  // Pre-fill existing data for current week
-  stores.forEach(s=>{
-    const existing=D.WeeklySales.find(ws=>String(ws.storeId)===String(s.id)&&String(ws.week)===String(weekNo));
-    if(existing){
-      const salesEl=$('wsSales_'+s.id);if(salesEl)salesEl.value=existing.totalSales||'';
-      const notesEl=$('wsNotes_'+s.id);if(notesEl)notesEl.value=existing.notes||'';
-    }
-  });
-  renderSalesHistView();
-}
-function renderSalesHistView(){
-  const btn1=$('shViewList'),btn2=$('shViewCal');
-  if(btn1)btn1.style.cssText='border:none;border-radius:0;font-size:12px;padding:6px 14px;'+(salesHistView==='list'?'background:var(--primary);color:#fff':'background:#fff;color:var(--text)');
-  if(btn2)btn2.style.cssText='border:none;border-radius:0;font-size:12px;padding:6px 14px;'+(salesHistView==='calendar'?'background:var(--primary);color:#fff':'background:#fff;color:var(--text)');
-  if(salesHistView==='calendar')renderSalesCalendar();
-  else renderSalesHistory();
-}
-function renderSalesHistory(){
-  const storeId=$('wsHistStore')?.value||'';
-  let recs=D.WeeklySales.filter(ws=>hasStoreAccess(ws.storeId));
-  if(storeId)recs=recs.filter(ws=>String(ws.storeId)===storeId);
-  recs.sort((a,b)=>(b.week||0)-(a.week||0));
-  const el=$('wsHistContent');if(!el)return;
-  el.innerHTML=recs.length?`<table class="data-table"><thead><tr><th>Week</th><th>Start</th><th>Store</th><th>Sales</th><th>Notes</th><th>By</th></tr></thead><tbody>`+recs.slice(0,52).map(ws=>{
-    const store=D.Stores.find(s=>String(s.id)===String(ws.storeId));
-    const user=D.Users.find(u=>String(u.id)===String(ws.submittedBy));
-    return`<tr>
-      <td style="font-weight:700">W${String(ws.week).slice(-2)}</td>
-      <td>${ws.weekStart||'—'}</td>
-      <td>${store?escHtml(store.name):ws.storeId}</td>
-      <td style="font-size:16px;font-weight:700;color:var(--success)">£${Number(ws.totalSales).toLocaleString('en-GB',{minimumFractionDigits:2})}</td>
-      <td style="font-size:12px;color:var(--text-light)">${ws.notes?escHtml(ws.notes):'—'}</td>
-      <td style="font-size:12px">${user?escHtml(user.name):'—'}</td></tr>`;
-  }).join('')+`</tbody></table>`:'<div style="text-align:center;color:var(--text-light);padding:40px">No sales data yet</div>';
-}
-let salesCalYear=new Date().getFullYear();
-function renderSalesCalendar(){
-  const el=$('wsHistContent');if(!el)return;
-  const storeId=$('wsHistStore')?.value||'';
-  const stores=getAccessibleStores().filter(s=>!storeId||String(s.id)===storeId);
-  const storeColors={PAB:'#1b5e20',TBS:'#1565c0',TBR:'#6a1b9a',TBB:'#e65100',TBO:'#00838f'};
-  let recs=D.WeeklySales.filter(ws=>hasStoreAccess(ws.storeId));
-  if(storeId)recs=recs.filter(ws=>String(ws.storeId)===storeId);
-  // Filter by selected year
-  recs=recs.filter(ws=>{
-    const wk=String(ws.week);
-    if(wk.length>=6)return wk.slice(0,4)===String(salesCalYear);
-    const ws2=ws.weekStart;if(ws2)return ws2.startsWith(String(salesCalYear));
-    return false;
-  });
-  // Build week map: weekNum -> {storeId: totalSales}
-  const weekMap={};
-  recs.forEach(ws=>{
-    const wk=String(ws.week).slice(-2);
-    if(!weekMap[wk])weekMap[wk]={};
-    weekMap[wk][ws.storeId]=ws;
-  });
-  // Get all weeks 1-52
-  const weeks=[];
-  for(let w=1;w<=52;w++)weeks.push(String(w).padStart(2,'0'));
-  // Helper: get Monday of ISO week
-  function getMonday(yr,wk){
-    const jan4=new Date(yr,0,4);
-    const dow=jan4.getDay()||7;
-    const mon=new Date(jan4);mon.setDate(jan4.getDate()-(dow-1)+(wk-1)*7);
-    return mon;
-  }
-  // Build calendar grid by month
-  let html=`<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
-    <button class="btn btn-sm" onclick="salesCalYear--;renderSalesCalendar()" style="padding:6px 12px">◀</button>
-    <span style="font-size:20px;font-weight:700">${salesCalYear}</span>
-    <button class="btn btn-sm" onclick="salesCalYear++;renderSalesCalendar()" style="padding:6px 12px">▶</button>
-  </div>`;
-  // Yearly total
-  let yearTotal=0;
-  recs.forEach(ws=>yearTotal+=Number(ws.totalSales)||0);
-  html+=`<div style="margin-bottom:16px;padding:12px 16px;background:linear-gradient(135deg,#111,#333);color:#fff;border-radius:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
-    <span style="font-size:14px;font-weight:600">${salesCalYear} Total Sales</span>
-    <span style="font-size:22px;font-weight:800">£${yearTotal.toLocaleString('en-GB',{minimumFractionDigits:2})}</span>
-  </div>`;
-  // Table with months as groups
-  html+=`<div style="overflow-x:auto"><table class="data-table" style="font-size:13px"><thead><tr>
-    <th style="width:60px">Week</th><th style="width:90px">Date</th>`;
-  stores.forEach(s=>{
-    const clr=storeColors[s.code]||'var(--primary)';
-    html+=`<th style="color:${clr}">${escHtml(s.name)}</th>`;
-  });
-  html+=`<th style="font-weight:800">Total</th></tr></thead><tbody>`;
-  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  let lastMonth=-1;
-  let monthTotal=0;
-  let monthStoreTotals={};
-  stores.forEach(s=>monthStoreTotals[s.id]=0);
-  weeks.forEach((wk,idx)=>{
-    const mon=getMonday(salesCalYear,parseInt(wk));
-    const curMonth=mon.getMonth();
-    // Month separator
-    if(curMonth!==lastMonth){
-      if(lastMonth!==-1){
-        // Print month total row
-        html+=`<tr style="background:#f0f0f0;font-weight:700"><td colspan="2" style="text-align:right;font-size:12px">${months[lastMonth]} Total</td>`;
-        stores.forEach(s=>{
-          const v=monthStoreTotals[s.id];
-          html+=`<td style="color:${v?'var(--success)':'#ccc'}">${v?'£'+v.toLocaleString('en-GB',{minimumFractionDigits:2}):'—'}</td>`;
-        });
-        html+=`<td style="font-size:15px;font-weight:800;color:var(--success)">£${monthTotal.toLocaleString('en-GB',{minimumFractionDigits:2})}</td></tr>`;
-        html+=`<tr><td colspan="${stores.length+3}" style="padding:2px;background:var(--border)"></td></tr>`;
-      }
-      lastMonth=curMonth;
-      monthTotal=0;
-      stores.forEach(s=>monthStoreTotals[s.id]=0);
-    }
-    const dateStr=mon.toISOString().split('T')[0];
-    const data=weekMap[wk]||{};
-    let weekTotal=0;
-    let hasData=false;
-    stores.forEach(s=>{if(data[s.id])hasData=true;});
-    html+=`<tr style="${hasData?'':'opacity:0.5'}">
-      <td style="font-weight:700;font-size:12px">W${wk}</td>
-      <td style="font-size:12px;white-space:nowrap">${dateStr.slice(5)}</td>`;
-    stores.forEach(s=>{
-      const ws=data[s.id];
-      const val=ws?Number(ws.totalSales):0;
-      weekTotal+=val;
-      monthTotal+=val;
-      monthStoreTotals[s.id]+=val;
-      const clr=storeColors[s.code]||'var(--primary)';
-      html+=`<td style="font-weight:${val?'700':'400'};color:${val?clr:'#ddd'};font-size:${val?'14px':'12px'}">${val?'£'+val.toLocaleString('en-GB',{minimumFractionDigits:2}):'—'}</td>`;
-    });
-    html+=`<td style="font-weight:800;color:${weekTotal?'var(--success)':'#ddd'};font-size:${weekTotal?'14px':'12px'}">${weekTotal?'£'+weekTotal.toLocaleString('en-GB',{minimumFractionDigits:2}):'—'}</td></tr>`;
-  });
-  // Last month total
-  if(lastMonth!==-1){
-    html+=`<tr style="background:#f0f0f0;font-weight:700"><td colspan="2" style="text-align:right;font-size:12px">${months[lastMonth]} Total</td>`;
-    stores.forEach(s=>{
-      const v=monthStoreTotals[s.id];
-      html+=`<td style="color:${v?'var(--success)':'#ccc'}">${v?'£'+v.toLocaleString('en-GB',{minimumFractionDigits:2}):'—'}</td>`;
-    });
-    html+=`<td style="font-size:15px;font-weight:800;color:var(--success)">£${monthTotal.toLocaleString('en-GB',{minimumFractionDigits:2})}</td></tr>`;
-  }
-  html+=`</tbody></table></div>`;
-  el.innerHTML=html;
-}
-async function submitWeeklySalesFor(storeId){
-  const weekStart=$('wsDate')?.value;
-  const totalSales=parseFloat($('wsSales_'+storeId)?.value||0);
-  const notes=$('wsNotes_'+storeId)?.value||'';
-  if(!weekStart){toast('Select week start date','error');return;}
-  if(totalSales<=0){toast('Enter sales amount','error');return;}
-  const week=getISOWeek(new Date(weekStart));
-  const id='ws_'+week+'_'+storeId;
-  const store=D.Stores.find(s=>String(s.id)===storeId);
-  const row={id,storeId,week,weekStart,totalSales,notes,submittedBy:currentUser?.id||'',submittedAt:new Date().toISOString()};
-  try{
-    await saveRow('WeeklySales',row);
-    toast(`${store?store.name:storeId} — Week ${String(week).slice(-2)}: £${totalSales.toFixed(2)} saved`,'success');
-    fillSalesForDate();
-    renderSalesHistView();
-  }catch(e){toast('Error: '+e.message,'error');}
-}
-function fillSalesForDate(){
-  const dateVal=$('wsDate')?.value;
-  if(!dateVal)return;
-  const week=getISOWeek(new Date(dateVal));
-  // Update header week number
-  const h3=document.querySelector('#content .card h3');
-  if(h3&&h3.textContent.includes('Weekly Sales Input'))h3.innerHTML=`<i class="fas fa-chart-bar" style="color:var(--accent);margin-right:8px"></i>Weekly Sales Input — Week ${String(week).slice(-2)}`;
-  const stores=getAccessibleStores();
-  stores.forEach(s=>{
-    const existing=D.WeeklySales.find(ws=>String(ws.storeId)===String(s.id)&&String(ws.week)===String(week));
-    const salesEl=$('wsSales_'+s.id);
-    const notesEl=$('wsNotes_'+s.id);
-    if(salesEl)salesEl.value=existing?existing.totalSales:'';
-    if(notesEl)notesEl.value=existing?existing.notes||'':'';
-  });
-}
-function openStoreSalesModal(storeId,year){
-  salesCalYear=year||new Date().getFullYear();
-  const store=D.Stores.find(s=>String(s.id)===storeId);
-  const storeName=store?store.name:storeId;
-  const storeColors={PAB:'#1b5e20',TBS:'#1565c0',TBR:'#6a1b9a',TBB:'#e65100',TBO:'#00838f'};
-  const clr=storeColors[store?.code]||'var(--primary)';
-  const recs=D.WeeklySales.filter(ws=>String(ws.storeId)===storeId);
-  const yearRecs=recs.filter(ws=>(ws.weekStart||'').startsWith(String(salesCalYear)));
-  const yearTotal=yearRecs.reduce((s,ws)=>s+(Number(ws.totalSales)||0),0);
-  // Build 12-month calendar grid
-  const monthNames=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  // Find max monthly total for heat intensity
-  const monthTotals=[];
-  for(let m=0;m<12;m++){
-    const mKey=salesCalYear+'-'+String(m+1).padStart(2,'0');
-    const mRecs=yearRecs.filter(ws=>(ws.weekStart||'').startsWith(mKey));
-    const total=mRecs.reduce((s,ws)=>s+(Number(ws.totalSales)||0),0);
-    monthTotals.push({month:m,mKey,total,recs:mRecs});
-  }
-  const maxTotal=Math.max(...monthTotals.map(m=>m.total),1);
-  let body=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-    <button class="btn btn-sm btn-outline" onclick="openStoreSalesModal('${storeId}',${salesCalYear-1})" style="padding:6px 12px"><i class="fas fa-chevron-left"></i> ${salesCalYear-1}</button>
-    <div style="text-align:center">
-      <div style="font-size:24px;font-weight:800;color:${clr}">${salesCalYear}</div>
-      <div style="font-size:20px;font-weight:700;margin-top:2px">£${yearTotal.toLocaleString('en-GB',{minimumFractionDigits:2})}</div>
-      <div style="font-size:11px;color:var(--text-light)">${yearRecs.length} weeks recorded</div>
-    </div>
-    <button class="btn btn-sm btn-outline" onclick="openStoreSalesModal('${storeId}',${salesCalYear+1})" style="padding:6px 12px">${salesCalYear+1} <i class="fas fa-chevron-right"></i></button>
-  </div>
-  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-height:420px;overflow-y:auto">`;
-  monthTotals.forEach(mt=>{
-    const intensity=mt.total>0?Math.max(0.08,mt.total/maxTotal):0;
-    const bg=mt.total>0?`rgba(${clr==='#1b5e20'?'27,94,32':clr==='#1565c0'?'21,101,192':clr==='#6a1b9a'?'106,27,154':'230,81,0'},${intensity*0.2})`:'#f8f9fa';
-    const border=mt.total>0?clr:'#e0e0e0';
-    body+=`<div style="background:${bg};border:2px solid ${border};border-radius:10px;padding:10px;min-height:100px;position:relative">
-      <div style="font-size:12px;font-weight:700;color:${mt.total>0?clr:'#bbb'};margin-bottom:6px">${monthNames[mt.month]}</div>`;
-    if(mt.total>0){
-      body+=`<div style="font-size:15px;font-weight:800;margin-bottom:6px">£${mt.total.toLocaleString('en-GB',{minimumFractionDigits:0,maximumFractionDigits:0})}</div>`;
-      mt.recs.sort((a,b)=>(a.weekStart||'').localeCompare(b.weekStart||'')).forEach(ws=>{
-        body+=`<div style="display:flex;justify-content:space-between;font-size:10px;padding:2px 0;border-bottom:1px solid rgba(0,0,0,.06)">
-          <span style="color:#888">W${String(ws.week).slice(-2)}</span>
-          <span style="font-weight:600">£${Number(ws.totalSales).toLocaleString('en-GB',{minimumFractionDigits:0,maximumFractionDigits:0})}</span>
-        </div>`;
-      });
-      body+=`<div style="font-size:9px;color:var(--text-light);margin-top:4px">avg £${(mt.total/mt.recs.length).toLocaleString('en-GB',{minimumFractionDigits:0,maximumFractionDigits:0})}/wk</div>`;
-    }else{
-      body+=`<div style="font-size:11px;color:#ccc;margin-top:12px;text-align:center">No data</div>`;
-    }
-    body+=`</div>`;
-  });
-  body+=`</div>`;
-  openModal(`<span style="color:${clr}"><i class="fas fa-calendar-alt" style="margin-right:8px"></i>${escHtml(storeName)}</span>`,body,`<button class="btn btn-outline" onclick="closeModal()">Close</button>`,'max-width:560px');
-}
-
 // ==================== SALES ANALYSIS (Individual Orders from SalesOrders) ====================
 // ★ POS와 동일한 분석: MAIN/SUB, 시간대별, 아이템별, Sales by Type
 function renderSalesAnalysis(c) {
@@ -5177,7 +4983,7 @@ ${d.hourKeys.length>0 ? `<div class="sec"><div class="sec-t">Hourly Breakdown</d
 
 <div class="sec"><div class="sec-t">Item Sales (${d.totalQty} items)</div><table><thead><tr><th>Item</th><th style="text-align:center">Qty</th><th style="text-align:right">Revenue</th><th style="text-align:right">%</th></tr></thead><tbody>${itemRows}</tbody></table></div>
 
-<div class="footer">TBMS Ver4.5.5 &copy; ${new Date().getFullYear()} The Bap. All rights reserved.</div>
+<div class="footer">TBMS Ver4.6.1 &copy; ${new Date().getFullYear()} The Bap. All rights reserved.</div>
 </body></html>`;
 
   const w = window.open('','_blank','width=800,height=1000');
@@ -5556,7 +5362,7 @@ function exportAllWord(){
       ['submittedBy / submittedAt','Who submitted and when']
     ]);
 
-    html+=`<hr style="margin:16px 0"><p style="text-align:center;font-size:8pt;color:#999;font-style:italic">TBMS Ver4.5.5</p>`;
+    html+=`<hr style="margin:16px 0"><p style="text-align:center;font-size:8pt;color:#999;font-style:italic">TBMS Ver4.6.1</p>`;
     html+=`</body></html>`;
 
     const blob=new Blob(['\ufeff'+html],{type:'application/msword'});

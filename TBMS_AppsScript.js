@@ -1,8 +1,8 @@
 // ============================================================
-//  TBMS - The Bap Management System v4.5.3
+//  TBMS - The Bap Management System v4.5.5
 //  Google Apps Script Backend (Code.gs)
 //  Deployed: 2026-03-14
-//  URL: https://script.google.com/macros/s/AKfycbzg4BOrVECLE-SBL9WjAwuuFvbIU6SftY9xvcX2XPHt-2ZUwgDgVMQRRi9UJPdioa8L/exec
+//  URL: https://script.google.com/macros/s/AKfycbwRPuMygxRoPbN4ZAl-Kk0dN7Q3nFAp5PJIkYtAnHSv3PZuIhX-b2HC88ECTByQh6ZM/exec
 // ============================================================
 //  SETUP:
 //  1. Google Drive > New > Google Sheets > Name "TBMS Database"
@@ -697,9 +697,39 @@ function saveStockCount(data) {
     }
   }
 
-  // Sync StoreStock qty only if countDate is today (batch method for speed)
-  var todayStr = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd');
-  if (data.countDate === todayStr) {
+  // ★ 근본 수정: stockDate_{storeId} 세팅으로 StoreStock의 데이터 날짜를 확정적으로 추적
+  // 기존 StoreStock에는 날짜 정보가 없어서 "지금 qty가 언제 것인지" 알 수 없었음
+  // → 이제 저장할 때마다 Settings에 날짜를 기록하여 프론트엔드가 확정적으로 판단 가능
+  var props = PropertiesService.getScriptProperties();
+  var prevDateStr = props.getProperty('setting_stockDate_' + data.storeId);
+  var prevDate = prevDateStr ? JSON.parse(prevDateStr) : '';
+  // countDate가 이전 기록보다 같거나 최신이면 → StoreStock 동기화 + 날짜 갱신
+  var shouldSync = false;
+  if (data.items && data.items.length > 0) {
+    if (!prevDate || data.countDate >= prevDate) {
+      shouldSync = true;
+    }
+  } else {
+    // items가 비어있음 = 삭제 요청. 삭제한 날짜가 현재 기록 날짜와 같으면 날짜도 초기화
+    if (data.countDate === prevDate) {
+      // 해당 지점의 StockCount에서 남은 가장 최근 날짜 찾기
+      var allSC = scSheet.getDataRange().getValues();
+      var scStoreCol = headers.indexOf('storeId');
+      var scDateCol = headers.indexOf('countDate');
+      var scQtyCol = headers.indexOf('qty');
+      var newLatest = '';
+      for (var k = 1; k < allSC.length; k++) {
+        if (String(allSC[k][scStoreCol]) === String(data.storeId)) {
+          var dt = String(allSC[k][scDateCol] || '');
+          var q = Number(allSC[k][scQtyCol]) || 0;
+          if (q > 0 && dt > newLatest) newLatest = dt;
+        }
+      }
+      props.setProperty('setting_stockDate_' + data.storeId, JSON.stringify(newLatest));
+    }
+  }
+  if (shouldSync) {
+    // StoreStock qty 동기화
     var ssSheet = ss.getSheetByName('StoreStock');
     if (ssSheet && ssSheet.getLastRow() > 1) {
       var ssData = ssSheet.getDataRange().getValues();
@@ -722,9 +752,11 @@ function saveStockCount(data) {
         ssSheet.getRange(2, 1, ssData.length - 1, ssData[0].length).setValues(ssData.slice(1));
       }
     }
+    // ★ 핵심: 날짜 세팅 저장 — 이 지점의 StoreStock이 언제 데이터인지 확정
+    props.setProperty('setting_stockDate_' + data.storeId, JSON.stringify(data.countDate));
   }
 
-  return {status: 'ok', week: week, count: rows.length};
+  return {status: 'ok', week: week, count: rows.length, synced: shouldSync, stockDate: data.countDate};
 }
 
 // ============================================================

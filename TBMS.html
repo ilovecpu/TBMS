@@ -237,7 +237,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
   <div class="login-logo">
     <div class="logo-icon"><i class="fas fa-bowl-food"></i></div>
     <h1>TBMS</h1>
-    <p>The Bap Management System <span style="opacity:.5;font-size:11px">Ver4.9.5</span></p>
+    <p>The Bap Management System <span style="opacity:.5;font-size:11px">Ver4.9.7</span></p>
   </div>
   <div class="form-group"><label>Username</label><input id="loginUser" placeholder="Enter username"></div>
   <div class="form-group"><label>Password</label><input id="loginPass" type="password" placeholder="Enter password"></div>
@@ -254,7 +254,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
 <!-- MAIN APP -->
 <div id="mainApp" class="hidden">
   <div class="sidebar" id="sidebar">
-    <div class="sidebar-header"><h2>TBMS <span style="font-size:12px;font-weight:400;opacity:.6">Ver4.9.5</span></h2><p>The Bap Management System</p></div>
+    <div class="sidebar-header"><h2>TBMS <span style="font-size:12px;font-weight:400;opacity:.6">Ver4.9.7</span></h2><p>The Bap Management System</p></div>
     <div class="sidebar-menu">
       <div class="menu-item active" data-page="dashboard" onclick="navigate('dashboard')"><i class="fas fa-home"></i>Dashboard</div>
       <div class="menu-group">
@@ -310,7 +310,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
   <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
   <div class="main-content">
     <div class="header">
-      <div class="header-left"><button class="menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button><h2 id="pageTitle" style="font-size:18px">Dashboard</h2><span style="font-size:11px;color:var(--text-light);margin-left:8px;font-weight:400;opacity:.7">Ver4.9.5</span></div>
+      <div class="header-left"><button class="menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button><h2 id="pageTitle" style="font-size:18px">Dashboard</h2><span style="font-size:11px;color:var(--text-light);margin-left:8px;font-weight:400;opacity:.7">Ver4.9.7</span></div>
       <div class="header-right"><span id="headerDate"></span><span class="sync-status"><span class="dot offline" id="syncDot"></span><span id="syncText">Local</span></span><button class="btn btn-sm btn-outline" onclick="doLogout()"><i class="fas fa-sign-out-alt"></i> Logout</button></div>
     </div>
     <div class="page-content" id="pageContent"></div>
@@ -549,7 +549,7 @@ const LS = {
   set(k, v) { localStorage.setItem('tbms_'+k, JSON.stringify(v)); },
   getConfig() { return this.get('config') || {}; }
 };
-const CLOUD_URL = 'https://script.google.com/macros/s/AKfycbzg4BOrVECLE-SBL9WjAwuuFvbIU6SftY9xvcX2XPHt-2ZUwgDgVMQRRi9UJPdioa8L/exec';
+const CLOUD_URL = 'https://script.google.com/macros/s/AKfycbwRPuMygxRoPbN4ZAl-Kk0dN7Q3nFAp5PJIkYtAnHSv3PZuIhX-b2HC88ECTByQh6ZM/exec';
 const API_KEY = 'tBaP2026xKr!mGt9Qz';
 const API = {
   url: CLOUD_URL, mode: 'cloud',
@@ -2411,7 +2411,7 @@ function execDeleteCat(oldCat){
 }
 let _ssCalYear,_ssCalMonth;
 async function renderStock(c) {
-  // Refresh StoreStock + StockCount from server
+  // Refresh StoreStock + StockCount + stockDate 세팅 from server
   if(API.mode==='cloud'){
     try{
       const [ssR,scR]=await Promise.all([
@@ -2421,6 +2421,8 @@ async function renderStock(c) {
       if(ssR&&ssR.data)D.StoreStock=ssR.data;
       if(scR&&scR.data)D.StockCount=scR.data;
     }catch(e){}
+    // ★ 모든 지점의 stockDate 세팅 로드
+    await _fetchStockDates();
   }
   const cats=getSortedCategories();
   const stores=getAccessibleStores();
@@ -2529,17 +2531,29 @@ function renderStockCalendar(){
   cal.innerHTML=html;
 }
 const _storeClr={PAB:'#1b5e20',TBS:'#1565c0',TBR:'#6a1b9a',TBB:'#e65100',TBO:'#00838f'};
+// ★ 근본 수정: stockDate_{storeId} 세팅 캐시 — 서버가 확정한 마지막 스톡 날짜
+let _stockDateCache={};
+async function _fetchStockDates(){
+  // 모든 지점의 stockDate를 한번에 로드
+  const stores=getAccessibleStores();
+  const promises=stores.map(async(s)=>{
+    try{const r=await API.get('getSetting',{key:'stockDate_'+s.id});_stockDateCache[s.id]=(r&&r.value)?r.value:'';}
+    catch(e){_stockDateCache[s.id]='';}
+  });
+  await Promise.all(promises);
+  console.log('[TBMS] stockDate cache loaded:',JSON.stringify(_stockDateCache));
+}
 function _getLatestValidDate(storeId){
   const today=new Date().toISOString().split('T')[0];
-  // Past dates: check StockCount
+  // ★ 1순위: stockDate 세팅 (서버가 확정한 마지막 저장 날짜)
+  const stockDate=_stockDateCache[storeId]||'';
+  if(stockDate)return stockDate;
+  // ★ 2순위 (폴백): 세팅이 없으면 StockCount에서 추정
   const _byDate={};
   D.StockCount.filter(sc=>String(sc.storeId)===storeId).forEach(sc=>{if(!_byDate[sc.countDate])_byDate[sc.countDate]=[];_byDate[sc.countDate].push(sc);});
-  const _validDates=Object.keys(_byDate).filter(dt=>dt!==today&&_byDate[dt].some(r=>(Number(r.qty)||0)>0)).sort();
-  // Today: check StoreStock (live data)
-  const todayStock=D.StoreStock.filter(s=>String(s.storeId)===storeId);
-  const todayHasData=todayStock.some(s=>(Number(s.qty)||0)>0);
-  if(todayHasData)return today;
-  return _validDates.length?_validDates[_validDates.length-1]:today;
+  const validDates=Object.keys(_byDate).filter(dt=>_byDate[dt].some(r=>(Number(r.qty)||0)>0)).sort();
+  if(validDates.length)return validDates[validDates.length-1];
+  return today;
 }
 function onStoreSelect(){
   const sel=$('ssStore');if(!sel)return;
@@ -2759,7 +2773,7 @@ async function renderStockStatusTable(){
   const banner=$('ssDateBanner');
   if(banner){
     if(isToday)banner.innerHTML=`<div style="background:linear-gradient(135deg,#43a047,#66bb6a);color:#fff;padding:10px 16px;border-radius:8px;margin-bottom:12px;font-size:13px;font-weight:600"><i class="fas fa-clock" style="margin-right:8px"></i>Current Stock — Today (${today})</div>`;
-    else if(hasExisting)banner.innerHTML=`<div style="background:linear-gradient(135deg,#1565c0,#42a5f5);color:#fff;padding:10px 16px;border-radius:8px;margin-bottom:12px;font-size:13px;font-weight:600"><i class="fas fa-edit" style="margin-right:8px"></i>Editing stock count for ${dateLabel} (${existingRecs.length} items)</div>`;
+    else if(hasExisting)banner.innerHTML=`<div style="background:linear-gradient(135deg,#1565c0,#42a5f5);color:#fff;padding:10px 16px;border-radius:8px;margin-bottom:12px;font-size:13px;font-weight:600;display:flex;justify-content:space-between;align-items:center"><span><i class="fas fa-edit" style="margin-right:8px"></i>Editing stock count for ${dateLabel} (${existingRecs.length} items)</span><button onclick="deleteStockCountDate('${storeId}','${dateVal}')" style="background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.5);padding:4px 12px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer" title="이 날짜의 스톡 데이터 삭제"><i class="fas fa-trash-alt"></i> Delete This Date</button></div>`;
     else banner.innerHTML=`<div style="background:linear-gradient(135deg,#e65100,#ff9800);color:#fff;padding:10px 16px;border-radius:8px;margin-bottom:12px;font-size:13px;font-weight:600"><i class="fas fa-plus-circle" style="margin-right:8px"></i>New stock count entry for ${dateLabel}</div>`;
   }
   // Save button — always visible with appropriate label
@@ -3108,6 +3122,8 @@ async function saveStockAll() {
   if(items.length>0){
     try{
       await API.post({action:'saveStockCount',storeId,countDate:today,items,submittedBy:currentUser?.id||''});
+      // ★ stockDate 캐시 업데이트
+      _stockDateCache[storeId]=today;
       // Update local StockCount cache
       D.StockCount=D.StockCount.filter(sc=>!(String(sc.storeId)===storeId&&sc.countDate===today));
       const week=getISOWeek(new Date(today));
@@ -3147,6 +3163,31 @@ async function resetAllQty(){
   toast('All QTY reset to 0','info');
   renderStockStatusTable();
 }
+// 특정 날짜의 StockCount 데이터를 완전히 삭제하는 함수
+async function deleteStockCountDate(storeId,dateVal){
+  if(!storeId||!dateVal){toast('Store/date missing','error');return;}
+  const store=D.Stores.find(s=>String(s.id)===storeId);
+  const storeName=store?store.name:storeId;
+  const cnt=D.StockCount.filter(sc=>String(sc.storeId)===storeId&&sc.countDate===dateVal).length;
+  if(!confirm(`⚠️ ${storeName}의 ${dateVal} 스톡 데이터(${cnt}건)를 완전히 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.`))return;
+  showLoading('Deleting stock data for '+dateVal+'...');
+  try{
+    // 빈 items로 saveStockCount 호출 → 해당 날짜 행 전부 삭제
+    const r=await API.post({action:'saveStockCount',storeId,countDate:dateVal,items:[],submittedBy:currentUser?.id||''});
+    if(r&&!r.error){
+      // 로컬 캐시에서도 제거
+      D.StockCount=D.StockCount.filter(sc=>!(String(sc.storeId)===storeId&&sc.countDate===dateVal));
+      // ★ stockDate 캐시도 서버가 업데이트한 값으로 갱신 (삭제 시 서버가 남은 최신 날짜로 자동 변경)
+      try{const sd=await API.get('getSetting',{key:'stockDate_'+storeId});_stockDateCache[storeId]=(sd&&sd.value)?sd.value:'';}catch(e){}
+      toast(`${storeName} ${dateVal} 데이터 ${cnt}건 삭제 완료`,'success');
+      renderStockCalendar();
+      // 삭제 후 최신 유효 날짜로 이동
+      const latestDate=_getLatestValidDate(storeId);
+      await ssSelectDate(latestDate);
+    }else{toast('삭제 실패: '+(r?.error||''),'error');}
+  }catch(e){toast('Error: '+e.message,'error');}
+  hideLoading();
+}
 async function copyStockToDate(){
   const storeId=$('ssStore')?.value;
   if(!storeId){toast('Select a store','error');return;}
@@ -3167,6 +3208,9 @@ async function copyStockToDate(){
     const r=await API.post({action:'saveStockCount',storeId,countDate:targetDate,items,submittedBy:currentUser?.id||''});
     hideLoading();
     if(r&&!r.error){
+      // ★ stockDate 캐시 업데이트
+      const prev=_stockDateCache[storeId]||'';
+      if(!prev||targetDate>=prev)_stockDateCache[storeId]=targetDate;
       D.StockCount=D.StockCount.filter(sc=>!(String(sc.storeId)===storeId&&sc.countDate===targetDate));
       const week=getISOWeek(new Date(targetDate));
       const ts=new Date().toISOString();
@@ -3198,6 +3242,9 @@ async function submitStockFromStatus(){
   try{
     const r=await API.post({action:'saveStockCount',storeId,countDate,items,submittedBy:currentUser?.id||''});
     if(r&&!r.error){
+      // ★ stockDate 캐시 업데이트 (서버에서 shouldSync 판단하여 이미 저장됨)
+      const prev=_stockDateCache[storeId]||'';
+      if(!prev||countDate>=prev)_stockDateCache[storeId]=countDate;
       if(isToday){
         items.forEach(item=>{
           const ss=D.StoreStock.find(s=>String(s.storeId)===storeId&&String(s.itemId)===item.itemId);
@@ -4077,7 +4124,7 @@ th{font-size:9px;color:#666;font-weight:600}
 <div style="margin-bottom:12px">${selBadges}</div>
 <div class="info">Date: <b>${today}</b> &nbsp; Suppliers: <b>${supKeys.length}</b> &nbsp; Total Items: <b>${totalItems}</b></div>
 ${blocks}
-<p style="text-align:center;font-size:8px;color:#999;margin-top:20px">TBMS Ver4.9.5</p>
+<p style="text-align:center;font-size:8px;color:#999;margin-top:20px">TBMS Ver4.9.7</p>
 </body></html>`);
   w.document.close();
 }
@@ -5538,7 +5585,7 @@ ${d.hourKeys.length>0 ? `<div class="sec"><div class="sec-t">Hourly Breakdown</d
 
 <div class="sec"><div class="sec-t">Item Sales (${d.totalQty} items)</div><table><thead><tr><th>Item</th><th style="text-align:center">Qty</th><th style="text-align:right">Revenue</th><th style="text-align:right">%</th></tr></thead><tbody>${itemRows}</tbody></table></div>
 
-<div class="footer">TBMS Ver4.9.5 &copy; ${new Date().getFullYear()} The Bap. All rights reserved.</div>
+<div class="footer">TBMS Ver4.9.7 &copy; ${new Date().getFullYear()} The Bap. All rights reserved.</div>
 </body></html>`;
 
   const w = window.open('','_blank','width=800,height=1000');
@@ -5917,7 +5964,7 @@ function exportAllWord(){
       ['submittedBy / submittedAt','Who submitted and when']
     ]);
 
-    html+=`<hr style="margin:16px 0"><p style="text-align:center;font-size:8pt;color:#999;font-style:italic">TBMS Ver4.9.5</p>`;
+    html+=`<hr style="margin:16px 0"><p style="text-align:center;font-size:8pt;color:#999;font-style:italic">TBMS Ver4.9.7</p>`;
     html+=`</body></html>`;
 
     const blob=new Blob(['\ufeff'+html],{type:'application/msword'});

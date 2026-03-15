@@ -399,7 +399,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
 // ============================================================
 //  CONFIG
 // ============================================================
-const DEFAULT_API='https://script.google.com/macros/s/AKfycbzg4BOrVECLE-SBL9WjAwuuFvbIU6SftY9xvcX2XPHt-2ZUwgDgVMQRRi9UJPdioa8L/exec';
+const DEFAULT_API='https://script.google.com/macros/s/AKfycbwRPuMygxRoPbN4ZAl-Kk0dN7Q3nFAp5PJIkYtAnHSv3PZuIhX-b2HC88ECTByQh6ZM/exec';
 const API_URL=DEFAULT_API;
 const API_KEY='tBaP2026xKr!mGt9Qz';
 
@@ -651,44 +651,61 @@ async function openStockCheck(){
   $('stockScreen').classList.add('show');
   $('stockBar').style.background=STORE_COLORS[currentStore];
   showLoading('Loading stock data...');
-  const [tplRes,ssRes,coRes]=await Promise.all([
+  // ★ 근본 수정: stockDate 세팅도 함께 로드
+  const [tplRes,ssRes,coRes,sdRes]=await Promise.all([
     apiGet('getSheet&sheet=StockTemplate'),
     apiGet('getStoreData&store='+currentStore+'&sheets=StoreStock,StockCount'),
-    apiGet('getSetting&key=catOrder')
+    apiGet('getSetting&key=catOrder'),
+    apiGet('getSetting&key=stockDate_'+currentStore)
   ]);
   if(tplRes&&tplRes.data)stockTemplates=tplRes.data;
   if(ssRes&&ssRes.data&&ssRes.data.StoreStock)storeStockItems=ssRes.data.StoreStock;
   const stockCounts=(ssRes&&ssRes.data&&ssRes.data.StockCount)||[];
   if(coRes&&coRes.value)stockCatOrder=coRes.value;
   else stockCatOrder=[];
-  // Find most recent date with valid (non-all-zero) data
-  // Today: check StoreStock (live). Past dates: check StockCount.
+  // ★ 서버에서 확정한 마지막 스톡 날짜
+  const serverStockDate=(sdRes&&sdRes.value)?sdRes.value:'';
   const today=new Date().toISOString().split('T')[0];
-  const _byDate={};
-  stockCounts.forEach(sc=>{if(!_byDate[sc.countDate])_byDate[sc.countDate]=[];_byDate[sc.countDate].push(sc);});
-  const pastValidDates=Object.keys(_byDate).filter(dt=>dt!==today&&_byDate[dt].some(r=>(Number(r.qty)||0)>0)).sort();
-  const todayHasData=storeStockItems.some(s=>(Number(s.qty)||0)>0);
+  // 날짜 결정: stockDate 세팅이 있으면 그것을 사용 (확정적)
   let latestDate='';
-  if(todayHasData){latestDate=today;}
-  else if(pastValidDates.length){latestDate=pastValidDates[pastValidDates.length-1];}
-  const latestRecs=(latestDate&&latestDate!==today)?(_byDate[latestDate]||[]):[];
+  if(serverStockDate){
+    latestDate=serverStockDate;
+    console.log('[Kiosk4] Using server stockDate:',serverStockDate);
+  }else{
+    // 폴백: StockCount에서 추정
+    const _byDate={};
+    stockCounts.forEach(sc=>{if(!_byDate[sc.countDate])_byDate[sc.countDate]=[];_byDate[sc.countDate].push(sc);});
+    const validDates=Object.keys(_byDate).filter(dt=>_byDate[dt].some(r=>(Number(r.qty)||0)>0)).sort();
+    if(validDates.length)latestDate=validDates[validDates.length-1];
+    console.log('[Kiosk4] Fallback: latest StockCount date:',latestDate);
+  }
+  // StockCount에서 해당 날짜 레코드 가져오기
+  const _byDate2={};
+  stockCounts.forEach(sc=>{if(!_byDate2[sc.countDate])_byDate2[sc.countDate]=[];_byDate2[sc.countDate].push(sc);});
+  const latestRecs=(latestDate&&latestDate!==today)?(_byDate2[latestDate]||[]):[];
   _stockDataDate=latestDate;
   // Init qty
   stockQty={};
   if(latestDate===today){
-    // Use StoreStock live data
+    // 오늘 데이터 → StoreStock 사용 (실시간)
     stockTemplates.forEach(t=>{
       const ss=storeStockItems.find(s=>String(s.itemId)===String(t.id));
       stockQty[t.id]=ss?Number(ss.qty)||0:0;
     });
-  }else if(latestRecs.length>0){
-    // Use StockCount from past date
+  }else if(latestDate&&latestRecs.length>0){
+    // 과거 날짜 + StockCount 기록 있음 → StockCount 사용
     stockTemplates.forEach(t=>{
       const rec=latestRecs.find(r=>String(r.itemId)===String(t.id));
       stockQty[t.id]=rec?Number(rec.qty)||0:0;
     });
+  }else if(latestDate&&storeStockItems.some(s=>(Number(s.qty)||0)>0)){
+    // 과거 날짜인데 StockCount가 없음 → StoreStock을 과거 데이터로 사용
+    stockTemplates.forEach(t=>{
+      const ss=storeStockItems.find(s=>String(s.itemId)===String(t.id));
+      stockQty[t.id]=ss?Number(ss.qty)||0:0;
+    });
   }else{
-    // No valid data anywhere
+    // 데이터 없음
     stockTemplates.forEach(t=>{stockQty[t.id]=0;});
   }
   hideLoading();

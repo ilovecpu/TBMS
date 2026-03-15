@@ -237,7 +237,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
   <div class="login-logo">
     <div class="logo-icon"><i class="fas fa-bowl-food"></i></div>
     <h1>TBMS</h1>
-    <p>The Bap Management System <span style="opacity:.5;font-size:11px">Ver4.8.0</span></p>
+    <p>The Bap Management System <span style="opacity:.5;font-size:11px">Ver4.8.5</span></p>
   </div>
   <div class="form-group"><label>Username</label><input id="loginUser" placeholder="Enter username"></div>
   <div class="form-group"><label>Password</label><input id="loginPass" type="password" placeholder="Enter password"></div>
@@ -254,7 +254,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
 <!-- MAIN APP -->
 <div id="mainApp" class="hidden">
   <div class="sidebar" id="sidebar">
-    <div class="sidebar-header"><h2>TBMS <span style="font-size:12px;font-weight:400;opacity:.6">Ver4.8.0</span></h2><p>The Bap Management System</p></div>
+    <div class="sidebar-header"><h2>TBMS <span style="font-size:12px;font-weight:400;opacity:.6">Ver4.8.5</span></h2><p>The Bap Management System</p></div>
     <div class="sidebar-menu">
       <div class="menu-item active" data-page="dashboard" onclick="navigate('dashboard')"><i class="fas fa-home"></i>Dashboard</div>
       <div class="menu-group">
@@ -310,7 +310,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
   <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
   <div class="main-content">
     <div class="header">
-      <div class="header-left"><button class="menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button><h2 id="pageTitle" style="font-size:18px">Dashboard</h2><span style="font-size:11px;color:var(--text-light);margin-left:8px;font-weight:400;opacity:.7">Ver4.8.0</span></div>
+      <div class="header-left"><button class="menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button><h2 id="pageTitle" style="font-size:18px">Dashboard</h2><span style="font-size:11px;color:var(--text-light);margin-left:8px;font-weight:400;opacity:.7">Ver4.8.5</span></div>
       <div class="header-right"><span id="headerDate"></span><span class="sync-status"><span class="dot offline" id="syncDot"></span><span id="syncText">Local</span></span><button class="btn btn-sm btn-outline" onclick="doLogout()"><i class="fas fa-sign-out-alt"></i> Logout</button></div>
     </div>
     <div class="page-content" id="pageContent"></div>
@@ -323,6 +323,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
 // ==================== UTILITIES ====================
@@ -3557,6 +3558,244 @@ function _getCheckedStoreIds(){
   const checks=document.querySelectorAll('.ol-store-chk:checked');
   return Array.from(checks).map(cb=>cb.value);
 }
+// ========== 서플라이어별 Order Form 매핑 (이름 소문자 키) ==========
+const _supOrderFormMap={
+  'treestone butchers':{fn:exportTreestoneOrderForm},
+  'treestone butcher':{fn:exportTreestoneOrderForm}
+};
+
+// ========== Treestone Order Form Excel 생성 (ExcelJS — 원본 폼과 동일한 스타일) ==========
+async function exportTreestoneOrderForm(supKey){
+  const checkedIds=_getCheckedStoreIds();
+  const {supGroups}=_collectOrderData(checkedIds);
+  const rows=(supGroups[supKey]||[]).filter(r=>r.needOrder);
+  if(!rows.length){toast('No order items for '+supKey,'info');return;}
+
+  // 지점 순서 고정 (원본 폼 순서)
+  const storeOrder=['PAB','TBR','TBS','TBB','TBO'];
+  const stores=getAccessibleStores();
+  const activeStoreCodes=new Set();
+  rows.forEach(r=>{if(r.storeCode)activeStoreCodes.add(r.storeCode);});
+  const orderedStores=storeOrder.filter(c=>activeStoreCodes.has(c));
+
+  // 지점별 배경색 (원본 참고)
+  const storeBg={PAB:'FFFFFDEA',TBR:'FFFFF9FA',TBS:'FFEAF1E7',TBB:'FFE9F0F7',TBO:'FFE5F5F5'};
+  // 지점별 표시 이름 (원본 형태)
+  const storeLabel={};
+  stores.forEach(s=>{
+    const city=s.name?s.name.replace(/^(The Bap|Pick A Bap)\s*/i,'').trim():'';
+    storeLabel[s.code]=s.code==='PAB'?'Farnborough\n(Pick A Bap)':(city||s.code)+'\n(The Bap)';
+  });
+
+  // Treestone 아이템 고정 순서 (키워드 매칭)
+  const _tsOrd=['chicken thigh','beef bulgogi','pork collar','white cabbage','red cabbage',
+    'onion','carrot','spring onion','egg','spinach','beansprout','courgette','mushroom','tofu','garlic'];
+  const _tsIdx=name=>{const l=name.toLowerCase();for(let i=0;i<_tsOrd.length;i++){if(l.includes(_tsOrd[i]))return i;}return 999;};
+
+  // 아이템별 지점별 수량
+  const itemMap={};
+  rows.forEach(r=>{
+    const k=r.itemName;
+    if(!itemMap[k])itemMap[k]={name:r.itemName,stores:{}};
+    itemMap[k].stores[r.storeCode||'']=(itemMap[k].stores[r.storeCode||'']||0)+r.orderQty;
+  });
+  const items=Object.values(itemMap).sort((a,b)=>_tsIdx(a.name)-_tsIdx(b.name));
+
+  // ===== ExcelJS 워크북 생성 =====
+  const wb=new ExcelJS.Workbook();
+  const ws=wb.addWorksheet('Sheet1');
+
+  // 컬럼 수 계산: A(아이템) + 지점수*2(Tue/Fri) + Total + Price + Total
+  const nStores=orderedStores.length;
+  const totalColNum=1+nStores*2+1; // Total 컬럼 번호
+  const priceColNum=totalColNum+1;
+  const gtColNum=priceColNum+1;
+  const lastCol=gtColNum;
+
+  // 열 너비
+  ws.getColumn(1).width=44;
+  for(let i=0;i<nStores;i++){ws.getColumn(2+i*2).width=12;ws.getColumn(3+i*2).width=12;}
+  ws.getColumn(totalColNum).width=10;
+  ws.getColumn(priceColNum).width=10;
+  ws.getColumn(gtColNum).width=12;
+
+  // 공통 스타일 함수
+  const thinBorder={style:'thin',color:{argb:'FF000000'}};
+  const allBorders={top:thinBorder,left:thinBorder,bottom:thinBorder,right:thinBorder};
+  const centerAlign={horizontal:'center',vertical:'middle'};
+  const cFont=(sz,bold,color)=>({name:'Calibri',size:sz||14,bold:!!bold,color:color?{argb:color}:undefined});
+
+  // ===== Row 1: 배달 안내 =====
+  const r1=ws.addRow(['Delivered every TUESDAY, FRIDAY']);
+  r1.height=20; r1.getCell(1).font=cFont(14,true);
+
+  // ===== Row 2: 주문 안내 =====
+  const r2=ws.addRow(['Place order by SUNDAY evening']);
+  r2.height=20; r2.getCell(1).font=cFont(14,true);
+
+  // ===== Row 3: 서플라이어 + 날짜 =====
+  const today=new Date();
+  const dateStr=String(today.getDate()).padStart(2,'0')+'/'+String(today.getMonth()+1).padStart(2,'0')+'/'+today.getFullYear();
+  const r3=ws.addRow([]);
+  r3.height=33;
+  r3.getCell(1).value=supKey;
+  r3.getCell(1).font={name:'Calibri',size:35,bold:true,color:{argb:'FFFF0000'}};
+  r3.getCell(1).alignment={horizontal:'center',vertical:'middle',wrapText:true};
+  r3.getCell(2).value='The Bap weekly order  Date: '+dateStr;
+  r3.getCell(2).font=cFont(22,false);
+
+  // ===== Row 4: 지점 헤더 =====
+  const r4=ws.addRow([]);
+  r4.height=20;
+  r4.getCell(1).value='Items';
+  r4.getCell(1).font=cFont(16,true);
+  r4.getCell(1).alignment={horizontal:'center',vertical:'middle',wrapText:true};
+  r4.getCell(1).border=allBorders;
+  orderedStores.forEach((sc,si)=>{
+    const col=2+si*2;
+    r4.getCell(col).value=storeLabel[sc]||sc;
+    r4.getCell(col).font=cFont(14,true);
+    r4.getCell(col).alignment={horizontal:'center',vertical:'middle',wrapText:true};
+    r4.getCell(col).fill={type:'pattern',pattern:'solid',fgColor:{argb:storeBg[sc]||'FFFFFFFF'}};
+    r4.getCell(col).border=allBorders;
+    r4.getCell(col+1).fill={type:'pattern',pattern:'solid',fgColor:{argb:storeBg[sc]||'FFFFFFFF'}};
+    r4.getCell(col+1).border=allBorders;
+    ws.mergeCells(4,col,4,col+1);
+  });
+  r4.getCell(totalColNum).value='Total';
+  r4.getCell(totalColNum).font=cFont(14,true);r4.getCell(totalColNum).alignment=centerAlign;r4.getCell(totalColNum).border=allBorders;
+  r4.getCell(priceColNum).value='Price';
+  r4.getCell(priceColNum).font=cFont(14,true);r4.getCell(priceColNum).alignment=centerAlign;r4.getCell(priceColNum).border=allBorders;
+  r4.getCell(gtColNum).value='Total';
+  r4.getCell(gtColNum).font=cFont(14,true);r4.getCell(gtColNum).alignment=centerAlign;r4.getCell(gtColNum).border=allBorders;
+
+  // ===== Row 5: Tuesday/Friday 서브헤더 =====
+  const r5=ws.addRow([]);
+  r5.height=20;
+  r5.getCell(1).border=allBorders;
+  orderedStores.forEach((sc,si)=>{
+    const col=2+si*2;
+    r5.getCell(col).value='Tuesday';
+    r5.getCell(col).font=cFont(15,true);r5.getCell(col).alignment=centerAlign;
+    r5.getCell(col).fill={type:'pattern',pattern:'solid',fgColor:{argb:storeBg[sc]||'FFFFFFFF'}};
+    r5.getCell(col).border=allBorders;
+    r5.getCell(col+1).value='Friday';
+    r5.getCell(col+1).font=cFont(15,true);r5.getCell(col+1).alignment=centerAlign;
+    r5.getCell(col+1).fill={type:'pattern',pattern:'solid',fgColor:{argb:storeBg[sc]||'FFFFFFFF'}};
+    r5.getCell(col+1).border=allBorders;
+  });
+  r5.getCell(totalColNum).border=allBorders;
+  r5.getCell(priceColNum).border=allBorders;
+  r5.getCell(gtColNum).border=allBorders;
+
+  // ===== 아이템 데이터 행 =====
+  const dataStartExcelRow=6;
+  items.forEach((item,idx)=>{
+    const dr=ws.addRow([]);
+    dr.height=20;
+    dr.getCell(1).value=item.name;
+    dr.getCell(1).font=cFont(14,false);
+    dr.getCell(1).alignment={horizontal:'center',vertical:'middle'};
+    dr.getCell(1).border=allBorders;
+    orderedStores.forEach((sc,si)=>{
+      const col=2+si*2;
+      const qty=item.stores[sc]||0;
+      if(qty>0)dr.getCell(col).value=qty;
+      dr.getCell(col).font=cFont(14,false);dr.getCell(col).alignment=centerAlign;
+      dr.getCell(col).fill={type:'pattern',pattern:'solid',fgColor:{argb:storeBg[sc]||'FFFFFFFF'}};
+      dr.getCell(col).border=allBorders;
+      dr.getCell(col+1).font=cFont(14,false);dr.getCell(col+1).alignment=centerAlign;
+      dr.getCell(col+1).fill={type:'pattern',pattern:'solid',fgColor:{argb:storeBg[sc]||'FFFFFFFF'}};
+      dr.getCell(col+1).border=allBorders;
+    });
+    // Total = SUM(B:I 해당행)
+    const exRow=dataStartExcelRow+idx;
+    const startCol=ExcelJS.utils?'B':'B';
+    const scLetter=String.fromCharCode(65+1); // B
+    const ecLetter=String.fromCharCode(65+nStores*2); // 마지막 지점 Friday 열
+    dr.getCell(totalColNum).value={formula:`SUM(B${exRow}:${ecLetter}${exRow})`};
+    dr.getCell(totalColNum).font=cFont(14,false);dr.getCell(totalColNum).alignment=centerAlign;dr.getCell(totalColNum).border=allBorders;
+    // Price — 빈칸 (수동 입력)
+    dr.getCell(priceColNum).font=cFont(14,false);dr.getCell(priceColNum).alignment=centerAlign;
+    dr.getCell(priceColNum).numFmt='£#,##0.00';dr.getCell(priceColNum).border=allBorders;
+    // Grand Total = Total * Price
+    const tcLetter=String.fromCharCode(65+totalColNum-1);
+    const pcLetter=String.fromCharCode(65+priceColNum-1);
+    dr.getCell(gtColNum).value={formula:`${tcLetter}${exRow}*${pcLetter}${exRow}`};
+    dr.getCell(gtColNum).font=cFont(14,false);dr.getCell(gtColNum).alignment=centerAlign;
+    dr.getCell(gtColNum).numFmt='£#,##0.00';dr.getCell(gtColNum).border=allBorders;
+  });
+
+  // ===== Delivery Fee 행 =====
+  const feeExRow=dataStartExcelRow+items.length;
+  const feeR=ws.addRow([]);
+  feeR.height=20;
+  feeR.getCell(1).value='Delivery Fee';
+  feeR.getCell(1).font=cFont(14,true);feeR.getCell(1).alignment=centerAlign;feeR.getCell(1).border=allBorders;
+  // 지점별 배달비 셀 (수동 입력용)
+  orderedStores.forEach((sc,si)=>{
+    const col=2+si*2;
+    feeR.getCell(col).font=cFont(14,false);feeR.getCell(col).alignment=centerAlign;
+    feeR.getCell(col).numFmt='£#,##0.00';feeR.getCell(col).border=allBorders;
+    feeR.getCell(col+1).border=allBorders;
+  });
+  feeR.getCell(totalColNum).border=allBorders;feeR.getCell(priceColNum).border=allBorders;
+  // Delivery Fee Total = SUM of fee cells
+  const ecLetterFee=String.fromCharCode(65+nStores*2);
+  feeR.getCell(gtColNum).value={formula:`SUM(B${feeExRow}:${ecLetterFee}${feeExRow})`};
+  feeR.getCell(gtColNum).font=cFont(14,false);feeR.getCell(gtColNum).alignment=centerAlign;
+  feeR.getCell(gtColNum).numFmt='£#,##0.00';feeR.getCell(gtColNum).border=allBorders;
+
+  // ===== Grand Total 행 =====
+  const gtExRow=feeExRow+1;
+  const gtR=ws.addRow([]);
+  gtR.height=20;
+  const gtcLetter=String.fromCharCode(65+gtColNum-1);
+  gtR.getCell(gtColNum).value={formula:`SUM(${gtcLetter}${dataStartExcelRow}:${gtcLetter}${feeExRow})`};
+  gtR.getCell(gtColNum).font=cFont(14,true,undefined);gtR.getCell(gtColNum).alignment=centerAlign;
+  gtR.getCell(gtColNum).numFmt='£#,##0.00';gtR.getCell(gtColNum).border=allBorders;
+
+  // ===== 빈 줄 =====
+  ws.addRow([]);
+
+  // ===== 지점 주소 정보 =====
+  orderedStores.forEach(sc=>{
+    const st=stores.find(s=>s.code===sc);
+    if(st){
+      const ar=ws.addRow([]);
+      ar.getCell(1).value=sc+' - '+(st.name||'')+' :';
+      ar.getCell(1).font=cFont(12,true);ar.getCell(1).alignment={horizontal:'right'};
+      ar.getCell(2).value=st.address||'';
+      ar.getCell(2).font=cFont(12,false);
+      // 주소 셀 머지
+      const arNum=ar.number;
+      ws.mergeCells(arNum,2,arNum,1+nStores*2);
+      ws.addRow([]); // 빈 줄
+    }
+  });
+
+  // ===== TBMS 버전 + 생성 날짜/시간 =====
+  ws.addRow([]);
+  const now=new Date();
+  const timeStr=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0');
+  const stampR=ws.addRow([]);
+  const verText=document.querySelector('.sidebar-header span')?.textContent||'TBMS';
+  stampR.getCell(1).value='Auto Generated: '+dateStr+' '+timeStr+'  by  TBMS '+verText;
+  stampR.getCell(1).font={name:'Calibri',size:9,italic:true,color:{argb:'FF999999'}};
+
+  // ===== 파일 다운로드 =====
+  const fileName='Treestone_Order_'+dateStr.replace(/\//g,'')+'.xlsx';
+  try{
+    const buf=await wb.xlsx.writeBuffer();
+    const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=fileName;a.click();
+    toast('Treestone Order Form exported: '+fileName,'success');
+  }catch(e){
+    console.error('[TBMS] Excel export error:',e);
+    toast('Excel export failed: '+e.message,'error');
+  }
+}
+
 // Full List 전역 + 서플라이어별 토글 상태
 let _olFullAll=false;
 let _olFullMap={};
@@ -3683,9 +3922,14 @@ function renderOrderListBody(){
         <strong style="font-size:15px">${escHtml(supKey)}</strong>
         <span style="opacity:.7;font-size:13px">${isFull?allRows.length+' items':rows.length+' items'}</span>
       </div>
-      <button onclick="toggleSupFullList('${escHtml(supKey).replace(/'/g,"\\'")}')" style="${flBtnStyle};border:1.5px solid rgba(255,255,255,.5);border-radius:6px;padding:3px 10px;font-size:11px;cursor:pointer">
-        <i class="fas fa-list" style="margin-right:3px"></i>${isFull?'Order Only':'Full List'}
-      </button>
+      <div style="display:flex;gap:6px;align-items:center">
+        <button onclick="toggleSupFullList('${escHtml(supKey).replace(/'/g,"\\'")}')" style="${flBtnStyle};border:1.5px solid rgba(255,255,255,.5);border-radius:6px;padding:3px 10px;font-size:11px;cursor:pointer">
+          <i class="fas fa-list" style="margin-right:3px"></i>${isFull?'Order Only':'Full List'}
+        </button>
+        ${_supOrderFormMap[supKey.toLowerCase()]?`<button onclick="_supOrderFormMap['${supKey.toLowerCase().replace(/'/g,"\\'")}'].fn('${escHtml(supKey).replace(/'/g,"\\'")}')" style="background:rgba(255,255,255,.9);color:${clr};border:1.5px solid rgba(255,255,255,.5);border-radius:6px;padding:3px 10px;font-size:11px;cursor:pointer;font-weight:700">
+          <i class="fas fa-file-excel" style="margin-right:3px;color:#1a7340"></i>Order Form
+        </button>`:''}
+      </div>
     </div>`;
     // 테이블
     html+=`<table style="width:100%;border-collapse:collapse;font-size:13px">
@@ -3803,7 +4047,7 @@ th{font-size:9px;color:#666;font-weight:600}
 <h1><i class="fas fa-clipboard-list"></i> The Bap — Order List</h1>
 <div class="info">Date: <b>${today}</b> &nbsp; Store: <b>${escHtml(selNames)}</b> &nbsp; Suppliers: <b>${supKeys.length}</b> &nbsp; Total Items: <b>${totalItems}</b></div>
 ${blocks}
-<p style="text-align:center;font-size:8px;color:#999;margin-top:20px">TBMS Ver4.8.0</p>
+<p style="text-align:center;font-size:8px;color:#999;margin-top:20px">TBMS Ver4.8.5</p>
 </body></html>`);
   w.document.close();
 }
@@ -5264,7 +5508,7 @@ ${d.hourKeys.length>0 ? `<div class="sec"><div class="sec-t">Hourly Breakdown</d
 
 <div class="sec"><div class="sec-t">Item Sales (${d.totalQty} items)</div><table><thead><tr><th>Item</th><th style="text-align:center">Qty</th><th style="text-align:right">Revenue</th><th style="text-align:right">%</th></tr></thead><tbody>${itemRows}</tbody></table></div>
 
-<div class="footer">TBMS Ver4.8.0 &copy; ${new Date().getFullYear()} The Bap. All rights reserved.</div>
+<div class="footer">TBMS Ver4.8.5 &copy; ${new Date().getFullYear()} The Bap. All rights reserved.</div>
 </body></html>`;
 
   const w = window.open('','_blank','width=800,height=1000');
@@ -5643,7 +5887,7 @@ function exportAllWord(){
       ['submittedBy / submittedAt','Who submitted and when']
     ]);
 
-    html+=`<hr style="margin:16px 0"><p style="text-align:center;font-size:8pt;color:#999;font-style:italic">TBMS Ver4.8.0</p>`;
+    html+=`<hr style="margin:16px 0"><p style="text-align:center;font-size:8pt;color:#999;font-style:italic">TBMS Ver4.8.5</p>`;
     html+=`</body></html>`;
 
     const blob=new Blob(['\ufeff'+html],{type:'application/msword'});

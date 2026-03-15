@@ -237,7 +237,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
   <div class="login-logo">
     <div class="logo-icon"><i class="fas fa-bowl-food"></i></div>
     <h1>TBMS</h1>
-    <p>The Bap Management System <span style="opacity:.5;font-size:11px">Ver4.7.0</span></p>
+    <p>The Bap Management System <span style="opacity:.5;font-size:11px">Ver4.7.2</span></p>
   </div>
   <div class="form-group"><label>Username</label><input id="loginUser" placeholder="Enter username"></div>
   <div class="form-group"><label>Password</label><input id="loginPass" type="password" placeholder="Enter password"></div>
@@ -254,7 +254,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
 <!-- MAIN APP -->
 <div id="mainApp" class="hidden">
   <div class="sidebar" id="sidebar">
-    <div class="sidebar-header"><h2>TBMS <span style="font-size:12px;font-weight:400;opacity:.6">Ver4.7.0</span></h2><p>The Bap Management System</p></div>
+    <div class="sidebar-header"><h2>TBMS <span style="font-size:12px;font-weight:400;opacity:.6">Ver4.7.2</span></h2><p>The Bap Management System</p></div>
     <div class="sidebar-menu">
       <div class="menu-item active" data-page="dashboard" onclick="navigate('dashboard')"><i class="fas fa-home"></i>Dashboard</div>
       <div class="menu-group">
@@ -310,7 +310,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
   <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
   <div class="main-content">
     <div class="header">
-      <div class="header-left"><button class="menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button><h2 id="pageTitle" style="font-size:18px">Dashboard</h2><span style="font-size:11px;color:var(--text-light);margin-left:8px;font-weight:400;opacity:.7">Ver4.7.0</span></div>
+      <div class="header-left"><button class="menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button><h2 id="pageTitle" style="font-size:18px">Dashboard</h2><span style="font-size:11px;color:var(--text-light);margin-left:8px;font-weight:400;opacity:.7">Ver4.7.2</span></div>
       <div class="header-right"><span id="headerDate"></span><span class="sync-status"><span class="dot offline" id="syncDot"></span><span id="syncText">Local</span></span><button class="btn btn-sm btn-outline" onclick="doLogout()"><i class="fas fa-sign-out-alt"></i> Logout</button></div>
     </div>
     <div class="page-content" id="pageContent"></div>
@@ -548,7 +548,7 @@ const LS = {
   set(k, v) { localStorage.setItem('tbms_'+k, JSON.stringify(v)); },
   getConfig() { return this.get('config') || {}; }
 };
-const CLOUD_URL = 'https://script.google.com/macros/s/AKfycbzIOUKhRoUysB6FGK-TTbkdguXYFy_GZF0qHS6XadqUs8eKQVL_m3J3zrFjHczfcHtO/exec';
+const CLOUD_URL = 'https://script.google.com/macros/s/AKfycbzg4BOrVECLE-SBL9WjAwuuFvbIU6SftY9xvcX2XPHt-2ZUwgDgVMQRRi9UJPdioa8L/exec';
 const API_KEY = 'tBaP2026xKr!mGt9Qz';
 const API = {
   url: CLOUD_URL, mode: 'cloud',
@@ -572,8 +572,32 @@ const API = {
 };
 
 let _pendingSaves=0;
+// ── 배경 저장 (debounce + batch 지원) ──
+let _bgQueue={}; // 시트별 debounce 큐
+let _bgBatchTimer=null;
 function _bgPost(data){
   if(API.mode!=='cloud')return;
+  // saveSheet 요청은 batch로 묶기 (500ms 내 동일/다른 시트 요청을 한번에)
+  if(data.action==='saveSheet'){
+    _bgQueue[data.sheet]={sheet:data.sheet,rows:data.rows};
+    if(_bgBatchTimer)clearTimeout(_bgBatchTimer);
+    _bgBatchTimer=setTimeout(()=>{
+      const sheets=Object.values(_bgQueue);
+      _bgQueue={};_bgBatchTimer=null;
+      if(sheets.length===0)return;
+      _pendingSaves++;
+      updateSyncStatus('syncing');
+      // 시트 1개면 saveSheet, 여러개면 saveBatch로 전송
+      const payload=sheets.length===1?{action:'saveSheet',sheet:sheets[0].sheet,rows:sheets[0].rows}:{action:'saveBatch',sheets};
+      API.post(payload).then(r=>{
+        _pendingSaves--;
+        if(_pendingSaves<=0){_pendingSaves=0;updateSyncStatus(r&&!r.error?'online':'offline');}
+        if(!r||r.error)toast('Sync error: '+(r?r.error:'network'),'error');
+      }).catch(()=>{_pendingSaves--;updateSyncStatus('offline');toast('Sync failed','error');});
+    },500); // 500ms debounce — 연속 저장 요청을 하나로 묶음
+    return;
+  }
+  // saveSheet 외의 요청은 즉시 전송
   _pendingSaves++;
   updateSyncStatus('syncing');
   API.post(data).then(r=>{
@@ -3200,66 +3224,62 @@ function openStockItemModal(editId){
   const isNew=!existing;
   const title=isNew?'Add New Stock Item':'Edit Stock Item';
   const maxSort=Math.max(0,...D.StockTemplate.map(t=>t.sortOrder||0));
+  const _f='padding:4px 6px;border:1.5px solid var(--border);border-radius:5px;font-size:12px'; // 공통 input 스타일
   const body=`
-    <div class="form-row" style="margin-bottom:3px">
-      <div class="form-group" style="flex:2;margin-bottom:0"><label style="font-size:11px">Category</label>
-        <select id="siCat" style="padding:5px;border:1.5px solid var(--border);border-radius:6px;font-size:13px" onchange="toggleNewCat()">
+    <div style="display:flex;gap:6px;margin-bottom:2px;flex-wrap:wrap">
+      <div style="flex:2;min-width:120px"><label style="font-size:10px;color:#888">Category</label>
+        <select id="siCat" style="${_f};width:100%" onchange="toggleNewCat()">
           ${cats.map(c=>`<option value="${c}"${existing&&existing.category===c?' selected':''}>${escHtml(c)}</option>`).join('')}
           <option value="__new__">+ New Category</option>
         </select>
-        <input type="text" id="siNewCat" class="hidden" placeholder="New category name" style="padding:5px;border:1.5px solid var(--border);border-radius:6px;font-size:13px;margin-top:2px">
+        <input type="text" id="siNewCat" class="hidden" placeholder="New category" style="${_f};width:100%;margin-top:2px">
       </div>
-      <div class="form-group" style="flex:1;margin-bottom:0"><label style="font-size:11px">Unit *</label>
-        <select id="siUnit" style="padding:5px;border:1.5px solid var(--border);border-radius:6px;font-size:13px">
+      <div style="flex:1;min-width:60px"><label style="font-size:10px;color:#888">Unit *</label>
+        <select id="siUnit" style="${_f};width:100%">
           ${['Bag','Box','Pack','Pcs','Kg','Ctn','L','Bottle'].map(u=>`<option${existing&&existing.unit===u?' selected':''}>${u}</option>`).join('')}
         </select></div>
-    </div>
-    <div class="form-row" style="margin-bottom:3px">
-      <div class="form-group" style="flex:3;margin-bottom:0"><label style="font-size:11px">Item Name *</label>
-        <input type="text" id="siName" value="${existing?escHtml(existing.name):''}" placeholder="e.g. Soy Sauce 15L" style="padding:5px;border:1.5px solid var(--border);border-radius:6px;font-size:13px"></div>
-      <div class="form-group" style="flex:1;margin-bottom:0"><label style="font-size:11px">Order Unit</label>
-        <select id="siOrderUnit" style="padding:5px;border:1.5px solid var(--border);border-radius:6px;font-size:13px;color:#1565c0;font-weight:600">
+      <div style="flex:1;min-width:60px"><label style="font-size:10px;color:#888">Ord Unit</label>
+        <select id="siOrderUnit" style="${_f};width:100%;color:#1565c0;font-weight:600">
           ${['Bag','Box','Pack','Pcs','Kg','Ctn','L','Bottle'].map(u=>{const sel=existing?(existing.orderUnit||existing.unit)===u:u==='Box';return'<option'+(sel?' selected':'')+'>'+u+'</option>';}).join('')}
         </select></div>
-      <div class="form-group" style="width:60px;margin-bottom:0"><label style="font-size:11px">Sort</label>
-        <input type="number" id="siSort" min="0" value="${existing?existing.sortOrder:(maxSort+1)}" style="padding:5px;border:1.5px solid var(--border);border-radius:6px;font-size:13px;text-align:center"></div>
+      <div style="width:50px"><label style="font-size:10px;color:#888">Sort</label>
+        <input type="number" id="siSort" min="0" value="${existing?existing.sortOrder:(maxSort+1)}" style="${_f};width:100%;text-align:center"></div>
     </div>
-    <div style="display:flex;gap:8px;margin-bottom:3px;flex-wrap:wrap">
-      <div style="flex:1;display:flex;align-items:center;gap:6px;padding:4px 10px;background:${existing&&existing.alwaysOrder?'#e3f2fd':'#f8f9fa'};border-radius:6px;border:1.5px solid ${existing&&existing.alwaysOrder?'#1565c0':'var(--border)'}">
-        <input type="checkbox" id="siAlwaysOrder" ${existing&&existing.alwaysOrder?'checked':''} style="width:16px;height:16px;cursor:pointer">
-        <label for="siAlwaysOrder" style="cursor:pointer;font-size:12px;font-weight:600;color:${existing&&existing.alwaysOrder?'#1565c0':'var(--text)'}"><i class="fas fa-cart-plus" style="margin-right:4px"></i>Always Order</label>
-      </div>
-      <div style="flex:1;display:flex;align-items:center;gap:6px;padding:4px 10px;background:${existing&&existing.priority==='high'?'#fce4ec':'#f8f9fa'};border-radius:6px;border:1.5px solid ${existing&&existing.priority==='high'?'#c62828':'var(--border)'}">
-        <input type="checkbox" id="siPriority" ${existing&&existing.priority==='high'?'checked':''} style="width:16px;height:16px;cursor:pointer;accent-color:#c62828">
-        <label for="siPriority" style="cursor:pointer;font-size:12px;font-weight:600;color:${existing&&existing.priority==='high'?'#c62828':'var(--text)'}"><i class="fas fa-fire" style="margin-right:4px"></i>High Priority</label>
-      </div>
+    <div style="display:flex;gap:6px;margin-bottom:2px;align-items:flex-end">
+      <div style="flex:1"><label style="font-size:10px;color:#888">Item Name *</label>
+        <input type="text" id="siName" value="${existing?escHtml(existing.name):''}" placeholder="e.g. Soy Sauce 15L" style="${_f};width:100%"></div>
+      ${existing?`<div style="display:flex;align-items:center;gap:4px;padding-bottom:2px">
+        <div id="siPhotoPreview" style="width:32px;height:32px;border-radius:6px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;font-size:14px;border:1px solid var(--border)">${existing.photo?'<img src="https://drive.google.com/thumbnail?id='+existing.photo+'&sz=w80" style="width:100%;height:100%;object-fit:cover">':'📦'}</div>
+        <label for="siPhotoFile" style="display:inline-flex;align-items:center;gap:3px;padding:4px 8px;background:var(--accent);color:#fff;border-radius:5px;font-size:10px;font-weight:600;cursor:pointer;white-space:nowrap"><i class="fas fa-camera"></i></label>
+        <input type="file" id="siPhotoFile" accept="image/*" capture="environment" style="display:none" onchange="handleStockPhoto(this)">
+      </div>`:''}
     </div>
-    <div style="border-top:1px solid var(--border);margin:3px 0;padding-top:5px">
-      <label style="font-size:12px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:5px;margin-bottom:3px"><i class="fas fa-truck" style="color:var(--accent);font-size:11px"></i>Suppliers</label>
-      <div class="form-row" style="margin-bottom:3px">
-        <div class="form-group" style="margin-bottom:0"><label style="font-size:10px">Primary</label>
-          <select id="siSup1" style="padding:4px;border:1.5px solid var(--border);border-radius:6px;font-size:12px">
-            <option value="">— None —</option>${D.Suppliers.map(s=>`<option value="${escHtml(s.id)}"${existing&&(existing.supplier1===s.id||existing.supplier1===s.name)?' selected':''}>${escHtml(s.name)}</option>`).join('')}
-          </select></div>
-        <div class="form-group" style="margin-bottom:0"><label style="font-size:10px">Supplier 2</label>
-          <select id="siSup2" style="padding:4px;border:1.5px solid var(--border);border-radius:6px;font-size:12px">
-            <option value="">— None —</option>${D.Suppliers.map(s=>`<option value="${escHtml(s.id)}"${existing&&(existing.supplier2===s.id||existing.supplier2===s.name)?' selected':''}>${escHtml(s.name)}</option>`).join('')}
-          </select></div>
-        <div class="form-group" style="margin-bottom:0"><label style="font-size:10px">Supplier 3</label>
-          <select id="siSup3" style="padding:4px;border:1.5px solid var(--border);border-radius:6px;font-size:12px">
-            <option value="">— None —</option>${D.Suppliers.map(s=>`<option value="${escHtml(s.id)}"${existing&&(existing.supplier3===s.id||existing.supplier3===s.name)?' selected':''}>${escHtml(s.name)}</option>`).join('')}
-          </select></div>
+    <div style="display:flex;gap:6px;margin-bottom:2px">
+      <div style="flex:1;display:flex;align-items:center;gap:5px;padding:3px 8px;background:${existing&&existing.alwaysOrder?'#e3f2fd':'#f8f9fa'};border-radius:5px;border:1px solid ${existing&&existing.alwaysOrder?'#1565c0':'#ddd'}">
+        <input type="checkbox" id="siAlwaysOrder" ${existing&&existing.alwaysOrder?'checked':''} style="width:14px;height:14px;cursor:pointer">
+        <label for="siAlwaysOrder" style="cursor:pointer;font-size:11px;font-weight:600;color:${existing&&existing.alwaysOrder?'#1565c0':'#666'}"><i class="fas fa-cart-plus" style="margin-right:3px"></i>Always Order</label>
+      </div>
+      <div style="flex:1;display:flex;align-items:center;gap:5px;padding:3px 8px;background:${existing&&existing.priority==='high'?'#fce4ec':'#f8f9fa'};border-radius:5px;border:1px solid ${existing&&existing.priority==='high'?'#c62828':'#ddd'}">
+        <input type="checkbox" id="siPriority" ${existing&&existing.priority==='high'?'checked':''} style="width:14px;height:14px;cursor:pointer;accent-color:#c62828">
+        <label for="siPriority" style="cursor:pointer;font-size:11px;font-weight:600;color:${existing&&existing.priority==='high'?'#c62828':'#666'}"><i class="fas fa-fire" style="margin-right:3px"></i>High Priority</label>
       </div>
     </div>
-    <div class="form-row" style="margin-bottom:3px;align-items:flex-start">
-      <div class="form-group" style="flex:1;margin-bottom:0"><label style="font-size:11px">Memo / Notes</label>
-        <textarea id="siMemo" rows="1" placeholder="e.g. Box/£22, Order on Mon..." style="padding:5px;border:1.5px solid var(--border);border-radius:6px;font-size:12px;resize:vertical">${existing?escHtml(existing.memo||''):''}</textarea></div>
-      ${existing?`<div class="form-group" style="width:140px;margin-bottom:0"><label style="font-size:11px"><i class="fas fa-camera" style="margin-right:3px;color:var(--accent)"></i>Photo</label>
-        <div style="display:flex;align-items:center;gap:8px">
-          <div id="siPhotoPreview" style="width:56px;height:56px;border-radius:8px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;font-size:24px;border:1.5px solid var(--border)">${existing.photo?'<img src="https://drive.google.com/thumbnail?id='+existing.photo+'&sz=w120" style="width:100%;height:100%;object-fit:cover">':'📦'}</div>
-          <label for="siPhotoFile" style="display:inline-flex;align-items:center;gap:4px;padding:6px 10px;background:var(--accent);color:#fff;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap"><i class="fas fa-upload"></i>Upload</label>
-          <input type="file" id="siPhotoFile" accept="image/*" capture="environment" style="display:none" onchange="handleStockPhoto(this)">
-        </div></div>`:''}
+    <div style="display:flex;gap:4px;margin-bottom:2px;align-items:flex-end">
+      <div style="flex:1"><label style="font-size:10px;color:#888"><i class="fas fa-truck" style="margin-right:2px"></i>Sup1</label>
+        <select id="siSup1" style="${_f};width:100%;font-size:11px">
+          <option value="">—</option>${D.Suppliers.map(s=>`<option value="${escHtml(s.id)}"${existing&&(existing.supplier1===s.id||existing.supplier1===s.name)?' selected':''}>${escHtml(s.name)}</option>`).join('')}
+        </select></div>
+      <div style="flex:1"><label style="font-size:10px;color:#888">Sup2</label>
+        <select id="siSup2" style="${_f};width:100%;font-size:11px">
+          <option value="">—</option>${D.Suppliers.map(s=>`<option value="${escHtml(s.id)}"${existing&&(existing.supplier2===s.id||existing.supplier2===s.name)?' selected':''}>${escHtml(s.name)}</option>`).join('')}
+        </select></div>
+      <div style="flex:1"><label style="font-size:10px;color:#888">Sup3</label>
+        <select id="siSup3" style="${_f};width:100%;font-size:11px">
+          <option value="">—</option>${D.Suppliers.map(s=>`<option value="${escHtml(s.id)}"${existing&&(existing.supplier3===s.id||existing.supplier3===s.name)?' selected':''}>${escHtml(s.name)}</option>`).join('')}
+        </select></div>
+    </div>
+    <div style="margin-bottom:2px"><label style="font-size:10px;color:#888">Memo</label>
+      <input type="text" id="siMemo" value="${existing?escHtml(existing.memo||''):''}" placeholder="e.g. Box/£22, Order on Mon..." style="${_f};width:100%">
     </div>
     ${existing?`<div style="border-top:1px solid var(--border);margin:6px 0;padding-top:8px">
       <label style="font-size:12px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:5px;margin-bottom:6px"><i class="fas fa-store" style="color:var(--accent);font-size:11px"></i>Per-Store Min / Order Qty / Suppliers</label>
@@ -3755,7 +3775,7 @@ th{font-size:9px;color:#666;font-weight:600}
 <h1><i class="fas fa-clipboard-list"></i> The Bap — Order List</h1>
 <div class="info">Date: <b>${today}</b> &nbsp; Store: <b>${escHtml(selNames)}</b> &nbsp; Suppliers: <b>${supKeys.length}</b> &nbsp; Total Items: <b>${totalItems}</b></div>
 ${blocks}
-<p style="text-align:center;font-size:8px;color:#999;margin-top:20px">TBMS Ver4.7.0</p>
+<p style="text-align:center;font-size:8px;color:#999;margin-top:20px">TBMS Ver4.7.2</p>
 </body></html>`);
   w.document.close();
 }
@@ -5216,7 +5236,7 @@ ${d.hourKeys.length>0 ? `<div class="sec"><div class="sec-t">Hourly Breakdown</d
 
 <div class="sec"><div class="sec-t">Item Sales (${d.totalQty} items)</div><table><thead><tr><th>Item</th><th style="text-align:center">Qty</th><th style="text-align:right">Revenue</th><th style="text-align:right">%</th></tr></thead><tbody>${itemRows}</tbody></table></div>
 
-<div class="footer">TBMS Ver4.7.0 &copy; ${new Date().getFullYear()} The Bap. All rights reserved.</div>
+<div class="footer">TBMS Ver4.7.2 &copy; ${new Date().getFullYear()} The Bap. All rights reserved.</div>
 </body></html>`;
 
   const w = window.open('','_blank','width=800,height=1000');
@@ -5595,7 +5615,7 @@ function exportAllWord(){
       ['submittedBy / submittedAt','Who submitted and when']
     ]);
 
-    html+=`<hr style="margin:16px 0"><p style="text-align:center;font-size:8pt;color:#999;font-style:italic">TBMS Ver4.7.0</p>`;
+    html+=`<hr style="margin:16px 0"><p style="text-align:center;font-size:8pt;color:#999;font-style:italic">TBMS Ver4.7.2</p>`;
     html+=`</body></html>`;
 
     const blob=new Blob(['\ufeff'+html],{type:'application/msword'});

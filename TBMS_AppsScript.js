@@ -1,8 +1,8 @@
 // ============================================================
-//  TBMS - The Bap Management System v4.5.2
+//  TBMS - The Bap Management System v4.5.3
 //  Google Apps Script Backend (Code.gs)
 //  Deployed: 2026-03-14
-//  URL: https://script.google.com/macros/s/AKfycbzIOUKhRoUysB6FGK-TTbkdguXYFy_GZF0qHS6XadqUs8eKQVL_m3J3zrFjHczfcHtO/exec
+//  URL: https://script.google.com/macros/s/AKfycbzg4BOrVECLE-SBL9WjAwuuFvbIU6SftY9xvcX2XPHt-2ZUwgDgVMQRRi9UJPdioa8L/exec
 // ============================================================
 //  SETUP:
 //  1. Google Drive > New > Google Sheets > Name "TBMS Database"
@@ -100,7 +100,7 @@ function doGet(e) {
 function doPost(e) {
   var lock = LockService.getScriptLock();
   try {
-    lock.waitLock(30000);
+    lock.waitLock(60000); // 60초로 연장 (대용량 데이터 대비)
     var data = JSON.parse(e.postData.contents);
     if (!checkKey(data.apikey)) {
       return ContentService.createTextOutput(JSON.stringify({error:'Unauthorized'})).setMimeType(ContentService.MimeType.JSON);
@@ -108,6 +108,7 @@ function doPost(e) {
     var result;
     switch(data.action) {
       case 'saveSheet':  result = saveSheet(data.sheet, data.rows); break;
+      case 'saveBatch':  result = saveBatch(data.sheets); break; // 여러 시트 한번에 저장
       case 'upsert':     result = upsertRow(data.sheet, data.row); break;
       case 'deleteRow':  result = deleteRow(data.sheet, data.id); break;
       case 'appendRow':  result = appendNewRow(data.sheet, data.row); break;
@@ -352,17 +353,41 @@ function saveSheet(name, rows) {
   var sheet = ss.getSheetByName(name);
   if (!sheet) { sheet = ss.insertSheet(name); }
   var headers = SHEETS[name];
-  if (sheet.getLastRow() > 1) {
-    sheet.getRange(2, 1, sheet.getLastRow() - 1, sheet.getLastColumn()).clearContent();
-  }
+  var lastRow = sheet.getLastRow();
+  var lastCol = sheet.getLastColumn();
+  // 헤더 설정
   sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
   if (rows && rows.length > 0) {
+    // 데이터 매핑
     var values = rows.map(function(row) {
       return headers.map(function(h) { var v = row[h]; return (v === null || v === undefined) ? '' : v; });
     });
-    sheet.getRange(2, 1, values.length, headers.length).setValues(values);
+    // 기존 데이터 영역과 새 데이터 영역의 차이만 처리
+    var newRowCount = values.length;
+    // 새 데이터 한번에 쓰기
+    sheet.getRange(2, 1, newRowCount, headers.length).setValues(values);
+    // 기존 행이 더 많았으면 나머지 삭제 (clearContent 대신 행 삭제로 속도 개선)
+    var totalRows = sheet.getMaxRows();
+    if (totalRows > newRowCount + 1) {
+      sheet.deleteRows(newRowCount + 2, totalRows - newRowCount - 1);
+    }
+  } else {
+    // 데이터 없으면 기존 데이터만 삭제
+    if (lastRow > 1) sheet.getRange(2, 1, lastRow - 1, Math.max(lastCol, headers.length)).clearContent();
   }
+  // 불필요한 빈 컬럼 정리
+  SpreadsheetApp.flush();
   return {status:'ok', count: rows ? rows.length : 0};
+}
+
+// saveBatch — 여러 시트를 한 번의 lock으로 저장 (동시 저장 충돌 방지)
+function saveBatch(sheets) {
+  if (!sheets || !Array.isArray(sheets)) return {error: 'Invalid batch data'};
+  var results = {};
+  sheets.forEach(function(s) {
+    results[s.sheet] = saveSheet(s.sheet, s.rows);
+  });
+  return {status:'ok', results: results};
 }
 
 // ============================================================

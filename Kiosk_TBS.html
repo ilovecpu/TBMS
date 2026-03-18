@@ -166,7 +166,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:linear-gradient(135deg,#15
 <div class="toast-box" id="toastBox"></div>
 <div class="header">
   <h1><i class="fas fa-bowl-food"></i> The Bap Swindon</h1>
-  <p>Swindon - Staff Clock In/Out <span style="opacity:.5;font-size:11px">Ver1.2</span></p>
+  <p>Swindon - Staff Clock In/Out <span style="opacity:.5;font-size:11px">Ver1.3</span></p>
 </div>
 <div class="main-card" id="mainCard"></div>
 <div class="status-bar"><span class="status-dot" id="statusDot"></span><span id="statusText">Connecting...</span></div>
@@ -192,7 +192,8 @@ let viewYear=new Date().getFullYear(),viewMonth=new Date().getMonth();
 if(new Date().getDate()>=26){viewMonth++;if(viewMonth>11){viewMonth=0;viewYear++;}}
 let _origValues={};
 const MAX_PIN=10;
-const STAFF_FIELDS=['id','storeId','name','nickName','clothSize','kioskPwd','dob','address','niNo','eVisa','mobile','startDate','leftDate','rate','sortCode','accountNo','email','memo','active','kioskLogin'];
+const STAFF_FIELDS=['id','storeId','name','nickName','clothSize','kioskPwd','dob','address','niNo','eVisa','mobile','startDate','leftDate','rate','taxCode','sortCode','accountNo','email','memo','active','kioskLogin','spare1','spare2','spare3','spare4','spare5','spare6','spare7','spare8','spare9','spare10'];
+// spare1 = infoConfirmed (날짜 문자열 — 확인 완료 시 YYYY-MM-DD 기록)
 const ATT_FIELDS=['id','staffId','storeId','date','clockIn','clockOut','photoIn','photoOut','source'];
 const MSG_FIELDS=['id','storeId','staffId','type','message','active','createdBy','createdAt'];
 const TCR_FIELDS=['id','attendanceId','staffId','storeId','date','field','currentValue','requestedValue','reason','status','kioskVersion','createdAt','reviewedBy','reviewedAt','acknowledgedAt'];
@@ -344,11 +345,59 @@ function selectStaff(id){
 
 function verify(){
   if(!currentStaff)return;
-  if(String(currentStaff.kioskPwd)===String(pinCode)){showAction();}
+  if(String(currentStaff.kioskPwd)===String(pinCode)){_selectedSize=currentStaff.clothSize||'';showAction();}
   else{toast('Wrong password','error');shakePin();}
 }
 
+// ★ 직원 정보 확인 설문 — 옷 사이즈, 전화번호, 주소, 이메일 확인
+function needsInfoCheck(s){ return !s.spare1; }
+function showInfoSurvey(){
+  const s=currentStaff;const dn=esc(s.nickName||s.name);const initial=(s.nickName||s.name).charAt(0).toUpperCase();
+  const sizes=['XS','S','M','L','XL'];const curSize=_selectedSize||s.clothSize||'';
+  $('mainCard').innerHTML=`
+    <div style="max-width:420px;margin:0 auto;text-align:left">
+      <div style="text-align:center;margin-bottom:16px">
+        <div class="avatar-lg" style="margin:0 auto 8px">${initial}</div>
+        <h3 style="margin:0">${dn}</h3>
+        <p style="color:#888;font-size:13px;margin:4px 0 0"><i class="fas fa-clipboard-check" style="color:#e65100"></i> Please confirm your details</p>
+      </div>
+      <div style="background:#fff;border-radius:16px;padding:20px;box-shadow:0 2px 12px rgba(0,0,0,.08)">
+        <label style="font-size:13px;font-weight:700;color:#333;display:block;margin-bottom:8px"><i class="fas fa-tshirt" style="color:#e65100;width:20px"></i> Uniform Size</label>
+        <div style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap" id="sizeButtons">
+          ${sizes.map(sz=>`<button onclick="pickSize('${sz}')" id="sz_${sz}" style="flex:1;min-width:50px;padding:12px 6px;border-radius:10px;border:2px solid ${curSize===sz?'#e65100':'#ddd'};background:${curSize===sz?'#fff3e0':'#fff'};font-size:16px;font-weight:700;color:${curSize===sz?'#e65100':'#555'};cursor:pointer;transition:all .2s">${sz}</button>`).join('')}
+        </div>
+        <label style="font-size:13px;font-weight:700;color:#333;display:block;margin-bottom:4px"><i class="fas fa-phone" style="color:#1565c0;width:20px"></i> Mobile Number</label>
+        <input type="tel" id="svMobile" value="${esc(s.mobile||'')}" placeholder="e.g. 07xxx xxx xxx" style="width:100%;padding:12px;border:2px solid #ddd;border-radius:10px;font-size:15px;margin-bottom:14px;box-sizing:border-box">
+        <label style="font-size:13px;font-weight:700;color:#333;display:block;margin-bottom:4px"><i class="fas fa-home" style="color:#2e7d32;width:20px"></i> Address</label>
+        <textarea id="svAddress" rows="2" placeholder="Your current address" style="width:100%;padding:12px;border:2px solid #ddd;border-radius:10px;font-size:14px;margin-bottom:14px;box-sizing:border-box;resize:none">${esc(s.address||'')}</textarea>
+        <label style="font-size:13px;font-weight:700;color:#333;display:block;margin-bottom:4px"><i class="fas fa-envelope" style="color:#6a1b9a;width:20px"></i> Email</label>
+        <input type="email" id="svEmail" value="${esc(s.email||'')}" placeholder="your@email.com" style="width:100%;padding:12px;border:2px solid #ddd;border-radius:10px;font-size:15px;margin-bottom:20px;box-sizing:border-box">
+        <button onclick="submitInfoSurvey()" style="width:100%;padding:14px;background:#e65100;color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer"><i class="fas fa-check-circle"></i> Confirm & Continue</button>
+      </div>
+      <div style="text-align:center;margin-top:12px"><button class="btn-outline" onclick="showStaffList()" style="font-size:13px"><i class="fas fa-arrow-left"></i> Back</button></div>
+    </div>`;
+}
+let _selectedSize='';
+function pickSize(sz){
+  _selectedSize=sz;
+  ['XS','S','M','L','XL'].forEach(s=>{const btn=document.getElementById('sz_'+s);if(btn){btn.style.border='2px solid '+(s===sz?'#e65100':'#ddd');btn.style.background=s===sz?'#fff3e0':'#fff';btn.style.color=s===sz?'#e65100':'#555';}});
+}
+async function submitInfoSurvey(){
+  const s=currentStaff;const size=_selectedSize||s.clothSize||'';
+  const mobile=(document.getElementById('svMobile')?.value||'').trim();
+  const address=(document.getElementById('svAddress')?.value||'').trim();
+  const email=(document.getElementById('svEmail')?.value||'').trim();
+  if(!size){toast('Please select your uniform size','error');return;}
+  const today=new Date().toISOString().split('T')[0];
+  s.clothSize=size;s.mobile=mobile;s.address=address;s.email=email;s.spare1=today;
+  _selectedSize='';toast('Saving...','info');
+  try{await apiPost({action:'upsert',sheet:'Staff',row:s});toast('Details updated! Thank you.','success');showAction();}
+  catch(e){toast('Save error: '+e.message,'error');}
+}
+
 function showAction(){
+  // ★ 정보 확인 안 된 직원이면 설문 먼저 표시
+  if(needsInfoCheck(currentStaff)){showInfoSurvey();return;}
   const now=new Date();const today=now.toISOString().split('T')[0];
   const todayAtt=attendance.filter(a=>String(a.staffId)===String(currentStaff.id)&&a.date===today);
   const openAtt=todayAtt.find(a=>a.clockIn&&!a.clockOut);

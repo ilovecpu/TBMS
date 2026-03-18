@@ -237,7 +237,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
   <div class="login-logo">
     <div class="logo-icon"><i class="fas fa-bowl-food"></i></div>
     <h1>TBMS</h1>
-    <p>The Bap Management System <span style="opacity:.5;font-size:11px">Ver5.0.3</span></p>
+    <p>The Bap Management System <span style="opacity:.5;font-size:11px">Ver5.0.4</span></p>
   </div>
   <div class="form-group"><label>Username</label><input id="loginUser" placeholder="Enter username"></div>
   <div class="form-group"><label>Password</label><input id="loginPass" type="password" placeholder="Enter password"></div>
@@ -254,7 +254,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
 <!-- MAIN APP -->
 <div id="mainApp" class="hidden">
   <div class="sidebar" id="sidebar">
-    <div class="sidebar-header"><h2>TBMS <span style="font-size:12px;font-weight:400;opacity:.6">Ver5.0.3</span></h2><p>The Bap Management System</p></div>
+    <div class="sidebar-header"><h2>TBMS <span style="font-size:12px;font-weight:400;opacity:.6">Ver5.0.4</span></h2><p>The Bap Management System</p></div>
     <div class="sidebar-menu">
       <div class="menu-item active" data-page="dashboard" onclick="navigate('dashboard')"><i class="fas fa-home"></i>Dashboard</div>
       <div class="menu-group">
@@ -310,7 +310,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
   <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
   <div class="main-content">
     <div class="header">
-      <div class="header-left"><button class="menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button><h2 id="pageTitle" style="font-size:18px">Dashboard</h2><span style="font-size:11px;color:var(--text-light);margin-left:8px;font-weight:400;opacity:.7">Ver5.0.3</span></div>
+      <div class="header-left"><button class="menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button><h2 id="pageTitle" style="font-size:18px">Dashboard</h2><span style="font-size:11px;color:var(--text-light);margin-left:8px;font-weight:400;opacity:.7">Ver5.0.4</span></div>
       <div class="header-right"><span id="headerDate"></span><span class="sync-status"><span class="dot offline" id="syncDot"></span><span id="syncText">Local</span></span><button class="btn btn-sm btn-outline" onclick="doLogout()"><i class="fas fa-sign-out-alt"></i> Logout</button></div>
     </div>
     <div class="page-content" id="pageContent"></div>
@@ -891,8 +891,9 @@ function renderDashboardContent() {
       ${myStores.map(store=>{
         const sw=working.filter(a=>String(a.storeId)===String(store.id));
         if(!sw.length)return'';
-        return`<div style="background:var(--pink-bg);border-radius:10px;padding:10px 12px;border-left:3px solid var(--accent)">
-          <div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:6px"><i class="fas fa-store"></i> ${escHtml(store.name)} (${sw.length})</div>
+        const _sc=_storeClr[store.code]||'var(--accent)';
+        return`<div style="background:var(--pink-bg);border-radius:10px;padding:10px 12px;border-left:3px solid ${_sc}">
+          <div style="font-size:12px;font-weight:700;color:${_sc};margin-bottom:6px"><i class="fas fa-store"></i> ${escHtml(store.name)} (${sw.length})</div>
           ${sw.map(a=>{
             const s=D.Staff.find(x=>String(x.id)===String(a.staffId));
             const cin=parseTime(a.clockIn);
@@ -968,7 +969,7 @@ function _renderDashDeadlines(stores){
     html+=`<tr style="${rowBg?'background:'+rowBg:''}${i>0?';border-top:1px solid var(--border)':''}">
       <td style="padding:10px 16px;width:40px"><i class="fas ${it.icon}" style="color:${it.catColor};font-size:16px"></i></td>
       <td style="padding:10px 4px;font-weight:600;font-size:13px;white-space:nowrap">${it.label}</td>
-      <td style="padding:10px 4px"><span style="background:var(--primary);color:#fff;padding:2px 8px;border-radius:6px;font-weight:700;font-size:11px">${it.store}</span> <span style="font-size:12px;color:var(--text-light)">${escHtml(it.storeName)}</span></td>
+      <td style="padding:10px 4px">${storeBadge(it.store,11)} <span style="font-size:12px;color:var(--text-light)">${escHtml(it.storeName)}</span></td>
       <td style="padding:10px 16px;text-align:right">${badge(it.date)}</td>
     </tr>`;
   });
@@ -1008,7 +1009,7 @@ function renderStores(c) {
   ${D.Stores.map(s=>`<div style="border:1px solid var(--border);border-radius:12px;padding:16px;background:var(--bg);overflow:hidden">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
       <div style="display:flex;align-items:center;gap:10px;min-width:0">
-        <span style="background:var(--primary);color:#fff;padding:6px 10px;border-radius:8px;font-weight:800;font-size:14px;flex-shrink:0">${escHtml(s.code)}</span>
+        ${storeBadge(s.code)}
         <strong style="font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(s.name)}</strong>
       </div>
       <div style="display:flex;gap:4px;flex-shrink:0">
@@ -1149,7 +1150,7 @@ function renderStoreMgmt(c){
   c.innerHTML=`<div class="card"><div class="card-header"><h3>Store Management</h3></div>
   <div style="display:flex;flex-wrap:wrap;gap:12px;padding:4px 0;margin-bottom:20px">
     ${stores.map(s=>`<div class="sm-store-box${smSelectedStore===s.id?' sm-selected':''}" onclick="smSelectStore('${s.id}')" style="cursor:pointer;border:2px solid ${smSelectedStore===s.id?'var(--accent)':'var(--border)'};border-radius:12px;padding:14px 20px;background:${smSelectedStore===s.id?'#e8f5e9':'#fff'};display:flex;align-items:center;gap:10px;transition:all .2s;min-width:160px">
-      <span style="background:${smSelectedStore===s.id?'var(--accent)':'var(--primary)'};color:#fff;padding:6px 10px;border-radius:8px;font-weight:800;font-size:14px">${escHtml(s.code)}</span>
+      <span style="background:${smSelectedStore===s.id?'var(--accent)':(_storeClr[s.code]||'var(--primary)')};color:#fff;padding:6px 10px;border-radius:8px;font-weight:800;font-size:14px">${escHtml(s.code)}</span>
       <span style="font-weight:600;font-size:15px">${escHtml(s.name)}</span>
     </div>`).join('')}
   </div>
@@ -2599,6 +2600,8 @@ function renderStockCalendar(){
   cal.innerHTML=html;
 }
 const _storeClr={PAB:'#1b5e20',TBS:'#1565c0',TBR:'#6a1b9a',TBB:'#e65100',TBO:'#00838f'};
+// ★ 지점 코드 배지 헬퍼 — 지점별 고유 색상 적용
+function storeBadge(code,size){const sz=size||14;const bg=_storeClr[code]||'var(--primary)';return`<span style="background:${bg};color:#fff;padding:${sz>12?'6px 10px':'2px 8px'};border-radius:${sz>12?8:6}px;font-weight:${sz>12?800:700};font-size:${sz}px;flex-shrink:0">${escHtml(code)}</span>`;}
 // ★ 근본 수정: stockDate_{storeId} 세팅 캐시 — 서버가 확정한 마지막 스톡 날짜
 let _stockDateCache={};
 async function _fetchStockDates(){
@@ -4222,7 +4225,7 @@ th{font-size:9px;color:#666;font-weight:600}
 <div style="margin-bottom:12px">${selBadges}</div>
 <div class="info">Date: <b>${today}</b> &nbsp; Suppliers: <b>${supKeys.length}</b> &nbsp; Total Items: <b>${totalItems}</b></div>
 ${blocks}
-<p style="text-align:center;font-size:8px;color:#999;margin-top:20px">TBMS Ver5.0.3</p>
+<p style="text-align:center;font-size:8px;color:#999;margin-top:20px">TBMS Ver5.0.4</p>
 </body></html>`);
   w.document.close();
 }
@@ -5688,7 +5691,7 @@ ${d.hourKeys.length>0 ? `<div class="sec"><div class="sec-t">Hourly Breakdown</d
 
 <div class="sec"><div class="sec-t">Item Sales (${d.totalQty} items)</div><table><thead><tr><th>Item</th><th style="text-align:center">Qty</th><th style="text-align:right">Revenue</th><th style="text-align:right">%</th></tr></thead><tbody>${itemRows}</tbody></table></div>
 
-<div class="footer">TBMS Ver5.0.3 &copy; ${new Date().getFullYear()} The Bap. All rights reserved.</div>
+<div class="footer">TBMS Ver5.0.4 &copy; ${new Date().getFullYear()} The Bap. All rights reserved.</div>
 </body></html>`;
 
   const w = window.open('','_blank','width=800,height=1000');
@@ -6067,7 +6070,7 @@ function exportAllWord(){
       ['submittedBy / submittedAt','Who submitted and when']
     ]);
 
-    html+=`<hr style="margin:16px 0"><p style="text-align:center;font-size:8pt;color:#999;font-style:italic">TBMS Ver5.0.3</p>`;
+    html+=`<hr style="margin:16px 0"><p style="text-align:center;font-size:8pt;color:#999;font-style:italic">TBMS Ver5.0.4</p>`;
     html+=`</body></html>`;
 
     const blob=new Blob(['\ufeff'+html],{type:'application/msword'});

@@ -1,0 +1,51 @@
+KIOSK HTML FILES UPDATE SUMMARY
+================================
+
+Date: 2026-02-17
+Directory: /sessions/peaceful-tender-johnson/mnt/outputs/
+
+FILES UPDATED (4 files - Kiosk1 variants):
+- Kiosk_PAB.html
+- Kiosk_TBB.html
+- Kiosk_TBR.html
+- Kiosk_TBS.html
+
+FILES NOT MODIFIED (8 files - Kiosk2 & Kiosk3 variants):
+- Kiosk2_PAB.html (no doClockIn/doClockOut functions)
+- Kiosk2_TBB.html (no doClockIn/doClockOut functions)
+- Kiosk2_TBR.html (no doClockIn/doClockOut functions)
+- Kiosk2_TBS.html (no doClockIn/doClockOut functions)
+- Kiosk3_PAB.html (no doClockIn/doClockOut functions)
+- Kiosk3_TBB.html (no doClockIn/doClockOut functions)
+- Kiosk3_TBR.html (no doClockIn/doClockOut functions)
+- Kiosk3_TBS.html (no doClockIn/doClockOut functions)
+
+CHANGES APPLIED:
+
+1. doClockIn() Function:
+   - Added: console.log('[DEBUG] clockIn response:',JSON.stringify(r));
+     (after hideLoad() to log the API response)
+   - Added: console.log('[DEBUG] att.photoIn after clockIn:',att.photoIn);
+     (in success branch to log the photoIn value after API updates)
+   - Added: console.log('[DEBUG] clockIn FAILED:',JSON.stringify(r));
+     (in error branch to log failed responses)
+
+2. doClockOut() Function:
+   - Added: console.log('[DEBUG] clockOut response:',JSON.stringify(r));
+     (after hideLoad() to log the API response)
+   - Added: console.log('[DEBUG] att sent to server:',JSON.stringify({id:att.id,photoIn:att.photoIn,photoOut:att.photoOut,clockOut:att.clockOut}));
+     (to log the attendance object data sent to the server)
+   - Added: console.log('[DEBUG] clockOut FAILED:',JSON.stringify(r));
+     (in error branch to log failed responses)
+
+VERIFICATION:
+Each updated file contains exactly 6 debug console.log statements:
+- 3 in doClockIn function
+- 3 in doClockOut function
+
+Total debug statements added: 24 (6 per file × 4 files)
+
+NOTES:
+- Kiosk2 and Kiosk3 files do not contain doClockIn/doClockOut functions,
+  so they were not modified.
+- All replacements were done using exact string matching to ensure accuracy.

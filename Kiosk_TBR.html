@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%232e7d32'/%3E%3Cg transform='translate(8,10) scale(0.09375)'%3E%3Cpath fill='%23fff' d='M0 192c0-35.3 28.7-64 64-64c.5 0 1.1 0 1.6 0C73 91.5 105.3 64 144 64c15 0 29 4.1 40.9 11.2C198.2 49.6 225.1 32 256 32s57.8 17.6 71.1 43.2C339 68.1 353 64 368 64c38.7 0 71 27.5 78.4 64c.5 0 1.1 0 1.6 0c35.3 0 64 28.7 64 64c0 11.7-3.1 22.6-8.6 32H8.6C3.1 214.6 0 203.7 0 192zm0 91.4C0 268.3 12.3 256 27.4 256H484.6c15.1 0 27.4 12.3 27.4 27.4c0 70.5-44.4 130.7-106.7 154.1L403.5 452c-2 16-15.6 28-31.8 28H140.2c-16.1 0-29.8-12-31.8-28l-1.8-14.4C44.4 414.1 0 353.9 0 283.4z'/%3E%3C/g%3E%3C/svg%3E">
+<title>The Bap Reading - Clock In/Out</title>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+<link rel="manifest" href="manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--primary:#1a237e;--success:#8e24aa;--danger:#e53935;--bg:#6a1b9a;--card:#fff;--text:#333;--text-light:#666;--border:#ddd;--warning:#f39c12}
+body{font-family:'Noto Sans KR',sans-serif;background:linear-gradient(135deg,#6a1b9a 0%,#7b1fa2 100%);min-height:100vh;display:flex;flex-direction:column;align-items:center;color:var(--text);overflow-x:hidden;-webkit-user-select:none;user-select:none}
+.toast-box{position:fixed;top:16px;right:16px;z-index:1000}
+.toast{padding:14px 24px;border-radius:12px;color:#fff;font-size:15px;font-weight:500;display:flex;align-items:center;gap:10px;animation:slideIn .3s;box-shadow:0 4px 20px rgba(0,0,0,.3);margin-bottom:8px}
+.toast.success{background:var(--success)}.toast.error{background:var(--danger)}.toast.info{background:var(--primary)}
+@keyframes slideIn{from{transform:translateX(120%);opacity:0}to{transform:translateX(0);opacity:1}}
+.header{text-align:center;color:#fff;padding:24px 20px 16px;width:100%}
+.header h1{font-size:26px;display:flex;align-items:center;justify-content:center;gap:12px;text-shadow:0 2px 8px rgba(0,0,0,.2)}
+.header p{font-size:15px;opacity:.85;margin-top:6px}
+.main-card{background:#fff;border-radius:20px;padding:28px;width:calc(100% - 40px);max-width:480px;box-shadow:0 20px 60px rgba(0,0,0,.25);margin:8px 0 20px;min-height:400px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.clock{font-size:56px;font-weight:700;color:var(--primary);text-align:center;font-variant-numeric:tabular-nums;letter-spacing:2px}
+.date{text-align:center;color:var(--text-light);font-size:15px;margin-top:4px;margin-bottom:24px}
+.staff-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:14px;width:100%;max-height:none;overflow-y:auto;padding:4px}
+.staff-btn{padding:14px 8px;background:#f3e5f5;border-radius:16px;text-align:center;cursor:pointer;transition:all .2s;border:2.5px solid #8e24aa}
+.staff-btn:hover,.staff-btn:active{transform:scale(1.05);filter:brightness(0.97)}
+.staff-btn.clocked-in{border-color:#e84393;background:#fff0f3}
+.staff-btn.clocked-in .avatar{background:#e84393}
+.staff-btn.clocked-in .status-dot{display:block}
+.staff-btn .avatar{width:56px;height:56px;background:#8e24aa;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 8px;font-weight:700;font-size:22px;position:relative}
+.staff-btn .status-dot{display:none;position:absolute;bottom:0;right:0;width:16px;height:16px;background:#e84393;border:2px solid #fff;border-radius:50%}
+.staff-btn .name{font-size:14px;font-weight:600;line-height:1.3;word-break:keep-all}
+.pw-section{text-align:center;width:100%}
+.pw-section .avatar-lg{width:64px;height:64px;background:var(--primary);color:#fff;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:26px;font-weight:700;margin-bottom:10px}
+.pw-section h3{font-size:20px;margin-bottom:16px}
+.pin-display{display:flex;justify-content:center;gap:14px;margin-bottom:20px;min-height:28px;align-items:center}
+.pin-dot{width:22px;height:22px;border-radius:50%;border:2.5px solid #ccc;background:#fff;transition:all .15s}
+.pin-dot.filled{background:var(--primary);border-color:var(--primary);transform:scale(1.1)}
+.pin-dot.error{background:var(--danger);border-color:var(--danger);animation:shake .4s}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+.keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:100%;max-width:300px;margin:0 auto 16px}
+.key-btn{height:68px;border-radius:16px;font-size:30px;font-weight:600;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .1s;background:#f0f2f5;color:var(--text);-webkit-tap-highlight-color:transparent}
+.key-btn:active{transform:scale(.9);background:#ddd}
+.key-btn.fn{background:transparent;font-size:24px;color:var(--text-light)}
+.key-btn.fn:active{background:#f0f0f0;transform:scale(.9)}
+.key-btn.confirm{background:var(--success);color:#fff;font-size:24px}
+.key-btn.confirm:active{background:#388e3c;transform:scale(.9)}
+.btn{padding:14px 28px;border-radius:12px;font-size:16px;font-weight:600;border:none;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:10px;transition:all .2s;width:100%}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-success{background:var(--success);color:#fff}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-outline{background:transparent;border:2px solid var(--border);color:var(--text);width:auto;padding:10px 20px;font-size:14px}
+.action-btns{display:flex;flex-direction:column;gap:14px;width:100%;margin-top:20px}
+.action-btn{padding:24px;border-radius:14px;font-size:22px;font-weight:700;color:#fff;cursor:pointer;text-align:center;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:12px;border:none}
+.action-btn:active{transform:scale(.97)}
+.action-btn.in{background:linear-gradient(135deg,#8e24aa,#7b1fa2)}
+.action-btn.out{background:linear-gradient(135deg,#e53935,#c62828)}
+.action-btn.records{background:linear-gradient(135deg,#5c6bc0,#3949ab);font-size:16px;padding:16px}
+.result{text-align:center;width:100%}
+.result .icon{font-size:72px;margin-bottom:16px}
+.result .msg{font-size:22px;font-weight:700;margin-bottom:8px}
+.result .time{font-size:36px;color:var(--primary);font-weight:700}
+.result .who{margin-top:12px;color:var(--text-light);font-size:16px}
+.status-bar{color:rgba(255,255,255,.6);font-size:12px;padding:8px;display:flex;align-items:center;gap:6px;position:fixed;bottom:8px}
+.status-dot{width:8px;height:8px;border-radius:50%;background:#8e24aa}
+.status-dot.off{background:#fb8c00}
+.loading-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;color:#fff;font-size:16px}
+.loading-overlay.hidden{display:none}
+.camera-modal{position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:900;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px}
+.camera-modal.hidden{display:none}
+.camera-modal video{width:320px;height:240px;border-radius:16px;border:3px solid #fff;object-fit:cover;transform:scaleX(-1)}
+.camera-modal canvas{display:none}
+.camera-modal .cam-title{color:#fff;font-size:20px;font-weight:600;display:flex;align-items:center;gap:10px}
+.camera-modal .cam-preview{width:320px;height:240px;border-radius:16px;border:3px solid var(--success);object-fit:cover}
+.cam-capture{padding:18px 48px;border-radius:50px;font-size:20px;font-weight:700;border:none;cursor:pointer;color:#fff;background:linear-gradient(135deg,#e84393,#d63384);display:flex;align-items:center;gap:12px;box-shadow:0 4px 20px rgba(232,67,147,.4);transition:all .15s}
+.cam-capture:active{transform:scale(.93)}
+.cam-cancel{padding:12px 28px;border-radius:30px;font-size:14px;font-weight:500;border:2px solid rgba(255,255,255,.3);cursor:pointer;color:#fff;background:transparent;margin-top:4px}
+.cam-cancel:active{background:rgba(255,255,255,.1)}
+.spinner{width:44px;height:44px;border:4px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.today-records{width:100%;margin-top:16px;background:#f8faf8;border-radius:10px;padding:12px;max-height:120px;overflow-y:auto}
+.today-records h4{font-size:12px;color:var(--text-light);margin-bottom:8px}
+.today-records .rec{font-size:13px;display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #eee}
+.today-records .rec:last-child{border:none}
+.fs-overlay{position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:2000;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:20px;color:#fff;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.fs-overlay .fs-icon{font-size:72px;animation:fsPulse 2s infinite}
+.fs-overlay h2{font-size:28px;font-weight:700}
+.fs-overlay p{font-size:15px;opacity:.6}
+@keyframes fsPulse{0%,100%{opacity:.7;transform:scale(1)}50%{opacity:1;transform:scale(1.1)}}
+.msg-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:800;display:flex;align-items:center;justify-content:center;padding:20px}
+.msg-box{background:#fff;border-radius:20px;padding:32px;max-width:400px;width:100%;text-align:center;animation:msgPop .3s}
+.msg-box .msg-icon{font-size:48px;margin-bottom:12px}
+.msg-box .msg-title{font-size:13px;font-weight:500;margin-bottom:12px;color:#999;text-transform:uppercase;letter-spacing:1px}
+.msg-box .msg-content{font-size:28px;line-height:1.5;color:#111;font-weight:800;margin-bottom:24px;white-space:pre-wrap}
+.msg-box .msg-ok{padding:14px 40px;background:var(--primary);color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer}
+.msg-box .msg-ok:active{transform:scale(.95)}
+@keyframes msgPop{from{transform:scale(.8);opacity:0}to{transform:scale(1);opacity:1}}
+/* ===== Records (Calendar/ChangeRequests) Styles ===== */
+.records-wrap{width:100%;text-align:left}
+.records-wrap .card{background:#f8f9fa;border-radius:12px;padding:10px;width:100%;box-shadow:none;margin-bottom:10px}
+.records-wrap .card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:6px}
+.records-wrap .card-header h2{font-size:14px;font-weight:700;color:var(--primary)}
+.month-nav{display:flex;align-items:center;gap:6px}
+.month-nav button{width:32px;height:32px;border:2px solid var(--border);border-radius:8px;background:#fff;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center}
+.month-nav button:active{background:#f0f0f0}
+.month-nav span{font-size:11px;font-weight:700;min-width:100px;text-align:center}
+.time-table{width:100%;border-collapse:collapse;font-size:11px}
+.time-table th{background:var(--primary);color:#fff;padding:5px 2px;font-size:10px;font-weight:600;text-align:center}
+.time-table td{padding:3px 1px;border-bottom:1px solid #f0f0f0;text-align:center;vertical-align:middle}
+.time-table tr.sat{background:#e3f2fd}
+.time-table tr.sun{background:#fce4ec}
+.time-table tr.today{background:#f3e5f5}
+.time-table .date-cell{font-weight:700;font-size:12px;width:26px;white-space:nowrap}
+.time-table .day-cell{font-size:11px;font-weight:700;width:26px}
+.time-table .day-sat{color:#1565c0;font-weight:700}
+.time-table .day-sun{color:#c0392b;font-weight:700}
+.time-sel{padding:3px 0;border:1.5px solid var(--border);border-radius:6px;font-size:13px;font-weight:600;font-family:inherit;text-align:center;background:#fff;appearance:none;-webkit-appearance:none;width:36px}
+.time-sel:focus{border-color:var(--primary);outline:none}
+.time-sel.filled{border-color:var(--success);background:#f0fff0}
+.time-wrap{display:inline-flex;align-items:center;gap:1px}
+.time-wrap .colon{font-weight:700;font-size:13px}
+.hour-cell{font-weight:700;font-size:12px;color:var(--primary);min-width:34px}
+.hour-cell.zero{color:#ccc}
+.summary-bar{display:flex;justify-content:space-between;align-items:center;background:linear-gradient(135deg,#1a237e,#283593);color:#fff;padding:10px 12px;border-radius:10px;margin-top:8px}
+.summary-bar .total{font-size:16px;font-weight:800}
+.summary-bar .label{font-size:10px;opacity:.8}
+.cr-card{background:#fff;border-radius:12px;padding:12px;width:100%;box-shadow:0 2px 10px rgba(0,0,0,.06);margin-bottom:10px;border-left:4px solid var(--warning)}
+.cr-card h3{font-size:13px;font-weight:700;color:var(--text);margin-bottom:8px}
+.cr-item{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #f5f5f5;font-size:11px;flex-wrap:wrap;gap:4px}
+.cr-item:last-child{border-bottom:none}
+.cr-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700}
+.cr-badge.pending{background:#fff3cd;color:#856404;border:1px solid #ffc107}
+.cr-badge.approved{background:#d4edda;color:#155724;border:1px solid #28a745}
+.cr-badge.rejected{background:#f8d7da;color:#721c24;border:1px solid #dc3545}
+.cr-ack-btn{padding:4px 10px;border:none;border-radius:8px;background:#28a745;color:#fff;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap}
+.cr-ack-btn:active{transform:scale(.95)}
+.cr-ack-btn.rej{background:#6c757d}
+.btn-save-rec{padding:10px 20px;border:none;border-radius:10px;font-size:14px;font-weight:700;background:var(--success);color:#fff;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.btn-save-rec:active{filter:brightness(.9)}
+@media(max-width:400px){
+  .clock{font-size:42px}
+  .staff-grid{grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:10px}
+  .staff-btn{padding:10px 6px}
+  .staff-btn .avatar{width:48px;height:48px;font-size:20px}
+  .staff-btn .name{font-size:12px}
+  .main-card{padding:16px}
+  .key-btn{height:58px;font-size:26px}
+  .time-sel{width:32px;font-size:12px}
+  .time-wrap .colon{font-size:12px}
+  .hour-cell{font-size:11px;min-width:30px}
+  .date-cell{font-size:11px!important}
+  .day-cell{font-size:10px!important}
+}
+</style>
+</head>
+<body>
+<div class="loading-overlay" id="loading"><div class="spinner"></div><div id="loadingText">Loading...</div></div>
+<div class="toast-box" id="toastBox"></div>
+<div class="header">
+  <h1><i class="fas fa-bowl-food"></i> The Bap Reading</h1>
+  <p>Reading - Staff Clock In/Out <span style="opacity:.5;font-size:11px">Ver1.2</span></p>
+</div>
+<div class="main-card" id="mainCard"></div>
+<div class="status-bar"><span class="status-dot" id="statusDot"></span><span id="statusText">Connecting...</span></div>
+<script>
+const STORE_ID='TBR',STORE_NAME='The Bap Reading';
+const DEFAULT_API='https://script.google.com/macros/s/AKfycbzCE9MIDjtjZG4QeqTNXL032WbTJCIHeXUAQf7wq9K7dIKpWngi-FPFg-IzvtPP3bxK/exec';
+const API_URL=DEFAULT_API;
+const API_KEY='tBaP2026xKr!mGt9Qz';
+const $=id=>document.getElementById(id);
+function toast(msg,type='info'){const t=document.createElement('div');t.className='toast '+type;t.innerHTML='<i class="fas fa-'+(type==='error'?'exclamation-circle':type==='success'?'check-circle':'info-circle')+'"></i>'+msg;$('toastBox').appendChild(t);setTimeout(()=>t.remove(),3000);}
+function showLoad(t){$('loadingText').textContent=t;$('loading').classList.remove('hidden');}
+function hideLoad(){$('loading').classList.add('hidden');}
+function genId(){return 'a_'+Date.now()+'_'+Math.random().toString(36).substr(2,5);}
+function fmtTime(d){return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');}
+function esc(s){if(!s&&s!==0)return'';const d=document.createElement('div');d.textContent=String(s);return d.innerHTML;}
+
+async function apiGet(action){try{const r=await fetch(API_URL+'?action='+action+'&apikey='+encodeURIComponent(API_KEY),{redirect:'follow'});return await r.json();}catch(e){console.error(e);return null;}}
+async function apiPost(data){try{data.apikey=API_KEY;const r=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(data),redirect:'follow'});return await r.json();}catch(e){console.error(e);return null;}}
+
+let staff=[],attendance=[],staffMessages=[],clockTimer=null,currentStaff=null,pinCode='';
+let timeChangeReqs=[],recordsLoaded=false;
+let viewYear=new Date().getFullYear(),viewMonth=new Date().getMonth();
+if(new Date().getDate()>=26){viewMonth++;if(viewMonth>11){viewMonth=0;viewYear++;}}
+let _origValues={};
+const MAX_PIN=10;
+const STAFF_FIELDS=['id','storeId','name','nickName','clothSize','kioskPwd','dob','address','niNo','eVisa','mobile','startDate','leftDate','rate','sortCode','accountNo','email','memo','active','kioskLogin'];
+const ATT_FIELDS=['id','staffId','storeId','date','clockIn','clockOut','photoIn','photoOut','source'];
+const MSG_FIELDS=['id','storeId','staffId','type','message','active','createdBy','createdAt'];
+const TCR_FIELDS=['id','attendanceId','staffId','storeId','date','field','currentValue','requestedValue','reason','status','kioskVersion','createdAt','reviewedBy','reviewedAt','acknowledgedAt'];
+function nrmRow(fields,row){const m={};for(const k in row)m[k.replace(/[\s_\-]+/g,'').toLowerCase()]=row[k];const r={};for(const f of fields){const n=f.replace(/[\s_\-]+/g,'').toLowerCase();r[f]=m[n]!==undefined?m[n]:'';}return r;}
+
+let _lastDataHash='';
+async function loadData(silent){
+  if(!silent)showLoad('Loading staff data...');
+  const result=silent
+    ?await apiGet('getStoreData&store='+STORE_ID+'&sheets=Staff,Attendance,StaffMessages')
+    :await apiGet('getAll');
+  if(result&&result.data&&!result.error){
+    const newStaff=(result.data.Staff||[]).map(r=>nrmRow(STAFF_FIELDS,r)).filter(s=>String(s.storeId)===STORE_ID&&(s.active===true||s.active==='true'||s.active==='TRUE')&&s.kioskLogin!==false&&s.kioskLogin!=='false');
+    const newAtt=(result.data.Attendance||[]).map(r=>nrmRow(ATT_FIELDS,r));
+    const rawMsgs=result.data.StaffMessages||[];
+    const newMsgs=rawMsgs.map(r=>nrmRow(MSG_FIELDS,r)).filter(m=>(String(m.storeId)===STORE_ID||String(m.storeId)==='ALL')&&(m.active===true||m.active==='true'||m.active==='TRUE'));
+    const hash=JSON.stringify({s:newStaff.map(s=>s.id),a:newAtt.map(a=>a.id+a.clockIn+a.clockOut)});
+    const changed=hash!==_lastDataHash;
+    _lastDataHash=hash;
+    staff=newStaff;attendance=newAtt;staffMessages=newMsgs;
+    $('statusDot').className='status-dot';$('statusText').textContent='Connected';
+    if(!silent)hideLoad();
+    return changed?true:'nochange';
+  }
+  $('statusDot').className='status-dot off';$('statusText').textContent='Offline';
+  if(!silent){hideLoad();toast('Cannot connect to server','error');}
+  return false;
+}
+
+// ===== Lazy load TimeChangeReq for Records =====
+async function loadRecordsData(){
+  if(recordsLoaded)return true;
+  showLoad('Loading records...');
+  const r=await apiGet('getStoreData&store='+STORE_ID+'&sheets=TimeChangeReq');
+  hideLoad();
+  if(r&&r.data&&!r.error){
+    timeChangeReqs=(r.data.TimeChangeReq||[]).map(r2=>nrmRow(TCR_FIELDS,r2));
+    recordsLoaded=true;
+    return true;
+  }
+  toast('Failed to load records','error');
+  return false;
+}
+
+function pressKey(n){if(pinCode.length>=MAX_PIN)return;pinCode+=String(n);updatePinDisplay();}
+function pressBackspace(){if(!pinCode.length)return;pinCode=pinCode.slice(0,-1);updatePinDisplay();}
+function pressConfirm(){if(pinCode.length>0)verify();}
+function updatePinDisplay(){
+  const container=document.getElementById('pinDots');
+  if(!container)return;
+  container.innerHTML='';
+  const len=Math.max(pinCode.length,4);
+  for(let i=0;i<len;i++){
+    const dot=document.createElement('div');
+    dot.className='pin-dot'+(i<pinCode.length?' filled':'');
+    container.appendChild(dot);
+  }
+}
+function shakePin(){
+  document.querySelectorAll('.pin-dot.filled').forEach(d=>{d.classList.add('error');});
+  setTimeout(()=>{pinCode='';updatePinDisplay();},500);
+}
+
+function startClock(){if(clockTimer)clearInterval(clockTimer);clockTimer=setInterval(()=>{const el=document.querySelector('.clock');if(el)el.textContent=new Date().toLocaleTimeString('en-GB');},1000);}
+
+function getMessages(staffId,type){
+  return staffMessages.filter(m=>(String(m.staffId)===String(staffId)||String(m.staffId)==='ALL')&&String(m.type).toLowerCase()===String(type).toLowerCase());
+}
+
+function showMessage(msgs,callback){
+  if(!msgs.length){callback();return;}
+  const msg=msgs.map(m=>m.message).join('\n\n');
+  const overlay=document.createElement('div');
+  overlay.className='msg-overlay';
+  overlay.id='msgOverlay';
+  overlay.innerHTML=`<div class="msg-box">
+    <div class="msg-icon">📢</div>
+    <div class="msg-title">Message from Management</div>
+    <div class="msg-content">${esc(msg)}</div>
+    <button class="msg-ok">OK</button>
+  </div>`;
+  document.body.appendChild(overlay);
+  overlay._cb=callback;
+  overlay.querySelector('.msg-ok').onclick=function(){
+    overlay.remove();
+    callback();
+  };
+}
+
+function checkMsgThenClock(type,attId){
+  const msgType=type==='in'?'checkin':'checkout';
+  const msgs=getMessages(currentStaff.id,msgType);
+  if(msgs.length>0){
+    showMessage(msgs,function(){openCamera(type,attId);});
+  }else{
+    openCamera(type,attId);
+  }
+}
+
+function isClockedIn(staffId){
+  const today=new Date().toISOString().split('T')[0];
+  return attendance.some(a=>String(a.staffId)===String(staffId)&&a.date===today&&a.clockIn&&!a.clockOut);
+}
+function showStaffList(){
+  currentStaff=null;pinCode='';recordsLoaded=false;timeChangeReqs=[];
+  const now=new Date();
+  $('mainCard').innerHTML=`
+    <div class="clock" id="clock">${now.toLocaleTimeString('en-GB')}</div>
+    <div class="date">${now.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</div>
+    ${staff.length?`<div class="staff-grid">${staff.map(s=>{const dn=s.nickName||s.name;const ci=isClockedIn(s.id);return`
+      <div class="staff-btn${ci?' clocked-in':''}" onclick="selectStaff('${s.id}')">
+        <div class="avatar">${dn.charAt(0).toUpperCase()}<span class="status-dot"></span></div>
+        <div class="name">${esc(dn)}</div>
+      </div>`;}).join('')}</div>`:'<p style="color:var(--text-light)">No staff found for this store</p>'}
+    <div style="margin-top:16px"><button class="btn-outline" onclick="loadData().then(()=>showStaffList())"><i class="fas fa-sync"></i> Refresh</button></div>`;
+  startClock();
+}
+
+function selectStaff(id){
+  currentStaff=staff.find(s=>String(s.id)===String(id));
+  if(!currentStaff)return;
+  pinCode='';
+  const now=new Date();
+  $('mainCard').innerHTML=`
+    <div class="clock" id="clock">${now.toLocaleTimeString('en-GB')}</div>
+    <div class="date">${now.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</div>
+    <div class="pw-section">
+      <div class="avatar-lg">${(currentStaff.nickName||currentStaff.name).charAt(0).toUpperCase()}</div>
+      <h3>${esc(currentStaff.nickName||currentStaff.name)}</h3>
+      <div class="pin-display" id="pinDots"><div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div></div>
+      <div class="keypad">
+        <div class="key-btn" onclick="pressKey(1)">1</div>
+        <div class="key-btn" onclick="pressKey(2)">2</div>
+        <div class="key-btn" onclick="pressKey(3)">3</div>
+        <div class="key-btn" onclick="pressKey(4)">4</div>
+        <div class="key-btn" onclick="pressKey(5)">5</div>
+        <div class="key-btn" onclick="pressKey(6)">6</div>
+        <div class="key-btn" onclick="pressKey(7)">7</div>
+        <div class="key-btn" onclick="pressKey(8)">8</div>
+        <div class="key-btn" onclick="pressKey(9)">9</div>
+        <div class="key-btn fn" onclick="pressBackspace()"><i class="fas fa-delete-left"></i></div>
+        <div class="key-btn" onclick="pressKey(0)">0</div>
+        <div class="key-btn confirm" onclick="pressConfirm()"><i class="fas fa-check"></i></div>
+      </div>
+      <div><button class="btn-outline" onclick="showStaffList()"><i class="fas fa-arrow-left"></i> Back</button></div>
+    </div>`;
+  startClock();
+}
+
+function verify(){
+  if(!currentStaff)return;
+  if(String(currentStaff.kioskPwd)===String(pinCode)){showAction();}
+  else{toast('Wrong password','error');shakePin();}
+}
+
+function showAction(){
+  const now=new Date();const today=now.toISOString().split('T')[0];
+  const todayAtt=attendance.filter(a=>String(a.staffId)===String(currentStaff.id)&&a.date===today);
+  const openAtt=todayAtt.find(a=>a.clockIn&&!a.clockOut);
+  const missedAtt=attendance.find(a=>String(a.staffId)===String(currentStaff.id)&&a.date!==today&&a.clockIn&&!a.clockOut);
+  const dn=esc(currentStaff.nickName||currentStaff.name);
+  const initial=(currentStaff.nickName||currentStaff.name).charAt(0).toUpperCase();
+  let missedHtml='';
+  if(missedAtt&&!openAtt){
+    missedHtml=`<div style="background:#fff3e0;border:2px solid #ff9800;border-radius:14px;padding:16px;margin:12px 0 8px;text-align:left;width:100%">
+      <div style="font-size:18px;font-weight:700;color:#e65100;margin-bottom:8px;text-align:center"><i class="fas fa-exclamation-triangle"></i> Missed Clock Out!</div>
+      <div style="font-size:14px;color:#333;margin-bottom:6px"><i class="fas fa-calendar-day" style="color:#e65100;width:20px"></i> <strong>Date:</strong> ${missedAtt.date}</div>
+      <div style="font-size:14px;color:#333;margin-bottom:10px"><i class="fas fa-clock" style="color:#e65100;width:20px"></i> <strong>Clock In:</strong> ${missedAtt.clockIn} → <span style="color:#e53935;font-weight:700">No Clock Out</span></div>
+      <div style="background:#fff8e1;border-radius:8px;padding:10px;font-size:13px;color:#555;line-height:1.5">
+        <i class="fas fa-phone" style="color:#e65100"></i> <strong>Please contact your manager</strong> to confirm your clock-out time for this shift.
+      </div>
+      <div style="background:#fbe9e7;border-radius:8px;padding:10px;margin-top:8px;font-size:13px;color:#c62828;line-height:1.5;text-align:center;font-weight:600">
+        <i class="fas fa-bell"></i> Always remember to Clock In AND Clock Out!
+      </div>
+    </div>`;
+  }
+  $('mainCard').innerHTML=`
+    <div class="clock" id="clock">${now.toLocaleTimeString('en-GB')}</div>
+    <div class="date">${now.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</div>
+    <div class="pw-section">
+      <div class="avatar-lg">${initial}</div>
+      <h3>${dn}</h3>
+      ${missedHtml}
+      <div class="action-btns">
+        ${openAtt?`<button class="action-btn out" onclick="checkMsgThenClock('out','${openAtt.id}')"><i class="fas fa-sign-out-alt"></i> Clock Out</button>`
+        :`<button class="action-btn in" onclick="checkMsgThenClock('in','')"><i class="fas fa-sign-in-alt"></i> Clock In</button>`}
+      </div>
+      ${todayAtt.length?`<div class="today-records"><h4>Today's Records</h4>${todayAtt.map(a=>`<div class="rec"><span>${a.clockIn||'-'} → ${a.clockOut||'...'}</span></div>`).join('')}</div>`:''}
+      <div style="margin-top:14px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+        <button class="btn-outline" onclick="showStaffList()"><i class="fas fa-arrow-left"></i> Back</button>
+        <button class="btn-outline" onclick="openRecords()" style="border-color:#5c6bc0;color:#3949ab"><i class="fas fa-clipboard-list"></i> My Records</button>
+      </div>
+    </div>`;
+  startClock();
+}
+
+// ===== Selfie Camera =====
+let cameraStream=null,pendingAction=null,cameraRetries=0;
+const MAX_RETRIES=3;
+function openCamera(type,attId){
+  pendingAction={type,attId};
+  cameraRetries=0;
+  startCamera();
+}
+function startCamera(){
+  const type=pendingAction.type,attId=pendingAction.attId;
+  closeCamera();
+  const modal=document.createElement('div');modal.className='camera-modal';modal.id='cameraModal';
+  modal.innerHTML=`
+    <div class="cam-title"><i class="fas fa-camera"></i> Selfie Verification</div>
+    <p style="color:rgba(255,255,255,.7);font-size:14px;margin:-6px 0 4px">${esc(currentStaff.nickName||currentStaff.name)} — ${type==='in'?'Clock In':'Clock Out'}</p>
+    <video id="camVideo" autoplay playsinline muted></video>
+    <canvas id="camCanvas" width="320" height="240"></canvas>
+    <button class="cam-capture" onclick="capturePhoto()"><i class="fas fa-camera"></i> Take Photo</button>
+    <button class="cam-cancel" onclick="closeCamera()"><i class="fas fa-times"></i> Cancel</button>`;
+  document.body.appendChild(modal);
+  navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:320},height:{ideal:240}}})
+    .then(stream=>{cameraStream=stream;document.getElementById('camVideo').srcObject=stream;})
+    .catch(err=>{
+      cameraRetries++;
+      closeCamera();
+      if(cameraRetries>=MAX_RETRIES){
+        showCameraFailModal(type,attId);
+      }else{
+        showCameraRetryModal(type,attId,err.message);
+      }
+    });
+}
+function showCameraRetryModal(type,attId,errMsg){
+  const modal=document.createElement('div');modal.className='camera-modal';modal.id='cameraModal';
+  modal.innerHTML=`
+    <div style="text-align:center;padding:30px">
+      <div style="font-size:48px;margin-bottom:16px">📷</div>
+      <div class="cam-title" style="color:#ff6b6b"><i class="fas fa-exclamation-triangle"></i> Camera Failed</div>
+      <p style="color:rgba(255,255,255,.7);font-size:14px;margin:8px 0 20px">${errMsg}<br>Attempt ${cameraRetries} of ${MAX_RETRIES}</p>
+      <button onclick="startCamera()" style="padding:14px 40px;background:#8e24aa;color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;margin:6px"><i class="fas fa-redo"></i> Retry Camera</button>
+      <br><button onclick="closeCamera()" style="padding:10px 30px;background:transparent;color:rgba(255,255,255,.5);border:1px solid rgba(255,255,255,.3);border-radius:10px;font-size:14px;cursor:pointer;margin-top:12px"><i class="fas fa-times"></i> Cancel</button>
+    </div>`;
+  document.body.appendChild(modal);
+}
+function showCameraFailModal(type,attId){
+  const modal=document.createElement('div');modal.className='camera-modal';modal.id='cameraModal';
+  modal.innerHTML=`
+    <div style="text-align:center;padding:30px">
+      <div style="font-size:48px;margin-bottom:16px">⚠️</div>
+      <div class="cam-title" style="color:#ff6b6b"><i class="fas fa-camera-slash"></i> Camera Unavailable</div>
+      <p style="color:rgba(255,255,255,.7);font-size:14px;margin:8px 0 6px">Camera failed ${MAX_RETRIES} times.</p>
+      <p style="color:#ffc107;font-size:13px;margin:0 0 20px">Proceed without photo?<br>This will be recorded without selfie verification.</p>
+      <button onclick="closeCamera();doClockDirect('${type}','${attId||''}')" style="padding:14px 40px;background:#fb8c00;color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;margin:6px"><i class="fas fa-sign-in-alt"></i> Continue Without Photo</button>
+      <br><button onclick="startCamera()" style="padding:10px 30px;background:transparent;color:rgba(255,255,255,.5);border:1px solid rgba(255,255,255,.3);border-radius:10px;font-size:14px;cursor:pointer;margin-top:8px"><i class="fas fa-redo"></i> Try Again</button>
+      <br><button onclick="closeCamera()" style="padding:10px 30px;background:transparent;color:rgba(255,255,255,.3);border:none;font-size:13px;cursor:pointer;margin-top:6px"><i class="fas fa-times"></i> Cancel</button>
+    </div>`;
+  document.body.appendChild(modal);
+}
+function capturePhoto(){
+  const video=document.getElementById('camVideo'),canvas=document.getElementById('camCanvas');
+  if(!video||!canvas)return;
+  canvas.width=320;canvas.height=240;
+  const ctx=canvas.getContext('2d');
+  ctx.translate(320,0);ctx.scale(-1,1);
+  ctx.drawImage(video,0,0,320,240);
+  const base64=canvas.toDataURL('image/jpeg',0.6).split(',')[1];
+  closeCamera();
+  if(pendingAction.type==='in')doClockIn(base64);
+  else doClockOut(pendingAction.attId,base64);
+}
+function closeCamera(){
+  if(cameraStream){cameraStream.getTracks().forEach(t=>t.stop());cameraStream=null;}
+  const m=document.getElementById('cameraModal');if(m)m.remove();
+}
+function doClockDirect(type,attId){
+  if(type==='in')doClockIn('');else doClockOut(attId,'');
+}
+
+// ===== Optimistic Clock In/Out =====
+function doClockIn(photo){
+  const now=new Date();
+  const att={id:genId(),staffId:currentStaff.id,storeId:STORE_ID,date:now.toISOString().split('T')[0],clockIn:fmtTime(now),clockOut:'',photoIn:'',photoOut:'',source:'kiosk'};
+  // Optimistic: update local data + show result immediately
+  attendance.push(att);
+  showResult('in',att.clockIn);
+  // Fire-and-forget server save
+  apiPost({action:'clockInPhoto',row:att,photo:photo||''}).then(r=>{
+    if(r&&!r.error){if(r.row&&r.row.photoIn)att.photoIn=r.row.photoIn;}
+    else{toast('Server save failed — manager will be notified','error');}
+  }).catch(()=>{toast('Network error saving clock in','error');});
+}
+function doClockOut(attId,photo){
+  const att=attendance.find(a=>String(a.id)===String(attId));if(!att)return;
+  att.clockOut=fmtTime(new Date());
+  // Optimistic: show result immediately
+  showResult('out',att.clockOut);
+  // Fire-and-forget server save
+  apiPost({action:'clockOutPhoto',row:att,photo:photo||''}).then(r=>{
+    if(!r||r.error){toast('Server save failed — manager will be notified','error');}
+  }).catch(()=>{toast('Network error saving clock out','error');});
+}
+
+function showResult(type,time){
+  $('mainCard').innerHTML=`
+    <div class="result">
+      <div class="icon">${type==='in'?'✅':'🏁'}</div>
+      <div class="msg">${type==='in'?'Clock In Recorded!':'Clock Out Recorded!'}</div>
+      <div class="time">${time}</div>
+      <div class="who">${currentStaff?esc(currentStaff.nickName||currentStaff.name):''}</div>
+    </div>`;
+  toast(type==='in'?'Clock In successful!':'Clock Out successful!','success');
+  setTimeout(()=>showStaffList(),3000);
+}
+
+// ===== My Records (ported from Kiosk3) =====
+async function openRecords(){
+  const ok=await loadRecordsData();
+  if(!ok)return;
+  showRecords();
+}
+
+function showRecords(){
+  if(!currentStaff)return;
+  const dn=esc(currentStaff.nickName||currentStaff.name);
+  const initial=(currentStaff.nickName||currentStaff.name).charAt(0).toUpperCase();
+  // Build change requests HTML
+  const crHtml=buildChangeRequestsHtml();
+  // Build calendar HTML
+  const calHtml=buildCalendarHtml();
+
+  $('mainCard').style.maxWidth='700px';
+  $('mainCard').innerHTML=`
+    <div class="records-wrap">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:36px;height:36px;background:var(--primary);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px">${initial}</div>
+          <span style="font-weight:700;font-size:15px">${dn}</span>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button onclick="doRecRefresh()" class="btn-outline" style="padding:8px 14px;font-size:12px" id="recRefBtn"><i class="fas fa-sync-alt"></i></button>
+          <button onclick="backToAction()" class="btn-outline" style="padding:8px 14px;font-size:12px"><i class="fas fa-arrow-left"></i> Back</button>
+        </div>
+      </div>
+      ${crHtml}
+      ${calHtml}
+    </div>`;
+}
+
+function backToAction(){
+  $('mainCard').style.maxWidth='480px';
+  showAction();
+}
+
+async function doRecRefresh(){
+  const btn=$('recRefBtn');if(btn){btn.disabled=true;btn.innerHTML='<i class="fas fa-sync-alt fa-spin"></i>';}
+  recordsLoaded=false;
+  await loadData(true);
+  await loadRecordsData();
+  showRecords();
+  toast('Records refreshed','success');
+}
+
+// ===== Change Requests =====
+function ackCr(id){
+  const req=timeChangeReqs.find(r=>r.id===id);
+  if(req)req.acknowledgedAt=new Date().toISOString();
+  apiPost({action:'ackTimeReq',id:id});
+  showRecords();
+}
+
+function buildChangeRequestsHtml(){
+  if(!currentStaff)return'';
+  const myReqs=timeChangeReqs.filter(r=>String(r.staffId)===String(currentStaff.id)&&String(r.storeId)===STORE_ID)
+    .filter(r=>r.status==='pending'||!r.acknowledgedAt)
+    .sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''));
+  if(myReqs.length===0)return'';
+  const pendCount=myReqs.filter(r=>r.status==='pending').length;
+  let html=`<div class="cr-card"><h3><i class="fas fa-exchange-alt" style="color:var(--warning);margin-right:6px"></i>Change Requests ${pendCount>0?`<span style="background:#fff3cd;color:#856404;padding:2px 8px;border-radius:10px;font-size:10px;margin-left:4px">${pendCount} pending</span>`:''}</h3>`;
+  myReqs.slice(0,10).forEach(r=>{
+    let badge='',ackBtn='';
+    if(r.status==='pending')badge='<span class="cr-badge pending">Pending</span>';
+    else if(r.status==='approved'){badge='<span class="cr-badge approved">Approved</span>';ackBtn=`<button class="cr-ack-btn" onclick="event.stopPropagation();ackCr('${r.id}')"><i class="fas fa-check"></i> OK</button>`;}
+    else if(r.status==='rejected'){badge='<span class="cr-badge rejected">Rejected</span>';ackBtn=`<button class="cr-ack-btn rej" onclick="event.stopPropagation();ackCr('${r.id}')"><i class="fas fa-check"></i> OK</button>`;}
+    html+=`<div class="cr-item">
+      <div style="flex:1"><strong>${r.date||'—'}</strong> · ${r.field||''}: ${r.currentValue||'—'} → <span style="color:var(--primary);font-weight:700">${r.requestedValue||'—'}</span></div>
+      <div style="display:flex;align-items:center;gap:6px">${badge}${ackBtn}</div>
+    </div>`;
+  });
+  if(myReqs.length>10)html+=`<div style="text-align:center;font-size:10px;color:var(--text-light);padding:6px">+${myReqs.length-10} more</div>`;
+  html+='</div>';
+  return html;
+}
+
+// ===== Calendar =====
+function getPeriodDates(){
+  const prevM=viewMonth===0?11:viewMonth-1;
+  const prevY=viewMonth===0?viewYear-1:viewYear;
+  const startDate=new Date(prevY,prevM,26);
+  const endDate=new Date(viewYear,viewMonth,25);
+  const dates=[];
+  for(let d=new Date(startDate);d<=endDate;d.setDate(d.getDate()+1)){dates.push(new Date(d));}
+  return dates;
+}
+function fmtDate(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function periodLabel(){
+  const mShort=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const prevM=viewMonth===0?11:viewMonth-1;
+  return '26 '+mShort[prevM]+' — 25 '+mShort[viewMonth]+' '+viewYear;
+}
+
+function buildCalendarHtml(){
+  if(!currentStaff)return'';
+  const s=currentStaff;
+  const dayNames=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const dates=getPeriodDates();
+  const today=new Date();const todayStr=fmtDate(today);
+  const dateSet=new Set(dates.map(d=>fmtDate(d)));
+  const myAtt=attendance.filter(a=>String(a.staffId)===String(s.id)&&dateSet.has(a.date));
+  _origValues={};
+  let rows='',totalHours=0,totalDays=0,lastMonth=-1;
+  const mNames=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  dates.forEach(dateObj=>{
+    const dow=dateObj.getDay();
+    const dateStr=fmtDate(dateObj);
+    const dayLabel=dayNames[dow===0?6:dow-1];
+    const isToday=dateStr===todayStr;
+    const dm=dateObj.getMonth();
+    const rec=myAtt.find(a=>a.date===dateStr);
+    _origValues[dateStr]={clockIn:rec?rec.clockIn:'',clockOut:rec?rec.clockOut:''};
+    if(dm!==lastMonth){
+      lastMonth=dm;
+      rows+=`<tr><td colspan="5" style="background:var(--primary);color:#fff;font-weight:700;font-size:10px;padding:4px 8px;border:none;text-align:left">
+        <i class="fas fa-calendar" style="margin-right:4px"></i>${mNames[dm]} ${dateObj.getFullYear()}</td></tr>`;
+    }
+    const clockIn=rec?rec.clockIn:'';
+    const clockOut=rec?rec.clockOut:'';
+    const hours=calcHours(clockIn,clockOut);
+    if(hours>0){totalHours+=hours;totalDays++;}
+    const rowClass=isToday?'today':dow===6?'sat':dow===0?'sun':'';
+    const dayClass=dow===0?'day-cell day-sun':dow===6?'day-cell day-sat':'day-cell';
+    rows+=`<tr class="${rowClass}">
+      <td class="date-cell">${dateObj.getDate()}</td>
+      <td class="${dayClass}">${dayLabel}</td>
+      <td>${timeSelHtml('in',dateStr,clockIn)}</td>
+      <td>${timeSelHtml('out',dateStr,clockOut)}</td>
+      <td class="hour-cell ${hours===0?'zero':''}" id="hr_${dateStr}">${hours>0?hours.toFixed(1):'—'}</td>
+    </tr>`;
+  });
+  return `<div class="card">
+      <div class="card-header">
+        <h2>${periodLabel()}</h2>
+        <div class="month-nav">
+          <button onclick="changeMonth(-1)"><i class="fas fa-chevron-left"></i></button>
+          <button onclick="changeMonth(1)"><i class="fas fa-chevron-right"></i></button>
+        </div>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="time-table">
+          <thead><tr><th>Date</th><th>Day</th><th>IN</th><th>OUT</th><th>Hours</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+      <div class="summary-bar">
+        <div><div class="label">Total Hours</div><div class="total" id="totalHours">${totalHours.toFixed(1)} hrs</div></div>
+        <div style="text-align:right"><div class="label">Days Worked</div><div class="total" id="totalDays">${totalDays}</div></div>
+      </div>
+      <div style="display:flex;justify-content:center;margin-top:12px">
+        <button class="btn-save-rec" onclick="saveAll()"><i class="fas fa-cloud-upload-alt"></i> Save All</button>
+      </div>
+    </div>`;
+}
+
+// ===== Time Select Helpers =====
+function timeSelHtml(prefix,ds,val){
+  const [vh,vm]=val?val.split(':'):['','00'];
+  const rvm=vm?String(parseInt(vm)).padStart(2,'0'):'00';
+  let hOpts='<option value="">--</option>';
+  for(let i=0;i<24;i++){const hh=String(i).padStart(2,'0');hOpts+=`<option value="${hh}"${hh===vh?' selected':''}>${hh}</option>`;}
+  const mins=[];for(let i=0;i<60;i++)mins.push(String(i).padStart(2,'0'));
+  let mOpts='';mins.forEach(mm=>{mOpts+=`<option value="${mm}"${mm===rvm?' selected':''}>${mm}</option>`;});
+  const fc=vh?'filled':'';
+  return `<span class="time-wrap"><select id="${prefix}H_${ds}" onchange="onTimeChange('${prefix}','${ds}')" class="time-sel ${fc}">${hOpts}</select><span class="colon">:</span><select id="${prefix}M_${ds}" onchange="onTimeChange('${prefix}','${ds}')" class="time-sel ${fc}">${mOpts}</select></span>`;
+}
+function getTimeVal(prefix,ds){
+  const h=$(prefix+'H_'+ds),m=$(prefix+'M_'+ds);
+  if(!h||!m||h.value==='')return '';
+  return h.value+':'+m.value;
+}
+function calcHours(inTime,outTime){
+  if(!inTime||!outTime)return 0;
+  const [ih,im]=inTime.split(':').map(Number);
+  const [oh,om]=outTime.split(':').map(Number);
+  let mins=(oh*60+om)-(ih*60+im);
+  if(mins<0)mins+=24*60;
+  return Math.round(mins/6)/10;
+}
+function revertTime(prefix,dateStr){
+  const hEl=$(prefix+'H_'+dateStr),mEl=$(prefix+'M_'+dateStr);
+  if(hEl){hEl.value='';hEl.className='time-sel';}
+  if(mEl){mEl.value='00';mEl.className='time-sel';}
+}
+function revertToOrig(prefix,dateStr){
+  const orig=_origValues[dateStr]||{};
+  const field=prefix==='in'?'clockIn':'clockOut';
+  const origVal=orig[field]||'';
+  const hEl=$(prefix+'H_'+dateStr),mEl=$(prefix+'M_'+dateStr);
+  if(origVal){
+    const [h,m]=origVal.split(':');
+    if(hEl){hEl.value=h;hEl.className='time-sel filled';}
+    if(mEl){mEl.value=String(parseInt(m)).padStart(2,'0');mEl.className='time-sel filled';}
+  }else{
+    if(hEl){hEl.value='';hEl.className='time-sel';}
+    if(mEl){mEl.value='00';mEl.className='time-sel';}
+  }
+}
+function showFutureAlert(msg){
+  const old=document.getElementById('futureAlertOv');if(old)old.remove();
+  const ov=document.createElement('div');
+  ov.id='futureAlertOv';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1500;display:flex;align-items:center;justify-content:center;padding:20px';
+  ov.innerHTML=`<div style="background:#fff;border-radius:20px;padding:28px;max-width:380px;width:100%;text-align:center">
+    <div style="font-size:40px;margin-bottom:8px">⚠️</div>
+    <div style="font-size:16px;font-weight:700;color:var(--danger);margin-bottom:10px">Cannot Set Future Time</div>
+    <div style="font-size:14px;color:#555;margin-bottom:20px;line-height:1.5">${msg}</div>
+    <button onclick="document.getElementById('futureAlertOv').remove()" style="padding:12px 32px;border:none;border-radius:10px;font-size:15px;font-weight:600;background:var(--primary);color:#fff;cursor:pointer">OK</button>
+  </div>`;
+  document.body.appendChild(ov);
+}
+function updateRowDisplay(dateStr){
+  const inVal=getTimeVal('in',dateStr);
+  const outVal=getTimeVal('out',dateStr);
+  const hrs=calcHours(inVal,outVal);
+  const hrEl=$('hr_'+dateStr);
+  const todayStr=fmtDate(new Date());
+  const orig=_origValues[dateStr]||{};
+  const hasChanges=dateStr<todayStr&&(inVal!==(orig.clockIn||'')||outVal!==(orig.clockOut||''));
+  if(hrEl){
+    if(hasChanges){
+      hrEl.innerHTML=`<div style="display:flex;flex-direction:row;align-items:center;gap:4px;justify-content:center">
+        <button onclick="submitDateChange('${dateStr}')" style="padding:5px 8px;border:none;border-radius:8px;background:#e65100;color:#fff;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap"><i class="fas fa-paper-plane"></i> Submit</button>
+        <button onclick="cancelDateChange('${dateStr}')" style="padding:4px 8px;border:1px solid #ccc;border-radius:8px;background:#fff;color:#666;font-size:10px;font-weight:600;cursor:pointer;white-space:nowrap">Cancel</button>
+      </div>`;
+    }else{
+      hrEl.textContent=hrs>0?hrs.toFixed(1):'—';
+      hrEl.className='hour-cell'+(hrs===0?' zero':'');
+    }
+  }
+  ['in','out'].forEach(p=>{
+    const v=p==='in'?inVal:outVal;
+    const hEl=$(p+'H_'+dateStr),mEl=$(p+'M_'+dateStr);
+    if(hEl)hEl.className='time-sel'+(v?' filled':'');
+    if(mEl)mEl.className='time-sel'+(v?' filled':'');
+  });
+  recalcTotals();
+}
+function askChangeReason(dateStr,changesHtml){
+  return new Promise(resolve=>{
+    const old=document.getElementById('crReasonOv');if(old)old.remove();
+    const ov=document.createElement('div');
+    ov.id='crReasonOv';
+    ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1500;display:flex;align-items:center;justify-content:center;padding:20px';
+    ov.innerHTML=`<div style="background:#fff;border-radius:20px;padding:28px;max-width:400px;width:100%;text-align:center">
+      <div style="font-size:36px;margin-bottom:8px">📝</div>
+      <div style="font-size:16px;font-weight:700;color:#e65100;margin-bottom:6px"><i class="fas fa-exclamation-triangle"></i> Time Change Request</div>
+      <div style="font-size:14px;color:#555;margin-bottom:8px;line-height:1.5">
+        <strong>${dateStr}</strong><br>${changesHtml}
+      </div>
+      <div style="font-size:13px;color:#888;margin-bottom:12px">This change requires manager approval.</div>
+      <textarea id="crReasonInput" rows="3" placeholder="Enter reason for the change..." style="width:100%;padding:12px;border:2px solid #ddd;border-radius:10px;font-size:15px;font-family:inherit;resize:none;margin-bottom:16px"></textarea>
+      <div style="display:flex;gap:10px">
+        <button id="crReasonCancel" style="flex:1;padding:14px;border:2px solid #ddd;border-radius:10px;font-size:15px;font-weight:600;background:#fff;cursor:pointer">Cancel</button>
+        <button id="crReasonSubmit" style="flex:1;padding:14px;border:none;border-radius:10px;font-size:15px;font-weight:600;background:#e65100;color:#fff;cursor:pointer">Submit</button>
+      </div>
+    </div>`;
+    document.body.appendChild(ov);
+    ov.querySelector('#crReasonCancel').onclick=()=>{ov.remove();resolve(null);};
+    ov.querySelector('#crReasonSubmit').onclick=()=>{const v=ov.querySelector('#crReasonInput').value.trim();if(!v){ov.querySelector('#crReasonInput').style.borderColor='#e53935';return;}ov.remove();resolve(v);};
+    setTimeout(()=>ov.querySelector('#crReasonInput').focus(),100);
+  });
+}
+function cancelDateChange(dateStr){
+  revertToOrig('in',dateStr);
+  revertToOrig('out',dateStr);
+  updateRowDisplay(dateStr);
+}
+async function submitDateChange(dateStr){
+  const orig=_origValues[dateStr]||{};
+  const inVal=getTimeVal('in',dateStr);
+  const outVal=getTimeVal('out',dateStr);
+  const changes=[];
+  if(inVal!==(orig.clockIn||''))changes.push({field:'clockIn',oldVal:orig.clockIn||'',newVal:inVal});
+  if(outVal!==(orig.clockOut||''))changes.push({field:'clockOut',oldVal:orig.clockOut||'',newVal:outVal});
+  if(changes.length===0)return;
+  const changesHtml=changes.map(c=>{
+    const label=c.field==='clockIn'?'Clock In':'Clock Out';
+    return `${label}: ${c.oldVal||'(empty)'} → <span style="color:var(--primary);font-weight:700">${c.newVal||'(empty)'}</span>`;
+  }).join('<br>');
+  const reason=await askChangeReason(dateStr,changesHtml);
+  if(reason){
+    const existing=attendance.find(a=>String(a.staffId)===String(currentStaff.id)&&a.date===dateStr);
+    let allOk=true;
+    toast('Submitting '+changes.length+' change request(s)...','info');
+    for(const c of changes){
+      const cr={attendanceId:existing?existing.id:'new_'+dateStr,staffId:currentStaff.id,storeId:STORE_ID,date:dateStr,field:c.field,currentValue:c.oldVal,requestedValue:c.newVal,reason:reason,kioskVersion:'kiosk1'};
+      const res=await apiPost({action:'timeChangeReq',...cr});
+      if(res&&!res.error){
+        timeChangeReqs.push({...cr,id:res.id||genId(),status:'pending',createdAt:new Date().toISOString(),reviewedBy:'',reviewedAt:'',acknowledgedAt:''});
+      }else{allOk=false;}
+    }
+    if(allOk){
+      if(!_origValues[dateStr])_origValues[dateStr]={clockIn:'',clockOut:''};
+      changes.forEach(c=>{_origValues[dateStr][c.field]=c.newVal;});
+      toast(changes.length+' change request(s) submitted','success');
+    }else{
+      toast('Some change requests failed','error');
+      revertToOrig('in',dateStr);revertToOrig('out',dateStr);
+    }
+    updateRowDisplay(dateStr);
+    // Refresh CR display at top
+    showRecords();
+  }else{
+    revertToOrig('in',dateStr);revertToOrig('out',dateStr);
+    updateRowDisplay(dateStr);
+  }
+}
+function onTimeChange(prefix,dateStr){
+  const now=new Date();
+  const todayStr=fmtDate(now);
+  if(dateStr>todayStr){
+    const hEl=$(prefix+'H_'+dateStr),mEl=$(prefix+'M_'+dateStr);
+    if((hEl&&hEl.value!=='')||(mEl&&mEl.value!=='00')){
+      showFutureAlert('You cannot enter time for a future date ('+dateStr+').');
+      revertTime(prefix,dateStr);
+    }
+    updateRowDisplay(dateStr);
+    return;
+  }
+  if(dateStr===todayStr){
+    const nowH=now.getHours(),nowM=now.getMinutes();
+    const hEl=$(prefix+'H_'+dateStr),mEl=$(prefix+'M_'+dateStr);
+    const hv=hEl?hEl.value:'',mv=mEl?mEl.value:'00';
+    if(hv!==''){
+      const h=parseInt(hv),m=parseInt(mv);
+      if(h>nowH||(h===nowH&&m>nowM)){
+        const label=prefix==='in'?'Clock In':'Clock Out';
+        showFutureAlert(label+' time ('+hv+':'+mv+') is later than now. You cannot enter a future time.');
+        revertTime(prefix,dateStr);
+      }
+    }
+    updateRowDisplay(dateStr);
+    return;
+  }
+  updateRowDisplay(dateStr);
+}
+function recalcTotals(){
+  const dates=getPeriodDates();
+  let totalHrs=0,totalDays=0;
+  dates.forEach(d=>{
+    const dateStr=fmtDate(d);
+    const inVal=getTimeVal('in',dateStr);
+    const outVal=getTimeVal('out',dateStr);
+    const hrs=calcHours(inVal,outVal);
+    if(hrs>0){totalHrs+=hrs;totalDays++;}
+  });
+  const thEl=$('totalHours');if(thEl)thEl.textContent=totalHrs.toFixed(1)+' hrs';
+  const tdEl=$('totalDays');if(tdEl)tdEl.textContent=totalDays;
+}
+function changeMonth(dir){
+  viewMonth+=dir;
+  if(viewMonth>11){viewMonth=0;viewYear++;}
+  if(viewMonth<0){viewMonth=11;viewYear--;}
+  showRecords();
+}
+
+// ===== Save (today/future only) =====
+function setSaveBtnsDisabled(disabled){
+  document.querySelectorAll('.btn-save-rec').forEach(b=>{b.disabled=disabled;b.style.opacity=disabled?'0.5':'1';b.style.pointerEvents=disabled?'none':'auto';});
+}
+async function saveAll(){
+  if(!currentStaff)return;
+  const todayStr=fmtDate(new Date());
+  const dates=getPeriodDates();
+  setSaveBtnsDisabled(true);
+  try{
+  const rows=[],editLogs=[];
+  dates.forEach(d=>{
+    const dateStr=fmtDate(d);
+    if(dateStr<todayStr)return;
+    const inVal=getTimeVal('in',dateStr);
+    const outVal=getTimeVal('out',dateStr);
+    if(!inVal&&!outVal)return;
+    const existing=attendance.find(a=>String(a.staffId)===String(currentStaff.id)&&a.date===dateStr);
+    const row={id:existing?existing.id:genId(),staffId:currentStaff.id,storeId:STORE_ID,date:dateStr,clockIn:inVal,clockOut:outVal,photoIn:'',photoOut:'',source:'kiosk1'};
+    rows.push(row);
+    if(existing){
+      if(existing.clockIn!==inVal)editLogs.push({attendanceId:row.id,staffId:currentStaff.id,storeId:STORE_ID,date:dateStr,fieldChanged:'clockIn',oldValue:existing.clockIn||'',newValue:inVal,kioskVersion:'kiosk1'});
+      if(existing.clockOut!==outVal)editLogs.push({attendanceId:row.id,staffId:currentStaff.id,storeId:STORE_ID,date:dateStr,fieldChanged:'clockOut',oldValue:existing.clockOut||'',newValue:outVal,kioskVersion:'kiosk1'});
+      existing.clockIn=inVal;existing.clockOut=outVal;existing.source='kiosk1';
+    }else{
+      if(inVal)editLogs.push({attendanceId:row.id,staffId:currentStaff.id,storeId:STORE_ID,date:dateStr,fieldChanged:'clockIn',oldValue:'',newValue:inVal,kioskVersion:'kiosk1'});
+      if(outVal)editLogs.push({attendanceId:row.id,staffId:currentStaff.id,storeId:STORE_ID,date:dateStr,fieldChanged:'clockOut',oldValue:'',newValue:outVal,kioskVersion:'kiosk1'});
+      attendance.push(row);
+    }
+  });
+  if(rows.length===0){toast('No hours to save','info');return;}
+  toast('Saving '+rows.length+' records...','info');
+  let ok=true;
+  const attResults=await Promise.all(rows.map(r=>apiPost({action:'upsert',sheet:'Attendance',row:r})));
+  attResults.forEach(r=>{if(!r||r.error)ok=false;});
+  if(editLogs.length>0){editLogs.forEach(log=>apiPost({action:'editLog',...log}));}
+  if(ok)toast('Saved successfully!','success');
+  else toast('Some records failed to save','error');
+  }finally{setSaveBtnsDisabled(false);}
+}
+
+async function init(){
+  const ok=await loadData();
+  if(ok)showStaffList();
+  else $('mainCard').innerHTML='<div style="text-align:center"><p style="color:var(--danger);font-size:18px;margin-bottom:16px"><i class="fas fa-exclamation-triangle"></i> Connection Failed</p><button class="btn btn-primary" onclick="init()"><i class="fas fa-redo"></i> Retry</button></div>';
+  setInterval(async()=>{
+    const r=await loadData(true);
+    if(r&&r!=='nochange'&&!currentStaff)showStaffList();
+  },2*60*1000);
+}
+
+// ===== Fullscreen Mode =====
+function goFullscreen(){
+  const el=document.documentElement;
+  if(el.requestFullscreen)el.requestFullscreen();
+  else if(el.webkitRequestFullscreen)el.webkitRequestFullscreen();
+  else if(el.msRequestFullscreen)el.msRequestFullscreen();
+  const ov=document.getElementById('fsOverlay');if(ov)ov.remove();
+}
+function exitFsHandler(){
+  if(!document.fullscreenElement&&!document.webkitFullscreenElement){
+    if(!document.getElementById('fsOverlay'))showFsOverlay();
+  }
+}
+function showFsOverlay(){
+  const ov=document.createElement('div');ov.className='fs-overlay';ov.id='fsOverlay';
+  ov.innerHTML='<div class="fs-icon"><i class="fas fa-expand"></i></div><h2>Tap to Start</h2><p>Full screen kiosk mode</p>';
+  ov.addEventListener('click',goFullscreen);
+  document.body.appendChild(ov);
+}
+document.addEventListener('fullscreenchange',exitFsHandler);
+document.addEventListener('webkitfullscreenchange',exitFsHandler);
+if(!window.matchMedia('(display-mode: standalone)').matches&&!window.matchMedia('(display-mode: fullscreen)').matches){
+  showFsOverlay();
+}
+
+init();
+</script>
+</body>
+</html>

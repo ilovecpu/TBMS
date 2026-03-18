@@ -468,7 +468,11 @@ function doClockDirect(type,attId){
 }
 
 // ===== Optimistic Clock In/Out =====
+let _clockBusy=false; // ★ 이중 탭 방지 플래그
 function doClockIn(photo){
+  if(_clockBusy)return;
+  _clockBusy=true;
+  setTimeout(()=>{_clockBusy=false;},3000);
   const now=new Date();
   const att={id:genId(),staffId:currentStaff.id,storeId:STORE_ID,date:now.toISOString().split('T')[0],clockIn:fmtTime(now),clockOut:'',photoIn:'',photoOut:'',source:'kiosk'};
   // Optimistic: update local data + show result immediately
@@ -481,6 +485,9 @@ function doClockIn(photo){
   }).catch(()=>{toast('Network error saving clock in','error');});
 }
 function doClockOut(attId,photo){
+  if(_clockBusy)return;
+  _clockBusy=true;
+  setTimeout(()=>{_clockBusy=false;},3000);
   const att=attendance.find(a=>String(a.id)===String(attId));if(!att)return;
   att.clockOut=fmtTime(new Date());
   // Optimistic: show result immediately

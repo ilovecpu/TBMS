@@ -2,7 +2,7 @@
 //  TBMS - The Bap Management System v4.5.8
 //  Google Apps Script Backend (Code.gs)
 //  Deployed: 2026-03-18
-//  URL: https://script.google.com/macros/s/AKfycbzCE9MIDjtjZG4QeqTNXL032WbTJCIHeXUAQf7wq9K7dIKpWngi-FPFg-IzvtPP3bxK/exec
+//  URL: https://script.google.com/macros/s/AKfycbz_0Vcn1aCQyHZ7i9XRFp72f6O1H5kAsuaFATW4MMSnOhgWakAjMebH8ngMchYDHfS5/exec
 // ============================================================
 //  SETUP:
 //  1. Google Drive > New > Google Sheets > Name "TBMS Database"
@@ -34,7 +34,7 @@ const SHEETS = {
   KnowledgeBase:  ['id','category','title','content','tags','source','createdBy','createdAt','updatedAt','active','version','accessLevel'],
   // ★ POS Sales Data
   // DailySales/LiveSales 제거 (v4.4.2) → SalesOrders 기반 getSalesOrdersSummary로 대체
-  EndSales:       ['id','branch','branchName','periodFrom','periodTo','totalOrders','cashCount','cardCount','main_cashTotal','main_cardTotal','main_grandTotal','main_vatTotal','sub_cashPct','sub_cashTotal','sub_cardTotal','sub_grandTotal','sub_vatTotal','sub_vatablePct','sub_vatableGross','sub_nonVatableGross','sub_totalNet','itemBreakdown','staff','pushedAt']
+  EndSales:       ['id','branch','branchName','periodFrom','periodTo','totalOrders','cashCount','cardCount','main_cashTotal','main_cardTotal','main_grandTotal','main_vatTotal','sub_cashPct','sub_cashTotal','sub_cardTotal','sub_grandTotal','sub_vatTotal','sub_vatablePct','sub_vatableGross','sub_nonVatableGross','sub_totalNet','itemBreakdown','staff','pushedAt','sub_cashCount','sub_cardCount']
 };
 
 // ★ SalesOrders — 주간 시트 (SalesOrders_YYYY_WNN), SHEETS에는 미포함 (v4.5.1: 월간→주간 전환, 기존 월간 시트 하위 호환)
@@ -1204,7 +1204,9 @@ function pushEndSales(data) {
     sub_totalNet:    data.sub ? data.sub.totalNet : 0,
     itemBreakdown:   data.itemBreakdown || [],
     staff:           data.staff || '',
-    pushedAt:        new Date().toISOString()
+    pushedAt:        new Date().toISOString(),
+    sub_cashCount:   data.sub ? (data.sub.cashCount || 0) : 0,
+    sub_cardCount:   data.sub ? (data.sub.cardCount || 0) : 0
   };
   // Upsert by id to prevent duplicates
   return _upsertSalesRow('EndSales', ['id'], row);

@@ -5286,7 +5286,7 @@ function _showEsDetail(idx) {
   if(typeof items === 'string') { try { items = JSON.parse(items); } catch(e) { items = []; } }
 
   // Store data for print
-  window._esDetailData = { r, fromStr, toStr, mainCash, mainCard, mainGrand, mainVat, mainNet, subGrand, subVat, subCash, subCard, subVatableGross, subNonVatable, subVatRate, cashCount, cardCount, totalOrders, hasSub, items };
+  window._esDetailData = { r, fromStr, toStr, mainCash, mainCard, mainGrand, mainVat, mainNet, subGrand, subVat, subCash, subCard, subVatableGross, subNonVatable, subVatRate, cashCount, cardCount, subCashCount, subCardCount, totalOrders, hasSub, items };
 
   const detailEl = document.getElementById('esDetailView');
   const listEl = document.getElementById('esListTable');
@@ -5424,9 +5424,9 @@ function _printEsDetail(mode) {
   <div class="r-row"><span>Period From:</span><span>${d.fromStr}</span></div>
   <div class="r-row"><span>Period To:</span><span>${d.toStr}</span></div>
   <div class="r-line"></div>
-  <div class="r-row"><span>Total Orders:</span><span>${d.totalOrders}</span></div>
-  <div class="r-row"><span>Cash Customers:</span><span>${d.cashCount}</span></div>
-  <div class="r-row"><span>Card Customers:</span><span>${d.cardCount}</span></div>
+  <div class="r-row"><span>Total Orders:</span><span>${isMain ? d.totalOrders : ((d.subCashCount||0) + (d.subCardCount||0))}</span></div>
+  <div class="r-row"><span>Cash Customers:</span><span>${isMain ? d.cashCount : d.subCashCount}</span></div>
+  <div class="r-row"><span>Card Customers:</span><span>${isMain ? d.cardCount : d.subCardCount}</span></div>
   <div class="r-line"></div>
   <div class="r-row"><span>Cash Total:</span><span>${fp(cashAmt)}</span></div>
   <div class="r-row"><span>Card Total:</span><span>${fp(cardAmt)}</span></div>

@@ -237,7 +237,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
   <div class="login-logo">
     <div class="logo-icon"><i class="fas fa-bowl-food"></i></div>
     <h1>TBMS</h1>
-    <p>The Bap Management System <span style="opacity:.5;font-size:11px">Ver5.0.5</span></p>
+    <p>The Bap Management System <span style="opacity:.5;font-size:11px">Ver5.0.7</span></p>
   </div>
   <div class="form-group"><label>Username</label><input id="loginUser" placeholder="Enter username"></div>
   <div class="form-group"><label>Password</label><input id="loginPass" type="password" placeholder="Enter password"></div>
@@ -254,7 +254,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
 <!-- MAIN APP -->
 <div id="mainApp" class="hidden">
   <div class="sidebar" id="sidebar">
-    <div class="sidebar-header"><h2>TBMS <span style="font-size:12px;font-weight:400;opacity:.6">Ver5.0.5</span></h2><p>The Bap Management System</p></div>
+    <div class="sidebar-header"><h2>TBMS <span style="font-size:12px;font-weight:400;opacity:.6">Ver5.0.7</span></h2><p>The Bap Management System</p></div>
     <div class="sidebar-menu">
       <div class="menu-item active" data-page="dashboard" onclick="navigate('dashboard')"><i class="fas fa-home"></i>Dashboard</div>
       <div class="menu-group">
@@ -317,7 +317,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
   <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
   <div class="main-content">
     <div class="header">
-      <div class="header-left"><button class="menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button><h2 id="pageTitle" style="font-size:18px">Dashboard</h2><span style="font-size:11px;color:var(--text-light);margin-left:8px;font-weight:400;opacity:.7">Ver5.0.5</span></div>
+      <div class="header-left"><button class="menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button><h2 id="pageTitle" style="font-size:18px">Dashboard</h2><span style="font-size:11px;color:var(--text-light);margin-left:8px;font-weight:400;opacity:.7">Ver5.0.7</span></div>
       <div class="header-right"><span id="headerDate"></span><span class="sync-status"><span class="dot offline" id="syncDot"></span><span id="syncText">Local</span></span><button class="btn btn-sm btn-outline" onclick="doLogout()"><i class="fas fa-sign-out-alt"></i> Logout</button></div>
     </div>
     <div class="page-content" id="pageContent"></div>
@@ -1417,8 +1417,9 @@ function renderStaff(c) {
   if(sF.search){const q=sF.search.toLowerCase();staff=staff.filter(s=>s.name.toLowerCase().includes(q)||(s.nickName||'').toLowerCase().includes(q));}
   const activeCount=staff.filter(s=>s.active!==false).length;
   const leftCount=staff.filter(s=>s.active===false).length;
-  c.innerHTML=`<div class="filters">
-    <select onchange="sF.storeId=this.value;renderStaff($('pageContent'))"><option value="">All Stores</option>${getAccessibleStores().map(s=>`<option value="${s.id}" ${sF.storeId===s.id?'selected':''}>${s.name}</option>`).join('')}</select>
+  c.innerHTML=`<div id="staffStoreTabs" style="margin-bottom:10px">${(_storeTabCB.stf=function(v){sF.storeId=v;renderStaff($('pageContent'));},'')+(renderStoreTabs('staffStoreTabs','_sfStoreH',{showAll:true,allLabel:'All Stores',selected:sF.storeId||'',cbKey:'stf'}))}</div>
+  <input type="hidden" id="_sfStoreH" value="${sF.storeId||''}">
+  <div class="filters">
     <div class="search-box"><i class="fas fa-search"></i><input placeholder="Search staff..." value="${escHtml(sF.search)}" oninput="sF.search=this.value;renderStaff($('pageContent'))"></div>
     <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;white-space:nowrap"><input type="checkbox" ${sF.showLeft?'checked':''} onchange="sF.showLeft=this.checked;renderStaff($('pageContent'))" style="accent-color:var(--accent)"> Show Left (${D.Staff.filter(s=>s.active===false&&hasStoreAccess(s.storeId)).length})</label>
     <button class="btn btn-primary btn-sm" onclick="editStaff()"><i class="fas fa-plus"></i> Add Staff</button>
@@ -1873,8 +1874,9 @@ async function refreshAttendance(){
 }
 function renderAttendance(c) {
   const today=new Date().toISOString().split('T')[0];
-  c.innerHTML=`<div class="filters">
-    <select id="attStore" onchange="switchAttView()"><option value="">All Stores</option>${getAccessibleStores().map(s=>`<option value="${s.id}">${s.name}</option>`).join('')}</select>
+  c.innerHTML=`<div id="attStoreTabs" style="margin-bottom:10px">${(_storeTabCB.att=function(){switchAttView();},'')+(renderStoreTabs('attStoreTabs','attStore',{showAll:true,allLabel:'All Stores',selected:'',cbKey:'att'}))}</div>
+  <input type="hidden" id="attStore" value="">
+  <div class="filters">
     <input type="date" id="attDate" value="${today}" onchange="switchAttView()">
     <div style="display:inline-flex;border:2px solid var(--border);border-radius:8px;overflow:hidden;margin:0 4px">
       <button id="attViewDaily" class="btn btn-sm" style="border:none;border-radius:0;font-size:12px;padding:6px 14px;${attViewMode==='daily'?'background:var(--primary);color:#fff':'background:#fff;color:var(--text)'}" onclick="attViewMode='daily';switchAttView()"><i class="fas fa-list"></i> Daily</button>
@@ -1890,6 +1892,7 @@ function renderAttendance(c) {
   attAutoRefresh=setInterval(refreshAttendance,30000);
 }
 function switchAttView(){
+  const _tc=$('attStoreTabs');if(_tc)_tc.innerHTML=renderStoreTabs('attStoreTabs','attStore',{showAll:true,allLabel:'All Stores',selected:$('attStore')?.value||'',cbKey:'att'});
   const btn1=$('attViewDaily'),btn2=$('attViewWeekly');
   if(btn1)btn1.style.cssText='border:none;border-radius:0;font-size:12px;padding:6px 14px;'+(attViewMode==='daily'?'background:var(--primary);color:#fff':'background:#fff;color:var(--text)');
   if(btn2)btn2.style.cssText='border:none;border-radius:0;font-size:12px;padding:6px 14px;'+(attViewMode==='weekly'?'background:var(--primary);color:#fff':'background:#fff;color:var(--text)');
@@ -2130,8 +2133,9 @@ function renderPayroll(c) {
   const periods=getPayPeriods();
   const curP=getPayPeriod();
   const rnd=getTimeRounding();
-  c.innerHTML=`<div class="filters" style="flex-wrap:wrap;gap:10px">
-    <select id="payStore" onchange="calcPayroll()"><option value="">All Stores</option>${getAccessibleStores().map(s=>`<option value="${s.id}">${s.name}</option>`).join('')}</select>
+  c.innerHTML=`<div id="payStoreTabs" style="margin-bottom:10px">${(_storeTabCB.pay=function(){calcPayroll();},'')+(renderStoreTabs('payStoreTabs','payStore',{showAll:true,allLabel:'All Stores',selected:'',cbKey:'pay'}))}</div>
+  <input type="hidden" id="payStore" value="">
+  <div class="filters" style="flex-wrap:wrap;gap:10px">
     <select id="payPeriod" onchange="calcPayroll()">${periods.map(p=>`<option value="${p.label}" ${p.label===curP.label?'selected':''}>${p.label}</option>`).join('')}</select>
     <div style="display:flex;align-items:center;gap:6px"><label style="font-size:12px;font-weight:600;white-space:nowrap">Rounding:</label>
     <select id="payRounding" onchange="setTimeRounding(this.value);calcPayroll()" style="padding:6px 10px;border:2px solid var(--border);border-radius:8px;font-size:13px">
@@ -2165,6 +2169,7 @@ function togglePayDetail(){
 }
 function calcPayroll() {
   const storeF=$('payStore')?.value||'';
+  const _tc=$('payStoreTabs');if(_tc)_tc.innerHTML=renderStoreTabs('payStoreTabs','payStore',{showAll:true,allLabel:'All Stores',selected:storeF,cbKey:'pay'});
   const periodLabel=$('payPeriod')?.value||'';
   const period=getPayPeriods().find(p=>p.label===periodLabel)||getPayPeriod();
   const rnd=getTimeRounding();
@@ -2515,8 +2520,7 @@ async function renderStock(c) {
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">
       <h3><i class="fas fa-warehouse" style="color:var(--accent);margin-right:8px"></i>Stock Status</h3>
       <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
-        <select id="ssStore" onchange="onStoreSelect()" style="padding:8px 12px;border:2px solid var(--border);border-radius:8px;font-size:14px;font-weight:600">
-          ${stores.map((s,i)=>`<option value="${s.id}" data-color="${escHtml(s.color||'')}"${i===0?' selected':''}>${escHtml(s.name)}</option>`).join('')}</select>
+        <input type="hidden" id="ssStore" value="${stores[0]?.id||''}">
         <button class="btn btn-sm" onclick="ssSelectDate('${today}')" style="background:#f0f0f0;color:#555" title="Today"><i class="fas fa-calendar-day"></i> Today</button>
         <button class="btn btn-sm" onclick="refreshStockStatus()" style="background:#f0f0f0;color:#555" title="Refresh"><i class="fas fa-sync-alt"></i></button>
         <button class="btn btn-sm" onclick="printStockStatus()" style="background:#f0f0f0;color:#555" title="Print Stock Sheet"><i class="fas fa-print"></i> Stock Sheet</button>
@@ -2525,6 +2529,7 @@ async function renderStock(c) {
         <button class="btn btn-sm" onclick="copyStockToDate()" style="background:#e3f2fd;color:#1565c0" title="Copy current stock to a date"><i class="fas fa-copy"></i> Copy to Date</button>
       </div>
     </div>
+    <div id="ssStoreTabs" style="margin-bottom:12px">${(_storeTabCB.ss=function(){onStoreSelect();},'')+(renderStoreTabs('ssStoreTabs','ssStore',{showAll:false,selected:stores[0]?.id||'',cbKey:'ss'}))}</div>
     <div id="ssStoreBanner" style="margin-bottom:12px"></div>
     <!-- Calendar -->
     <div id="ssCalendar" style="margin-bottom:16px"></div>
@@ -2609,6 +2614,29 @@ function renderStockCalendar(){
 const _storeClr={PAB:'#1b5e20',TBS:'#1565c0',TBR:'#6a1b9a',TBB:'#e65100',TBO:'#00838f'};
 // ★ 지점 코드 배지 헬퍼 — 지점별 고유 색상 적용
 function storeBadge(code,size){const sz=size||14;const bg=_storeClr[code]||'var(--primary)';return`<span style="background:${bg};color:#fff;padding:${sz>12?'6px 10px':'2px 8px'};border-radius:${sz>12?8:6}px;font-weight:${sz>12?800:700};font-size:${sz}px;flex-shrink:0">${escHtml(code)}</span>`;}
+// ★ 공통 지점 탭 메뉴 — 드롭다운 대신 탭 버튼으로 지점 선택
+// containerId: 탭 컨테이너 ID, hiddenId: 숨겨진 값 input ID
+// opts: {showAll:bool, allLabel:string, cbKey:string(콜백 레지스트리 키), selected:string}
+const _storeTabCB={};// 콜백 레지스트리
+function renderStoreTabs(containerId,hiddenId,opts){
+  const o=opts||{};const stores=getAccessibleStores();const sel=o.selected||'';
+  const allLabel=o.allLabel||'All';const cbKey=o.cbKey||containerId;
+  let h='<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">';
+  if(o.showAll!==false){
+    const isAll=!sel;
+    h+='<button onclick="_storeTabPick(\''+cbKey+'\',\''+hiddenId+'\',\'\')" style="padding:6px 14px;border-radius:8px;border:2px solid '+(isAll?'var(--accent)':'var(--border)')+';background:'+(isAll?'var(--accent)':'#fff')+';color:'+(isAll?'#fff':'var(--text)')+';font-size:12px;font-weight:700;cursor:pointer;transition:all .15s">'+allLabel+'</button>';
+  }
+  stores.forEach(function(s){
+    var isSel=sel===s.id;var clr=_storeClr[s.code]||'var(--primary)';
+    h+='<button onclick="_storeTabPick(\''+cbKey+'\',\''+hiddenId+'\',\''+s.id+'\')" style="padding:6px 10px;border-radius:8px;border:2px solid '+(isSel?clr:'var(--border)')+';background:'+(isSel?clr:'#fff')+';color:'+(isSel?'#fff':'var(--text)')+';font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:5px"><span style="background:'+(isSel?'rgba(255,255,255,.3)':clr)+';color:#fff;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:800">'+escHtml(s.code)+'</span>'+escHtml(s.name)+'</button>';
+  });
+  h+='</div>';
+  return h;
+}
+function _storeTabPick(cbKey,hId,val){
+  var h=document.getElementById(hId);if(h)h.value=val;
+  var cb=_storeTabCB[cbKey];if(typeof cb==='function')cb(val);
+}
 // ★ 근본 수정: stockDate_{storeId} 세팅 캐시 — 서버가 확정한 마지막 스톡 날짜
 let _stockDateCache={};
 async function _fetchStockDates(){
@@ -2636,6 +2664,8 @@ function _getLatestValidDate(storeId){
 function onStoreSelect(){
   const sel=$('ssStore');if(!sel)return;
   const storeId=sel.value;
+  // ★ 탭 UI 갱신
+  const tc=$('ssStoreTabs');if(tc)tc.innerHTML=renderStoreTabs('ssStoreTabs','ssStore',{showAll:false,selected:storeId,cbKey:'ss'});
   // Jump to latest valid date for this store
   const latestDate=_getLatestValidDate(storeId);
   ssSelectDate(latestDate);
@@ -2759,8 +2789,10 @@ function printStockStatus(){
     const qty=Number(s.qty)||0;const min=s._min||0;const mc=s._minCond||'lt';
     const oq=s._orderQty||0;
     const ao=s._alwaysOrder===true||s._alwaysOrder==='true';
-    const needOrder=(min>0&&(mc==='lte'?qty<=min:qty<min))||(ao&&oq>0);
-    const orderVal=needOrder?oq:0; // 주문수량은 계산하지 않고 템플릿 설정값 그대로 표시
+    const belowMin4=min>0&&(mc==='lte'?qty<=min:qty<min);
+    const needOrder=belowMin4||(ao&&oq>0);
+    // ★ 주문 수량: (min - 현재재고) + 세팅된 주문수량
+    const orderVal=needOrder?(belowMin4?Math.max(min-qty,0)+oq:(ao&&oq>0?oq:0)):0;
     const nameHtml=needOrder?`<b>${escHtml(s.name)}</b>`:escHtml(s.name);
     const qtyStyle=needOrder?'font-weight:700;color:#c62828':'';
     const aoIcon=ao?'<i class="fas fa-cart-plus" style="color:#1565c0;font-size:10px;margin-left:4px" title="Always Order"></i>':'';
@@ -2901,8 +2933,10 @@ async function renderStockStatusTable(){
     const oq=Number(s.orderQty)||0;
     const ao=s.alwaysOrder===true||s.alwaysOrder==='true';
     const counted=isToday?todayCounted:hasExisting;
-    const needOrder=counted&&((min>0&&(mc2==='lte'?qty<=min:qty<min))||(ao&&oq>0));
-    const orderVal=needOrder?oq:0; // 주문수량은 계산하지 않고 템플릿 설정값 그대로 표시
+    const belowMin3=min>0&&(mc2==='lte'?qty<=min:qty<min);
+    const needOrder=counted&&(belowMin3||(ao&&oq>0));
+    // ★ 주문 수량: (min - 현재재고) + 세팅된 주문수량
+    const orderVal=needOrder?(belowMin3?Math.max(min-qty,0)+oq:(ao&&oq>0?oq:0)):0;
     const status=!counted?'badge-secondary':qty<=0?'badge-danger':qty<=min?'badge-warning':'badge-success';
     const statusText=!counted?'—':qty<=0?'Out':qty<=min?'Low':'OK';
     const photoHtml=s._photo?`<img src="https://drive.google.com/thumbnail?id=${s._photo}&sz=w80" style="width:36px;height:36px;object-fit:cover;border-radius:6px;cursor:pointer" onclick="showPhotoLightbox('${s._photo}','${escHtml(s.name)}')">`:'<span style="font-size:18px;opacity:.3">📦</span>';
@@ -4020,13 +4054,16 @@ function _collectOrderData(storeIds){
       // 주문 필요 여부 판별 (Full List에서 스타일 구분용)
       const belowMin2=min>0&&(mc==='lte'?qty<=min:qty<min);
       const _needOrder=belowMin2||(ao&&oq>0);
+      // ★ 주문 수량 계산: (min - 현재재고) + 세팅된 주문수량
+      // 예: min=10, qty=3, oq=4 → 부족분7 + 여유4 = 11개 주문
+      const _calcOrderQty=belowMin2?Math.max(min-qty,0)+oq:(ao&&oq>0?oq:0);
       // 아이템 중요도: StockTemplate의 priority 값 사용
       const _priority=tpl?tpl.priority:'';
       if(!supGroups[sup1])supGroups[sup1]=[];
       supGroups[sup1].push({
         storeName:store.name||storeId, storeCode:store.code||'',
         itemName:s.name||'', category:s.category||'',
-        unit:s.unit||'', qty, min, orderQty:oq, ordUnit,
+        unit:s.unit||'', qty, min, orderQty:_calcOrderQty, ordUnit,
         sup2, sup3, alwaysOrder:ao, needOrder:_needOrder,
         priority:_priority, sortOrder:tpl?tpl.sortOrder:9999
       });
@@ -4232,7 +4269,7 @@ th{font-size:9px;color:#666;font-weight:600}
 <div style="margin-bottom:12px">${selBadges}</div>
 <div class="info">Date: <b>${today}</b> &nbsp; Suppliers: <b>${supKeys.length}</b> &nbsp; Total Items: <b>${totalItems}</b></div>
 ${blocks}
-<p style="text-align:center;font-size:8px;color:#999;margin-top:20px">TBMS Ver5.0.5</p>
+<p style="text-align:center;font-size:8px;color:#999;margin-top:20px">TBMS Ver5.0.7</p>
 </body></html>`);
   w.document.close();
 }
@@ -4555,10 +4592,9 @@ function renderMessages(c){
   c.innerHTML=`<div class="card">
     <div class="card-header"><h3><i class="fas fa-envelope" style="color:var(--accent);margin-right:8px"></i>Staff Messages</h3>
       <button class="btn btn-primary btn-sm" onclick="openMessageModal()"><i class="fas fa-plus"></i> New Message</button></div>
+    <div id="msgStoreTabs" style="margin-bottom:10px">${(_storeTabCB.msg=function(){renderMessageTable();},'')+(renderStoreTabs('msgStoreTabs','msgFilterStore',{showAll:true,allLabel:'All Stores',selected:'',cbKey:'msg'}))}</div>
+    <input type="hidden" id="msgFilterStore" value="">
     <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap">
-      <select id="msgFilterStore" onchange="renderMessageTable()" style="padding:8px 12px;border:2px solid var(--border);border-radius:8px">
-        <option value="">All Stores</option>${stores.map(s=>`<option value="${s.id}">${escHtml(s.code)} — ${escHtml(s.name)}</option>`).join('')}
-      </select>
       <select id="msgFilterType" onchange="renderMessageTable()" style="padding:8px 12px;border:2px solid var(--border);border-radius:8px">
         <option value="">All Types</option><option value="checkin">Check-In</option><option value="checkout">Check-Out</option>
       </select>
@@ -5470,12 +5506,10 @@ function renderSalesAnalysis(c) {
     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:16px">
       <h3><i class="fas fa-magnifying-glass-chart" style="color:var(--accent);margin-right:8px"></i>Sales Analysis</h3>
     </div>
+    <div id="saStoreTabs" style="margin-bottom:10px">${(_storeTabCB.sa=function(v){var _s=D.Stores.find(function(x){return x.id===v;});$('saStore').value=_s?_s.code:'';},'')+(renderStoreTabs('saStoreTabs','_saStoreH',{showAll:true,allLabel:'All Branches',selected:'',cbKey:'sa'}))}</div>
+    <input type="hidden" id="_saStoreH" value="">
+    <input type="hidden" id="saStore" value="">
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:12px">
-      <div><label style="font-size:11px;color:var(--text-light)">Branch</label><br>
-        <select id="saStore" style="padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:13px">
-          <option value="">All Branches</option>${storeOpts}
-        </select>
-      </div>
       <div><label style="font-size:11px;color:var(--text-light)">From</label><br>
         <input type="date" id="saFrom" value="${today}" style="padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:13px">
       </div>
@@ -5700,7 +5734,7 @@ ${d.hourKeys.length>0 ? `<div class="sec"><div class="sec-t">Hourly Breakdown</d
 
 <div class="sec"><div class="sec-t">Item Sales (${d.totalQty} items)</div><table><thead><tr><th>Item</th><th style="text-align:center">Qty</th><th style="text-align:right">Revenue</th><th style="text-align:right">%</th></tr></thead><tbody>${itemRows}</tbody></table></div>
 
-<div class="footer">TBMS Ver5.0.5 &copy; ${new Date().getFullYear()} The Bap. All rights reserved.</div>
+<div class="footer">TBMS Ver5.0.7 &copy; ${new Date().getFullYear()} The Bap. All rights reserved.</div>
 </body></html>`;
 
   const w = window.open('','_blank','width=800,height=1000');
@@ -6079,7 +6113,7 @@ function exportAllWord(){
       ['submittedBy / submittedAt','Who submitted and when']
     ]);
 
-    html+=`<hr style="margin:16px 0"><p style="text-align:center;font-size:8pt;color:#999;font-style:italic">TBMS Ver5.0.5</p>`;
+    html+=`<hr style="margin:16px 0"><p style="text-align:center;font-size:8pt;color:#999;font-style:italic">TBMS Ver5.0.7</p>`;
     html+=`</body></html>`;
 
     const blob=new Blob(['\ufeff'+html],{type:'application/msword'});
@@ -6652,10 +6686,10 @@ async function renderDiaryConfig(c){
   let selStore=_userStore?_userStore.code:(stores[0]?.code||'');
   const selStoreName=(stores.find(s=>s.code===selStore)||{}).name||selStore;
   c.innerHTML=`
+    <input type="hidden" id="dcStoreFilter" value="${selStore}">
+    <div id="dcStoreTabs" style="margin-bottom:10px">${(_storeTabCB.dc=function(v){var _s=D.Stores.find(function(x){return x.id===v;});$('dcStoreFilter').value=_s?_s.code:'';renderDiaryConfigBody();_dcUpdateStoreName();},'')+(renderStoreTabs('dcStoreTabs','_dcStoreH',{showAll:false,selected:stores.find(s=>s.code===selStore)?.id||stores[0]?.id||'',cbKey:'dc'}))}</div>
+    <input type="hidden" id="_dcStoreH" value="${stores.find(s=>s.code===selStore)?.id||stores[0]?.id||''}">
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap">
-      <select id="dcStoreFilter" onchange="renderDiaryConfigBody();_dcUpdateStoreName()" style="padding:8px 12px;border:2px solid #ddd;border-radius:8px;font-size:14px;font-family:inherit">
-        ${stores.map(s=>`<option value="${s.code}" ${s.code===selStore?'selected':''}>${s.name}</option>`).join('')}
-      </select>
       <span id="dcStoreName" style="font-size:20px;font-weight:800;color:var(--primary)">${escHtml(selStoreName)}</span>
     </div>
     <div id="dcBody"></div>`;
@@ -6774,10 +6808,10 @@ async function renderDiaryEntries(c){
   const selStore=_userStore2?_userStore2.code:(stores[0]?.code||'');
   const selStoreName=(stores.find(s=>s.code===selStore)||{}).name||selStore;
   c.innerHTML=`
+    <input type="hidden" id="deStoreFilter" value="${selStore}">
+    <div id="deStoreTabs" style="margin-bottom:6px">${(_storeTabCB.de=function(v){var _s=D.Stores.find(function(x){return x.id===v;});$('deStoreFilter').value=_s?_s.code:'';_deRefresh();_deUpdateStoreName();},'')+(renderStoreTabs('deStoreTabs','_deStoreH',{showAll:false,selected:stores.find(s=>s.code===selStore)?.id||stores[0]?.id||'',cbKey:'de'}))}</div>
+    <input type="hidden" id="_deStoreH" value="${stores.find(s=>s.code===selStore)?.id||stores[0]?.id||''}">
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px;flex-wrap:wrap">
-      <select id="deStoreFilter" onchange="_deRefresh();_deUpdateStoreName()" style="padding:8px 12px;border:2px solid #ddd;border-radius:8px;font-size:14px;font-family:inherit">
-        ${stores.map(s=>`<option value="${s.code}" ${s.code===selStore?'selected':''}>${s.name}</option>`).join('')}
-      </select>
       <span id="deStoreName" style="font-size:20px;font-weight:800;color:var(--primary)">${escHtml(selStoreName)}</span>
       <button class="btn btn-primary btn-sm" onclick="addDiaryEntry()" style="margin-left:auto"><i class="fas fa-plus"></i> Add Entry</button>
     </div>

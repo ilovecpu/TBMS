@@ -2791,8 +2791,8 @@ function printStockStatus(){
     const ao=s._alwaysOrder===true||s._alwaysOrder==='true';
     const belowMin4=min>0&&(mc==='lte'?qty<=min:qty<min);
     const needOrder=belowMin4||(ao&&oq>0);
-    // ★ 주문 수량: (min - 현재재고) + 세팅된 주문수량
-    const orderVal=needOrder?(belowMin4?Math.max(min-qty,0)+oq:(ao&&oq>0?oq:0)):0;
+    // ★ 주문 수량: 미니멈 이하이면 세팅된 주문수량(oq) 그대로 주문
+    const orderVal=needOrder?(belowMin4?oq:(ao&&oq>0?oq:0)):0;
     const nameHtml=needOrder?`<b>${escHtml(s.name)}</b>`:escHtml(s.name);
     const qtyStyle=needOrder?'font-weight:700;color:#c62828':'';
     const aoIcon=ao?'<i class="fas fa-cart-plus" style="color:#1565c0;font-size:10px;margin-left:4px" title="Always Order"></i>':'';
@@ -2935,8 +2935,8 @@ async function renderStockStatusTable(){
     const counted=isToday?todayCounted:hasExisting;
     const belowMin3=min>0&&(mc2==='lte'?qty<=min:qty<min);
     const needOrder=counted&&(belowMin3||(ao&&oq>0));
-    // ★ 주문 수량: (min - 현재재고) + 세팅된 주문수량
-    const orderVal=needOrder?(belowMin3?Math.max(min-qty,0)+oq:(ao&&oq>0?oq:0)):0;
+    // ★ 주문 수량: 미니멈 이하이면 세팅된 주문수량(oq) 그대로 주문
+    const orderVal=needOrder?(belowMin3?oq:(ao&&oq>0?oq:0)):0;
     const status=!counted?'badge-secondary':qty<=0?'badge-danger':qty<=min?'badge-warning':'badge-success';
     const statusText=!counted?'—':qty<=0?'Out':qty<=min?'Low':'OK';
     const photoHtml=s._photo?`<img src="https://drive.google.com/thumbnail?id=${s._photo}&sz=w80" style="width:36px;height:36px;object-fit:cover;border-radius:6px;cursor:pointer" onclick="showPhotoLightbox('${s._photo}','${escHtml(s.name)}')">`:'<span style="font-size:18px;opacity:.3">📦</span>';
@@ -3689,6 +3689,7 @@ async function renderOrders(c) {
       <div style="display:flex;gap:8px;align-items:center">
         <button id="olFullListBtn" class="btn btn-sm" onclick="toggleFullListAll()" style="background:#f0f0f0;color:#555;border:2px solid var(--border)"><i class="fas fa-list"></i> Full List</button>
         <button class="btn btn-sm" onclick="printOrderList()" style="background:#f0f0f0;color:#555"><i class="fas fa-print"></i> Print</button>
+        <button class="btn btn-sm" onclick="printOrderList(true)" style="background:#f0f0f0;color:#555"><i class="fas fa-print"></i> Full Print</button>
         <button class="btn btn-sm" onclick="exportOrderListCSV()" style="background:#1a7340;color:#fff"><i class="fas fa-file-csv"></i> CSV</button>
       </div>
     </div>
@@ -4054,9 +4055,8 @@ function _collectOrderData(storeIds){
       // 주문 필요 여부 판별 (Full List에서 스타일 구분용)
       const belowMin2=min>0&&(mc==='lte'?qty<=min:qty<min);
       const _needOrder=belowMin2||(ao&&oq>0);
-      // ★ 주문 수량 계산: (min - 현재재고) + 세팅된 주문수량
-      // 예: min=10, qty=3, oq=4 → 부족분7 + 여유4 = 11개 주문
-      const _calcOrderQty=belowMin2?Math.max(min-qty,0)+oq:(ao&&oq>0?oq:0);
+      // ★ 주문 수량: 미니멈 이하이면 세팅된 주문수량(oq) 그대로 주문
+      const _calcOrderQty=belowMin2?oq:(ao&&oq>0?oq:0);
       // 아이템 중요도: StockTemplate의 priority 값 사용
       const _priority=tpl?tpl.priority:'';
       if(!supGroups[sup1])supGroups[sup1]=[];
@@ -4210,13 +4210,13 @@ function exportOrderListCSV(){
   toast('Order List CSV exported','success');
 }
 // 인쇄
-function printOrderList(){
+function printOrderList(fullList){
   const checkedIds=_getCheckedStoreIds();
   const {supGroups}=_collectOrderData(checkedIds);
-  // 인쇄는 주문 필요 아이템만 — totalItems 재계산
+  // fullList=true이면 전체, 아니면 주문 필요 아이템만
   let printTotal=0;
-  Object.values(supGroups).forEach(rows=>rows.forEach(r=>{if(r.needOrder)printTotal++;}));
-  if(!printTotal){toast('No items to order','info');return;}
+  Object.values(supGroups).forEach(rows=>rows.forEach(r=>{if(fullList||r.needOrder)printTotal++;}));
+  if(!printTotal){toast(fullList?'No items found':'No items to order','info');return;}
   const totalItems=printTotal;
   const catIdx=getSortedCategories();
   const supKeys=Object.keys(supGroups).sort((a,b)=>{if(a==='Unassigned')return 1;if(b==='Unassigned')return -1;return a.localeCompare(b);});
@@ -4233,8 +4233,8 @@ function printOrderList(){
     :selStores.map(st=>{const c=_pStClrH[st.code]||'#555';return`<span style="display:inline-block;background:${c};color:#fff;padding:6px 14px;border-radius:6px;font-size:16px;font-weight:800;letter-spacing:1px;margin-right:6px">${escHtml(st.name)}</span>`;}).join('');
   let blocks='',_pIdx2=0;
   supKeys.forEach((supKey,si)=>{
-    // 인쇄는 주문 필요 아이템만
-    const rows=supGroups[supKey].filter(r=>r.needOrder);
+    // fullList이면 전체 아이템, 아니면 주문 필요 아이템만
+    const rows=fullList?supGroups[supKey]:supGroups[supKey].filter(r=>r.needOrder);
     if(!rows.length)return;
     rows.sort((a,b)=>{const si=(a.storeCode||a.storeName).localeCompare(b.storeCode||b.storeName);if(si!==0)return si;const ci=catIdx.indexOf(a.category)-catIdx.indexOf(b.category);return ci!==0?ci:(a.sortOrder||0)-(b.sortOrder||0);});
     const fixClr2=_supFixedClrs2[supKey.toLowerCase()];
@@ -4249,7 +4249,7 @@ function printOrderList(){
       </div>
       <table style="width:100%;border-collapse:collapse;font-size:9px">
         <tr style="background:#f5f5f5"><th style="padding:3px 6px;text-align:left">Store</th><th style="padding:3px 6px;text-align:left">Item</th><th style="padding:3px 4px;text-align:center">QTY</th><th style="padding:3px 4px;text-align:center">Min</th><th style="padding:3px 4px;text-align:center">Unit</th><th style="padding:3px 4px;text-align:center;color:#c62828;font-weight:700">Order</th><th style="padding:3px 4px;text-align:center">Pri</th><th style="padding:3px 6px">Sup2</th><th style="padding:3px 6px">Sup3</th></tr>
-        ${rows.map(r=>{const _sc=r.storeCode||r.storeName;return`<tr style="border-bottom:1px solid #eee${r.priority==='high'?';border-left:3px solid #c62828':''}"><td style="padding:3px 6px;font-weight:600;color:#aaa;text-align:center">${escHtml(_sc)}</td><td style="padding:3px 6px">${escHtml(r.itemName)}</td><td style="padding:3px 4px;text-align:center;${r.qty<=0?'color:#c62828;font-weight:700':''}">${r.qty}</td><td style="padding:3px 4px;text-align:center">${r.min}</td><td style="padding:3px 4px;text-align:center;color:#666">${escHtml(r.unit)}</td><td style="padding:3px 4px;text-align:center;font-weight:700;color:#c62828;white-space:nowrap">${r.orderQty} <span style="color:#1565c0;font-weight:600">${escHtml(r.ordUnit)}</span></td><td style="padding:3px 4px;text-align:center">${r.priority==='high'?'<span style="color:#c62828;font-weight:700">🔥</span>':''}</td><td style="padding:3px 6px;color:#666">${escHtml(r.sup2||'-')}</td><td style="padding:3px 6px;color:#666">${escHtml(r.sup3||'-')}</td></tr>`;}).join('')}
+        ${rows.map(r=>{const _sc=r.storeCode||r.storeName;const _noOrd=!r.needOrder;const _rowStyle=_noOrd?'border-bottom:1px solid #eee;color:#aaa':'border-bottom:1px solid #eee'+(r.priority==='high'?';border-left:3px solid #c62828':'');const _orderCell=r.needOrder?`<span style="font-weight:700;color:#c62828">${r.orderQty}</span> <span style="color:#1565c0;font-weight:600">${escHtml(r.ordUnit)}</span>`:`<span style="color:#ccc">—</span>`;return`<tr style="${_rowStyle}"><td style="padding:3px 6px;font-weight:600;color:#aaa;text-align:center">${escHtml(_sc)}</td><td style="padding:3px 6px${_noOrd?';color:#aaa':''}">${escHtml(r.itemName)}</td><td style="padding:3px 4px;text-align:center;${r.needOrder&&r.qty<=0?'color:#c62828;font-weight:700':(_noOrd?'color:#aaa':'')}">${r.qty}</td><td style="padding:3px 4px;text-align:center">${r.min}</td><td style="padding:3px 4px;text-align:center;color:#666">${escHtml(r.unit)}</td><td style="padding:3px 4px;text-align:center;white-space:nowrap">${_orderCell}</td><td style="padding:3px 4px;text-align:center">${r.priority==='high'?'<span style="color:#c62828;font-weight:700">🔥</span>':''}</td><td style="padding:3px 6px;color:#666">${escHtml(r.sup2||'-')}</td><td style="padding:3px 6px;color:#666">${escHtml(r.sup3||'-')}</td></tr>`;}).join('')}
       </table>
     </div>`;
   });
@@ -4265,7 +4265,7 @@ table{border-collapse:collapse}th,td{border:none}
 th{font-size:9px;color:#666;font-weight:600}
 </style></head><body>
 <div class="no-print" style="margin-bottom:16px"><button onclick="window.print()" style="padding:8px 24px;font-size:13px;font-weight:700;background:#222;color:#fff;border:none;border-radius:8px;cursor:pointer">PRINT</button></div>
-<h1><i class="fas fa-clipboard-list"></i> The Bap — Order List</h1>
+<h1><i class="fas fa-clipboard-list"></i> The Bap — ${fullList?'Full Stock List':'Order List'}</h1>
 <div style="margin-bottom:12px">${selBadges}</div>
 <div class="info">Date: <b>${today}</b> &nbsp; Suppliers: <b>${supKeys.length}</b> &nbsp; Total Items: <b>${totalItems}</b></div>
 ${blocks}

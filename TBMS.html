@@ -237,7 +237,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
   <div class="login-logo">
     <div class="logo-icon"><i class="fas fa-bowl-food"></i></div>
     <h1>TBMS</h1>
-    <p>The Bap Management System <span style="opacity:.5;font-size:11px">Ver5.0.8</span></p>
+    <p>The Bap Management System <span style="opacity:.5;font-size:11px">Ver5.1.2</span></p>
   </div>
   <div class="form-group"><label>Username</label><input id="loginUser" placeholder="Enter username"></div>
   <div class="form-group"><label>Password</label><input id="loginPass" type="password" placeholder="Enter password"></div>
@@ -254,7 +254,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
 <!-- MAIN APP -->
 <div id="mainApp" class="hidden">
   <div class="sidebar" id="sidebar">
-    <div class="sidebar-header"><h2>TBMS <span style="font-size:12px;font-weight:400;opacity:.6">Ver5.0.8</span></h2><p>The Bap Management System</p></div>
+    <div class="sidebar-header"><h2>TBMS <span style="font-size:12px;font-weight:400;opacity:.6">Ver5.1.2</span></h2><p>The Bap Management System</p></div>
     <div class="sidebar-menu">
       <div class="menu-item active" data-page="dashboard" onclick="navigate('dashboard')"><i class="fas fa-home"></i>Dashboard</div>
       <div class="menu-group">
@@ -317,7 +317,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
   <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
   <div class="main-content">
     <div class="header">
-      <div class="header-left"><button class="menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button><h2 id="pageTitle" style="font-size:18px">Dashboard</h2><span style="font-size:11px;color:var(--text-light);margin-left:8px;font-weight:400;opacity:.7">Ver5.0.8</span></div>
+      <div class="header-left"><button class="menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button><h2 id="pageTitle" style="font-size:18px">Dashboard</h2><span style="font-size:11px;color:var(--text-light);margin-left:8px;font-weight:400;opacity:.7">Ver5.1.2</span></div>
       <div class="header-right"><span id="headerDate"></span><span class="sync-status"><span class="dot offline" id="syncDot"></span><span id="syncText">Local</span></span><button class="btn btn-sm btn-outline" onclick="doLogout()"><i class="fas fa-sign-out-alt"></i> Logout</button></div>
     </div>
     <div class="page-content" id="pageContent"></div>
@@ -700,6 +700,8 @@ async function loadAllData() {
         Promise.all([
           API.get('getSetting',{key:'catOrder'}).then(r=>{if(r&&r.value){LS.set('catOrder',r.value);console.log('[TBMS] catOrder loaded');}}).catch(()=>{}),
           API.get('getSetting',{key:'timeRounding'}).then(r=>{if(r&&r.value!==null){LS.set('timeRounding',r.value);console.log('[TBMS] timeRounding loaded');}}).catch(()=>{}),
+          API.get('getSetting',{key:'timeRoundingIn'}).then(r=>{if(r&&r.value!==null){LS.set('timeRoundingIn',r.value);console.log('[TBMS] timeRoundingIn loaded');}}).catch(()=>{}),
+          API.get('getSetting',{key:'timeRoundingOut'}).then(r=>{if(r&&r.value!==null){LS.set('timeRoundingOut',r.value);console.log('[TBMS] timeRoundingOut loaded');}}).catch(()=>{}),
           loadKBData().catch(e=>console.log('KB load deferred:',e))
         ]);
         hideLoading(); updateSyncStatus('online'); return true;
@@ -2115,35 +2117,43 @@ async function saveManualAtt(){
 // ==================== PAYROLL ====================
 let payrollData=[];
 function getTimeRounding(){return Number(LS.get('timeRounding'))||0;}
-function setTimeRounding(v){LS.set('timeRounding',v);if(API.mode==='cloud')API.post({action:'saveSetting',key:'timeRounding',value:v});}
-function roundTime(timeStr,roundMin){
-  if(!timeStr||!roundMin)return timeStr;
+function getTimeRoundingIn(){const v=LS.get('timeRoundingIn');return v!==null&&v!==undefined?Number(v):getTimeRounding();}
+function getTimeRoundingOut(){const v=LS.get('timeRoundingOut');return v!==null&&v!==undefined?Number(v):getTimeRounding();}
+function setTimeRoundingIn(v){LS.set('timeRoundingIn',v);if(API.mode==='cloud')API.post({action:'saveSetting',key:'timeRoundingIn',value:v});}
+function setTimeRoundingOut(v){LS.set('timeRoundingOut',v);if(API.mode==='cloud')API.post({action:'saveSetting',key:'timeRoundingOut',value:v});}
+// Grace: Clock In — 내림(floor) 방식 (직원 유리, 늦은 분 깎아줌)
+// 예: 10:03 → 10:00, 10:07 → 10:05, 9:50 → 9:50 (경계값 그대로)
+function graceClockIn(timeStr,graceMin){
+  if(!timeStr||!graceMin)return timeStr;
   const[h,m]=timeStr.split(':').map(Number);
-  const rounded=Math.floor(m/roundMin)*roundMin;
+  const rounded=Math.floor(m/graceMin)*graceMin;
   return String(h).padStart(2,'0')+':'+String(rounded).padStart(2,'0');
 }
-function roundTimeUp(timeStr,roundMin){
-  if(!timeStr||!roundMin)return timeStr;
+// Grace: Clock Out — 올림(ceil) 방식 (직원 유리, 퇴근 분 올려줌)
+// 예: 8:27 → 8:30, 8:22 → 8:25, 8:35 → 8:35 (경계값 그대로)
+function graceClockOut(timeStr,graceMin){
+  if(!timeStr||!graceMin)return timeStr;
   const[h,m]=timeStr.split(':').map(Number);
-  const rounded=Math.ceil(m/roundMin)*roundMin;
+  const rounded=Math.ceil(m/graceMin)*graceMin;
   if(rounded>=60)return String(h+1).padStart(2,'0')+':00';
   return String(h).padStart(2,'0')+':'+String(rounded).padStart(2,'0');
 }
 function renderPayroll(c) {
   const periods=getPayPeriods();
   const curP=getPayPeriod();
-  const rnd=getTimeRounding();
+  const rndIn=getTimeRoundingIn(),rndOut=getTimeRoundingOut();
+  const _rOpts=[0,5,10,15,20,30];
   c.innerHTML=`<div id="payStoreTabs" style="margin-bottom:10px">${(_storeTabCB.pay=function(){calcPayroll();},'')+(renderStoreTabs('payStoreTabs','payStore',{showAll:true,allLabel:'All Stores',selected:'',cbKey:'pay'}))}</div>
   <input type="hidden" id="payStore" value="">
   <div class="filters" style="flex-wrap:wrap;gap:10px">
     <select id="payPeriod" onchange="calcPayroll()">${periods.map(p=>`<option value="${p.label}" ${p.label===curP.label?'selected':''}>${p.label}</option>`).join('')}</select>
-    <div style="display:flex;align-items:center;gap:6px"><label style="font-size:12px;font-weight:600;white-space:nowrap">Rounding:</label>
-    <select id="payRounding" onchange="setTimeRounding(this.value);calcPayroll()" style="padding:6px 10px;border:2px solid var(--border);border-radius:8px;font-size:13px">
-      <option value="0" ${rnd===0?'selected':''}>None (0 min)</option>
-      <option value="5" ${rnd===5?'selected':''}>5 min</option>
-      <option value="10" ${rnd===10?'selected':''}>10 min</option>
-      <option value="15" ${rnd===15?'selected':''}>15 min</option>
-      <option value="20" ${rnd===20?'selected':''}>20 min</option>
+    <div style="display:flex;align-items:center;gap:6px"><label style="font-size:12px;font-weight:600;white-space:nowrap">Grace In:</label>
+    <select id="payRoundingIn" onchange="setTimeRoundingIn(this.value);calcPayroll()" style="padding:6px 10px;border:2px solid var(--border);border-radius:8px;font-size:13px">
+      ${_rOpts.map(v=>`<option value="${v}" ${rndIn===v?'selected':''}>${v?v+' min':'None'}</option>`).join('')}
+    </select></div>
+    <div style="display:flex;align-items:center;gap:6px"><label style="font-size:12px;font-weight:600;white-space:nowrap">Out:</label>
+    <select id="payRoundingOut" onchange="setTimeRoundingOut(this.value);calcPayroll()" style="padding:6px 10px;border:2px solid var(--border);border-radius:8px;font-size:13px">
+      ${_rOpts.map(v=>`<option value="${v}" ${rndOut===v?'selected':''}>${v?v+' min':'None'}</option>`).join('')}
     </select></div>
     <div style="display:inline-flex;border:2px solid var(--border);border-radius:8px;overflow:hidden;margin:0 4px">
       <button id="payViewSummary" class="btn btn-sm" style="border:none;border-radius:0;font-size:12px;padding:6px 14px;background:var(--primary);color:#fff" onclick="payViewMode='summary';renderPayView()"><i class="fas fa-table"></i> Summary</button>
@@ -2172,7 +2182,7 @@ function calcPayroll() {
   const _tc=$('payStoreTabs');if(_tc)_tc.innerHTML=renderStoreTabs('payStoreTabs','payStore',{showAll:true,allLabel:'All Stores',selected:storeF,cbKey:'pay'});
   const periodLabel=$('payPeriod')?.value||'';
   const period=getPayPeriods().find(p=>p.label===periodLabel)||getPayPeriod();
-  const rnd=getTimeRounding();
+  const rndIn=getTimeRoundingIn(),rndOut=getTimeRoundingOut();
   let staff=D.Staff.filter(s=>s.active!==false&&hasStoreAccess(s.storeId));
   if(storeF)staff=staff.filter(s=>String(s.storeId)===storeF);
   payrollData=[];let grandTotal=0;
@@ -2182,8 +2192,8 @@ function calcPayroll() {
     att.forEach(a=>{
       const t1=parseTime(a.clockIn),t2=parseTime(a.clockOut);
       if(t1&&t2){
-        const rIn=rnd?roundTimeUp(t1,rnd):t1;
-        const rOut=rnd?roundTime(t2,rnd):t2;
+        const rIn=rndIn?graceClockIn(t1,rndIn):t1;
+        const rOut=rndOut?graceClockOut(t2,rndOut):t2;
         const[h1,m1]=rIn.split(':').map(Number);const[h2,m2]=rOut.split(':').map(Number);
         const mins=h2*60+m2-h1*60-m1;
         if(mins>0)totalMins+=mins;
@@ -2194,11 +2204,11 @@ function calcPayroll() {
     payrollData.push({id:s.id,name:s.name,nickName:s.nickName,store:store?store.name:s.storeId,storeId:s.storeId,days:att.length,hrs:hrs.toFixed(1),rate:Number(s.rate),pay:pay.toFixed(2),att});
   });
   if(payViewMode==='weekly'){
-    renderPayrollWeekly(period,rnd,grandTotal);
+    renderPayrollWeekly(period,{rndIn,rndOut},grandTotal);
   }else{
     $('payMainContent').innerHTML=`<div class="card"><div class="table-wrap"><table><thead><tr><th>Staff</th><th>Store</th><th>Days</th><th>Total Hours</th>${showRate?'<th>Rate</th><th>Total Pay</th>':''}</tr></thead><tbody id="payBody"></tbody><tfoot id="payFoot"></tfoot></table></div></div>
-    <div id="payDetailWrap" class="hidden"><div class="card"><h3 style="margin-bottom:12px"><i class="fas fa-clock"></i> Detailed Attendance (with rounding)</h3><div class="table-wrap"><table><thead><tr><th>Date</th><th>Staff</th><th>Store</th><th>Clock In</th><th>Rounded In</th><th>Clock Out</th><th>Rounded Out</th><th>Raw Hrs</th><th>Paid Hrs</th></tr></thead><tbody id="payDetailBody"></tbody></table></div></div></div>
-    <div id="staffDetailWrap" class="hidden" data-staff-id=""><div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><h3 style="margin:0"><i class="fas fa-user-clock"></i> <span id="staffDetailName"></span> — Hours Detail</h3><button class="btn btn-sm" onclick="$('staffDetailWrap').classList.add('hidden');$('staffDetailWrap').dataset.staffId=''" style="background:var(--border);color:var(--text)"><i class="fas fa-times"></i> Close</button></div><div id="staffDetailSummary" style="margin-bottom:10px"></div><div class="table-wrap"><table><thead><tr><th>Date</th><th>Store</th><th>Clock In</th><th>Rounded In</th><th>Clock Out</th><th>Rounded Out</th><th>Raw Hrs</th><th>Paid Hrs</th></tr></thead><tbody id="staffDetailBody"></tbody></table></div></div></div>`;
+    <div id="payDetailWrap" class="hidden"><div class="card"><h3 style="margin-bottom:12px"><i class="fas fa-clock"></i> Detailed Attendance (with grace)</h3><div class="table-wrap"><table><thead><tr><th>Date</th><th>Staff</th><th>Store</th><th>Clock In</th><th>Grace In</th><th>Clock Out</th><th>Grace Out</th><th>Raw Hrs</th><th>Paid Hrs</th></tr></thead><tbody id="payDetailBody"></tbody></table></div></div></div>
+    <div id="staffDetailWrap" class="hidden" data-staff-id=""><div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><h3 style="margin:0"><i class="fas fa-user-clock"></i> <span id="staffDetailName"></span> — Hours Detail</h3><button class="btn btn-sm" onclick="$('staffDetailWrap').classList.add('hidden');$('staffDetailWrap').dataset.staffId=''" style="background:var(--border);color:var(--text)"><i class="fas fa-times"></i> Close</button></div><div id="staffDetailSummary" style="margin-bottom:10px"></div><div class="table-wrap"><table><thead><tr><th>Date</th><th>Store</th><th>Clock In</th><th>Grace In</th><th>Clock Out</th><th>Grace Out</th><th>Raw Hrs</th><th>Paid Hrs</th></tr></thead><tbody id="staffDetailBody"></tbody></table></div></div></div>`;
     $('payBody').innerHTML=payrollData.map(r=>`<tr>
       <td><a href="#" onclick="showStaffPayDetail('${r.id}');return false" style="color:var(--accent);font-weight:600;text-decoration:underline;cursor:pointer">${escHtml(r.nickName||r.name)}</a></td>
       <td>${escHtml(r.store)}</td><td>${r.days}</td><td>${r.hrs}h</td>${showRate?`<td>£${r.rate.toFixed(2)}</td><td><strong>£${r.pay}</strong></td>`:''}</tr>`).join('');
@@ -2210,7 +2220,8 @@ function calcPayroll() {
   }
 }
 let payWeekIdx=0;
-function renderPayrollWeekly(period,rnd,grandTotal){
+function renderPayrollWeekly(period,_rndObj,grandTotal){
+  const rndIn=_rndObj.rndIn||0,rndOut=_rndObj.rndOut||0;
   // Build all weeks in the period
   const weeks=[];
   let cur=new Date(period.start);
@@ -2242,8 +2253,8 @@ function renderPayrollWeekly(period,rnd,grandTotal){
       if(!rec)return`<td style="text-align:center;color:#ddd;font-size:11px;padding:3px 2px">—</td>`;
       hasData=true;
       const t1=parseTime(rec.clockIn),t2=parseTime(rec.clockOut);
-      const rIn=rnd&&t1?roundTimeUp(t1,rnd):t1;
-      const rOut=rnd&&t2?roundTime(t2,rnd):t2;
+      const rIn=rndIn&&t1?graceClockIn(t1,rndIn):t1;
+      const rOut=rndOut&&t2?graceClockOut(t2,rndOut):t2;
       let hrs=0;
       if(rIn&&rOut){const[h1,m1]=rIn.split(':').map(Number);const[h2,m2]=rOut.split(':').map(Number);hrs=Math.max(0,(h2*60+m2-h1*60-m1)/60);}
       weekHrs+=hrs;
@@ -2286,33 +2297,40 @@ function renderPayrollWeekly(period,rnd,grandTotal){
       </div>
       <div style="padding:8px 16px;background:#e8f5e9;border-radius:10px;font-size:13px"><strong>${payrollData.length}</strong> staff</div>
       <div style="padding:8px 16px;background:#e3f2fd;border-radius:10px;font-size:13px">Period: <strong>${payrollData.reduce((s,r)=>s+parseFloat(r.hrs),0).toFixed(1)}h</strong>${showRate?' · £'+grandTotal.toFixed(2):''}</div>
-      ${rnd?`<div style="padding:8px 16px;background:#fff3e0;border-radius:10px;font-size:13px">Rounding: <strong>${rnd}min</strong></div>`:''}
+      ${rndIn||rndOut?`<div style="padding:8px 16px;background:#fff3e0;border-radius:10px;font-size:13px">Grace: <strong>In ${rndIn}min / Out ${rndOut}min</strong></div>`:''}
     </div>
     <div class="card"><div class="table-wrap"><table style="font-size:12px"><thead><tr>${weekHeaders}<th style="text-align:center">Hrs</th>${showRate?'<th style="text-align:right">Pay</th>':''}<th>Staff</th><th>Store</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
 }
 function renderPayDetail(){
-  const rnd=getTimeRounding();
+  const rndIn=getTimeRoundingIn(),rndOut=getTimeRoundingOut();
+  const graceThreshold=3; // 3분 이상 grace 조정시 하이라이트
   let html='';
   payrollData.forEach(s=>{
     s.att.forEach(a=>{
       const t1=parseTime(a.clockIn),t2=parseTime(a.clockOut);
       if(!t1||!t2)return;
-      const rIn=rnd?roundTimeUp(t1,rnd):t1;
-      const rOut=rnd?roundTime(t2,rnd):t2;
+      const rIn=rndIn?graceClockIn(t1,rndIn):t1;
+      const rOut=rndOut?graceClockOut(t2,rndOut):t2;
       const[h1,m1]=t1.split(':').map(Number);const[h2,m2]=t2.split(':').map(Number);
       const rawMins=h2*60+m2-h1*60-m1;
       const[rh1,rm1]=rIn.split(':').map(Number);const[rh2,rm2]=rOut.split(':').map(Number);
       const paidMins=rh2*60+rm2-rh1*60-rm1;
+      const graceDiff=paidMins-rawMins;
       const store=D.Stores.find(x=>String(x.id)===String(a.storeId));
       const changed=t1!==rIn||t2!==rOut;
-      html+=`<tr${changed?' style="background:#fff8e1"':''}>
+      const bigGrace=graceDiff>=graceThreshold;
+      const inDiff=h1*60+m1-(rh1*60+rm1);
+      const outDiff=(rh2*60+rm2)-(h2*60+m2);
+      const inFlag=inDiff>=graceThreshold?`<span style="color:#c62828;font-weight:700;font-size:10px;margin-left:3px">-${inDiff}m</span>`:'';
+      const outFlag=outDiff>=graceThreshold?`<span style="color:#c62828;font-weight:700;font-size:10px;margin-left:3px">+${outDiff}m</span>`:'';
+      html+=`<tr style="${bigGrace?'background:#fce4ec':(changed?'background:#fff8e1':'')}">
         <td>${a.date}</td><td>${escHtml(s.name)}</td><td>${store?escHtml(store.name):''}</td>
         <td><span class="badge badge-success">${t1}</span></td>
-        <td>${rnd?`<span class="badge" style="background:#fff3e0;color:#e65100">${rIn}</span>`:'-'}</td>
+        <td>${rndIn?`<span class="badge" style="background:${inDiff>=graceThreshold?'#ffcdd2;color:#c62828':'#fff3e0;color:#e65100'}">${rIn}</span>${inFlag}`:'-'}</td>
         <td><span class="badge badge-danger">${t2}</span></td>
-        <td>${rnd?`<span class="badge" style="background:#fff3e0;color:#e65100">${rOut}</span>`:'-'}</td>
+        <td>${rndOut?`<span class="badge" style="background:${outDiff>=graceThreshold?'#ffcdd2;color:#c62828':'#fff3e0;color:#e65100'}">${rOut}</span>${outFlag}`:'-'}</td>
         <td>${(rawMins/60).toFixed(1)}h</td>
-        <td><strong>${(paidMins>0?paidMins/60:0).toFixed(1)}h</strong></td></tr>`;
+        <td><strong>${(paidMins>0?paidMins/60:0).toFixed(1)}h</strong>${bigGrace?`<span style="color:#c62828;font-size:10px;font-weight:700;margin-left:3px">+${graceDiff}m</span>`:''}</td></tr>`;
     });
   });
   $('payDetailBody').innerHTML=html||'<tr><td colspan="9" style="text-align:center;color:var(--text-light)">No attendance data in this period</td></tr>';
@@ -2324,59 +2342,66 @@ function showStaffPayDetail(staffId){
   wrap.dataset.staffId=staffId;
   wrap.classList.remove('hidden');
   $('staffDetailName').textContent=sd.name+(sd.nickName?' ('+sd.nickName+')':'');
-  const rnd=getTimeRounding();
-  let html='';let totalRaw=0;let totalPaid=0;
+  const rndIn=getTimeRoundingIn(),rndOut=getTimeRoundingOut();
+  const graceThreshold=3;
+  let html='';let totalRaw=0;let totalPaid=0;let totalGrace=0;let graceAlertDays=0;
   sd.att.sort((a,b)=>a.date.localeCompare(b.date)).forEach(a=>{
     const t1=parseTime(a.clockIn),t2=parseTime(a.clockOut);
     if(!t1||!t2)return;
-    const rIn=rnd?roundTimeUp(t1,rnd):t1;
-    const rOut=rnd?roundTime(t2,rnd):t2;
+    const rIn=rndIn?graceClockIn(t1,rndIn):t1;
+    const rOut=rndOut?graceClockOut(t2,rndOut):t2;
     const[h1,m1]=t1.split(':').map(Number);const[h2,m2]=t2.split(':').map(Number);
     const rawMins=h2*60+m2-h1*60-m1;
     const[rh1,rm1]=rIn.split(':').map(Number);const[rh2,rm2]=rOut.split(':').map(Number);
     const paidMins=Math.max(0,rh2*60+rm2-rh1*60-rm1);
-    totalRaw+=rawMins;totalPaid+=paidMins;
+    const graceDiff=paidMins-rawMins;
+    totalRaw+=rawMins;totalPaid+=paidMins;totalGrace+=graceDiff;
+    const inDiff=h1*60+m1-(rh1*60+rm1);
+    const outDiff=(rh2*60+rm2)-(h2*60+m2);
+    const bigGrace=graceDiff>=graceThreshold;
+    if(bigGrace)graceAlertDays++;
     const store=D.Stores.find(x=>String(x.id)===String(a.storeId));
-    const changed=t1!==rIn||t2!==rOut;
-    html+=`<tr${changed?' style="background:#fff8e1"':''}>
+    const inFlag=inDiff>=graceThreshold?`<span style="color:#c62828;font-weight:700;font-size:10px;margin-left:3px">-${inDiff}m</span>`:'';
+    const outFlag=outDiff>=graceThreshold?`<span style="color:#c62828;font-weight:700;font-size:10px;margin-left:3px">+${outDiff}m</span>`:'';
+    html+=`<tr style="${bigGrace?'background:#fce4ec':(t1!==rIn||t2!==rOut?'background:#fff8e1':'')}">
       <td>${a.date}</td><td>${store?escHtml(store.name):''}</td>
       <td><span class="badge badge-success">${t1}</span></td>
-      <td>${rnd?`<span class="badge" style="background:#fff3e0;color:#e65100">${rIn}</span>`:'-'}</td>
+      <td>${rndIn?`<span class="badge" style="background:${inDiff>=graceThreshold?'#ffcdd2;color:#c62828':'#fff3e0;color:#e65100'}">${rIn}</span>${inFlag}`:'-'}</td>
       <td><span class="badge badge-danger">${t2}</span></td>
-      <td>${rnd?`<span class="badge" style="background:#fff3e0;color:#e65100">${rOut}</span>`:'-'}</td>
+      <td>${rndOut?`<span class="badge" style="background:${outDiff>=graceThreshold?'#ffcdd2;color:#c62828':'#fff3e0;color:#e65100'}">${rOut}</span>${outFlag}`:'-'}</td>
       <td>${(rawMins/60).toFixed(1)}h</td>
-      <td><strong>${(paidMins/60).toFixed(1)}h</strong></td></tr>`;
+      <td><strong>${(paidMins/60).toFixed(1)}h</strong>${bigGrace?`<span style="color:#c62828;font-size:10px;font-weight:700;margin-left:3px">+${graceDiff}m</span>`:''}</td></tr>`;
   });
   html+=`<tr style="background:#f5f5f5;font-weight:700"><td colspan="6" style="text-align:right">Total</td><td>${(totalRaw/60).toFixed(1)}h</td><td><strong>${(totalPaid/60).toFixed(1)}h</strong></td></tr>`;
   $('staffDetailBody').innerHTML=html||'<tr><td colspan="8" style="text-align:center;color:var(--text-light)">No attendance records</td></tr>';
-  const diffMins=totalRaw-totalPaid;
+  const diffMins=totalPaid-totalRaw;
   $('staffDetailSummary').innerHTML=`<div style="display:flex;gap:16px;flex-wrap:wrap">
     <div style="padding:10px 16px;background:#e8f5e9;border-radius:8px;font-size:13px"><strong>Days Worked:</strong> ${sd.days}</div>
     <div style="padding:10px 16px;background:#e3f2fd;border-radius:8px;font-size:13px"><strong>Raw Hours:</strong> ${(totalRaw/60).toFixed(1)}h</div>
     <div style="padding:10px 16px;background:#fff3e0;border-radius:8px;font-size:13px"><strong>Paid Hours:</strong> ${(totalPaid/60).toFixed(1)}h</div>
-    ${rnd?`<div style="padding:10px 16px;background:#fce4ec;border-radius:8px;font-size:13px"><strong>Rounding Diff:</strong> -${(diffMins/60).toFixed(1)}h</div>`:''}
+    ${rndIn||rndOut?`<div style="padding:10px 16px;background:${graceAlertDays>3?'#c62828;color:#fff':'#fce4ec'};border-radius:8px;font-size:13px"><strong>Grace Total:</strong> +${totalGrace}min (${graceAlertDays} alerts)</div>`:''}
     ${showRate?`<div style="padding:10px 16px;background:#f3e5f5;border-radius:8px;font-size:13px"><strong>Rate:</strong> £${sd.rate.toFixed(2)}/hr</div>
     <div style="padding:10px 16px;background:var(--accent);color:#fff;border-radius:8px;font-size:13px"><strong>Total Pay:</strong> £${sd.pay}</div>`:''}
   </div>`;
   wrap.scrollIntoView({behavior:'smooth',block:'start'});
 }
 function exportPayroll() {
-  const rnd=getTimeRounding();
+  const rndIn=getTimeRoundingIn(),rndOut=getTimeRoundingOut();
   const periodLabel=$('payPeriod')?.value||'';
   // Summary CSV
-  let csv='Payroll Report\nPeriod:,'+periodLabel+'\nRounding:,'+(rnd?rnd+' min':'None')+'\n\n';
+  let csv='Payroll Report\nPeriod:,'+periodLabel+'\nGrace In:,'+(rndIn?rndIn+' min':'None')+'\nGrace Out:,'+(rndOut?rndOut+' min':'None')+'\n\n';
   csv+='Staff,Store,Days,Hours,Rate,Pay\n';
   payrollData.forEach(r=>{csv+=`"${r.name}","${r.store}",${r.days},${r.hrs},${r.rate.toFixed(2)},${r.pay}\n`;});
   const grandTotal=payrollData.reduce((s,r)=>s+parseFloat(r.pay),0);
   csv+=`,,,,Total,"${grandTotal.toFixed(2)}"\n`;
   // Detail section
-  csv+='\n\nDetailed Attendance\nDate,Staff,Store,Clock In,Rounded In,Clock Out,Rounded Out,Raw Hours,Paid Hours\n';
+  csv+='\n\nDetailed Attendance\nDate,Staff,Store,Clock In,Grace In,Clock Out,Grace Out,Raw Hours,Paid Hours\n';
   payrollData.forEach(s=>{
     s.att.forEach(a=>{
       const t1=parseTime(a.clockIn),t2=parseTime(a.clockOut);
       if(!t1||!t2)return;
-      const rIn=rnd?roundTimeUp(t1,rnd):t1;
-      const rOut=rnd?roundTime(t2,rnd):t2;
+      const rIn=rndIn?graceClockIn(t1,rndIn):t1;
+      const rOut=rndOut?graceClockOut(t2,rndOut):t2;
       const[h1,m1]=t1.split(':').map(Number);const[h2,m2]=t2.split(':').map(Number);
       const rawH=((h2*60+m2-h1*60-m1)/60).toFixed(1);
       const[rh1,rm1]=rIn.split(':').map(Number);const[rh2,rm2]=rOut.split(':').map(Number);
@@ -4269,7 +4294,7 @@ th{font-size:9px;color:#666;font-weight:600}
 <div style="margin-bottom:12px">${selBadges}</div>
 <div class="info">Date: <b>${today}</b> &nbsp; Suppliers: <b>${supKeys.length}</b> &nbsp; Total Items: <b>${totalItems}</b></div>
 ${blocks}
-<p style="text-align:center;font-size:8px;color:#999;margin-top:20px">TBMS Ver5.0.8</p>
+<p style="text-align:center;font-size:8px;color:#999;margin-top:20px">TBMS Ver5.1.2</p>
 </body></html>`);
   w.document.close();
 }
@@ -5734,7 +5759,7 @@ ${d.hourKeys.length>0 ? `<div class="sec"><div class="sec-t">Hourly Breakdown</d
 
 <div class="sec"><div class="sec-t">Item Sales (${d.totalQty} items)</div><table><thead><tr><th>Item</th><th style="text-align:center">Qty</th><th style="text-align:right">Revenue</th><th style="text-align:right">%</th></tr></thead><tbody>${itemRows}</tbody></table></div>
 
-<div class="footer">TBMS Ver5.0.8 &copy; ${new Date().getFullYear()} The Bap. All rights reserved.</div>
+<div class="footer">TBMS Ver5.1.2 &copy; ${new Date().getFullYear()} The Bap. All rights reserved.</div>
 </body></html>`;
 
   const w = window.open('','_blank','width=800,height=1000');
@@ -6113,7 +6138,7 @@ function exportAllWord(){
       ['submittedBy / submittedAt','Who submitted and when']
     ]);
 
-    html+=`<hr style="margin:16px 0"><p style="text-align:center;font-size:8pt;color:#999;font-style:italic">TBMS Ver5.0.8</p>`;
+    html+=`<hr style="margin:16px 0"><p style="text-align:center;font-size:8pt;color:#999;font-style:italic">TBMS Ver5.1.2</p>`;
     html+=`</body></html>`;
 
     const blob=new Blob(['\ufeff'+html],{type:'application/msword'});

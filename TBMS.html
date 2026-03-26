@@ -1662,9 +1662,9 @@ async function trSaveAll(){
     const iv=trGetTimeVal('tr_in',ds),ov=trGetTimeVal('tr_out',ds);
     if(!iv&&!ov)return;
     const existing=D.Attendance.find(a=>String(a.staffId)===String(trStaffId)&&a.date===ds);
-    const row={id:existing?existing.id:('a'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)),staffId:trStaffId,storeId:s.storeId,date:ds,clockIn:iv,clockOut:ov,photoIn:'',photoOut:'',source:'manual'};
+    const row={id:existing?existing.id:('a'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)),staffId:trStaffId,storeId:s.storeId,date:ds,clockIn:iv,clockOut:ov,photoIn:existing?existing.photoIn||'':'',photoOut:existing?existing.photoOut||'':'',source:existing?existing.source||'manual':'manual'};
     rows.push(row);
-    if(existing){existing.clockIn=iv;existing.clockOut=ov;existing.source='manual';}
+    if(existing){existing.clockIn=iv;existing.clockOut=ov;}
     else D.Attendance.push(row);
   });
   if(rows.length===0){toast('No hours entered','info');return;}

@@ -2038,6 +2038,16 @@ async function editAttTime(attId,field,value){
   renderAttendanceTable();
   toast(field==='clockIn'?'Clock In updated':'Clock Out updated','success');
 }
+async function editPayDetailTime(attId,field,value){
+  const a=D.Attendance.find(x=>String(x.id)===String(attId));
+  if(!a)return;
+  a[field]=value;
+  await saveRow('Attendance',a);
+  // Refresh the staff detail view
+  const staffId=$('staffDetailWrap')?.dataset?.staffId;
+  if(staffId){calcPayroll();showStaffPayDetail(staffId);}
+  toast(field==='clockIn'?'Clock In updated':'Clock Out updated','success');
+}
 // ★ Attendance 레코드 삭제
 function deleteAttendance(attId){
   const a=D.Attendance.find(x=>String(x.id)===String(attId));
@@ -2238,7 +2248,7 @@ function calcPayroll() {
   }else{
     $('payMainContent').innerHTML=`<div class="card"><div class="table-wrap"><table><thead><tr><th>Staff</th><th>Store</th><th>Days</th><th>Total Hours</th>${showRate?'<th>Rate</th><th>Total Pay</th>':''}</tr></thead><tbody id="payBody"></tbody><tfoot id="payFoot"></tfoot></table></div></div>
     <div id="payDetailWrap" class="hidden"><div class="card"><h3 style="margin-bottom:12px"><i class="fas fa-clock"></i> Detailed Attendance (with grace)</h3><div class="table-wrap"><table><thead><tr><th>Date</th><th>Staff</th><th>Store</th><th>Clock In</th><th>Grace In</th><th>Clock Out</th><th>Grace Out</th><th>Raw Hrs</th><th>Paid Hrs</th></tr></thead><tbody id="payDetailBody"></tbody></table></div></div></div>
-    <div id="staffDetailWrap" class="hidden" data-staff-id=""><div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><h3 style="margin:0"><i class="fas fa-user-clock"></i> <span id="staffDetailName"></span> — Hours Detail</h3><div style="display:flex;gap:6px"><button class="btn btn-sm" onclick="printStaffDetail()" style="background:#222;color:#fff"><i class="fas fa-print"></i> Print</button><button class="btn btn-sm" onclick="$('staffDetailWrap').classList.add('hidden');$('staffDetailWrap').dataset.staffId=''" style="background:var(--border);color:var(--text)"><i class="fas fa-times"></i> Close</button></div></div><div id="staffDetailSummary" style="margin-bottom:10px"></div><div class="table-wrap"><table><thead><tr><th>Date</th><th>Store</th><th>Clock In</th><th>Grace In</th><th>Clock Out</th><th>Grace Out</th><th>Raw Hrs</th><th>Paid Hrs</th></tr></thead><tbody id="staffDetailBody"></tbody></table></div></div></div>`;
+    <div id="staffDetailWrap" class="hidden" data-staff-id=""><div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><h3 style="margin:0"><i class="fas fa-user-clock"></i> <span id="staffDetailName"></span> — Hours Detail</h3><div style="display:flex;gap:6px"><button class="btn btn-sm" onclick="printStaffDetail()" style="background:#222;color:#fff"><i class="fas fa-print"></i> Print</button><button class="btn btn-sm" onclick="$('staffDetailWrap').classList.add('hidden');$('staffDetailWrap').dataset.staffId=''" style="background:var(--border);color:var(--text)"><i class="fas fa-times"></i> Close</button></div></div><div id="staffDetailSummary" style="margin-bottom:10px"></div><div class="table-wrap"><table><thead><tr><th>Date</th><th>Store</th><th>Clock In</th><th style="width:40px"></th><th>Grace In</th><th>Clock Out</th><th style="width:40px"></th><th>Grace Out</th><th>Raw Hrs</th><th>Paid Hrs</th><th>Source</th></tr></thead><tbody id="staffDetailBody"></tbody></table></div></div></div>`;
     $('payBody').innerHTML=payrollData.map(r=>`<tr>
       <td><a href="#" onclick="showStaffPayDetail('${r.id}');return false" style="color:var(--accent);font-weight:600;text-decoration:underline;cursor:pointer">${escHtml(r.nickName||r.name)}</a></td>
       <td>${escHtml(r.store)}</td><td>${r.days}</td><td>${r.hrs}h</td>${showRate?`<td>£${r.rate.toFixed(2)}</td><td><strong>£${r.pay}</strong></td>`:''}</tr>`).join('');
@@ -2393,17 +2403,26 @@ function showStaffPayDetail(staffId){
     const store=D.Stores.find(x=>String(x.id)===String(a.storeId));
     const inFlag=inDiff>=graceThreshold?`<span style="color:#c62828;font-weight:700;font-size:10px;margin-left:3px">-${inDiff}m</span>`:'';
     const outFlag=outDiff>=graceThreshold?`<span style="color:#c62828;font-weight:700;font-size:10px;margin-left:3px">+${outDiff}m</span>`:'';
+    const srcBadge=(function(src){
+      const bs='display:inline-block;padding:2px 6px;border-radius:10px;font-size:10px;font-weight:600;';
+      if(src==='kiosk'||src==='kiosk1'||src==='camera')return `<span style="${bs}background:#e8f5e9;color:#2e7d32"><i class="fas fa-camera" style="font-size:9px"></i> Kiosk</span>`;
+      if(src==='manual')return `<span style="${bs}background:#fff3e0;color:#e65100"><i class="fas fa-pen" style="font-size:9px"></i> Manual</span>`;
+      return `<span style="${bs}background:#f5f5f5;color:#999">${escHtml(src||'—')}</span>`;
+    })(a.source);
     html+=`<tr style="${bigGrace?'background:#fce4ec':(t1!==rIn||t2!==rOut?'background:#fff8e1':'')}">
       <td>${a.date}</td><td>${store?escHtml(store.name):''}</td>
-      <td><span class="badge badge-success">${t1}</span></td>
+      <td><input type="time" value="${t1}" style="border:1px solid var(--border);border-radius:6px;padding:3px 6px;font-size:12px;width:90px;background:#e8f5e9;color:#2e7d32;font-weight:600" onchange="editPayDetailTime('${a.id}','clockIn',this.value)"></td>
+      <td>${photoThumb(a.photoIn,'In')}</td>
       <td>${rndIn?`<span class="badge" style="background:${inDiff>=graceThreshold?'#ffcdd2;color:#c62828':'#fff3e0;color:#e65100'}">${rIn}</span>${inFlag}`:'-'}</td>
-      <td><span class="badge badge-danger">${t2}</span></td>
+      <td><input type="time" value="${t2}" style="border:1px solid var(--border);border-radius:6px;padding:3px 6px;font-size:12px;width:90px;background:#ffebee;color:#c62828;font-weight:600" onchange="editPayDetailTime('${a.id}','clockOut',this.value)"></td>
+      <td>${photoThumb(a.photoOut,'Out')}</td>
       <td>${rndOut?`<span class="badge" style="background:${outDiff>=graceThreshold?'#ffcdd2;color:#c62828':'#fff3e0;color:#e65100'}">${rOut}</span>${outFlag}`:'-'}</td>
       <td>${(rawMins/60).toFixed(1)}h</td>
-      <td><strong>${(paidMins/60).toFixed(1)}h</strong>${bigGrace?`<span style="color:#c62828;font-size:10px;font-weight:700;margin-left:3px">+${graceDiff}m</span>`:''}</td></tr>`;
+      <td><strong>${(paidMins/60).toFixed(1)}h</strong>${bigGrace?`<span style="color:#c62828;font-size:10px;font-weight:700;margin-left:3px">+${graceDiff}m</span>`:''}</td>
+      <td>${srcBadge}</td></tr>`;
   });
-  html+=`<tr style="background:#f5f5f5;font-weight:700"><td colspan="6" style="text-align:right">Total</td><td>${(totalRaw/60).toFixed(1)}h</td><td><strong>${(totalPaid/60).toFixed(1)}h</strong></td></tr>`;
-  $('staffDetailBody').innerHTML=html||'<tr><td colspan="8" style="text-align:center;color:var(--text-light)">No attendance records</td></tr>';
+  html+=`<tr style="background:#f5f5f5;font-weight:700"><td colspan="8" style="text-align:right">Total</td><td>${(totalRaw/60).toFixed(1)}h</td><td><strong>${(totalPaid/60).toFixed(1)}h</strong></td><td></td></tr>`;
+  $('staffDetailBody').innerHTML=html||'<tr><td colspan="11" style="text-align:center;color:var(--text-light)">No attendance records</td></tr>';
   const diffMins=totalPaid-totalRaw;
   $('staffDetailSummary').innerHTML=`<div style="display:flex;gap:16px;flex-wrap:wrap">
     <div style="padding:10px 16px;background:#e8f5e9;border-radius:8px;font-size:13px"><strong>Days Worked:</strong> ${sd.days}</div>
@@ -2451,9 +2470,10 @@ function printStaffDetail(){
       <td style="padding:4px 8px;text-align:center;color:#e65100">${rOut}${outDiffTxt}</td>
       <td style="padding:4px 8px;text-align:center">${(rawMins/60).toFixed(1)}</td>
       <td style="padding:4px 8px;text-align:center;font-weight:700">${(paidMins/60).toFixed(1)}${bigGrace?`<span style="color:#c62828;font-size:9px;font-weight:700"> +${graceDiff}m</span>`:''}</td>
+      <td style="padding:4px 8px;text-align:center;font-size:10px">${a.source==='manual'?'<span style="color:#e65100">Manual</span>':'<span style="color:#2e7d32">Kiosk</span>'}</td>
     </tr>`;
   });
-  rows+=`<tr style="background:#f5f5f5;font-weight:700"><td colspan="6" style="padding:6px 8px;text-align:right">Total</td><td style="padding:6px 8px;text-align:center">${(totalRaw/60).toFixed(1)}h</td><td style="padding:6px 8px;text-align:center">${(totalPaid/60).toFixed(1)}h</td></tr>`;
+  rows+=`<tr style="background:#f5f5f5;font-weight:700"><td colspan="6" style="padding:6px 8px;text-align:right">Total</td><td style="padding:6px 8px;text-align:center">${(totalRaw/60).toFixed(1)}h</td><td style="padding:6px 8px;text-align:center">${(totalPaid/60).toFixed(1)}h</td><td></td></tr>`;
   const w=window.open('','_blank','width=900,height=700');
   w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Hours Detail - ${escHtml(sd.name)}</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -2475,7 +2495,7 @@ table{width:100%;border-collapse:collapse}th{background:#333;color:#fff;padding:
   ${showRate?`<div style="background:#f3e5f5"><strong>Rate:</strong> £${sd.rate.toFixed(2)}/hr</div><div style="background:#fce4ec"><strong>Total Pay:</strong> £${sd.pay}</div>`:''}
 </div>
 <table>
-  <thead><tr><th style="text-align:left">Date</th><th style="text-align:left">Store</th><th>Clock In</th><th>Grace In</th><th>Clock Out</th><th>Grace Out</th><th>Raw Hrs</th><th>Paid Hrs</th></tr></thead>
+  <thead><tr><th style="text-align:left">Date</th><th style="text-align:left">Store</th><th>Clock In</th><th>Grace In</th><th>Clock Out</th><th>Grace Out</th><th>Raw Hrs</th><th>Paid Hrs</th><th>Source</th></tr></thead>
   <tbody>${rows}</tbody>
 </table>
 <div style="margin-top:24px;padding-top:16px;border-top:1px solid #ddd">

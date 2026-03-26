@@ -1877,10 +1877,13 @@ async function refreshAttendance(){
 }
 function renderAttendance(c) {
   const today=new Date().toISOString().split('T')[0];
-  c.innerHTML=`<div id="attStoreTabs" style="margin-bottom:10px">${(_storeTabCB.att=function(){switchAttView();},'')+(renderStoreTabs('attStoreTabs','attStore',{showAll:true,allLabel:'All Stores',selected:'',cbKey:'att'}))}</div>
+  c.innerHTML=`<div id="attStoreTabs" style="margin-bottom:10px">${(_storeTabCB.att=function(){updateAttStaffFilter();switchAttView();},'')+(renderStoreTabs('attStoreTabs','attStore',{showAll:true,allLabel:'All Stores',selected:'',cbKey:'att'}))}</div>
   <input type="hidden" id="attStore" value="">
   <div class="filters">
     <input type="date" id="attDate" value="${today}" onchange="switchAttView()">
+    <select id="attStaffFilter" onchange="switchAttView()" style="padding:6px 12px;border:2px solid var(--border);border-radius:8px;font-size:13px;min-width:160px">
+      <option value="">All Staff</option>
+    </select>
     <div style="display:inline-flex;border:2px solid var(--border);border-radius:8px;overflow:hidden;margin:0 4px">
       <button id="attViewDaily" class="btn btn-sm" style="border:none;border-radius:0;font-size:12px;padding:6px 14px;${attViewMode==='daily'?'background:var(--primary);color:#fff':'background:#fff;color:var(--text)'}" onclick="attViewMode='daily';switchAttView()"><i class="fas fa-list"></i> Daily</button>
       <button id="attViewWeekly" class="btn btn-sm" style="border:none;border-radius:0;font-size:12px;padding:6px 14px;${attViewMode==='weekly'?'background:var(--primary);color:#fff':'background:#fff;color:var(--text)'}" onclick="attViewMode='weekly';switchAttView()"><i class="fas fa-calendar-week"></i> Weekly</button>
@@ -1890,9 +1893,19 @@ function renderAttendance(c) {
     <span style="font-size:12px;color:var(--text-light)">Auto-refresh: 30s</span>
   </div>
   <div id="attContent"></div>`;
+  updateAttStaffFilter();
   switchAttView();
   if(attAutoRefresh)clearInterval(attAutoRefresh);
   attAutoRefresh=setInterval(refreshAttendance,30000);
+}
+function updateAttStaffFilter(){
+  const sel=$('attStaffFilter');if(!sel)return;
+  const storeF=$('attStore')?.value||'';
+  const prev=sel.value;
+  let staff=D.Staff.filter(s=>s.active!==false&&hasStoreAccess(s.storeId));
+  if(storeF)staff=staff.filter(s=>String(s.storeId)===storeF);
+  staff.sort((a,b)=>(a.nickName||a.name).localeCompare(b.nickName||b.name));
+  sel.innerHTML='<option value="">All Staff</option>'+staff.map(s=>`<option value="${s.id}"${String(s.id)===prev?' selected':''}>${escHtml(s.nickName||s.name)}</option>`).join('');
 }
 function switchAttView(){
   const _tc=$('attStoreTabs');if(_tc)_tc.innerHTML=renderStoreTabs('attStoreTabs','attStore',{showAll:true,allLabel:'All Stores',selected:$('attStore')?.value||'',cbKey:'att'});
@@ -1919,6 +1932,8 @@ function renderAttendanceWeekly(){
   const weekLabel=weekDates[0].slice(5)+' ~ '+weekDates[6].slice(5);
   let att=[...D.Attendance].filter(a=>hasStoreAccess(a.storeId)&&weekDates.includes(a.date));
   if(storeF)att=att.filter(a=>String(a.storeId)===storeF);
+  const staffF=$('attStaffFilter')?.value||'';
+  if(staffF)att=att.filter(a=>String(a.staffId)===staffF);
   const staffIds=[...new Set(att.map(a=>a.staffId))];
   const staffList=staffIds.map(sid=>{
     const s=D.Staff.find(x=>String(x.id)===String(sid));
@@ -1981,8 +1996,10 @@ function renderAttendanceDaily(){
   let att=[...D.Attendance].filter(a=>hasStoreAccess(a.storeId)).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
   const storeF=$('attStore')?.value||'';
   const dateF=$('attDate')?.value||'';
+  const staffF=$('attStaffFilter')?.value||'';
   if(storeF)att=att.filter(a=>String(a.storeId)===storeF);
   if(dateF)att=att.filter(a=>a.date===dateF);
+  if(staffF)att=att.filter(a=>String(a.staffId)===staffF);
   const rows=att.slice(0,100).map(a=>{
     const s=D.Staff.find(x=>String(x.id)===String(a.staffId));
     const store=D.Stores.find(x=>String(x.id)===String(a.storeId));

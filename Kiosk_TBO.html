@@ -7,7 +7,7 @@
 <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%232e7d32'/%3E%3Cg transform='translate(8,10) scale(0.09375)'%3E%3Cpath fill='%23fff' d='M0 192c0-35.3 28.7-64 64-64c.5 0 1.1 0 1.6 0C73 91.5 105.3 64 144 64c15 0 29 4.1 40.9 11.2C198.2 49.6 225.1 32 256 32s57.8 17.6 71.1 43.2C339 68.1 353 64 368 64c38.7 0 71 27.5 78.4 64c.5 0 1.1 0 1.6 0c35.3 0 64 28.7 64 64c0 11.7-3.1 22.6-8.6 32H8.6C3.1 214.6 0 203.7 0 192zm0 91.4C0 268.3 12.3 256 27.4 256H484.6c15.1 0 27.4 12.3 27.4 27.4c0 70.5-44.4 130.7-106.7 154.1L403.5 452c-2 16-15.6 28-31.8 28H140.2c-16.1 0-29.8-12-31.8-28l-1.8-14.4C44.4 414.1 0 353.9 0 283.4z'/%3E%3C/g%3E%3C/svg%3E">
-<title>The Bap Swindon - Clock In/Out</title>
+<title>The Bap Oxford - Clock In/Out</title>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
 <link rel="manifest" href="manifest.json">
@@ -16,8 +16,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-:root{--primary:#1a237e;--success:#1976d2;--danger:#e53935;--bg:#1565c0;--card:#fff;--text:#333;--text-light:#666;--border:#ddd;--warning:#f39c12}
-body{font-family:'Noto Sans KR',sans-serif;background:linear-gradient(135deg,#1565c0 0%,#1976d2 100%);min-height:100vh;display:flex;flex-direction:column;align-items:center;color:var(--text);overflow-x:hidden;-webkit-user-select:none;user-select:none}
+:root{--primary:#00695c;--success:#00897b;--danger:#e53935;--bg:#00838f;--card:#fff;--text:#333;--text-light:#666;--border:#ddd;--warning:#f39c12}
+body{font-family:'Noto Sans KR',sans-serif;background:linear-gradient(135deg,#00838f 0%,#00acc1 100%);min-height:100vh;display:flex;flex-direction:column;align-items:center;color:var(--text);overflow-x:hidden;-webkit-user-select:none;user-select:none}
 .toast-box{position:fixed;top:16px;right:16px;z-index:1000}
 .toast{padding:14px 24px;border-radius:12px;color:#fff;font-size:15px;font-weight:500;display:flex;align-items:center;gap:10px;animation:slideIn .3s;box-shadow:0 4px 20px rgba(0,0,0,.3);margin-bottom:8px}
 .toast.success{background:var(--success)}.toast.error{background:var(--danger)}.toast.info{background:var(--primary)}
@@ -29,12 +29,12 @@ body{font-family:'Noto Sans KR',sans-serif;background:linear-gradient(135deg,#15
 .clock{font-size:56px;font-weight:700;color:var(--primary);text-align:center;font-variant-numeric:tabular-nums;letter-spacing:2px}
 .date{text-align:center;color:var(--text-light);font-size:15px;margin-top:4px;margin-bottom:24px}
 .staff-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:14px;width:100%;max-height:none;overflow-y:auto;padding:4px}
-.staff-btn{padding:14px 8px;background:#e3f2fd;border-radius:16px;text-align:center;cursor:pointer;transition:all .2s;border:2.5px solid #1976d2}
+.staff-btn{padding:14px 8px;background:#e0f2f1;border-radius:16px;text-align:center;cursor:pointer;transition:all .2s;border:2.5px solid #00897b}
 .staff-btn:hover,.staff-btn:active{transform:scale(1.05);filter:brightness(0.97)}
 .staff-btn.clocked-in{border-color:#e84393;background:#fff0f3}
 .staff-btn.clocked-in .avatar{background:#e84393}
 .staff-btn.clocked-in .status-dot{display:block}
-.staff-btn .avatar{width:56px;height:56px;background:#1976d2;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 8px;font-weight:700;font-size:22px;position:relative}
+.staff-btn .avatar{width:56px;height:56px;background:#00897b;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 8px;font-weight:700;font-size:22px;position:relative}
 .staff-btn .status-dot{display:none;position:absolute;bottom:0;right:0;width:16px;height:16px;background:#e84393;border:2px solid #fff;border-radius:50%}
 .staff-btn .name{font-size:14px;font-weight:600;line-height:1.3;word-break:keep-all}
 .pw-section{text-align:center;width:100%}
@@ -61,7 +61,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:linear-gradient(135deg,#15
 .action-btns{display:flex;flex-direction:column;gap:14px;width:100%;margin-top:20px}
 .action-btn{padding:24px;border-radius:14px;font-size:22px;font-weight:700;color:#fff;cursor:pointer;text-align:center;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:12px;border:none}
 .action-btn:active{transform:scale(.97)}
-.action-btn.in{background:linear-gradient(135deg,#1976d2,#1976d2)}
+.action-btn.in{background:linear-gradient(135deg,#00897b,#00695c)}
 .action-btn.out{background:linear-gradient(135deg,#e53935,#c62828)}
 .action-btn.records{background:linear-gradient(135deg,#5c6bc0,#3949ab);font-size:16px;padding:16px}
 .result{text-align:center;width:100%}
@@ -70,7 +70,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:linear-gradient(135deg,#15
 .result .time{font-size:36px;color:var(--primary);font-weight:700}
 .result .who{margin-top:12px;color:var(--text-light);font-size:16px}
 .status-bar{color:rgba(255,255,255,.6);font-size:12px;padding:8px;display:flex;align-items:center;gap:6px;position:fixed;bottom:8px}
-.status-dot{width:8px;height:8px;border-radius:50%;background:#1976d2}
+.status-dot{width:8px;height:8px;border-radius:50%;background:#00897b}
 .status-dot.off{background:#fb8c00}
 .loading-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;color:#fff;font-size:16px}
 .loading-overlay.hidden{display:none}
@@ -117,7 +117,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:linear-gradient(135deg,#15
 .time-table td{padding:3px 1px;border-bottom:1px solid #f0f0f0;text-align:center;vertical-align:middle}
 .time-table tr.sat{background:#e3f2fd}
 .time-table tr.sun{background:#fce4ec}
-.time-table tr.today{background:#e3f2fd}
+.time-table tr.today{background:#e0f2f1}
 .time-table .date-cell{font-weight:700;font-size:12px;width:26px;white-space:nowrap}
 .time-table .day-cell{font-size:11px;font-weight:700;width:26px}
 .time-table .day-sat{color:#1565c0;font-weight:700}
@@ -165,13 +165,13 @@ body{font-family:'Noto Sans KR',sans-serif;background:linear-gradient(135deg,#15
 <div class="loading-overlay" id="loading"><div class="spinner"></div><div id="loadingText">Loading...</div></div>
 <div class="toast-box" id="toastBox"></div>
 <div class="header">
-  <h1><i class="fas fa-bowl-food"></i> The Bap Swindon</h1>
-  <p>Swindon - Staff Clock In/Out <span style="opacity:.5;font-size:11px">Ver1.3</span></p>
+  <h1><i class="fas fa-bowl-food"></i> The Bap Oxford</h1>
+  <p>Farnborough - Staff Clock In/Out <span style="opacity:.5;font-size:11px">Ver1.3</span></p>
 </div>
 <div class="main-card" id="mainCard"></div>
 <div class="status-bar"><span class="status-dot" id="statusDot"></span><span id="statusText">Connecting...</span></div>
 <script>
-const STORE_ID='TBS',STORE_NAME='The Bap Swindon';
+const STORE_ID='TBO',STORE_NAME='The Bap Oxford';
 const DEFAULT_API='https://script.google.com/macros/s/AKfycbz_0Vcn1aCQyHZ7i9XRFp72f6O1H5kAsuaFATW4MMSnOhgWakAjMebH8ngMchYDHfS5/exec';
 const API_URL=DEFAULT_API;
 const API_KEY='tBaP2026xKr!mGt9Qz';
@@ -350,10 +350,16 @@ function verify(){
 }
 
 // ★ 직원 정보 확인 설문 — 옷 사이즈, 전화번호, 주소, 이메일 확인
-function needsInfoCheck(s){ return !s.spare1; }
+function needsInfoCheck(s){
+  // spare1 = infoConfirmed 날짜. 값이 있으면 이미 확인 완료
+  return !s.spare1;
+}
 function showInfoSurvey(){
-  const s=currentStaff;const dn=esc(s.nickName||s.name);const initial=(s.nickName||s.name).charAt(0).toUpperCase();
-  const sizes=['XS','S','M','L','XL'];const curSize=_selectedSize||s.clothSize||'';
+  const s=currentStaff;
+  const dn=esc(s.nickName||s.name);
+  const initial=(s.nickName||s.name).charAt(0).toUpperCase();
+  const sizes=['XS','S','M','L','XL'];
+  const curSize=s.clothSize||'';
   $('mainCard').innerHTML=`
     <div style="max-width:420px;margin:0 auto;text-align:left">
       <div style="text-align:center;margin-bottom:16px">
@@ -362,37 +368,60 @@ function showInfoSurvey(){
         <p style="color:#888;font-size:13px;margin:4px 0 0"><i class="fas fa-clipboard-check" style="color:#e65100"></i> Please confirm your details</p>
       </div>
       <div style="background:#fff;border-radius:16px;padding:20px;box-shadow:0 2px 12px rgba(0,0,0,.08)">
+        <!-- 옷 사이즈 -->
         <label style="font-size:13px;font-weight:700;color:#333;display:block;margin-bottom:8px"><i class="fas fa-tshirt" style="color:#e65100;width:20px"></i> Uniform Size</label>
         <div style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap" id="sizeButtons">
           ${sizes.map(sz=>`<button onclick="pickSize('${sz}')" id="sz_${sz}" style="flex:1;min-width:50px;padding:12px 6px;border-radius:10px;border:2px solid ${curSize===sz?'#e65100':'#ddd'};background:${curSize===sz?'#fff3e0':'#fff'};font-size:16px;font-weight:700;color:${curSize===sz?'#e65100':'#555'};cursor:pointer;transition:all .2s">${sz}</button>`).join('')}
         </div>
+        <!-- 전화번호 -->
         <label style="font-size:13px;font-weight:700;color:#333;display:block;margin-bottom:4px"><i class="fas fa-phone" style="color:#1565c0;width:20px"></i> Mobile Number</label>
         <input type="tel" id="svMobile" value="${esc(s.mobile||'')}" placeholder="e.g. 07xxx xxx xxx" style="width:100%;padding:12px;border:2px solid #ddd;border-radius:10px;font-size:15px;margin-bottom:14px;box-sizing:border-box">
-        <label style="font-size:13px;font-weight:700;color:#333;display:block;margin-bottom:4px"><i class="fas fa-home" style="color:#2e7d32;width:20px"></i> Address</label>
+        <!-- 주소 -->
+        <label style="font-size:13px;font-weight:700;color:#333;display:block;margin-bottom:4px"><i class="fas fa-home" style="color:#00695c;width:20px"></i> Address</label>
         <textarea id="svAddress" rows="2" placeholder="Your current address" style="width:100%;padding:12px;border:2px solid #ddd;border-radius:10px;font-size:14px;margin-bottom:14px;box-sizing:border-box;resize:none">${esc(s.address||'')}</textarea>
+        <!-- 이메일 -->
         <label style="font-size:13px;font-weight:700;color:#333;display:block;margin-bottom:4px"><i class="fas fa-envelope" style="color:#6a1b9a;width:20px"></i> Email</label>
         <input type="email" id="svEmail" value="${esc(s.email||'')}" placeholder="your@email.com" style="width:100%;padding:12px;border:2px solid #ddd;border-radius:10px;font-size:15px;margin-bottom:20px;box-sizing:border-box">
         <button onclick="submitInfoSurvey()" style="width:100%;padding:14px;background:#e65100;color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer"><i class="fas fa-check-circle"></i> Confirm & Continue</button>
       </div>
-      <div style="text-align:center;margin-top:12px"><button class="btn-outline" onclick="showStaffList()" style="font-size:13px"><i class="fas fa-arrow-left"></i> Back</button></div>
+      <div style="text-align:center;margin-top:12px">
+        <button class="btn-outline" onclick="showStaffList()" style="font-size:13px"><i class="fas fa-arrow-left"></i> Back</button>
+      </div>
     </div>`;
 }
 let _selectedSize='';
 function pickSize(sz){
   _selectedSize=sz;
-  ['XS','S','M','L','XL'].forEach(s=>{const btn=document.getElementById('sz_'+s);if(btn){btn.style.border='2px solid '+(s===sz?'#e65100':'#ddd');btn.style.background=s===sz?'#fff3e0':'#fff';btn.style.color=s===sz?'#e65100':'#555';}});
+  ['XS','S','M','L','XL'].forEach(s=>{
+    const btn=document.getElementById('sz_'+s);
+    if(btn){btn.style.border='2px solid '+(s===sz?'#e65100':'#ddd');btn.style.background=s===sz?'#fff3e0':'#fff';btn.style.color=s===sz?'#e65100':'#555';}
+  });
 }
 async function submitInfoSurvey(){
-  const s=currentStaff;const size=_selectedSize||s.clothSize||'';
+  const s=currentStaff;
+  const size=_selectedSize||s.clothSize||'';
   const mobile=(document.getElementById('svMobile')?.value||'').trim();
   const address=(document.getElementById('svAddress')?.value||'').trim();
   const email=(document.getElementById('svEmail')?.value||'').trim();
+  // 사이즈 필수 확인
   if(!size){toast('Please select your uniform size','error');return;}
+  // 서버에 업데이트
   const today=new Date().toISOString().split('T')[0];
-  s.clothSize=size;s.mobile=mobile;s.address=address;s.email=email;s.spare1=today;
-  _selectedSize='';toast('Saving...','info');
-  try{await apiPost({action:'upsert',sheet:'Staff',row:s});toast('Details updated! Thank you.','success');showAction();}
-  catch(e){toast('Save error: '+e.message,'error');}
+  s.clothSize=size;
+  s.mobile=mobile;
+  s.address=address;
+  s.email=email;
+  s.spare1=today; // infoConfirmed 날짜 기록
+  _selectedSize='';
+  toast('Saving...','info');
+  try{
+    await apiPost({action:'upsert',sheet:'Staff',row:s});
+    toast('Details updated! Thank you.','success');
+    // 바로 Clock In/Out 화면으로 이동
+    showAction();
+  }catch(e){
+    toast('Save error: '+e.message,'error');
+  }
 }
 
 function showAction(){
@@ -477,7 +506,7 @@ function showCameraRetryModal(type,attId,errMsg){
       <div style="font-size:48px;margin-bottom:16px">📷</div>
       <div class="cam-title" style="color:#ff6b6b"><i class="fas fa-exclamation-triangle"></i> Camera Failed</div>
       <p style="color:rgba(255,255,255,.7);font-size:14px;margin:8px 0 20px">${errMsg}<br>Attempt ${cameraRetries} of ${MAX_RETRIES}</p>
-      <button onclick="startCamera()" style="padding:14px 40px;background:#1976d2;color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;margin:6px"><i class="fas fa-redo"></i> Retry Camera</button>
+      <button onclick="startCamera()" style="padding:14px 40px;background:#00897b;color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;margin:6px"><i class="fas fa-redo"></i> Retry Camera</button>
       <br><button onclick="closeCamera()" style="padding:10px 30px;background:transparent;color:rgba(255,255,255,.5);border:1px solid rgba(255,255,255,.3);border-radius:10px;font-size:14px;cursor:pointer;margin-top:12px"><i class="fas fa-times"></i> Cancel</button>
     </div>`;
   document.body.appendChild(modal);

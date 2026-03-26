@@ -548,9 +548,17 @@ function doClockDirect(type,attId){
 // ===== Optimistic Clock In/Out =====
 let _clockBusy=false; // ★ 이중 탭 방지 플래그
 function doClockIn(photo){
-  if(_clockBusy)return;
+  if(_clockBusy)return; // ★ 이미 처리 중이면 무시
+  // ★ Duplicate prevention: block if unclosed record exists for today
+  const _today=new Date().toISOString().split('T')[0];
+  const _openToday=attendance.find(a=>String(a.staffId)===String(currentStaff.id)&&a.date===_today&&a.clockIn&&!a.clockOut);
+  if(_openToday){toast('Already clocked in — please clock out first','error');return;}
+  // ★ Duplicate prevention: if completed shift exists within 5 min, block
+  const _nowMin=new Date().getHours()*60+new Date().getMinutes();
+  const _dupShift=attendance.find(a=>String(a.staffId)===String(currentStaff.id)&&a.date===_today&&a.clockIn&&a.clockOut&&Math.abs((parseInt(a.clockIn.split(':')[0])*60+parseInt(a.clockIn.split(':')[1]))-_nowMin)<=5);
+  if(_dupShift){toast('Duplicate detected — you already have a shift starting near this time','error');return;}
   _clockBusy=true;
-  setTimeout(()=>{_clockBusy=false;},3000);
+  setTimeout(()=>{_clockBusy=false;},3000); // 3초 후 해제
   const now=new Date();
   const att={id:genId(),staffId:currentStaff.id,storeId:STORE_ID,date:now.toISOString().split('T')[0],clockIn:fmtTime(now),clockOut:'',photoIn:'',photoOut:'',source:'kiosk'};
   // Optimistic: update local data + show result immediately
@@ -719,7 +727,7 @@ function buildCalendarHtml(){
       <td class="${dayClass}">${dayLabel}</td>
       <td>${timeSelHtml('in',dateStr,clockIn)}</td>
       <td>${timeSelHtml('out',dateStr,clockOut)}</td>
-      <td class="hour-cell ${hours===0?'zero':''}" id="hr_${dateStr}">${hours>0?hours.toFixed(1):'—'}</td>
+      <td class="hour-cell ${hours===0?'zero':''}" id="hr_${dateStr}">${isToday&&rec?`<div style="display:flex;align-items:center;gap:3px;justify-content:center"><span>${hours>0?hours.toFixed(1):'—'}</span><button onclick="enableTodayEdit('${dateStr}')" style="padding:2px 6px;border:1px solid #ccc;border-radius:6px;background:#fff;font-size:9px;cursor:pointer;color:#e65100;font-weight:600" title="Edit"><i class="fas fa-pen"></i></button></div>`:hours>0?hours.toFixed(1):'—'}</td>
     </tr>`;
   });
   return `<div class="card">
@@ -750,12 +758,16 @@ function buildCalendarHtml(){
 function timeSelHtml(prefix,ds,val){
   const [vh,vm]=val?val.split(':'):['','00'];
   const rvm=vm?String(parseInt(vm)).padStart(2,'0'):'00';
+  const todayStr=fmtDate(new Date());
+  // 오늘 및 미래 날짜는 disabled (체크인/아웃 버튼으로만 가능, 수정은 Change Request)
+  const isLocked=ds>=todayStr;
   let hOpts='<option value="">--</option>';
   for(let i=0;i<24;i++){const hh=String(i).padStart(2,'0');hOpts+=`<option value="${hh}"${hh===vh?' selected':''}>${hh}</option>`;}
   const mins=[];for(let i=0;i<60;i++)mins.push(String(i).padStart(2,'0'));
   let mOpts='';mins.forEach(mm=>{mOpts+=`<option value="${mm}"${mm===rvm?' selected':''}>${mm}</option>`;});
   const fc=vh?'filled':'';
-  return `<span class="time-wrap"><select id="${prefix}H_${ds}" onchange="onTimeChange('${prefix}','${ds}')" class="time-sel ${fc}">${hOpts}</select><span class="colon">:</span><select id="${prefix}M_${ds}" onchange="onTimeChange('${prefix}','${ds}')" class="time-sel ${fc}">${mOpts}</select></span>`;
+  const dis=isLocked?' disabled':'';
+  return `<span class="time-wrap"><select id="${prefix}H_${ds}" onchange="onTimeChange('${prefix}','${ds}')" class="time-sel ${fc}"${dis}>${hOpts}</select><span class="colon">:</span><select id="${prefix}M_${ds}" onchange="onTimeChange('${prefix}','${ds}')" class="time-sel ${fc}"${dis}>${mOpts}</select></span>`;
 }
 function getTimeVal(prefix,ds){
   const h=$(prefix+'H_'+ds),m=$(prefix+'M_'+ds);
@@ -809,7 +821,7 @@ function updateRowDisplay(dateStr){
   const hrEl=$('hr_'+dateStr);
   const todayStr=fmtDate(new Date());
   const orig=_origValues[dateStr]||{};
-  const hasChanges=dateStr<todayStr&&(inVal!==(orig.clockIn||'')||outVal!==(orig.clockOut||''));
+  const hasChanges=dateStr<=todayStr&&(inVal!==(orig.clockIn||'')||outVal!==(orig.clockOut||''));
   if(hrEl){
     if(hasChanges){
       hrEl.innerHTML=`<div style="display:flex;flex-direction:row;align-items:center;gap:4px;justify-content:center">
@@ -899,6 +911,21 @@ async function submitDateChange(dateStr){
     updateRowDisplay(dateStr);
   }
 }
+function enableTodayEdit(dateStr){
+  // 오늘 날짜 select를 임시 활성화 → 수정하면 Change Request로 제출
+  ['in','out'].forEach(p=>{
+    const hEl=$(p+'H_'+dateStr),mEl=$(p+'M_'+dateStr);
+    if(hEl)hEl.disabled=false;
+    if(mEl)mEl.disabled=false;
+  });
+  const hrEl=$('hr_'+dateStr);
+  if(hrEl){
+    const inVal=getTimeVal('in',dateStr),outVal=getTimeVal('out',dateStr);
+    const hrs=calcHours(inVal,outVal);
+    hrEl.innerHTML=`<span style="font-size:10px;color:#e65100;font-weight:600"><i class="fas fa-pen"></i> Editing...</span>`;
+  }
+  toast('Edit the time, then Submit the change request','info');
+}
 function onTimeChange(prefix,dateStr){
   const now=new Date();
   const todayStr=fmtDate(now);
@@ -912,6 +939,7 @@ function onTimeChange(prefix,dateStr){
     return;
   }
   if(dateStr===todayStr){
+    // 오늘도 과거와 동일: 수정하면 Change Request로 Submit
     const nowH=now.getHours(),nowM=now.getMinutes();
     const hEl=$(prefix+'H_'+dateStr),mEl=$(prefix+'M_'+dateStr);
     const hv=hEl?hEl.value:'',mv=mEl?mEl.value:'00';
@@ -921,6 +949,8 @@ function onTimeChange(prefix,dateStr){
         const label=prefix==='in'?'Clock In':'Clock Out';
         showFutureAlert(label+' time ('+hv+':'+mv+') is later than now. You cannot enter a future time.');
         revertTime(prefix,dateStr);
+        updateRowDisplay(dateStr);
+        return;
       }
     }
     updateRowDisplay(dateStr);
@@ -961,7 +991,7 @@ async function saveAll(){
   const rows=[],editLogs=[];
   dates.forEach(d=>{
     const dateStr=fmtDate(d);
-    if(dateStr<todayStr)return;
+    if(dateStr<=todayStr)return;
     const inVal=getTimeVal('in',dateStr);
     const outVal=getTimeVal('out',dateStr);
     if(!inVal&&!outVal)return;

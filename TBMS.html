@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- TBMS - The Bap Management System v5.0.0 | 2026-03-17 -->
+<!-- TBMS - The Bap Management System v5.1.4 | 2026-03-26 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -237,7 +237,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
   <div class="login-logo">
     <div class="logo-icon"><i class="fas fa-bowl-food"></i></div>
     <h1>TBMS</h1>
-    <p>The Bap Management System <span style="opacity:.5;font-size:11px">Ver5.1.2</span></p>
+    <p>The Bap Management System <span style="opacity:.5;font-size:11px">Ver5.1.4</span></p>
   </div>
   <div class="form-group"><label>Username</label><input id="loginUser" placeholder="Enter username"></div>
   <div class="form-group"><label>Password</label><input id="loginPass" type="password" placeholder="Enter password"></div>
@@ -254,7 +254,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
 <!-- MAIN APP -->
 <div id="mainApp" class="hidden">
   <div class="sidebar" id="sidebar">
-    <div class="sidebar-header"><h2>TBMS <span style="font-size:12px;font-weight:400;opacity:.6">Ver5.1.2</span></h2><p>The Bap Management System</p></div>
+    <div class="sidebar-header"><h2>TBMS <span style="font-size:12px;font-weight:400;opacity:.6">Ver5.1.4</span></h2><p>The Bap Management System</p></div>
     <div class="sidebar-menu">
       <div class="menu-item active" data-page="dashboard" onclick="navigate('dashboard')"><i class="fas fa-home"></i>Dashboard</div>
       <div class="menu-group">
@@ -290,6 +290,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
           <div class="menu-item sub" onclick="window.open('https://ilovecpu.github.io/TBMS/Kiosk_TBS.html','_blank')"><i class="fas fa-external-link-alt"></i>The Bap Swindon</div>
           <div class="menu-item sub" onclick="window.open('https://ilovecpu.github.io/TBMS/Kiosk_TBR.html','_blank')"><i class="fas fa-external-link-alt"></i>The Bap Reading</div>
           <div class="menu-item sub" onclick="window.open('https://ilovecpu.github.io/TBMS/Kiosk_TBB.html','_blank')"><i class="fas fa-external-link-alt"></i>The Bap Bristol</div>
+          <div class="menu-item sub" onclick="window.open('https://ilovecpu.github.io/TBMS/Kiosk_TBO.html','_blank')"><i class="fas fa-external-link-alt"></i>The Bap Oxford</div>
         </div>
       </div>
       <div class="menu-group">
@@ -317,7 +318,7 @@ tr.drag-over{border-top:3px solid var(--accent)!important}
   <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
   <div class="main-content">
     <div class="header">
-      <div class="header-left"><button class="menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button><h2 id="pageTitle" style="font-size:18px">Dashboard</h2><span style="font-size:11px;color:var(--text-light);margin-left:8px;font-weight:400;opacity:.7">Ver5.1.2</span></div>
+      <div class="header-left"><button class="menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button><h2 id="pageTitle" style="font-size:18px">Dashboard</h2><span style="font-size:11px;color:var(--text-light);margin-left:8px;font-weight:400;opacity:.7">Ver5.1.4</span></div>
       <div class="header-right"><span id="headerDate"></span><span class="sync-status"><span class="dot offline" id="syncDot"></span><span id="syncText">Local</span></span><button class="btn btn-sm btn-outline" onclick="doLogout()"><i class="fas fa-sign-out-alt"></i> Logout</button></div>
     </div>
     <div class="page-content" id="pageContent"></div>
@@ -2187,7 +2188,19 @@ function calcPayroll() {
   if(storeF)staff=staff.filter(s=>String(s.storeId)===storeF);
   payrollData=[];let grandTotal=0;
   staff.forEach(s=>{
-    const att=D.Attendance.filter(a=>String(a.staffId)===String(s.id)&&a.date>=period.start.toISOString().split('T')[0]&&a.date<=period.end.toISOString().split('T')[0]&&a.clockIn&&a.clockOut);
+    const _rawAtt=D.Attendance.filter(a=>String(a.staffId)===String(s.id)&&a.date>=period.start.toISOString().split('T')[0]&&a.date<=period.end.toISOString().split('T')[0]&&a.clockIn&&a.clockOut);
+    // ★ Deduplicate: same date + clockIn within 5 min = duplicate (keep first)
+    const att=[];const _seen={};
+    _rawAtt.forEach(a=>{
+      const key=a.date;
+      if(!_seen[key])_seen[key]=[];
+      const isDup=_seen[key].some(prev=>{
+        const[ph,pm]=(prev.clockIn||'').split(':').map(Number);
+        const[ah,am]=(a.clockIn||'').split(':').map(Number);
+        return Math.abs((ph*60+pm)-(ah*60+am))<=5;
+      });
+      if(!isDup){_seen[key].push(a);att.push(a);}
+    });
     let totalMins=0;
     att.forEach(a=>{
       const t1=parseTime(a.clockIn),t2=parseTime(a.clockOut);
@@ -2208,7 +2221,7 @@ function calcPayroll() {
   }else{
     $('payMainContent').innerHTML=`<div class="card"><div class="table-wrap"><table><thead><tr><th>Staff</th><th>Store</th><th>Days</th><th>Total Hours</th>${showRate?'<th>Rate</th><th>Total Pay</th>':''}</tr></thead><tbody id="payBody"></tbody><tfoot id="payFoot"></tfoot></table></div></div>
     <div id="payDetailWrap" class="hidden"><div class="card"><h3 style="margin-bottom:12px"><i class="fas fa-clock"></i> Detailed Attendance (with grace)</h3><div class="table-wrap"><table><thead><tr><th>Date</th><th>Staff</th><th>Store</th><th>Clock In</th><th>Grace In</th><th>Clock Out</th><th>Grace Out</th><th>Raw Hrs</th><th>Paid Hrs</th></tr></thead><tbody id="payDetailBody"></tbody></table></div></div></div>
-    <div id="staffDetailWrap" class="hidden" data-staff-id=""><div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><h3 style="margin:0"><i class="fas fa-user-clock"></i> <span id="staffDetailName"></span> — Hours Detail</h3><button class="btn btn-sm" onclick="$('staffDetailWrap').classList.add('hidden');$('staffDetailWrap').dataset.staffId=''" style="background:var(--border);color:var(--text)"><i class="fas fa-times"></i> Close</button></div><div id="staffDetailSummary" style="margin-bottom:10px"></div><div class="table-wrap"><table><thead><tr><th>Date</th><th>Store</th><th>Clock In</th><th>Grace In</th><th>Clock Out</th><th>Grace Out</th><th>Raw Hrs</th><th>Paid Hrs</th></tr></thead><tbody id="staffDetailBody"></tbody></table></div></div></div>`;
+    <div id="staffDetailWrap" class="hidden" data-staff-id=""><div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><h3 style="margin:0"><i class="fas fa-user-clock"></i> <span id="staffDetailName"></span> — Hours Detail</h3><div style="display:flex;gap:6px"><button class="btn btn-sm" onclick="printStaffDetail()" style="background:#222;color:#fff"><i class="fas fa-print"></i> Print</button><button class="btn btn-sm" onclick="$('staffDetailWrap').classList.add('hidden');$('staffDetailWrap').dataset.staffId=''" style="background:var(--border);color:var(--text)"><i class="fas fa-times"></i> Close</button></div></div><div id="staffDetailSummary" style="margin-bottom:10px"></div><div class="table-wrap"><table><thead><tr><th>Date</th><th>Store</th><th>Clock In</th><th>Grace In</th><th>Clock Out</th><th>Grace Out</th><th>Raw Hrs</th><th>Paid Hrs</th></tr></thead><tbody id="staffDetailBody"></tbody></table></div></div></div>`;
     $('payBody').innerHTML=payrollData.map(r=>`<tr>
       <td><a href="#" onclick="showStaffPayDetail('${r.id}');return false" style="color:var(--accent);font-weight:600;text-decoration:underline;cursor:pointer">${escHtml(r.nickName||r.name)}</a></td>
       <td>${escHtml(r.store)}</td><td>${r.days}</td><td>${r.hrs}h</td>${showRate?`<td>£${r.rate.toFixed(2)}</td><td><strong>£${r.pay}</strong></td>`:''}</tr>`).join('');
@@ -2384,6 +2397,81 @@ function showStaffPayDetail(staffId){
     <div style="padding:10px 16px;background:var(--accent);color:#fff;border-radius:8px;font-size:13px"><strong>Total Pay:</strong> £${sd.pay}</div>`:''}
   </div>`;
   wrap.scrollIntoView({behavior:'smooth',block:'start'});
+}
+function printStaffDetail(){
+  const staffId=$('staffDetailWrap')?.dataset?.staffId;
+  const sd=payrollData.find(r=>String(r.id)===String(staffId));
+  if(!sd){toast('No staff data','error');return;}
+  const rndIn=getTimeRoundingIn(),rndOut=getTimeRoundingOut();
+  const periodLabel=$('payPeriod')?.value||'';
+  const today=new Date().toISOString().split('T')[0];
+  let rows='';let totalRaw=0;let totalPaid=0;let totalGrace=0;let graceAlertDays=0;
+  const graceThreshold=3;
+  sd.att.sort((a,b)=>a.date.localeCompare(b.date)).forEach(a=>{
+    const t1=parseTime(a.clockIn),t2=parseTime(a.clockOut);
+    if(!t1||!t2)return;
+    const rIn=rndIn?graceClockIn(t1,rndIn):t1;
+    const rOut=rndOut?graceClockOut(t2,rndOut):t2;
+    const[h1,m1]=t1.split(':').map(Number);const[h2,m2]=t2.split(':').map(Number);
+    const rawMins=h2*60+m2-h1*60-m1;
+    const[rh1,rm1]=rIn.split(':').map(Number);const[rh2,rm2]=rOut.split(':').map(Number);
+    const paidMins=Math.max(0,rh2*60+rm2-rh1*60-rm1);
+    const graceDiff=paidMins-rawMins;
+    const inDiff=h1*60+m1-(rh1*60+rm1);
+    const outDiff=(rh2*60+rm2)-(h2*60+m2);
+    totalRaw+=rawMins;totalPaid+=paidMins;totalGrace+=graceDiff;
+    const bigGrace=graceDiff>=graceThreshold;
+    if(bigGrace)graceAlertDays++;
+    const store=D.Stores.find(x=>String(x.id)===String(a.storeId));
+    const inDiffTxt=inDiff!==0?`<span style="color:${inDiff>=graceThreshold?'#c62828':'#e65100'};font-size:9px;font-weight:700"> -${inDiff}m</span>`:'';
+    const outDiffTxt=outDiff!==0?`<span style="color:${outDiff>=graceThreshold?'#c62828':'#e65100'};font-size:9px;font-weight:700"> +${outDiff}m</span>`:'';
+    rows+=`<tr style="border-bottom:1px solid #eee;${bigGrace?'background:#fce4ec':''}">
+      <td style="padding:4px 8px">${a.date}</td>
+      <td style="padding:4px 8px">${store?escHtml(store.name):''}</td>
+      <td style="padding:4px 8px;text-align:center">${t1}</td>
+      <td style="padding:4px 8px;text-align:center;color:#e65100">${rIn}${inDiffTxt}</td>
+      <td style="padding:4px 8px;text-align:center">${t2}</td>
+      <td style="padding:4px 8px;text-align:center;color:#e65100">${rOut}${outDiffTxt}</td>
+      <td style="padding:4px 8px;text-align:center">${(rawMins/60).toFixed(1)}</td>
+      <td style="padding:4px 8px;text-align:center;font-weight:700">${(paidMins/60).toFixed(1)}${bigGrace?`<span style="color:#c62828;font-size:9px;font-weight:700"> +${graceDiff}m</span>`:''}</td>
+    </tr>`;
+  });
+  rows+=`<tr style="background:#f5f5f5;font-weight:700"><td colspan="6" style="padding:6px 8px;text-align:right">Total</td><td style="padding:6px 8px;text-align:center">${(totalRaw/60).toFixed(1)}h</td><td style="padding:6px 8px;text-align:center">${(totalPaid/60).toFixed(1)}h</td></tr>`;
+  const w=window.open('','_blank','width=900,height=700');
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Hours Detail - ${escHtml(sd.name)}</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+@media print{.no-print{display:none!important}@page{size:A4 portrait;margin:10mm}*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;color-adjust:exact!important}}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;margin:20px;color:#333;font-size:12px}
+table{width:100%;border-collapse:collapse}th{background:#333;color:#fff;padding:6px 8px;font-size:11px;text-align:center}td{font-size:11px}
+.summary{display:flex;gap:12px;flex-wrap:wrap;margin:12px 0}
+.summary div{padding:8px 14px;border-radius:8px;font-size:12px}
+</style></head><body>
+<div class="no-print" style="margin-bottom:16px"><button onclick="window.print()" style="padding:8px 24px;font-size:13px;font-weight:700;background:#222;color:#fff;border:none;border-radius:8px;cursor:pointer"><i class="fas fa-print"></i> PRINT</button></div>
+<h2 style="margin:0 0 4px 0;font-size:16px"><i class="fas fa-user-clock"></i> ${escHtml(sd.name)}${sd.nickName?' ('+escHtml(sd.nickName)+')':''} — Hours Detail</h2>
+<div style="font-size:12px;color:#666;margin-bottom:8px">Period: <strong>${escHtml(periodLabel)}</strong> &nbsp; Date: <strong>${today}</strong>${rndIn||rndOut?' &nbsp; Grace: <strong>In '+rndIn+'min / Out '+rndOut+'min</strong>':''}</div>
+<div class="summary">
+  <div style="background:#e8f5e9"><strong>Days:</strong> ${sd.days}</div>
+  <div style="background:#e3f2fd"><strong>Raw:</strong> ${(totalRaw/60).toFixed(1)}h</div>
+  <div style="background:#fff3e0"><strong>Paid:</strong> ${(totalPaid/60).toFixed(1)}h</div>
+  ${rndIn||rndOut?`<div style="background:${graceAlertDays>3?'#c62828;color:#fff':'#fce4ec'}"><strong>Grace:</strong> +${totalGrace}min (${graceAlertDays} alerts)</div>`:''}
+  ${showRate?`<div style="background:#f3e5f5"><strong>Rate:</strong> £${sd.rate.toFixed(2)}/hr</div><div style="background:#fce4ec"><strong>Total Pay:</strong> £${sd.pay}</div>`:''}
+</div>
+<table>
+  <thead><tr><th style="text-align:left">Date</th><th style="text-align:left">Store</th><th>Clock In</th><th>Grace In</th><th>Clock Out</th><th>Grace Out</th><th>Raw Hrs</th><th>Paid Hrs</th></tr></thead>
+  <tbody>${rows}</tbody>
+</table>
+<div style="margin-top:24px;padding-top:16px;border-top:1px solid #ddd">
+  <div style="display:flex;justify-content:space-between;align-items:flex-end">
+    <div style="font-size:10px;color:#999">TBMS Ver5.1.4</div>
+    <div style="text-align:right">
+      <div style="font-size:10px;color:#999;margin-bottom:20px">Employee Signature</div>
+      <div style="border-bottom:1px solid #333;width:200px"></div>
+    </div>
+  </div>
+</div>
+</body></html>`);
+  w.document.close();
 }
 function exportPayroll() {
   const rndIn=getTimeRoundingIn(),rndOut=getTimeRoundingOut();
@@ -4294,7 +4382,7 @@ th{font-size:9px;color:#666;font-weight:600}
 <div style="margin-bottom:12px">${selBadges}</div>
 <div class="info">Date: <b>${today}</b> &nbsp; Suppliers: <b>${supKeys.length}</b> &nbsp; Total Items: <b>${totalItems}</b></div>
 ${blocks}
-<p style="text-align:center;font-size:8px;color:#999;margin-top:20px">TBMS Ver5.1.2</p>
+<p style="text-align:center;font-size:8px;color:#999;margin-top:20px">TBMS Ver5.1.4</p>
 </body></html>`);
   w.document.close();
 }
@@ -5759,7 +5847,7 @@ ${d.hourKeys.length>0 ? `<div class="sec"><div class="sec-t">Hourly Breakdown</d
 
 <div class="sec"><div class="sec-t">Item Sales (${d.totalQty} items)</div><table><thead><tr><th>Item</th><th style="text-align:center">Qty</th><th style="text-align:right">Revenue</th><th style="text-align:right">%</th></tr></thead><tbody>${itemRows}</tbody></table></div>
 
-<div class="footer">TBMS Ver5.1.2 &copy; ${new Date().getFullYear()} The Bap. All rights reserved.</div>
+<div class="footer">TBMS Ver5.1.4 &copy; ${new Date().getFullYear()} The Bap. All rights reserved.</div>
 </body></html>`;
 
   const w = window.open('','_blank','width=800,height=1000');
@@ -6138,7 +6226,7 @@ function exportAllWord(){
       ['submittedBy / submittedAt','Who submitted and when']
     ]);
 
-    html+=`<hr style="margin:16px 0"><p style="text-align:center;font-size:8pt;color:#999;font-style:italic">TBMS Ver5.1.2</p>`;
+    html+=`<hr style="margin:16px 0"><p style="text-align:center;font-size:8pt;color:#999;font-style:italic">TBMS Ver5.1.4</p>`;
     html+=`</body></html>`;
 
     const blob=new Blob(['\ufeff'+html],{type:'application/msword'});

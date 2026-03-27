@@ -30,7 +30,7 @@ const SHEETS = {
   TimeChangeReq:  ['id','attendanceId','staffId','storeId','date','field','currentValue','requestedValue','reason','status','kioskVersion','createdAt','reviewedBy','reviewedAt','acknowledgedAt'],
   DiaryConfig:    ['id','storeId','configType','name','sortOrder','active'],
   DiaryEntry:     ['id','storeId','date','openChecks','fridgeTemps','deliveries','cookingTemps','coolingRecords','leftovers','closingChecks','holdTemps','extraChecks','issues','signedBy','submittedBy','submittedAt'],
-  StoreInfo:      ['id','storeId','leaseStart','leaseEnd','monthlyRent','serviceCharge','rentReviewYears','landlordName','landlordPhone','landlordEmail','estateAgent','estateAgentPhone','estateAgentEmail','councilName','councilEmail','councilPhone','businessRateAnnual','hygieneInspDate','hygieneRating','electricCompany','electricContractStart','electricContractEnd','electricKwhRate','electricDailyCharge','phoneCompany','phoneContractStart','phoneContractEnd','waterCompany','cardMachineCompany','cardContractStart','cardContractEnd','cardRate','fridgeCleanDate','fridgeCleanNext','airconCleanDate','airconCleanNext','memo','custom1Label','custom1Value','custom2Label','custom2Value','custom3Label','custom3Value','custom4Label','custom4Value','custom5Label','custom5Value','custom6Label','custom6Value','custom7Label','custom7Value','custom8Label','custom8Value','custom9Label','custom9Value','custom10Label','custom10Value'],
+  StoreInfo:      ['id','storeId','leaseStart','leaseEnd','monthlyRent','serviceCharge','rentReviewYears','landlordName','landlordPhone','landlordEmail','estateAgent','estateAgentPhone','estateAgentEmail','councilName','councilEmail','councilPhone','businessRateAnnual','hygieneInspDate','hygieneRating','electricCompany','electricContractStart','electricContractEnd','electricKwhRate','electricDailyCharge','phoneCompany','phoneContractStart','phoneContractEnd','waterCompany','cardMachineCompany','cardContractStart','cardContractEnd','cardRate','fridgeCleanDate','fridgeCleanNext','airconCleanDate','airconCleanNext','memo','custom1Label','custom1Value','custom2Label','custom2Value','custom3Label','custom3Value','custom4Label','custom4Value','custom5Label','custom5Value','custom6Label','custom6Value','custom7Label','custom7Value','custom8Label','custom8Value','custom9Label','custom9Value','custom10Label','custom10Value','sheetUrl'],
   KnowledgeBase:  ['id','category','title','content','tags','source','createdBy','createdAt','updatedAt','active','version','accessLevel'],
   // ★ POS Sales Data
   // DailySales/LiveSales 제거 (v4.4.2) → SalesOrders 기반 getSalesOrdersSummary로 대체
@@ -578,6 +578,37 @@ function savePhotoToDrive(base64Data, fileName) {
 
 function clockInWithPhoto(data) {
   if (!data.row) return {error: 'Missing row data'};
+  // ★ Duplicate prevention: check for existing record same staffId + date
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var attSheet = ss.getSheetByName('Attendance');
+  if (attSheet) {
+    var headers = SHEETS['Attendance'];
+    var allData = attSheet.getDataRange().getValues();
+    var staffIdx = headers.indexOf('staffId');
+    var dateIdx = headers.indexOf('date');
+    var clockInIdx = headers.indexOf('clockIn');
+    var clockOutIdx = headers.indexOf('clockOut');
+    for (var i = 1; i < allData.length; i++) {
+      if (String(allData[i][staffIdx]) === String(data.row.staffId) &&
+          normalizeDate(allData[i][dateIdx]) === String(data.row.date)) {
+        var existingOut = String(allData[i][clockOutIdx] || '').trim();
+        if (!existingOut) {
+          // Unclosed record — duplicate clock in
+          return {status: 'duplicate', error: 'Already clocked in', existingId: String(allData[i][0])};
+        }
+        // Closed record — check if clockIn within 5 min (duplicate vs split shift)
+        var existingIn = String(allData[i][clockInIdx] || '');
+        var eParts = existingIn.split(':'), nParts = String(data.row.clockIn).split(':');
+        if (eParts.length === 2 && nParts.length === 2) {
+          var eMins = parseInt(eParts[0]) * 60 + parseInt(eParts[1]);
+          var nMins = parseInt(nParts[0]) * 60 + parseInt(nParts[1]);
+          if (Math.abs(eMins - nMins) <= 5) {
+            return {status: 'duplicate', error: 'Duplicate shift detected'};
+          }
+        }
+      }
+    }
+  }
   if (data.photo) {
     var fileName = data.row.staffId + '_' + data.row.date + '_in_' + Date.now();
     var fileId = savePhotoToDrive(data.photo, fileName);

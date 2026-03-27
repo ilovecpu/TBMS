@@ -1159,16 +1159,62 @@ function renderStoreMgmt(c){
   const stores=getAccessibleStores().filter(s=>s.active!==false);
   c.innerHTML=`<div class="card"><div class="card-header"><h3>Store Management</h3></div>
   <div style="display:flex;flex-wrap:wrap;gap:12px;padding:4px 0;margin-bottom:20px">
-    ${stores.map(s=>`<div class="sm-store-box${smSelectedStore===s.id?' sm-selected':''}" onclick="smSelectStore('${s.id}')" style="cursor:pointer;border:2px solid ${smSelectedStore===s.id?'var(--accent)':'var(--border)'};border-radius:12px;padding:14px 20px;background:${smSelectedStore===s.id?'#e8f5e9':'#fff'};display:flex;align-items:center;gap:10px;transition:all .2s;min-width:160px">
-      <span style="background:${smSelectedStore===s.id?'var(--accent)':(_storeClr[s.code]||'var(--primary)')};color:#fff;padding:6px 10px;border-radius:8px;font-weight:800;font-size:14px">${escHtml(s.code)}</span>
-      <span style="font-weight:600;font-size:15px">${escHtml(s.name)}</span>
-    </div>`).join('')}
+    ${stores.map(s=>{const _si=getStoreInfo(s.id);const _sheetUrl=_si.sheetUrl||'';return`<div style="display:flex;flex-direction:column;gap:6px;min-width:180px">
+      <div class="sm-store-box${smSelectedStore===s.id?' sm-selected':''}" onclick="smSelectStore('${s.id}')" style="cursor:pointer;border:2px solid ${smSelectedStore===s.id?'var(--accent)':'var(--border)'};border-radius:12px;padding:14px 20px;background:${smSelectedStore===s.id?'#e8f5e9':'#fff'};display:flex;align-items:center;gap:10px;transition:all .2s">
+        <span style="background:${smSelectedStore===s.id?'var(--accent)':(_storeClr[s.code]||'var(--primary)')};color:#fff;padding:6px 10px;border-radius:8px;font-weight:800;font-size:14px">${escHtml(s.code)}</span>
+        <span style="font-weight:600;font-size:15px">${escHtml(s.name)}</span>
+      </div>
+      <div style="display:flex;gap:4px">
+        <button onclick="openStoreSheet('${s.id}')" style="flex:1;padding:5px 8px;border:1px solid ${_sheetUrl?'#0f9d58':'#ddd'};border-radius:8px;background:${_sheetUrl?'#e6f4ea':'#f5f5f5'};color:${_sheetUrl?'#0f9d58':'#999'};font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;transition:all .2s" title="${_sheetUrl?'Open Google Sheet':'Set Google Sheet link'}"><i class="fas fa-table"></i> Sheet</button>
+        <button onclick="event.stopPropagation();editStoreSheet('${s.id}')" style="padding:5px 8px;border:1px solid #ddd;border-radius:8px;background:#f5f5f5;color:#666;font-size:11px;cursor:pointer;transition:all .2s" title="Edit Sheet link"><i class="fas fa-cog"></i></button>
+      </div>
+    </div>`;}).join('')}
   </div>
   <div id="smContent">${smSelectedStore?renderSmSections(smSelectedStore):'<div style="text-align:center;padding:60px 20px;color:#999"><i class="fas fa-hand-pointer" style="font-size:48px;margin-bottom:16px;display:block;opacity:.4"></i><p style="font-size:16px">Select a store to manage</p></div>'}</div>
   </div>`;
 }
 
 function smSelectStore(id){smSelectedStore=id;renderStoreMgmt($('pageContent'));}
+
+function openStoreSheet(storeId){
+  const info=getStoreInfo(storeId);
+  if(info.sheetUrl){window.open(info.sheetUrl,'_blank');}
+  else{editStoreSheet(storeId);}
+}
+function editStoreSheet(storeId){
+  const info=getStoreInfo(storeId);
+  const store=D.Stores.find(s=>s.id===storeId);
+  const old=document.getElementById('sheetLinkModal');if(old)old.remove();
+  const modal=document.createElement('div');modal.id='sheetLinkModal';
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center';
+  modal.innerHTML=`
+    <div style="background:#fff;border-radius:16px;padding:28px;width:500px;max-width:95vw;box-shadow:0 20px 60px rgba(0,0,0,.3)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+        <h3 style="margin:0;font-size:16px"><i class="fas fa-table" style="color:#0f9d58"></i> Google Sheet — ${store?escHtml(store.name):storeId}</h3>
+        <button onclick="document.getElementById('sheetLinkModal').remove()" style="background:none;border:none;font-size:18px;cursor:pointer;color:#999"><i class="fas fa-times"></i></button>
+      </div>
+      <div style="margin-bottom:16px">
+        <label style="font-size:12px;font-weight:600;color:var(--text-light);display:block;margin-bottom:6px">Google Sheets URL</label>
+        <input id="sheetUrlInput" type="url" value="${escHtml(info.sheetUrl||'')}" placeholder="https://docs.google.com/spreadsheets/d/..." style="width:100%;padding:12px;border:2px solid var(--border);border-radius:10px;font-size:14px;box-sizing:border-box">
+        <div style="font-size:11px;color:#999;margin-top:4px"><i class="fas fa-info-circle"></i> Google Sheets URL을 붙여넣으세요</div>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        ${info.sheetUrl?`<button onclick="saveStoreSheet('${storeId}','')" style="padding:8px 16px;border:1px solid #e53935;border-radius:8px;background:#fff;color:#e53935;font-size:13px;cursor:pointer"><i class="fas fa-trash"></i> Remove</button>`:''}
+        <button onclick="document.getElementById('sheetLinkModal').remove()" style="padding:8px 20px;border:1px solid var(--border);border-radius:8px;background:#fff;font-size:13px;cursor:pointer">Cancel</button>
+        <button onclick="saveStoreSheet('${storeId}',$('sheetUrlInput').value.trim())" style="padding:8px 20px;border:none;border-radius:8px;background:#0f9d58;color:#fff;font-size:13px;font-weight:700;cursor:pointer"><i class="fas fa-save"></i> Save</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  setTimeout(()=>$('sheetUrlInput').focus(),100);
+}
+async function saveStoreSheet(storeId,url){
+  const info=getStoreInfo(storeId);
+  info.sheetUrl=url;
+  await saveRow('StoreInfo',info);
+  const m=document.getElementById('sheetLinkModal');if(m)m.remove();
+  renderStoreMgmt($('pageContent'));
+  toast(url?'Google Sheet link saved':'Google Sheet link removed','success');
+}
 
 function renderSmSections(storeId){
   const info=getStoreInfo(storeId);

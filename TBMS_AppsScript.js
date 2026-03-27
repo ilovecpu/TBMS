@@ -1,8 +1,9 @@
 // ============================================================
-//  TBMS - The Bap Management System v4.5.8
+//  TBMS - The Bap Management System v5.1.5
 //  Google Apps Script Backend (Code.gs)
-//  Deployed: 2026-03-18
-//  URL: https://script.google.com/macros/s/AKfycbz_0Vcn1aCQyHZ7i9XRFp72f6O1H5kAsuaFATW4MMSnOhgWakAjMebH8ngMchYDHfS5/exec
+//  Deployed: 2026-03-27
+//  URL: https://script.google.com/macros/s/AKfycbxRqSo00Q3YUzKkqhBESbNq0mOX_ruQ_Dn8_gWaNa_94YhEjuA08HcYNCzoWdVBnG88/exec
+//  Changes: duplicate clock-in prevention, StoreInfo.sheetUrl added
 // ============================================================
 //  SETUP:
 //  1. Google Drive > New > Google Sheets > Name "TBMS Database"
